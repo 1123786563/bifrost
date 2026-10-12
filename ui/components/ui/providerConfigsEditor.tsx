@@ -8,6 +8,7 @@ import { ProviderLabels, ProviderName } from "@/lib/constants/logs";
 import { useGetAllKeysQuery, useGetProvidersQuery } from "@/lib/store";
 import { Info } from "lucide-react";
 import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 // Picked by the row that leaves the editor for provider management, rather than adding one.
 const MANAGE_PROVIDERS_VALUE = "__manage_providers__";
@@ -69,6 +70,7 @@ export function ProviderConfigsEditor({
 	onManageProviders,
 	error,
 }: ProviderConfigsEditorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { data: providersData, isLoading: isLoadingProviders, isError: isProvidersError } = useGetProvidersQuery();
 	const { data: keysData } = useGetAllKeysQuery();
 	const availableProviders = providersData || [];
@@ -118,7 +120,7 @@ export function ProviderConfigsEditor({
 	const manageProvidersOption = useMemo(
 		() =>
 			onManageProviders && !hasUnconfiguredProviders && !isLoadingProviders && !isProvidersError
-				? [{ value: MANAGE_PROVIDERS_VALUE, label: "No providers left to configure. Click to add" }]
+				? [{ value: MANAGE_PROVIDERS_VALUE, label: t("workspaces:providerConfigs.noneLeft") }]
 				: undefined,
 		[onManageProviders, hasUnconfiguredProviders, isLoadingProviders, isProvidersError],
 	);
@@ -147,7 +149,7 @@ export function ProviderConfigsEditor({
 			{/* Allow all providers */}
 			<div className="flex w-full items-center justify-between gap-2 py-2 text-sm">
 				<div className="flex items-center gap-1.5">
-					<span>Allow all providers</span>
+					<span>{t("workspaces:providerConfigs.allowAll")}</span>
 					<TooltipProvider>
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -177,7 +179,7 @@ export function ProviderConfigsEditor({
 					mode="add"
 					className="flex-1"
 					data-testid={`${testIdPrefix}-provider-select`}
-					placeholder="Select a provider to add"
+					placeholder={t("workspaces:providerConfigs.selectToAdd")}
 					groupByCustom
 					excludeValues={configuredProviderNames}
 					extraOptions={manageProvidersOption}

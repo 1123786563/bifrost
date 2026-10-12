@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { ModelAccessChipLabel } from "./modelAccessChip";
 import { isRegexEntry, isWildcardList, type ModelAccessMode } from "./utils";
+import { useTranslation } from "react-i18next";
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "success";
 
@@ -43,6 +44,7 @@ export function ModelAccessBadges({
 	entryClassName,
 	className,
 }: ModelAccessBadgesProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const entries = (value ?? []).filter((e) => e !== "*");
 	const isAll = allModels || isWildcardList(value);
 
@@ -62,11 +64,11 @@ export function ModelAccessBadges({
 		if (empty !== undefined) return <>{empty}</>;
 		return mode === "allow" ? (
 			<Badge variant="destructive" className={cn("text-xs", className)}>
-				No models (deny all)
+				{t("workspaces:modelAccess.noModelsDenyAll")}
 			</Badge>
 		) : (
 			<Badge variant="secondary" className={cn("text-xs", className)}>
-				{allowsAllModels === false ? "All models except those allowed" : "No models blocked"}
+				{allowsAllModels === false ? t("workspaces:modelAccess.allExceptAllowed") : t("workspaces:modelAccess.noModelsBlocked")}
 			</Badge>
 		);
 	}

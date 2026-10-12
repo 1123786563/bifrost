@@ -13,6 +13,7 @@ import { lazy, Suspense, useCallback, useEffect, useId, useMemo, useState, type 
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const LazyMarkdown = lazy(() => import("@/components/ui/markdown").then((m) => ({ default: m.Markdown })));
 const Markdown = (props: ComponentProps<typeof LazyMarkdown>) => (
@@ -73,6 +74,7 @@ function MessagePreview({
 }
 
 export function CommitVersionSheet({ open, onOpenChange, session, onCommitted }: CommitVersionSheetProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [commitSession, { isLoading }] = useCommitSessionMutation();
 	const canCommit = useRbac(RbacResource.PromptRepository, RbacOperation.Update);
 	const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
@@ -118,7 +120,7 @@ export function CommitVersionSheet({ open, onOpenChange, session, onCommitted }:
 
 	async function onSubmit(data: CommitVersionFormData) {
 		if (selectedIndices.size === 0) {
-			toast.error("Please select at least one message to commit");
+			toast.error(t("workspaces:promptsRepo.commitSheet.selectAtLeastOne"));
 			return;
 		}
 		try {
@@ -135,12 +137,12 @@ export function CommitVersionSheet({ open, onOpenChange, session, onCommitted }:
 				promptId: session.prompt_id,
 				data: commitData,
 			}).unwrap();
-			toast.success("Version committed");
+			toast.success(t("workspaces:promptsRepo.commitSheet.committed"));
 			reset();
 			onCommitted(result.version.id);
 			onOpenChange(false);
 		} catch (err) {
-			toast.error("Failed to commit version", {
+			toast.error(t("workspaces:promptsRepo.commitSheet.failed"), {
 				description: getErrorMessage(err),
 			});
 		}
@@ -157,8 +159,8 @@ export function CommitVersionSheet({ open, onOpenChange, session, onCommitted }:
 			>
 				<form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-hidden">
 					<SheetHeader className="flex flex-col items-start">
-						<SheetTitle>Commit as Version</SheetTitle>
-						<SheetDescription>Select the messages to include in this version. Uncheck any messages you want to exclude.</SheetDescription>
+						<SheetTitle>{t("workspaces:promptsRepo.commitSheet.title")}</SheetTitle>
+						<SheetDescription>{t("workspaces:promptsRepo.commitSheet.description")}</SheetDescription>
 					</SheetHeader>
 
 					{/* Messages selection - scrollable */}
@@ -168,7 +170,7 @@ export function CommitVersionSheet({ open, onOpenChange, session, onCommitted }:
 								Messages ({selectedIndices.size}/{session.messages.length})
 							</Label>
 							<button type="button" onClick={toggleAll} className="text-muted-foreground hover:text-foreground text-xs transition-colors">
-								{allSelected ? "Deselect all" : "Select all"}
+								{allSelected ? t("workspaces:promptsRepo.commitSheet.deselectAll") : t("workspaces:promptsRepo.commitSheet.selectAll")}
 							</button>
 						</div>
 						<ScrollArea className="flex-1 overflow-y-auto rounded-md border">
@@ -188,14 +190,14 @@ export function CommitVersionSheet({ open, onOpenChange, session, onCommitted }:
 					{/* Commit message + CTAs - always visible at bottom */}
 					<div className="mt-4 shrink-0 space-y-4">
 						<div className="space-y-2">
-							<Label htmlFor="commitMessage">Commit Message</Label>
+							<Label htmlFor="commitMessage">{t("workspaces:promptsRepo.commitSheet.commitMessage")}</Label>
 							<Input
 								id="commitMessage"
 								data-testid="commit-version-message"
-								placeholder="Added system message for better context..."
+								placeholder={t("workspaces:promptsRepo.commitSheet.commitPh")}
 								{...register("commitMessage", {
-									required: "Commit message is required",
-									validate: (v) => v.trim().length > 0 || "Commit message cannot be blank",
+									required: t("workspaces:promptsRepo.commitSheet.required"),
+									validate: (v) => v.trim().length > 0 || t("workspaces:promptsRepo.commitSheet.blank"),
 								})}
 								autoFocus
 							/>
@@ -216,7 +218,7 @@ export function CommitVersionSheet({ open, onOpenChange, session, onCommitted }:
 								type="submit"
 								data-testid="commit-version-submit"
 								disabled={isLoading || selectedIndices.size === 0 || !canCommit}
-								title={canCommit ? undefined : "You do not have permission to change prompts"}
+								title={canCommit ? undefined : t("workspaces:promptsRepo.commitSheet.noPermission")}
 								className={selectedIndices.size === 0 ? "opacity-50" : ""}
 							>
 								{isLoading ? "Committing..." : "Commit Version"}

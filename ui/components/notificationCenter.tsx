@@ -33,6 +33,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Check, CheckCircle2, CircleAlert, Inbox, Info, RefreshCw, TriangleAlert, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const severityStyles: Record<NotificationSeverity, string> = {
 	info: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
@@ -49,6 +50,7 @@ const severityIcons = {
 };
 
 export default function NotificationCenter() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const [open, setOpen] = useState(false);
@@ -103,8 +105,15 @@ export default function NotificationCenter() {
 					type="button"
 					aria-label={
 						unreadCount || activeJobCount
-							? `Notifications, ${[unreadCount && `${unreadCount} unread`, activeJobCount && `${activeJobCount} running`].filter(Boolean).join(", ")}`
-							: "Notifications"
+							? t("workspaces:notifications.ariaWithCount", {
+									summary: [
+										unreadCount && t("workspaces:notifications.unread", { count: unreadCount }),
+										activeJobCount && t("workspaces:notifications.running", { count: activeJobCount }),
+									]
+										.filter(Boolean)
+										.join(", "),
+								})
+							: t("workspaces:notifications.aria")
 					}
 					data-testid="topbar-notifications-btn"
 					// size-8 matches the theme toggle and the menu/user-pill trigger. Every topbar trigger has to
@@ -136,16 +145,16 @@ export default function NotificationCenter() {
 								// TabsList caches trigger widths on mount; remount when a count badge appears or goes so they are re-measured.
 								<TabsList key={`${unreadCount > 0}-${activeJobCount > 0}`} className="h-8 rounded-sm">
 									<TabsTrigger value="notifications" className="rounded-sm px-2.5 text-xs" data-testid="notification-tab-notifications">
-										Notifications
+										{t("workspaces:notifications.tab")}
 										{unreadCount > 0 && <TabCount count={unreadCount} />}
 									</TabsTrigger>
 									<TabsTrigger value="jobs" className="rounded-sm px-2.5 text-xs" data-testid="notification-tab-jobs">
-										Background jobs
+										{t("workspaces:notifications.jobsTab")}
 										{activeJobCount > 0 && <TabCount count={activeJobCount} />}
 									</TabsTrigger>
 								</TabsList>
 							) : (
-								<h2 className="px-1 text-sm font-semibold">Notifications</h2>
+								<h2 className="px-1 text-sm font-semibold">{t("workspaces:notifications.tab")}</h2>
 							)}
 							{isFetching && !isLoading && <RefreshCw className="text-muted-foreground size-3 shrink-0 animate-spin" />}
 						</div>
@@ -156,7 +165,7 @@ export default function NotificationCenter() {
 								className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer text-xs whitespace-nowrap transition-colors"
 								data-testid="notifications-mark-all-read"
 							>
-								Mark all read
+								{t("workspaces:notifications.markAllRead")}
 							</button>
 						)}
 						{tab === "jobs" && finishedJobIds.length > 0 && (
@@ -179,9 +188,9 @@ export default function NotificationCenter() {
 								onCancel={async (id) => {
 									try {
 										const result = await cancelJob(id).unwrap();
-										if (!result.cancelled) toast.info("That job had already finished");
+										if (!result.cancelled) toast.info(t("workspaces:notifications.jobFinishedToast"));
 									} catch (error) {
-										toast.error("Couldn't cancel the job", { description: getErrorMessage(error) });
+										toast.error(t("workspaces:notifications.cancelFailedToast"), { description: getErrorMessage(error) });
 									}
 								}}
 								onDismiss={(ids) => ids.forEach((id) => dispatch(removeNotification(id)))}
@@ -250,7 +259,12 @@ export default function NotificationCenter() {
 													<span className="min-w-0 flex-1 pr-5">
 														<span className="flex items-start gap-2">
 															<span className={cn("min-w-0 flex-1 text-sm", !isRead && "font-semibold")}>{notification.title}</span>
-															{!isRead && <span className="bg-primary mt-1.5 size-1.5 shrink-0 rounded-full" aria-label="Unread" />}
+															{!isRead && (
+																<span
+																	className="bg-primary mt-1.5 size-1.5 shrink-0 rounded-full"
+																	aria-label={t("workspaces:misc2.unreadAria")}
+																/>
+															)}
 														</span>
 														<span className="text-muted-foreground mt-0.5 line-clamp-3 block text-xs leading-relaxed">
 															{notification.message}

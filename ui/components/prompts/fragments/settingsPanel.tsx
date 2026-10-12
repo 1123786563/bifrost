@@ -21,10 +21,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiKeySelectorView } from "../components/apiKeySelectorView";
 import { VariablesTableView } from "../components/variablesTableView";
 import { usePromptContext } from "../context";
+import { useTranslation } from "react-i18next";
 
 const VIRTUAL_KEY_PAGE_SIZE = 20;
 
 export function SettingsPanel() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const {
 		provider,
 		setProvider,
@@ -213,7 +215,7 @@ export function SettingsPanel() {
 										extraOptions={savedProviderOption}
 										value={provider}
 										onChange={(v: string) => v && onProviderChange(v)}
-										placeholder="Select provider"
+										placeholder={t("workspaces:promptsRepo.settings.selectProvider")}
 										className="!h-9 !min-h-9"
 									/>
 								</div>
@@ -229,7 +231,11 @@ export function SettingsPanel() {
 										vks={filterVks}
 										value={model}
 										onChange={onModelChange}
-										placeholder={!provider ? "Select a provider first" : "Select model"}
+										placeholder={
+											!provider
+												? t("workspaces:promptsRepo.settings.selectProviderFirst")
+												: t("workspaces:promptsRepo.settings.selectModel")
+										}
 										disabled={!provider}
 										unfiltered
 										allowCustomModel

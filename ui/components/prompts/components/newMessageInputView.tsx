@@ -8,8 +8,10 @@ import { usePromptContext } from "../context";
 import { fileToAttachment } from "../utils/attachment";
 import { AttachmentBadge } from "./messagesView/attachmentViews";
 import MessageRoleSwitcher from "./messagesView/messageRoleSwitcher";
+import { useTranslation } from "react-i18next";
 
 export function NewMessageInputView() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const {
 		messages,
 		setMessages: onUpdateMessages,
@@ -225,7 +227,7 @@ export function NewMessageInputView() {
 			)}
 			<div className="relative">
 				<Textarea
-					placeholder="Type a message..."
+					placeholder={t("workspaces:promptsRepo.input.typeMessage")}
 					value={userInput}
 					ref={userInputRef}
 					onChange={(e) => setUserInput(e.target.value)}
@@ -271,7 +273,11 @@ export function NewMessageInputView() {
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="top">
-								{!canRun ? <span>Select a provider and model to run</span> : <span>Run prompt</span>}
+								{!canRun ? (
+									<span>{t("workspaces:promptsRepo.input.selectToRun")}</span>
+								) : (
+									<span>{t("workspaces:promptsRepo.input.runPrompt")}</span>
+								)}
 								<kbd className="bg-primary-foreground/20 ml-1.5 rounded px-1 py-0.5 font-mono text-[10px]">↵</kbd>
 							</TooltipContent>
 						</Tooltip>

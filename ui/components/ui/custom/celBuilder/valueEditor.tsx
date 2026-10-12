@@ -10,6 +10,7 @@ import { ProviderSelector } from "@/components/ui/providerSelector";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { ValueEditorProps, ValueEditorType } from "react-querybuilder";
+import { useTranslation } from "react-i18next";
 
 type CELValueEditorContext = {
 	validateRegex?: (pattern: string) => string | null;
@@ -23,6 +24,7 @@ export function ValueEditor({
 	type,
 	context,
 }: ValueEditorProps & { context?: CELValueEditorContext }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Compute all conditions upfront before any early returns
 	const isArrayOperator = operator === "in" || operator === "notIn";
 	const isRegexOperator = operator === "matches";
@@ -117,7 +119,7 @@ export function ValueEditor({
 					multiple
 					value={selectedModels}
 					onChange={handleMultiModelChange}
-					placeholder="Select models..."
+					placeholder={t("workspaces:celBuilder.selectModels")}
 					allowCustomModel
 					unfiltered
 					className="!min-h-9 w-[360px]"
@@ -135,7 +137,7 @@ export function ValueEditor({
 				} else if (typeof parsedValue === "string") {
 					valueToUse = parsedValue;
 				}
-			} catch (error) { }
+			} catch (error) {}
 		}
 
 		// For single operators (=, !=), use single select
@@ -143,7 +145,7 @@ export function ValueEditor({
 			<ModelSelector
 				value={valueToUse || ""}
 				onChange={handleOnChange}
-				placeholder="Search for a model..."
+				placeholder={t("workspaces:celBuilder.searchModel")}
 				allowCustomModel
 				unfiltered
 				className="border-input w-[360px]"
@@ -196,7 +198,7 @@ export function ValueEditor({
 					values={options}
 					value={selectedValues}
 					onChange={handleMultiselectChange}
-					placeholder="Select providers..."
+					placeholder={t("workspaces:celBuilder.selectProviders")}
 					className="w-[360px]"
 					noPortal
 				/>
@@ -206,7 +208,7 @@ export function ValueEditor({
 					value={selectedValues}
 					onValueChange={handleMultiselectChange}
 					options={options}
-					placeholder="Select providers..."
+					placeholder={t("workspaces:celBuilder.selectProviders")}
 					className="h-9 w-[360px]"
 					noPortal
 				/>
@@ -243,7 +245,7 @@ export function ValueEditor({
 				type="text"
 				value={keyValuePair.value}
 				onChange={(e) => handleKeyValueValueChange(e.target.value)}
-				placeholder="Value"
+				placeholder={t("workspaces:celBuilder.value")}
 				className="w-[180px]"
 				data-testid="cel-builder-keyvalue-value-input"
 			/>

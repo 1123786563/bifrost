@@ -8,6 +8,7 @@ import { Check, ExternalLink, Loader2, PencilLine, Play, RefreshCw, Send, Shield
 import { useRef, useState } from "react";
 import { MCPAuthRequiredError } from "../../utils/executor";
 import MessageRoleSwitcher from "./messageRoleSwitcher";
+import { useTranslation } from "react-i18next";
 
 export default function ToolCallMessageView({
 	message,
@@ -32,6 +33,7 @@ export default function ToolCallMessageView({
 	fetchToolResult?: (toolCall: ToolCall) => Promise<string>;
 	respondedToolCallIds?: Set<string>;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const toolCalls = message.toolCalls ?? [];
 	const [responses, setResponses] = useState<Record<string, string>>({});
 	const [executingIds, setExecutingIds] = useState<Set<string>>(new Set());
@@ -272,7 +274,7 @@ export default function ToolCallMessageView({
 					{!disabled && onRemove && (
 						<button
 							type="button"
-							aria-label="Delete message"
+							aria-label={t("workspaces:promptsRepo.messages.deleteAria")}
 							data-testid="tool-call-msg-delete"
 							onClick={onRemove}
 							className="hover:bg-destructive/10 focus:bg-destructive/10 rounded-md p-1 opacity-0 transition group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
@@ -381,7 +383,9 @@ export default function ToolCallMessageView({
 								<div className="animate-in fade-in-0 bg-muted/20 space-y-2 border-t px-3 py-2 duration-150 motion-reduce:animate-none">
 									<div className="flex items-center gap-2">
 										<div className="text-foreground text-xs font-medium">
-											{isResolved && !isManualEntryOpen ? "Executed result" : "Tool result"}
+											{isResolved && !isManualEntryOpen
+												? t("workspaces:promptsRepo.messages.executedResult")
+												: t("workspaces:promptsRepo.messages.toolResult")}
 										</div>
 										{isMultiple && (
 											<Button
@@ -409,7 +413,7 @@ export default function ToolCallMessageView({
 									</div>
 									<Textarea
 										autoFocus={isManualEntryOpen && !isResolved}
-										placeholder="Paste tool result..."
+										placeholder={t("workspaces:promptsRepo.messages.pasteResult")}
 										value={responses[tc.id] ?? ""}
 										onChange={(e) => handleResponseChange(tc.id, e.target.value)}
 										data-testid="tool-call-response-textarea"
@@ -533,9 +537,7 @@ export default function ToolCallMessageView({
 										: `${resolvedCount} of ${pendingToolCalls.length} results collected`}
 								</div>
 								<div className="text-muted-foreground text-[10px]">
-									{allResolved
-										? "Submit all results to continue the conversation."
-										: "Execute or fill each tool call above, then submit together."}
+									{allResolved ? t("workspaces:promptsRepo.messages.submitHint") : t("workspaces:promptsRepo.messages.executeHint")}
 								</div>
 							</div>
 							<div className="ml-auto flex items-center gap-1.5">
@@ -548,7 +550,7 @@ export default function ToolCallMessageView({
 										onClick={handleExecuteAll}
 									>
 										{isExecutingAll ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
-										{isExecutingAll ? "Executing all" : "Execute all"}
+										{isExecutingAll ? t("workspaces:promptsRepo.messages.executingAll") : t("workspaces:promptsRepo.messages.executeAll")}
 									</Button>
 								)}
 								<Button
@@ -564,7 +566,7 @@ export default function ToolCallMessageView({
 									onClick={handleSubmitAll}
 								>
 									{isSubmittingAll ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
-									{isSubmittingAll ? "Submitting" : "Submit all results"}
+									{isSubmittingAll ? t("workspaces:promptsRepo.messages.submitting") : t("workspaces:promptsRepo.messages.submitAll")}
 								</Button>
 							</div>
 						</div>

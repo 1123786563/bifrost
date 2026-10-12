@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { AsyncMultiSelect } from "./asyncMultiselect";
 import { Option } from "./multiselectUtils";
 import { cn } from "./utils";
+import { useTranslation } from "react-i18next";
 
 // Entity types supported by this component
 export type EntityType = "virtualKey" | "team" | "customer" | "user" | "provider" | "apiKey";
@@ -64,23 +65,23 @@ interface EntityAssociationSelectProps {
 }
 
 // Default placeholder text for each entity type
-const defaultPlaceholders: Record<EntityType, string> = {
-	virtualKey: "Add virtual key names...",
-	team: "Add team names...",
-	customer: "Add customer names...",
-	user: "Add user names...",
-	provider: "Add provider names...",
-	apiKey: "Add API key names...",
+const defaultPlaceholderKeys: Record<EntityType, string> = {
+	virtualKey: "workspaces:entitySelect.add.virtualKey",
+	team: "workspaces:entitySelect.add.team",
+	customer: "workspaces:entitySelect.add.customer",
+	user: "workspaces:entitySelect.add.user",
+	provider: "workspaces:entitySelect.add.provider",
+	apiKey: "workspaces:entitySelect.add.apiKey",
 };
 
 // Default no options messages for each entity type
-const defaultNoOptionsMessages: Record<EntityType, string> = {
-	virtualKey: "No virtual keys found",
-	team: "No teams found",
-	customer: "No customers found",
-	user: "No users found",
-	provider: "No providers found",
-	apiKey: "No API keys found",
+const defaultNoOptionsKeys: Record<EntityType, string> = {
+	virtualKey: "workspaces:entitySelect.none.virtualKey",
+	team: "workspaces:entitySelect.none.team",
+	customer: "workspaces:entitySelect.none.customer",
+	user: "workspaces:entitySelect.none.user",
+	provider: "workspaces:entitySelect.none.provider",
+	apiKey: "workspaces:entitySelect.none.apiKey",
 };
 
 // Label text for each entity type
@@ -107,6 +108,7 @@ export function EntityAssociationSelect({
 	formatCreateLabel,
 	noOptionsMessage,
 }: EntityAssociationSelectProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Convert static options to AsyncMultiSelect format using meta for complex data
 	const defaultOptions = useMemo((): Option<EntityOptionMeta>[] => {
 		return options.map((opt) => ({
@@ -184,7 +186,7 @@ export function EntityAssociationSelect({
 	return (
 		<div className={cn("w-full", className)}>
 			<AsyncMultiSelect<EntityOptionMeta>
-				placeholder={placeholder || defaultPlaceholders[entityType]}
+				placeholder={placeholder || t(defaultPlaceholderKeys[entityType])}
 				disabled={disabled}
 				defaultOptions={defaultOptions}
 				reload={reload}
@@ -197,7 +199,7 @@ export function EntityAssociationSelect({
 				isCreatable={isCreatable}
 				onCreateOption={handleCreateOption}
 				formatCreateLabel={formatCreateLabel || ((value) => `Add "${value}"`)}
-				noOptionsMessage={noOptionsMessage || (() => defaultNoOptionsMessages[entityType])}
+				noOptionsMessage={noOptionsMessage || (() => t(defaultNoOptionsKeys[entityType]))}
 				views={{
 					option: (props) => {
 						// Access data as Option<EntityOptionMeta> since that's the actual runtime type

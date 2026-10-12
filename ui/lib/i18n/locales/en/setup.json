@@ -1,0 +1,21 @@
+{
+	"login": {
+		"checkingAuth": "Checking authentication..."
+	},
+	"setupToken": {
+		"title": "Finish setting up Bifrost",
+		"subtitle": "Dashboard authentication is not configured, so the API is locked. Enter the setup token to continue and create an admin account.",
+		"setupTokenLabel": "Setup token",
+		"setupTokenPlaceholder": "Enter the setup token",
+		"continue": "Continue",
+		"whereToFind": "Where do I find the setup token?",
+		"instructionsIntro": "The setup token is a secret the operator sets on the server. Set it one of two ways, then restart Bifrost:",
+		"instructionEnv": "Set the {{envVar}} environment variable.",
+		"instructionConfig": "Add {{setupToken}} at the top level of {{configFile}}. It accepts a literal value, an {{envRef}} reference, or a {{vaultRef}} reference:",
+		"instructionsApi": "API clients send the same value in the {{header}} header. The token stops working once dashboard authentication is enabled.",
+		"notConfigured": "No setup token is configured on this server, so setup cannot continue yet.",
+		"errorUnreachable": "Could not reach Bifrost. Check that the server is running.",
+		"errorInvalid": "Invalid setup token",
+		"errorStatus": "Bifrost returned {{status}} while checking the token"
+	}
+}

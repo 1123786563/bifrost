@@ -15,6 +15,7 @@ import {
 	splitModelAccess,
 	toRegexEntry,
 } from "./utils";
+import { useTranslation } from "react-i18next";
 
 type EditorTab = "models" | "regex";
 
@@ -66,6 +67,7 @@ export function ModelAccessSelector({
 	className,
 	...rest
 }: ModelAccessSelectorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const testId = rest["data-testid"];
 	// FormControl injects these onto its child; forward them to whichever input is showing
 	// so the label, the error message and the invalid state still point at a real element.
@@ -85,14 +87,18 @@ export function ModelAccessSelector({
 
 	const toggle = (
 		<Tabs value={tab} onValueChange={(next) => setPickedTab(next as EditorTab)} className="shrink-0">
-			<TabsList aria-label="Model entry type" className="h-6 rounded-sm p-0.5" data-testid={testId ? `${testId}-mode` : undefined}>
+			<TabsList
+				aria-label={t("workspaces:modelAccess.entryTypeAria")}
+				className="h-6 rounded-sm p-0.5"
+				data-testid={testId ? `${testId}-mode` : undefined}
+			>
 				<TabsTrigger
 					value="models"
 					disabled={disabled}
 					className="rounded-[3px] px-2 text-[11px] leading-5"
 					data-testid={testId ? `${testId}-mode-models` : undefined}
 				>
-					Models
+					{t("workspaces:modelAccess.modelsTab")}
 				</TabsTrigger>
 				<TabsTrigger
 					value="regex"
@@ -100,7 +106,7 @@ export function ModelAccessSelector({
 					className="rounded-[3px] px-2 text-[11px] leading-5"
 					data-testid={testId ? `${testId}-mode-regex` : undefined}
 				>
-					Regex
+					{t("workspaces:modelAccess.regexTab")}
 				</TabsTrigger>
 			</TabsList>
 		</Tabs>
@@ -129,7 +135,7 @@ export function ModelAccessSelector({
 					value={hasWildcard ? [MODEL_WILDCARD] : models}
 					onChange={(next: string[]) => onChange(replaceModels(list, next))}
 					placeholder={modelAccessPlaceholder(list, mode)}
-					emptyMessage={provider ? "No models available for this provider." : "Select a provider first."}
+					emptyMessage={provider ? t("workspaces:modelAccess.noModelsForProvider") : t("workspaces:modelAccess.selectProviderFirst")}
 					renderValueLabel={(entry) => <ModelAccessChipLabel entry={entry} />}
 				/>
 			) : (
@@ -164,9 +170,7 @@ export function ModelAccessSelector({
 						</div>
 					) : (
 						<p className="text-muted-foreground text-xs">
-							{mode === "allow"
-								? "No patterns. Add an RE2 pattern to allow models by name shape."
-								: "No patterns. Add an RE2 pattern to block models by name shape."}
+							{mode === "allow" ? t("workspaces:modelAccess.noPatternsAllow") : t("workspaces:modelAccess.noPatternsBlock")}
 						</p>
 					)}
 				</div>

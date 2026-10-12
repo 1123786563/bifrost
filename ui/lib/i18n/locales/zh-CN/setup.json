@@ -1,0 +1,21 @@
+{
+	"login": {
+		"checkingAuth": "正在检查身份验证..."
+	},
+	"setupToken": {
+		"title": "完成 Bifrost 设置",
+		"subtitle": "尚未配置控制台身份验证，API 已锁定。请输入 setup token 以继续并创建管理员账户。",
+		"setupTokenLabel": "Setup token",
+		"setupTokenPlaceholder": "输入 setup token",
+		"continue": "继续",
+		"whereToFind": "在哪里可以找到 setup token？",
+		"instructionsIntro": "Setup token 是运维人员在服务器上设置的密钥。可通过以下两种方式之一进行设置，然后重启 Bifrost：",
+		"instructionEnv": "设置 {{envVar}} 环境变量。",
+		"instructionConfig": "在 {{configFile}} 顶层添加 {{setupToken}}。它接受字面值、{{envRef}} 引用或 {{vaultRef}} 引用：",
+		"instructionsApi": "API 客户端需在 {{header}} 请求头中发送相同的值。控制台身份验证启用后，该 token 将失效。",
+		"notConfigured": "此服务器未配置 setup token，暂时无法继续设置。",
+		"errorUnreachable": "无法连接 Bifrost。请检查服务器是否正在运行。",
+		"errorInvalid": "无效的 setup token",
+		"errorStatus": "Bifrost 在校验 token 时返回了 {{status}}"
+	}
+}

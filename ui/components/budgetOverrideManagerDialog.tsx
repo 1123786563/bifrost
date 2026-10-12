@@ -10,6 +10,7 @@ import { formatCurrency, getBudgetOverrideValidUntil, getEffectiveBudgetLimit, h
 import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 // One overridable budget row. `budget` is the persisted row the override applies to;
 // `label` is scope-relative (the section already names the scope), e.g. the reset
@@ -50,6 +51,7 @@ export function BudgetOverrideManagerDialog({
 	disabled,
 	triggerLabel = "Add override",
 }: BudgetOverrideManagerDialogProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [open, setOpen] = useState(false);
 	const [expandedKey, setExpandedKey] = useState<string | null>(null);
 	const [amount, setAmount] = useState("");
@@ -90,7 +92,7 @@ export function BudgetOverrideManagerDialog({
 		try {
 			const wasActive = hasActiveBudgetOverride(row.budget);
 			await onSave(row.budget.id, { amount: parsedAmount, mode, ...(mode === "cycles" ? { cycles: parsedCycles } : {}) });
-			toast.success(wasActive ? "Budget override updated" : "Budget override added");
+			toast.success(wasActive ? t("workspaces:budgetOverride.updated") : t("workspaces:budgetOverride.added"));
 			setExpandedKey(null);
 		} catch (mutationError) {
 			setError(getErrorMessage(mutationError));
@@ -104,7 +106,7 @@ export function BudgetOverrideManagerDialog({
 		setError(null);
 		try {
 			await onRemove(row.budget.id);
-			toast.success("Budget override removed");
+			toast.success(t("workspaces:budgetOverride.removed"));
 			if (expandedKey === row.key) setExpandedKey(null);
 		} catch (mutationError) {
 			// Remove can fire from a collapsed row where the inline error never renders,
@@ -215,8 +217,8 @@ export function BudgetOverrideManagerDialog({
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent className="rounded-sm">
-										<SelectItem value="cycles">For a number of reset cycles</SelectItem>
-										<SelectItem value="forever">Until removed</SelectItem>
+										<SelectItem value="cycles">{t("workspaces:budgetOverride.forCycles")}</SelectItem>
+										<SelectItem value="forever">{t("workspaces:budgetOverride.untilRemoved")}</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>
@@ -308,7 +310,7 @@ export function BudgetOverrideManagerDialog({
 			<DialogContent className="rounded-sm sm:max-w-lg" data-testid="budget-override-manager-dialog">
 				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>Temporarily add spending capacity to a budget without changing its base limit.</DialogDescription>
+					<DialogDescription>{t("workspaces:budgetOverride.managerDescription")}</DialogDescription>
 				</DialogHeader>
 
 				<div className="max-h-[60vh] space-y-4 overflow-y-auto py-2">

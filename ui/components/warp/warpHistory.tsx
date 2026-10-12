@@ -19,6 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface WarpHistoryProps {
 	activeConversationId?: string;
@@ -29,6 +30,7 @@ interface WarpHistoryProps {
 
 /** Refetched on mount: threads are created by the chat stream, which RTK never sees. */
 export default function WarpHistory({ activeConversationId, onOpen, onDeleted }: WarpHistoryProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { data: conversations, isLoading, isError } = useListWarpConversationsQuery({ limit: 50 }, { refetchOnMountOrArgChange: true });
 	const [deleteConversation] = useDeleteWarpConversationMutation();
 	const canDelete = useRbac(RbacResource.WarpSession, RbacOperation.Delete);
@@ -40,7 +42,7 @@ export default function WarpHistory({ activeConversationId, onOpen, onDeleted }:
 		try {
 			await onOpen(conversation);
 		} catch {
-			toast.error("Could not open that conversation.");
+			toast.error(t("workspaces:warp.openFailedToast"));
 		} finally {
 			setOpeningId(null);
 		}
@@ -55,7 +57,7 @@ export default function WarpHistory({ activeConversationId, onOpen, onDeleted }:
 			await deleteConversation(conversation.id).unwrap();
 			onDeleted?.(conversation.id);
 		} catch {
-			toast.error("Could not delete that conversation.");
+			toast.error(t("workspaces:warp.deleteFailedToast"));
 		} finally {
 			setDeletingId(null);
 		}
@@ -131,7 +133,7 @@ export default function WarpHistory({ activeConversationId, onOpen, onDeleted }:
 									type="button"
 									variant="ghost"
 									size="icon"
-									aria-label="Delete conversation"
+									aria-label={t("workspaces:warp.deleteConversationAria")}
 									data-testid={`warp-history-delete-${conversation.id}`}
 									disabled={deletingId !== null || openingId !== null}
 									onClick={() => setPendingDelete(conversation)}
@@ -149,9 +151,9 @@ export default function WarpHistory({ activeConversationId, onOpen, onDeleted }:
 			<AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+						<AlertDialogTitle>{t("workspaces:warp.deleteConversationTitle")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							{pendingDelete ? `"${pendingDelete.title}" and its messages are removed permanently. This cannot be undone.` : ""}
+							{pendingDelete ? t("workspaces:warp.deleteConversationBody", { title: pendingDelete.title }) : ""}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

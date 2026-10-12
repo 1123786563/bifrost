@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Regex } from "lucide-react";
 import { isRegexEntry, isWildcardEntry, regexEntryPattern } from "./utils";
+import { useTranslation } from "react-i18next";
 
 interface ModelAccessChipLabelProps {
 	entry: string;
@@ -13,11 +14,12 @@ interface ModelAccessChipLabelProps {
  * for a `regex:` entry, the plain name otherwise.
  */
 export function ModelAccessChipLabel({ entry, className }: ModelAccessChipLabelProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	if (isRegexEntry(entry)) {
 		return (
 			<span
 				className={cn("inline-flex min-w-0 items-center gap-1 font-mono", className)}
-				title="Regex pattern (case-insensitive, full match)"
+				title={t("workspaces:modelAccess.regexChipTitle")}
 				data-model-entry-kind="regex"
 			>
 				<Regex className="text-muted-foreground h-3 w-3 shrink-0" aria-hidden />

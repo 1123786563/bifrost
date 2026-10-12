@@ -2,6 +2,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { resetDurationLabels, supportsCalendarAlignment } from "@/lib/constants/governance";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { formatCompactNumber } from "@/lib/utils/numbers";
 
 interface RateLimitShape {
@@ -73,6 +74,7 @@ function Bar({
 	calendarAligned?: boolean;
 	scopeLabel?: string;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const pct = max > 0 ? Math.min((current / max) * 100, 100) : 0;
 	const isExhausted = max > 0 && current >= max;
 	const barClass = isExhausted ? "[&>div]:bg-red-500/70" : pct > 80 ? "[&>div]:bg-amber-500/70" : "[&>div]:bg-emerald-500/70";
@@ -89,7 +91,7 @@ function Bar({
 						<span className="text-muted-foreground">{formatResetDuration(resetDuration, calendarAligned)}</span>
 					</div>
 					<Progress
-						aria-label={`${label === "req" ? "Request" : label} usage`}
+						aria-label={t("workspaces:rateLimit.usageAria", { label: label === "req" ? t("workspaces:rateLimit.requestNoun") : label })}
 						value={pct}
 						className={cn("bg-muted/70 dark:bg-muted/30 h-1.5", barClass)}
 					/>
@@ -100,7 +102,9 @@ function Bar({
 					{current.toLocaleString()} / {max.toLocaleString()} {label}
 				</p>
 				{resetDuration ? (
-					<p className="text-muted-foreground text-xs">Resets {formatResetDuration(resetDuration, calendarAligned)}</p>
+					<p className="text-muted-foreground text-xs">
+						{t("workspaces:rateLimit.resets", { duration: formatResetDuration(resetDuration, calendarAligned) })}
+					</p>
 				) : null}
 			</TooltipContent>
 		</Tooltip>

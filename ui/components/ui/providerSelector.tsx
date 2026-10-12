@@ -19,6 +19,7 @@ import { ChevronDownIcon, Loader2Icon, XIcon } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { normalizeValueOption, type ProviderSelectorOption, type ProviderSelectorValue } from "./providerSelector.utils";
+import { useTranslation } from "react-i18next";
 
 export type { ProviderSelectorOption, ProviderSelectorValue } from "./providerSelector.utils";
 
@@ -126,6 +127,7 @@ function matches(option: ProviderSelectorOption, term: string): boolean {
 }
 
 export function ProviderSelector(props: ProviderSelectorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const {
 		source = "configured",
 		values,
@@ -436,7 +438,7 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 
 					{pinned.length > 0 && (
 						<ComboboxGroup>
-							<ComboboxLabel>Selected</ComboboxLabel>
+							<ComboboxLabel>{t("workspaces:selectors.selected")}</ComboboxLabel>
 							{pinned.map(renderOption)}
 						</ComboboxGroup>
 					)}
@@ -447,7 +449,7 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 							{base.map(renderOption)}
 							{custom.length > 0 && (
 								<ComboboxGroup>
-									<ComboboxLabel>Custom Providers</ComboboxLabel>
+									<ComboboxLabel>{t("workspaces:selectors.customProviders")}</ComboboxLabel>
 									{custom.map(renderOption)}
 								</ComboboxGroup>
 							)}

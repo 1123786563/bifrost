@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import FieldLabel from "./fieldLabel";
 import ParameterFieldView from "./paramFieldView";
 import { Parameter } from "./types";
+import { useTranslation } from "react-i18next";
 
 interface Props {
 	field: Parameter;
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function SelectFieldView(props: Props) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { field, config } = props;
 	const value = field.accesorKey ? (config[field.id] as any)?.[field.accesorKey] || "" : config[field.id];
 
@@ -65,7 +67,7 @@ export default function SelectFieldView(props: Props) {
 					value={(value as string) || null}
 					onValueChange={onFieldChange}
 					disabled={props.disabled}
-					placeholder="Select"
+					placeholder={t("workspaces:misc.select")}
 					disableSearch
 					className="h-9"
 				/>

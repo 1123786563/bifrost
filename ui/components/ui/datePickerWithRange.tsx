@@ -1,5 +1,6 @@
 import { getSupportedTimezones } from "@/lib/timezones";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TZDate, tz, tzName } from "@date-fns/tz";
 import { format } from "date-fns";
@@ -71,6 +72,7 @@ interface DateTimePickerWithRangeProps extends DatePickerWithRangeProps {
 }
 
 export function DateTimePickerWithRange(props: DateTimePickerWithRangeProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const isMobile = useIsMobile();
 	const { className, buttonClassName, triggerLabel, onTrigger, dateTime } = props;
 	const activeTimezone = props.showTimezone ? props.timezone : undefined;
@@ -206,7 +208,7 @@ export function DateTimePickerWithRange(props: DateTimePickerWithRangeProps) {
 										formatDate(dateTime.from, "LLL dd, y")
 									)
 								) : (
-									<span>Pick a date</span>
+									<span>{t("workspaces:datePicker.pickDate")}</span>
 								)}
 							</>
 						)}
@@ -250,9 +252,9 @@ export function DateTimePickerWithRange(props: DateTimePickerWithRangeProps) {
 							/>
 							<div className="-mt-1 flex flex-row items-center px-2 pb-1">
 								<div className="m-1 flex flex-1 flex-col gap-1">
-									<Label className="ml-0.5">From Time</Label>
+									<Label className="ml-0.5">{t("workspaces:datePicker.fromTime")}</Label>
 									<TimePicker
-										aria-label="From Time"
+										aria-label={t("workspaces:datePicker.fromTime")}
 										className=""
 										value={timeValue?.from}
 										onChange={(v) => {
@@ -271,9 +273,9 @@ export function DateTimePickerWithRange(props: DateTimePickerWithRangeProps) {
 									/>
 								</div>
 								<div className="m-1 flex flex-1 flex-col gap-1">
-									<Label className="ml-0.5">To Time</Label>
+									<Label className="ml-0.5">{t("workspaces:datePicker.toTime")}</Label>
 									<TimePicker
-										aria-label="To Time"
+										aria-label={t("workspaces:datePicker.toTime")}
 										className=""
 										value={timeValue?.to}
 										onChange={(v) => {
@@ -352,7 +354,7 @@ export function DateTimePickerWithRange(props: DateTimePickerWithRangeProps) {
 										}
 									}}
 									hideClear
-									placeholder="Select timezone"
+									placeholder={t("workspaces:datePicker.timezone")}
 									data-testid="datepicker-timezone-select"
 								/>
 							</div>
@@ -393,6 +395,7 @@ interface DateTimePickerProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function DateTimePicker(props: DateTimePickerProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { className, buttonClassName, buttonVariant, triggerLabel, onTrigger, dateTime } = props;
 
 	const initialDate = dateTime ? new Date(dateTime) : new Date();
@@ -461,7 +464,7 @@ export function DateTimePicker(props: DateTimePickerProps) {
 								{format(date, "LLL dd, y")} {printTimeValue(timeValue)}
 							</>
 						) : (
-							<span>Pick a date and time</span>
+							<span>{t("workspaces:datePicker.pickDateTime")}</span>
 						)}
 					</Button>
 				</PopoverTrigger>
@@ -487,7 +490,7 @@ export function DateTimePicker(props: DateTimePickerProps) {
 						<div className="mt-3 flex flex-col gap-1 px-2 pb-2">
 							<Label className="ml-0.5">Time</Label>
 							<TimePicker
-								aria-label="Time"
+								aria-label={t("workspaces:misc2.timeAria")}
 								className=""
 								value={timeValue}
 								onChange={(v) => {

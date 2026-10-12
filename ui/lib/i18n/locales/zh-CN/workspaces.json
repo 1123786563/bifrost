@@ -1,0 +1,868 @@
+{
+	"nav": {
+		"home": {
+			"title": "首页",
+			"description": "您的用量、密钥、预算与访问权限"
+		},
+		"observability": {
+			"title": "可观测性",
+			"description": "请求日志与监控",
+			"dashboard": {
+				"title": "仪表盘",
+				"description": "仪表盘"
+			},
+			"llmLogs": {
+				"title": "LLM 日志",
+				"description": "LLM 请求日志与监控"
+			},
+			"mcpLogs": {
+				"title": "MCP 日志",
+				"description": "MCP 工具执行日志"
+			},
+			"agentLogs": {
+				"title": "Agent 日志",
+				"description": "Agent 请求日志"
+			},
+			"connectors": {
+				"title": "连接器",
+				"description": "日志连接器"
+			},
+			"logsSettings": {
+				"title": "日志设置",
+				"description": "日志配置"
+			}
+		},
+		"models": {
+			"title": "模型",
+			"description": "配置模型",
+			"modelCatalog": {
+				"title": "模型目录",
+				"description": "Provider、密钥与用量总览"
+			},
+			"modelProviders": {
+				"title": "模型 Provider",
+				"description": "配置模型"
+			},
+			"budgetsLimits": {
+				"title": "预算与限制",
+				"description": "预算与速率限制"
+			},
+			"routingRules": {
+				"title": "路由规则",
+				"description": "智能路由规则"
+			},
+			"complexityRouter": {
+				"title": "Complexity Router",
+				"description": "按复杂度分层路由"
+			},
+			"circuitBreaker": {
+				"title": "熔断器",
+				"description": "主端点失败时自动降级"
+			},
+			"pricingOverrides": {
+				"title": "定价覆盖",
+				"description": "按范围覆盖定价"
+			},
+			"modelSettings": {
+				"title": "模型设置",
+				"description": "模型与路由配置"
+			}
+		},
+		"mcpServers": {
+			"title": "MCP 服务器",
+			"description": "MCP 配置",
+			"mcpCatalog": {
+				"title": "MCP 目录",
+				"description": "MCP 工具目录"
+			},
+			"mcpLibrary": {
+				"title": "MCP 库",
+				"description": "安装精选 MCP 服务器"
+			},
+			"virtualMcps": {
+				"title": "Virtual MCPs",
+				"description": "Virtual MCPs"
+			},
+			"authSessions": {
+				"title": "认证会话",
+				"description": "用户级 OAuth 会话"
+			},
+			"oauthGrants": {
+				"title": "OAuth 授权",
+				"description": "下游 OAuth 授权"
+			},
+			"mcpSettings": {
+				"title": "MCP 设置",
+				"description": "MCP 配置"
+			}
+		},
+		"agents": {
+			"title": "Agents",
+			"description": "注册并管理 A2A agents",
+			"agentCatalog": {
+				"title": "Agent 目录",
+				"description": "已注册的 A2A agents"
+			},
+			"pushConfigs": {
+				"title": "推送配置",
+				"description": "已存储的 A2A 推送回调"
+			},
+			"agentSettings": {
+				"title": "Agent 设置",
+				"description": "Agent Gateway 配置"
+			}
+		},
+		"plugins": {
+			"title": "插件",
+			"description": "管理自定义插件"
+		},
+		"alerting": {
+			"title": "告警",
+			"description": "管理告警渠道、规则与历史",
+			"channels": {
+				"title": "渠道",
+				"description": "配置通知渠道"
+			},
+			"rules": {
+				"title": "规则",
+				"description": "定义告警规则"
+			},
+			"history": {
+				"title": "历史",
+				"description": "查看告警发送历史"
+			}
+		},
+		"governance": {
+			"title": "治理",
+			"description": "Virtual Key、用户、团队、客户与角色",
+			"virtualKeys": {
+				"title": "Virtual Keys",
+				"description": "管理 Virtual Key 与访问权限"
+			},
+			"orgChart": {
+				"title": "组织架构",
+				"description": "跨业务单元、团队和用户的预算与用量"
+			},
+			"users": {
+				"title": "用户",
+				"description": "管理用户"
+			},
+			"teams": {
+				"title": "团队",
+				"description": "管理团队"
+			},
+			"businessUnits": {
+				"title": "业务单元",
+				"description": "管理业务单元"
+			},
+			"customers": {
+				"title": "客户",
+				"description": "管理客户"
+			},
+			"userProvisioning": {
+				"title": "用户开通",
+				"description": "用户管理与开通"
+			},
+			"rolesPermissions": {
+				"title": "角色与权限",
+				"description": "用户角色与权限"
+			},
+			"accessProfiles": {
+				"title": "访问配置文件",
+				"description": "管理角色的访问配置文件"
+			},
+			"projects": {
+				"title": "项目",
+				"description": "将请求限定到项目的访问权限与预算"
+			},
+			"auditLogs": {
+				"title": "审计日志",
+				"description": "审计日志与合规"
+			}
+		},
+		"guardrails": {
+			"title": "护栏",
+			"description": "护栏配置",
+			"rules": {
+				"title": "规则",
+				"description": "护栏规则"
+			},
+			"providers": {
+				"title": "Provider",
+				"description": "护栏 Provider 配置"
+			}
+		},
+		"webhooks": {
+			"title": "Webhooks",
+			"description": "异步任务 webhook 端点"
+		},
+		"edgeControl": {
+			"title": "边缘控制",
+			"description": "边缘设备管理",
+			"devices": {
+				"title": "设备",
+				"description": "管理边缘设备"
+			},
+			"approvals": {
+				"title": "审批",
+				"description": "审批应用与 MCP 服务器"
+			},
+			"edgeSettings": {
+				"title": "边缘设置",
+				"description": "边缘设置"
+			}
+		},
+		"clusterConfig": {
+			"title": "集群配置",
+			"description": "管理 Bifrost 集群"
+		},
+		"adaptiveRouting": {
+			"title": "自适应路由",
+			"description": "管理自适应路由",
+			"dashboard": {
+				"title": "仪表盘",
+				"description": "自适应路由指标"
+			},
+			"incidents": {
+				"title": "事件",
+				"description": "自适应路由事件"
+			},
+			"settings": {
+				"title": "设置",
+				"description": "自适应路由设置"
+			}
+		},
+		"promptRepository": {
+			"title": "Prompt 仓库",
+			"description": "Prompt 仓库"
+		},
+		"skillsRepository": {
+			"title": "Skills 仓库",
+			"description": "Skills 仓库"
+		},
+		"settings": {
+			"title": "设置",
+			"description": "Bifrost 设置",
+			"clientSettings": {
+				"title": "客户端设置",
+				"description": "客户端配置设置"
+			},
+			"compatibility": {
+				"title": "兼容性",
+				"description": "兼容性转换设置"
+			},
+			"caching": {
+				"title": "缓存",
+				"description": "缓存配置"
+			},
+			"security": {
+				"title": "安全",
+				"description": "安全设置"
+			},
+			"warp": {
+				"title": "Warp",
+				"description": "Warp agent 配置"
+			},
+			"proxy": {
+				"title": "代理",
+				"description": "代理配置"
+			},
+			"apiKeys": {
+				"title": "API 密钥",
+				"description": "API 密钥管理"
+			},
+			"performanceTuning": {
+				"title": "性能调优",
+				"description": "性能调优设置"
+			},
+			"featureFlags": {
+				"title": "功能开关",
+				"description": "切换功能开关"
+			},
+			"branding": {
+				"title": "品牌",
+				"description": "自定义 logo 与图标"
+			},
+			"licenseInfo": {
+				"title": "许可证信息",
+				"description": "企业版许可证信息"
+			}
+		}
+	},
+	"topbar": {
+		"links": {
+			"discord": "Discord 服务器",
+			"github": "GitHub 仓库",
+			"reportBug": "报告 bug",
+			"docs": "完整文档"
+		},
+		"user": "用户",
+		"signOut": "退出登录",
+		"version": "版本",
+		"accountMenuAria": "账户菜单",
+		"openMenuAria": "打开菜单",
+		"languageGroup": "语言"
+	},
+	"sidebar": {
+		"searchPlaceholder": "搜索...",
+		"searchAria": "搜索侧边栏导航",
+		"collapseAria": "收起侧边栏",
+		"expandAria": "展开侧边栏",
+		"promo": {
+			"setupTitle": "未配置控制台身份验证",
+			"setupBody": "在创建管理员账户之前，所有管理 API 都接受 {{header}} 请求头中的 setup token。",
+			"setupCreateAdmin": "创建管理员",
+			"setupDocs": "文档",
+			"restartTitle": "需要重启",
+			"restartDefaultReason": "配置更改需要重启服务器才能生效。",
+			"onboardingTitle": "设置清单未完成",
+			"onboardingBody_one": "还剩 {{count}} 个设置步骤。未完成这些步骤会使您的 Bifrost 部署存在安全风险。",
+			"onboardingBody_other": "还剩 {{count}} 个设置步骤。未完成这些步骤会使您的 Bifrost 部署存在安全风险。",
+			"resumeSetup": "继续设置",
+			"newReleaseTitle": "{{name}} 现已可用。",
+			"viewReleaseNotes": "查看发行说明",
+			"helpTitle": "需要生产环境部署方面的帮助？",
+			"helpBody": "我们提供生产环境部署帮助，包括自定义集成与专属支持。",
+			"bookDemo": "与我们的团队预约演示"
+		}
+	},
+	"pageTitle": {
+		"beta": "Beta",
+		"betaWithLabelAria": "{{label}} 处于 beta 阶段",
+		"betaAria": "此页面处于 beta 阶段",
+		"aboutAria": "关于此页面"
+	},
+	"noPermission": {
+		"title": "您没有权限查看{{entity}}",
+		"description": "请联系管理员申请访问此资源。"
+	},
+	"notAvailable": {
+		"title": "缺少配置存储设置。",
+		"description": "控制台需要数据库连接来存储配置数据，但当前未配置数据库。",
+		"howToPrefix": "要启用控制台，请将数据库设置添加到 config.json（参见",
+		"howToSuffix": "）。",
+		"docsLink": "文档"
+	},
+	"loggingDisabled": {
+		"title": "日志功能已禁用",
+		"description": "启用日志功能以查看 LLM 与 MCP 请求日志、链路追踪和可观测性数据。",
+		"enable": "启用日志功能",
+		"enabling": "正在启用…",
+		"configNotLoaded": "配置未加载",
+		"enabledToast": "日志功能已启用。"
+	},
+	"formFooter": {
+		"noPermission": "您没有权限执行此操作",
+		"saving": "正在保存...",
+		"fixErrors": "请修正校验错误",
+		"create": "创建{{label}}",
+		"update": "更新{{label}}"
+	},
+	"copyId": {
+		"copy": "复制 {{noun}}",
+		"copiedToast": "{{label}} 已复制",
+		"idNoun": "ID"
+	},
+	"theme": {
+		"light": "浅色",
+		"dark": "深色",
+		"system": "跟随系统",
+		"toggleAria": "切换主题"
+	},
+	"metricStrip": {
+		"unavailableTitle": "无法加载这些统计信息"
+	},
+	"sheetNav": {
+		"prev": "上一条",
+		"next": "下一条",
+		"prevAria": "上一个{{entity}}",
+		"nextAria": "下一个{{entity}}",
+		"or": "或",
+		"item": "条目"
+	},
+	"virtualKeyListItem": {
+		"copyAria": "复制 Virtual Key",
+		"removeAria": "移除 Virtual Key",
+		"copiedToast": "Virtual Key 已复制"
+	},
+	"budgetDisplay": {
+		"usageAria": "预算使用情况",
+		"overrideTag": "覆盖",
+		"overrideBreakdown": "基础 {{base}} + {{extra}} 覆盖"
+	},
+	"rateLimit": {
+		"usageAria": "{{label}}用量",
+		"requestNoun": "请求"
+	},
+	"scopeChips": {
+		"showAllAria": "显示全部 {{count}} 个权限范围"
+	},
+	"filters": {
+		"header": "筛选器",
+		"hide": "隐藏筛选器",
+		"show": "显示筛选器",
+		"showMissingCostOnly": "仅显示缺失成本的请求",
+		"directCache": "直接缓存",
+		"semanticCache": "语义缓存",
+		"selectedCount_one": "已选 {{count}} 项",
+		"selectedCount_other": "已选 {{count}} 项",
+		"searchDefault": "搜索...",
+		"sections": {
+			"status": "状态",
+			"stopReason": "停止原因",
+			"toolCalls": "工具调用",
+			"app": "应用",
+			"providers": "Provider",
+			"type": "类型",
+			"models": "模型",
+			"aliases": "别名",
+			"selectedKeys": "选中的密钥",
+			"virtualKeys": "Virtual Keys",
+			"routingEngines": "路由引擎",
+			"routingRules": "路由规则",
+			"complexityTier": "复杂度层级",
+			"complexityMechanism": "复杂度机制",
+			"agent": "Agent",
+			"sessionId": "Session ID",
+			"agentCorrelationId": "Agent 关联 ID",
+			"parentRequestId": "父请求 ID",
+			"user": "用户",
+			"teams": "团队",
+			"customers": "客户",
+			"businessUnits": "业务单元",
+			"projects": "项目",
+			"localCaching": "本地缓存",
+			"metadata": "元数据",
+			"cost": "成本",
+			"event": "事件",
+			"outcome": "结果",
+			"responseStatus": "响应状态",
+			"toolNames": "工具名称",
+			"servers": "服务器",
+			"webhooks": "Webhooks",
+			"devices": "设备"
+		},
+		"phStopReason": "搜索或添加停止原因",
+		"phFunctionName": "搜索或添加函数名",
+		"phApps": "搜索应用",
+		"phProviders": "搜索 Provider",
+		"phModel": "搜索或添加模型",
+		"phAlias": "搜索或添加别名",
+		"phKeys": "搜索密钥",
+		"phVirtualKeys": "搜索 Virtual Key",
+		"phEngines": "搜索引擎",
+		"phRules": "搜索规则",
+		"phAgents": "搜索 Agent",
+		"phExactSessionId": "精确的 session ID",
+		"phExactAgentCorrelation": "精确的 Agent 关联 ID",
+		"phParentRequestId": "父请求 ID",
+		"phUser": "搜索或添加用户",
+		"phTeam": "搜索或添加团队",
+		"phCustomer": "搜索或添加客户",
+		"phBusinessUnit": "搜索或添加业务单元",
+		"phProject": "搜索或添加项目",
+		"phMetadata": "搜索元数据...",
+		"phCustomValue": "自定义值...",
+		"phTool": "搜索或添加工具",
+		"phServer": "搜索或添加服务器",
+		"phWebhooks": "搜索 webhook..."
+	},
+	"datePicker": {
+		"pickDate": "选择日期",
+		"pickDateTime": "选择日期和时间",
+		"fromTime": "开始时间",
+		"toTime": "结束时间",
+		"timezone": "选择时区"
+	},
+	"budgetReset": {
+		"title": "重置预算用量？",
+		"description": "您更改了此{{owner}}的预算金额或重置频率。可将当前用量重置为 0，或保留现有计数。无论哪种方式，重置窗口都保持当前的开始和结束时间。",
+		"preserve": "保留用量",
+		"reset": "重置用量"
+	},
+	"configSync": {
+		"prefix": "此配置同步自",
+		"suffix": "。后续对 config.json 的更新将覆盖控制台中的更改。如果您只是用 config.json 初始化初始配置，可以忽略此提示。"
+	},
+	"inputs": {
+		"noLimit": "无限制",
+		"headerName": "Header 名称",
+		"headerValue": "Header 值",
+		"noResults": "未找到结果。",
+		"failedToLoad": "加载失败。",
+		"headers": "Headers"
+	},
+	"entitySelect": {
+		"add": {
+			"virtualKey": "添加 Virtual Key 名称...",
+			"team": "添加团队名称...",
+			"customer": "添加客户名称...",
+			"user": "添加用户名称...",
+			"provider": "添加 Provider 名称...",
+			"apiKey": "添加 API 密钥名称..."
+		},
+		"none": {
+			"virtualKey": "未找到 Virtual Key",
+			"team": "未找到团队",
+			"customer": "未找到客户",
+			"user": "未找到用户",
+			"provider": "未找到 Provider",
+			"apiKey": "未找到 API 密钥"
+		}
+	},
+	"multiSelect": {
+		"selectOptions": "选择选项",
+		"searchOptions": "搜索选项...",
+		"searchAria": "在可用选项中搜索",
+		"availableAria": "可用选项",
+		"noResults": "未找到结果。",
+		"noneSelected": "未选择任何选项",
+		"countSelected_one": "已选择 {{count}} 个选项：",
+		"countSelected_other": "已选择 {{count}} 个选项：",
+		"viewMore": "展开更多",
+		"viewLess": "收起",
+		"openedAnnounce": "下拉列表已打开。共 {{count}} 个选项。请使用方向键导航。",
+		"closedAnnounce": "下拉列表已关闭。"
+	},
+	"headersForm": {
+		"previouslySubmitted": "此前已提交",
+		"overwriteHint": "••••••（输入新值以覆盖）",
+		"valueFor": "{{key}} 的值",
+		"showValue": "显示值",
+		"hideValue": "隐藏值"
+	},
+	"selectors": {
+		"selected": "已选",
+		"customProviders": "自定义 Provider",
+		"allModels": "全部模型"
+	},
+	"combobox": {
+		"typeOrSelect": "输入或选择...",
+		"noResults": "未找到结果。",
+		"clearSelection": "清除所选",
+		"clearSearch": "清除搜索"
+	},
+	"providerCard": {
+		"excludeFromRouting": "从路由中排除",
+		"addModel": "添加模型…",
+		"allowAllKeys": "允许所有密钥",
+		"allowAllKeysDesc": "允许此 Provider 的所有现有及未来密钥",
+		"providerKeys": "Provider 密钥",
+		"allowedModels": "允许的模型",
+		"blockedModels": "阻止的模型",
+		"weight": "权重"
+	},
+	"providerConfigs": {
+		"noneLeft": "没有剩余可配置的 Provider。点击添加",
+		"allowAll": "允许所有 Provider",
+		"selectToAdd": "选择要添加的 Provider"
+	},
+	"mcpConfigs": {
+		"duplicate": "此 MCP 服务器已配置",
+		"selectServer": "选择要添加的 MCP 服务器",
+		"allowedTools": "允许的工具",
+		"allowAllTools": "允许所有工具"
+	},
+	"editors": {
+		"selectAgent": "选择要添加的 agent",
+		"selectVirtualMcp": "选择要添加的 Virtual MCP"
+	},
+	"overhead": {
+		"serialization": "序列化",
+		"conversion": "格式转换",
+		"plugins": "插件",
+		"middleware": "中间件",
+		"routing": "密钥选择",
+		"processing": "处理",
+		"protocol_sdk": "协议库",
+		"networking": "网络",
+		"streaming": "客户端交付",
+		"miscellaneous": "杂项",
+		"other": "其他"
+	},
+	"overheadMembers": {
+		"request_unmarshal": "请求解析",
+		"request_marshal": "请求编码",
+		"response_parse": "响应解析",
+		"response_marshal": "响应编码",
+		"convertor": "Schema 转换",
+		"convertor_stream_in": "流式转换（入站）",
+		"convertor_stream_out": "流式转换（出站）",
+		"middleware_apikeys": "API",
+		"middleware_scim": "SCIM",
+		"middleware_auth": "认证",
+		"key_pool": "密钥池",
+		"key_selection": "密钥选择",
+		"handle_setup": "请求准备",
+		"pipeline_pre": "前置钩子",
+		"pipeline_post": "后置钩子",
+		"worker_setup": "Worker 准备",
+		"worker_handoff": "Worker 交接",
+		"queue_wait": "队列等待",
+		"attribute_population": "属性填充",
+		"miscellaneous": "未归集开销",
+		"provider_internal": "Provider 处理",
+		"transport_context": "请求上下文构建",
+		"transport_response_headers": "响应头",
+		"response_finalize": "响应读取",
+		"request_sign": "请求签名",
+		"credentials_fetch": "凭据获取",
+		"stream_backpressure": "客户端背压",
+		"stream_client_write": "客户端写入",
+		"scheduling": "调度残留",
+		"a2a_normalize": "请求规范化",
+		"a2a_auth": "网关认证",
+		"a2a_prepare": "上游客户端准备",
+		"a2a_encode": "响应编码",
+		"a2a_dispatch": "A2A SDK 处理",
+		"a2a_push_db_authenticate": "推送认证查询",
+		"a2a_push_db_bind": "推送任务绑定",
+		"a2a_push_db_enqueue": "推送入队",
+		"a2a_push_db_config": "推送配置查询",
+		"a2a_push_db_outcome": "推送结果更新",
+		"a2a_push_db_local": "推送配置读取",
+		"a2a_push_db_save": "推送配置保存",
+		"a2a_push_db_delete": "推送配置删除",
+		"a2a_push_db_list_due": "到期推送查询",
+		"a2a_push_db_prune": "推送数据清理"
+	},
+	"celBuilder": {
+		"addRule": "添加规则",
+		"addGroup": "添加规则组",
+		"switchTitle": "切换到可视化构建器？",
+		"switchDescription": "可视化构建器无法导入手写的 CEL 表达式，当前 CEL 将被丢弃且构建器将从空白开始。如需保留请先复制。",
+		"discardAndSwitch": "丢弃 CEL 并切换",
+		"selectField": "选择字段...",
+		"selectOperator": "选择运算符...",
+		"selectModels": "选择模型...",
+		"searchModel": "搜索模型...",
+		"selectProviders": "选择 Provider...",
+		"value": "值"
+	},
+	"misc": {
+		"select": "选择",
+		"viewMore": "展开更多",
+		"viewLess": "收起",
+		"selectBaseFormat": "选择基础格式",
+		"searchFormats": "搜索格式...",
+		"budgetConfig": "预算配置",
+		"maxSpend": "最大支出（USD）",
+		"searchMcpServers": "搜索并选择 MCP 服务器...",
+		"noMcpServers": "未找到 MCP 服务器",
+		"openServerDetails": "在新标签页打开服务器详情",
+		"searchTools": "搜索并选择工具...",
+		"noResults": "未找到结果"
+	},
+	"budgetOverride": {
+		"updated": "预算覆盖已更新",
+		"added": "预算覆盖已添加",
+		"removed": "预算覆盖已移除",
+		"editOverride": "编辑覆盖",
+		"addOverride": "添加覆盖",
+		"editTitle": "编辑预算覆盖",
+		"addTitle": "添加预算覆盖",
+		"addDescription": "在不更改基础 {{base}} 预算的情况下临时增加支出额度。",
+		"managerDescription": "在不更改基础限额的情况下临时为预算增加支出额度。",
+		"additionalBudget": "追加预算",
+		"duration": "持续时间",
+		"forCycles": "持续若干个重置周期",
+		"untilRemoved": "直到移除",
+		"resetCycles": "重置周期数",
+		"firstCycleNote": "当前重置周期计为第一个周期。",
+		"validUntil": "有效期至",
+		"currentEffectiveLimit": "当前生效限额：",
+		"invalidInput": "无效输入"
+	},
+	"notifications": {
+		"ariaWithCount": "通知，{{summary}}",
+		"aria": "通知",
+		"tab": "通知",
+		"jobsTab": "后台任务",
+		"markAllRead": "全部标为已读",
+		"jobFinishedToast": "该任务已经完成",
+		"cancelFailedToast": "无法取消任务",
+		"unread": "{{count}} 条未读",
+		"running": "{{count}} 个运行中"
+	},
+	"sidekiq": {
+		"queued": "排队中",
+		"running": "运行中",
+		"completed": "已完成",
+		"failed": "已失败",
+		"cancelled": "已取消",
+		"done": "完成",
+		"started": "开始于",
+		"finished": "结束于",
+		"aria": "后台任务",
+		"progressAria": "{{label}}进度"
+	},
+	"columns": {
+		"toggle": "切换列",
+		"aria": "列配置"
+	},
+	"warp": {
+		"deleteConversationTitle": "删除此对话？",
+		"deleteConversationBody": "「{{title}}」及其消息将被永久删除。此操作无法撤销。",
+		"deleteConversationAria": "删除对话",
+		"openFailedToast": "无法打开该对话。",
+		"deleteFailedToast": "无法删除该对话。",
+		"whatThisCovers": "覆盖内容",
+		"question": "问题",
+		"skip": "跳过",
+		"orTypeOwn": "或在下方输入您自己的回答。"
+	},
+	"onboarding": {
+		"expandAria": "展开设置清单",
+		"minimizeAria": "最小化",
+		"closeAria": "暂时关闭"
+	},
+	"agentSelect": {
+		"openToAll": "对所有密钥开放",
+		"disabled": "已禁用"
+	},
+	"promptsRepo": {
+		"promptSheet": {
+			"updated": "Prompt 已更新",
+			"created": "Prompt 已创建",
+			"editDesc": "更新 Prompt 名称。",
+			"createInFolderDesc": "在此文件夹中创建新 Prompt。",
+			"createDesc": "创建新 Prompt。",
+			"nameLabel": "名称",
+			"namePh": "客服助手",
+			"nameRequired": "Prompt 名称必填",
+			"nameBlank": "Prompt 名称不能为空",
+			"noPermission": "您没有权限更改 prompt"
+		},
+		"folderSheet": {
+			"updated": "文件夹已更新",
+			"created": "文件夹已创建",
+			"editDesc": "更新文件夹名称和描述。",
+			"createDesc": "创建新文件夹来整理您的 prompt。",
+			"nameLabel": "名称",
+			"namePh": "我的 Prompt",
+			"nameRequired": "文件夹名称必填",
+			"nameBlank": "文件夹名称不能为空",
+			"descLabel": "描述（可选）",
+			"descPh": "用于客服场景的 prompt...",
+			"noPermission": "您没有权限更改 prompt 文件夹"
+		},
+		"commitSheet": {
+			"selectAtLeastOne": "请至少选择一条消息进行提交",
+			"committed": "版本已提交",
+			"failed": "提交版本失败",
+			"title": "提交为版本",
+			"description": "选择要包含在此版本中的消息。取消勾选您想要排除的消息。",
+			"deselectAll": "取消全选",
+			"selectAll": "全选",
+			"commitMessage": "提交信息",
+			"commitPh": "添加了系统消息以提供更好的上下文...",
+			"required": "提交信息必填",
+			"blank": "提交信息不能为空",
+			"noPermission": "您没有权限更改 prompt"
+		},
+		"settings": {
+			"selectProvider": "选择 Provider",
+			"selectProviderFirst": "请先选择 Provider",
+			"selectModel": "选择模型"
+		},
+		"sidebar": {
+			"searchPrompts": "搜索 prompt...",
+			"addAria": "添加 prompt 或文件夹",
+			"folderActionsAria": "文件夹操作",
+			"promptActionsAria": "Prompt 操作"
+		},
+		"messages": {
+			"deleteAria": "删除消息",
+			"attachAria": "附件",
+			"editAria": "编辑消息",
+			"executedResult": "已执行的结果",
+			"toolResult": "工具结果",
+			"pasteResult": "粘贴工具结果...",
+			"submitHint": "提交所有结果以继续对话。",
+			"executeHint": "执行或填写上方的每个工具调用，然后一起提交。",
+			"executingAll": "正在全部执行",
+			"executeAll": "全部执行",
+			"submitting": "正在提交",
+			"submitAll": "提交所有结果"
+		},
+		"roles": {
+			"system": "System",
+			"user": "User",
+			"assistant": "Assistant",
+			"tool": "Tool"
+		},
+		"apiKey": {
+			"vkLabel": "Virtual Key",
+			"vkApiLabel": "Virtual Key / API 密钥",
+			"selectVk": "选择 Virtual Key",
+			"selectApiKey": "选择 API 密钥",
+			"vkGroup": "Virtual Keys"
+		},
+		"input": {
+			"typeMessage": "输入消息...",
+			"selectToRun": "选择 Provider 和模型以运行",
+			"runPrompt": "运行 Prompt"
+		},
+		"alerts": {
+			"deleteFolderTitle": "删除文件夹",
+			"deleteFolderBody": "确定要删除「{{name}}」吗？这也会删除该文件夹中的所有 prompt、版本和会话。此操作无法撤销。",
+			"deletePromptTitle": "删除 Prompt",
+			"deletePromptBody": "确定要删除「{{name}}」吗？这也会删除所有版本和会话。此操作无法撤销。",
+			"deleting": "正在删除..."
+		},
+		"header": {
+			"sessionSaved": "会话已保存",
+			"saveFailed": "保存会话失败",
+			"renameFailed": "重命名会话失败",
+			"unpublishedChanges": "未发布的更改",
+			"noSessions": "未找到会话。",
+			"versions": "版本",
+			"sessionNamePh": "会话名称",
+			"renameAria": "重命名会话"
+		},
+		"empty": {
+			"noPromptSelected": "从侧边栏选择一个 prompt",
+			"selectOrCreate": "从侧边栏选择一个 prompt 或",
+			"createNew": "创建新的",
+			"title": "构建、测试并管理 Prompt 版本",
+			"canCreateDesc": "创建 prompt，在 Playground 中用不同模型和参数进行测试，并为部署管理变更版本。",
+			"viewOnlyDesc": "查看 prompt，并在 Playground 中用不同模型和参数进行测试。",
+			"readMoreAria": "详细了解 prompt 仓库（在新标签页打开）",
+			"readMore": "了解更多",
+			"createFirstAria": "创建您的第一个 prompt",
+			"createPrompt": "创建 Prompt"
+		},
+		"toasts": {
+			"moved": "Prompt 移动成功",
+			"moveFailed": "移动 prompt 失败",
+			"folderDeleted": "文件夹已删除",
+			"folderDeleteFailed": "删除文件夹失败",
+			"promptDeleted": "Prompt 已删除",
+			"promptDeleteFailed": "删除 prompt 失败",
+			"executeToolFailed": "执行工具失败",
+			"submitResultsFailed": "提交工具结果失败"
+		},
+		"loadFailed": "加载 prompt 仓库失败"
+	},
+	"modelAccess": {
+		"entryTypeAria": "模型条目类型",
+		"modelsTab": "模型",
+		"regexTab": "正则",
+		"noModelsForProvider": "此 Provider 没有可用模型。",
+		"selectProviderFirst": "请先选择 Provider。",
+		"noPatternsAllow": "暂无规则。添加 RE2 正则以按名称形态允许模型。",
+		"noPatternsBlock": "暂无规则。添加 RE2 正则以按名称形态阻止模型。",
+		"regexChipTitle": "正则表达式（不区分大小写，全匹配）",
+		"noModelsDenyAll": "无模型（全部拒绝）",
+		"allExceptAllowed": "除允许的模型外全部",
+		"noModelsBlocked": "未阻止任何模型"
+	},
+	"misc2": {
+		"hideFilters": "隐藏筛选器",
+		"timeAria": "时间",
+		"dismissAria": "关闭",
+		"toggleSidebar": "切换侧边栏",
+		"fiscalYearStarts": "财年起始月",
+		"unreadAria": "未读"
+	}
+}

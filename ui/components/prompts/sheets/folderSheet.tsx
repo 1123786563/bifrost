@@ -10,6 +10,7 @@ import { Folder } from "@/lib/types/prompts";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface FolderFormData {
 	name: string;
@@ -24,6 +25,7 @@ interface FolderSheetProps {
 }
 
 export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheetProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [createFolder, { isLoading: isCreating }] = useCreateFolderMutation();
 	const [updateFolder, { isLoading: isUpdating }] = useUpdateFolderMutation();
 	const canSave = useRbac(RbacResource.PromptRepository, folder ? RbacOperation.Update : RbacOperation.Create);
@@ -56,13 +58,13 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 					id: folder.id,
 					data: { name: data.name.trim(), description: data.description.trim() || undefined },
 				}).unwrap();
-				toast.success("Folder updated");
+				toast.success(t("workspaces:promptsRepo.folderSheet.updated"));
 			} else {
 				await createFolder({
 					name: data.name.trim(),
 					description: data.description.trim() || undefined,
 				}).unwrap();
-				toast.success("Folder created");
+				toast.success(t("workspaces:promptsRepo.folderSheet.created"));
 			}
 			onSaved();
 			onOpenChange(false);
@@ -86,20 +88,20 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 					<SheetHeader className="flex flex-col items-start">
 						<SheetTitle>{isEditing ? "Edit Folder" : "Create Folder"}</SheetTitle>
 						<SheetDescription>
-							{isEditing ? "Update the folder name and description." : "Create a new folder to organize your prompts."}
+							{isEditing ? t("workspaces:promptsRepo.folderSheet.editDesc") : t("workspaces:promptsRepo.folderSheet.createDesc")}
 						</SheetDescription>
 					</SheetHeader>
 
 					<div className="mt-6 space-y-4">
 						<div className="space-y-2">
-							<Label htmlFor="name">Name</Label>
+							<Label htmlFor="name">{t("common:fields.name")}</Label>
 							<Input
 								id="name"
 								data-testid="folder-name-input"
-								placeholder="My Prompts"
+								placeholder={t("workspaces:promptsRepo.folderSheet.namePh")}
 								{...register("name", {
-									required: "Folder name is required",
-									validate: (v) => v.trim().length > 0 || "Folder name cannot be blank",
+									required: t("workspaces:promptsRepo.folderSheet.nameRequired"),
+									validate: (v) => v.trim().length > 0 || t("workspaces:promptsRepo.folderSheet.nameBlank"),
 								})}
 								autoFocus
 							/>
@@ -107,11 +109,11 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="description">Description (optional)</Label>
+							<Label htmlFor="description">{t("workspaces:promptsRepo.folderSheet.descLabel")}</Label>
 							<Textarea
 								id="description"
 								data-testid="folder-description-input"
-								placeholder="Prompts for customer support use cases..."
+								placeholder={t("workspaces:promptsRepo.folderSheet.descPh")}
 								className="resize-none"
 								{...register("description")}
 							/>
@@ -126,7 +128,7 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 							type="submit"
 							data-testid="folder-submit"
 							disabled={isLoading || !canSave}
-							title={canSave ? undefined : "You do not have permission to change prompt folders"}
+							title={canSave ? undefined : t("workspaces:promptsRepo.folderSheet.noPermission")}
 						>
 							{isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
 						</Button>

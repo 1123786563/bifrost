@@ -5,6 +5,7 @@ import * as React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface SearchSelectOption {
 	value: string;
@@ -88,6 +89,7 @@ function filterByText(_value: string, search: string, keywords?: string[]) {
 }
 
 function SearchSelect<T extends SearchSelectOption = SearchSelectOption>(props: SearchSelectProps<T>) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const {
 		options,
 		onValueSelect,
@@ -95,7 +97,7 @@ function SearchSelect<T extends SearchSelectOption = SearchSelectOption>(props: 
 		entryView,
 		footer,
 		searchPlaceholder = "Search...",
-		emptyMessage = "No results found.",
+		emptyMessage,
 		disabled = false,
 		open: controlledOpen,
 		onOpenChange,
@@ -113,7 +115,7 @@ function SearchSelect<T extends SearchSelectOption = SearchSelectOption>(props: 
 	const isSearching = isAsync ? (props.isSearching ?? false) : false;
 	const isLoading = isAsync ? (props.isLoading ?? false) : false;
 	const isError = isAsync ? (props.isError ?? false) : false;
-	const errorMessage = isAsync ? (props.errorMessage ?? "Failed to load.") : "";
+	const errorMessage = isAsync ? (props.errorMessage ?? t("workspaces:inputs.failedToLoad")) : "";
 	const loadMoreErrorMessage = isAsync ? props.loadMoreErrorMessage : undefined;
 	const onRetry = isAsync ? props.onRetry : undefined;
 
@@ -239,7 +241,9 @@ function SearchSelect<T extends SearchSelectOption = SearchSelectOption>(props: 
 							</div>
 						) : (
 							<>
-								<CommandPrimitive.Empty className="text-muted-foreground py-6 text-center text-sm">{emptyMessage}</CommandPrimitive.Empty>
+								<CommandPrimitive.Empty className="text-muted-foreground py-6 text-center text-sm">
+									{emptyMessage ?? t("workspaces:inputs.noResults")}
+								</CommandPrimitive.Empty>
 								{options.map((option) => (
 									<CommandPrimitive.Item
 										key={option.value}

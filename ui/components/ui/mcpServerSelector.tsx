@@ -5,6 +5,7 @@ import { Badge } from "./badge";
 import { Button } from "./button";
 import { Option } from "./multiselectUtils";
 import { cn } from "./utils";
+import { useTranslation } from "react-i18next";
 
 // Types
 export interface MCPServerInfo {
@@ -40,11 +41,12 @@ export function MCPServerSelector({
 	value,
 	onChange,
 	mcpClients,
-	placeholder = "Search and select MCP servers...",
+	placeholder,
 	disabled = false,
 	className,
 	registryPath = "/workspace/mcp-registry",
 }: MCPServerSelectorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Create options from MCP clients using meta for complex data
 	const allServerOptions = useMemo((): Option<ServerOptionMeta>[] => {
 		return mcpClients.map((client) => ({
@@ -139,7 +141,7 @@ export function MCPServerSelector({
 		<div className={cn("space-y-3", className)}>
 			{/* Search dropdown */}
 			<AsyncMultiSelect<ServerOptionMeta>
-				placeholder={placeholder}
+				placeholder={placeholder ?? t("workspaces:misc.searchMcpServers")}
 				disabled={disabled}
 				defaultOptions={availableOptions}
 				reload={reload}
@@ -150,7 +152,7 @@ export function MCPServerSelector({
 				closeMenuOnSelect={true}
 				hideSelectedOptions={true}
 				controlShouldRenderValue={false}
-				noOptionsMessage={() => "No MCP servers found"}
+				noOptionsMessage={() => t("workspaces:misc.noMcpServers")}
 				views={{
 					option: (props) => {
 						// Access data as Option<ServerOptionMeta> since that's the actual runtime type
@@ -206,7 +208,7 @@ export function MCPServerSelector({
 										href={`${registryPath}?server=${server.clientId}`}
 										target="_blank"
 										rel="noopener noreferrer"
-										title="Open server details in new tab"
+										title={t("workspaces:misc.openServerDetails")}
 									>
 										<ExternalLink className="h-4 w-4" />
 									</a>

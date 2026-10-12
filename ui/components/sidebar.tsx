@@ -87,6 +87,8 @@ import { ChevronRight } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCookies } from "react-cookie";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Badge } from "./ui/badge";
 import { PromoCardStack } from "./ui/promoCardStack";
 
@@ -118,13 +120,13 @@ const MCPIcon = ({ className }: { className?: string }) => (
 
 // Main navigation items
 
-// Base promotional card (memoized outside component to prevent recreation)
-const productionSetupHelpCard = {
+// Base promotional card, built per-render so it can translate with the active language
+const makeProductionSetupHelpCard = (t: TFunction) => ({
 	id: "production-setup",
-	title: "Need help with production setup?",
+	title: t("workspaces:sidebar.promo.helpTitle"),
 	description: (
 		<>
-			We offer help with production setup including custom integrations and dedicated support.
+			{t("workspaces:sidebar.promo.helpBody")}
 			<br />
 			<br />
 			<a
@@ -133,13 +135,13 @@ const productionSetupHelpCard = {
 				className="text-primary font-medium underline"
 				rel="noopener noreferrer"
 			>
-				Book a demo with our team
+				{t("workspaces:sidebar.promo.bookDemo")}
 			</a>
 			.
 		</>
 	),
 	dismissible: true,
-};
+});
 
 const newBadgeClassName =
 	"relative overflow-hidden px-1.5 py-0 text-[10px] leading-4 group-data-[collapsible=icon]:hidden after:pointer-events-none after:absolute after:inset-y-0 after:-left-full after:w-full after:skew-x-[-18deg] after:bg-gradient-to-r after:from-transparent after:via-primary/25 after:to-transparent after:opacity-0 after:content-[''] after:animate-[sidebar-new-badge-shine_1200ms_cubic-bezier(0.22,1,0.36,1)_260ms_both]";
@@ -564,6 +566,7 @@ function WarpNavIcon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
 }
 
 export default function AppSidebar() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const pathname = useLocation({ select: (l) => l.pathname });
 	const search = useLocation({ select: (l) => l.searchStr ?? "" });
 	const tsNavigate = useNavigate();
@@ -675,433 +678,489 @@ export default function AppSidebar() {
 			...(IS_ENTERPRISE
 				? [
 						{
-							title: "Home",
+							title: t("workspaces:nav.home.title"),
+							testId: "home",
 							url: "/workspace/home",
 							icon: House,
-							description: "Your usage, keys, budgets and access",
+							description: t("workspaces:nav.home.description"),
 							hasAccess: true,
 						},
 					]
 				: []),
 			{
-				title: "Observability",
+				title: t("workspaces:nav.observability.title"),
+				testId: "observability",
 				url: "/workspace/logs",
 				icon: Telescope,
-				description: "Request logs & monitoring",
+				description: t("workspaces:nav.observability.description"),
 				hasAccess:
 					hasLogsAccess || hasDashboardAccess || hasMCPLogsAccess || hasAgentLogsAccess || hasObservabilityAccess || hasSettingsAccess,
 				subItems: [
 					{
-						title: "Dashboard",
+						title: t("workspaces:nav.observability.dashboard.title"),
+						testId: "dashboard",
 						url: "/workspace/dashboard",
 						icon: ChartColumnBig,
-						description: "Dashboard",
+						description: t("workspaces:nav.observability.dashboard.description"),
 						hasAccess: hasDashboardAccess,
 					},
 					{
-						title: "LLM Logs",
+						title: t("workspaces:nav.observability.llmLogs.title"),
+						testId: "llm-logs",
 						url: "/workspace/logs",
 						icon: Logs,
-						description: "LLM request logs & monitoring",
+						description: t("workspaces:nav.observability.llmLogs.description"),
 						hasAccess: hasLogsAccess,
 					},
 					{
-						title: "MCP Logs",
+						title: t("workspaces:nav.observability.mcpLogs.title"),
+						testId: "mcp-logs",
 						url: "/workspace/mcp-logs",
 						icon: MCPIcon,
-						description: "MCP tool execution logs",
+						description: t("workspaces:nav.observability.mcpLogs.description"),
 						hasAccess: hasMCPLogsAccess,
 					},
 					{
-						title: "Agent Logs",
+						title: t("workspaces:nav.observability.agentLogs.title"),
+						testId: "agent-logs",
 						url: "/workspace/agent-logs",
 						icon: Bot,
-						description: "Agent request logs",
+						description: t("workspaces:nav.observability.agentLogs.description"),
 						hasAccess: hasAgentLogsAccess,
 					},
 					{
-						title: "Connectors",
+						title: t("workspaces:nav.observability.connectors.title"),
+						testId: "connectors",
 						url: "/workspace/observability",
 						icon: ChevronsLeftRightEllipsis,
-						description: "Log connectors",
+						description: t("workspaces:nav.observability.connectors.description"),
 						hasAccess: hasObservabilityAccess,
 					},
 					{
-						title: "Logs Settings",
+						title: t("workspaces:nav.observability.logsSettings.title"),
+						testId: "logs-settings",
 						url: "/workspace/config/logging",
 						icon: Settings,
-						description: "Logs configuration",
+						description: t("workspaces:nav.observability.logsSettings.description"),
 						hasAccess: hasSettingsAccess,
 					},
 				],
 			},
 			{
-				title: "Models",
+				title: t("workspaces:nav.models.title"),
+				testId: "models",
 				url: "/workspace/providers",
 				icon: BoxIcon,
-				description: "Configure models",
+				description: t("workspaces:nav.models.description"),
 				hasAccess: true,
 				subItems: [
 					{
-						title: "Model Catalog",
+						title: t("workspaces:nav.models.modelCatalog.title"),
+						testId: "model-catalog",
 						url: "/workspace/model-catalog",
 						icon: LayoutGrid,
-						description: "Overview of providers, keys, and usage",
+						description: t("workspaces:nav.models.modelCatalog.description"),
 						hasAccess: hasModelProvidersAccess,
 					},
 					{
-						title: "Model Providers",
+						title: t("workspaces:nav.models.modelProviders.title"),
+						testId: "model-providers",
 						url: "/workspace/providers",
 						icon: Boxes,
-						description: "Configure models",
+						description: t("workspaces:nav.models.modelProviders.description"),
 						hasAccess: hasModelProvidersAccess,
 					},
 					{
-						title: "Budgets & Limits",
+						title: t("workspaces:nav.models.budgetsLimits.title"),
+						testId: "budgets-&-limits",
 						url: "/workspace/model-limits",
 						icon: Wallet,
-						description: "Budgets and rate limits",
+						description: t("workspaces:nav.models.budgetsLimits.description"),
 						hasAccess: hasGovernanceLegacyAccess,
 					},
 					{
-						title: "Routing Rules",
+						title: t("workspaces:nav.models.routingRules.title"),
+						testId: "routing-rules",
 						url: "/workspace/routing-rules",
 						icon: Network,
-						description: "Intelligent routing rules",
+						description: t("workspaces:nav.models.routingRules.description"),
 						hasAccess: hasRoutingRulesAccess,
 					},
 					{
-						title: "Complexity Router",
+						title: t("workspaces:nav.models.complexityRouter.title"),
+						testId: "complexity-router",
 						url: "/workspace/complexity-router",
 						icon: GitCompareArrows,
-						description: "Complexity tier routing",
+						description: t("workspaces:nav.models.complexityRouter.description"),
 						hasAccess: hasRoutingRulesAccess,
 					},
 					{
-						title: "Circuit Breaker",
+						title: t("workspaces:nav.models.circuitBreaker.title"),
+						testId: "circuit-breaker",
 						url: "/workspace/circuit-breaker",
 						icon: CircuitBoard,
-						description: "Automatic fallback when primary endpoints fail",
+						description: t("workspaces:nav.models.circuitBreaker.description"),
 						hasAccess: hasCircuitBreakerAccess,
 					},
 					{
-						title: "Pricing Overrides",
+						title: t("workspaces:nav.models.pricingOverrides.title"),
+						testId: "pricing-overrides",
 						url: "/workspace/custom-pricing/overrides",
 						icon: SlidersHorizontal,
-						description: "Scoped pricing overrides",
+						description: t("workspaces:nav.models.pricingOverrides.description"),
 						hasAccess: hasSettingsAccess,
 					},
 					{
-						title: "Model Settings",
+						title: t("workspaces:nav.models.modelSettings.title"),
+						testId: "model-settings",
 						url: "/workspace/custom-pricing",
 						icon: Settings,
-						description: "Model and routing configuration",
+						description: t("workspaces:nav.models.modelSettings.description"),
 						hasAccess: hasSettingsAccess,
 					},
 				],
 			},
 			{
-				title: "MCP Servers",
+				title: t("workspaces:nav.mcpServers.title"),
 				testId: "mcp-gateway", // keep the pre-rename E2E selector stable
 				icon: MCPIcon,
-				description: "MCP configuration",
+				description: t("workspaces:nav.mcpServers.description"),
 				url: "/workspace/mcp-gateway",
 				hasAccess: hasMCPGatewayAccess || hasVirtualMCPsAccess,
 				subItems: [
 					{
-						title: "MCP Catalog",
+						title: t("workspaces:nav.mcpServers.mcpCatalog.title"),
+						testId: "mcp-catalog",
 						url: "/workspace/mcp-registry",
 						icon: LayoutGrid,
-						description: "MCP tool catalog",
+						description: t("workspaces:nav.mcpServers.mcpCatalog.description"),
 						hasAccess: hasMCPGatewayAccess,
 					},
 					{
-						title: "MCP Library",
+						title: t("workspaces:nav.mcpServers.mcpLibrary.title"),
+						testId: "mcp-library",
 						url: "/workspace/mcp-registry/library",
 						icon: Boxes,
-						description: "Install curated MCP servers",
+						description: t("workspaces:nav.mcpServers.mcpLibrary.description"),
 						hasAccess: hasMCPGatewayAccess,
 					},
 					{
-						title: "Virtual MCPs",
+						title: t("workspaces:nav.mcpServers.virtualMcps.title"),
 						url: "/workspace/virtual-mcps",
 						icon: ToolCase,
-						description: "Virtual MCPs",
+						description: t("workspaces:nav.mcpServers.virtualMcps.description"),
 						hasAccess: hasVirtualMCPsAccess,
 						testId: "tool-groups", // keep the pre-rename E2E selector stable
 					},
 					{
-						title: "Auth Sessions",
+						title: t("workspaces:nav.mcpServers.authSessions.title"),
+						testId: "auth-sessions",
 						url: "/workspace/mcp-sessions",
 						icon: KeyRound,
-						description: "Per-user OAuth sessions",
+						description: t("workspaces:nav.mcpServers.authSessions.description"),
 						hasAccess: hasMCPGatewayAccess,
 					},
 					{
-						title: "OAuth Grants",
+						title: t("workspaces:nav.mcpServers.oauthGrants.title"),
+						testId: "oauth-grants",
 						url: "/workspace/oauth-grants",
 						icon: ShieldCheck,
-						description: "Downstream OAuth grants",
+						description: t("workspaces:nav.mcpServers.oauthGrants.description"),
 						hasAccess: hasMCPGatewayAccess,
 					},
 					{
-						title: "MCP Settings",
+						title: t("workspaces:nav.mcpServers.mcpSettings.title"),
+						testId: "mcp-settings",
 						url: "/workspace/mcp-settings",
 						icon: Settings,
-						description: "MCP configuration",
+						description: t("workspaces:nav.mcpServers.mcpSettings.description"),
 						hasAccess: hasMCPGatewayAccess,
 					},
 				],
 			},
 			{
-				title: "Agents",
+				title: t("workspaces:nav.agents.title"),
+				testId: "agents",
 				url: "/workspace/agent-gateway",
 				icon: Bot,
-				description: "Register and manage A2A agents",
+				description: t("workspaces:nav.agents.description"),
 				hasAccess: hasAgentGatewayAccess,
 				new: true,
 				subItems: [
 					{
-						title: "Agent Catalog",
+						title: t("workspaces:nav.agents.agentCatalog.title"),
+						testId: "agent-catalog",
 						url: "/workspace/agent-gateway",
 						icon: LayoutGrid,
-						description: "Registered A2A agents",
+						description: t("workspaces:nav.agents.agentCatalog.description"),
 						hasAccess: hasAgentGatewayAccess,
 					},
 					{
-						title: "Push Configurations",
+						title: t("workspaces:nav.agents.pushConfigs.title"),
+						testId: "push-configurations",
 						url: "/workspace/agent-gateway/push-configs",
 						icon: Webhook,
-						description: "Stored A2A push callbacks",
+						description: t("workspaces:nav.agents.pushConfigs.description"),
 						hasAccess: hasAgentGatewayAccess,
 					},
 					{
-						title: "Agent Settings",
+						title: t("workspaces:nav.agents.agentSettings.title"),
+						testId: "agent-settings",
 						url: "/workspace/config/agent-gateway",
 						icon: Settings,
-						description: "Agent Gateway configuration",
+						description: t("workspaces:nav.agents.agentSettings.description"),
 						hasAccess: hasSettingsAccess,
 					},
 				],
 			},
 			{
-				title: "Plugins",
+				title: t("workspaces:nav.plugins.title"),
+				testId: "plugins",
 				url: "/workspace/plugins",
 				icon: Puzzle,
-				description: "Manage custom plugins",
+				description: t("workspaces:nav.plugins.description"),
 				hasAccess: hasPluginsAccess,
 			},
 			{
-				title: "Alerting",
+				title: t("workspaces:nav.alerting.title"),
+				testId: "alerting",
 				url: "/workspace/alerting",
 				icon: Siren,
-				description: "Manage alert channels, rules, and history",
+				description: t("workspaces:nav.alerting.description"),
 				hasAccess: hasAlertingAccess,
 				subItems: [
 					{
-						title: "Channels",
+						title: t("workspaces:nav.alerting.channels.title"),
+						testId: "channels",
 						url: "/workspace/alerting/channels",
 						icon: Megaphone,
-						description: "Configure notification channels",
+						description: t("workspaces:nav.alerting.channels.description"),
 						hasAccess: hasAlertingAccess,
 					},
 					{
-						title: "Rules",
+						title: t("workspaces:nav.alerting.rules.title"),
+						testId: "rules",
 						url: "/workspace/alerting/rules",
 						icon: Gavel,
-						description: "Define alerting rules",
+						description: t("workspaces:nav.alerting.rules.description"),
 						hasAccess: hasAlertingAccess,
 					},
 					{
-						title: "History",
+						title: t("workspaces:nav.alerting.history.title"),
+						testId: "history",
 						url: "/workspace/alerting/history",
 						icon: History,
-						description: "Review alert delivery history",
+						description: t("workspaces:nav.alerting.history.description"),
 						hasAccess: hasAlertingAccess,
 					},
 				],
 			},
 			{
-				title: "Governance",
+				title: t("workspaces:nav.governance.title"),
+				testId: "governance",
 				url: "/workspace/governance",
 				icon: Landmark,
-				description: "Virtual keys, users, teams, customers & roles",
+				description: t("workspaces:nav.governance.description"),
 				hasAccess: hasAnyGovernanceAccess,
 				subItems: [
 					{
-						title: "Virtual Keys",
+						title: t("workspaces:nav.governance.virtualKeys.title"),
+						testId: "virtual-keys",
 						url: "/workspace/governance/virtual-keys",
 						icon: KeyRound,
-						description: "Manage virtual keys & access",
+						description: t("workspaces:nav.governance.virtualKeys.description"),
 						hasAccess: hasVirtualKeysAccess,
 					},
 					{
-						title: "Org Chart",
+						title: t("workspaces:nav.governance.orgChart.title"),
+						testId: "org-chart",
 						url: "/workspace/governance/org-chart",
 						icon: Network,
-						description: "Budgets and usage across business units, teams and users",
+						description: t("workspaces:nav.governance.orgChart.description"),
 						// The chart is read from business units down, so it follows the Business Units entry.
 						hasAccess: hasBusinessUnitsAccess,
 						new: true,
 					},
 					{
-						title: "Users",
+						title: t("workspaces:nav.governance.users.title"),
+						testId: "users",
 						url: "/workspace/governance/users",
 						icon: Users,
-						description: "Manage users",
+						description: t("workspaces:nav.governance.users.description"),
 						hasAccess: hasUsersAccess,
 					},
 					{
-						title: "Teams",
+						title: t("workspaces:nav.governance.teams.title"),
+						testId: "teams",
 						url: "/workspace/governance/teams",
 						icon: Building,
-						description: "Manage teams",
+						description: t("workspaces:nav.governance.teams.description"),
 						hasAccess: hasTeamsAccess,
 					},
 					{
-						title: "Business Units",
+						title: t("workspaces:nav.governance.businessUnits.title"),
+						testId: "business-units",
 						url: "/workspace/governance/business-units",
 						icon: Building2,
-						description: "Manage business units",
+						description: t("workspaces:nav.governance.businessUnits.description"),
 						hasAccess: hasBusinessUnitsAccess,
 					},
 					{
-						title: "Customers",
+						title: t("workspaces:nav.governance.customers.title"),
+						testId: "customers",
 						url: "/workspace/governance/customers",
 						icon: WalletCards,
-						description: "Manage customers",
+						description: t("workspaces:nav.governance.customers.description"),
 						hasAccess: hasCustomersAccess,
 					},
 					{
-						title: "User Provisioning",
+						title: t("workspaces:nav.governance.userProvisioning.title"),
+						testId: "user-provisioning",
 						url: "/workspace/scim",
 						icon: BookUser,
-						description: "User management and provisioning",
+						description: t("workspaces:nav.governance.userProvisioning.description"),
 						hasAccess: hasUserProvisioningAccess,
 					},
 					{
-						title: "Roles & Permissions",
+						title: t("workspaces:nav.governance.rolesPermissions.title"),
+						testId: "roles-&-permissions",
 						url: "/workspace/governance/rbac",
 						icon: UserRoundCheck,
-						description: "User roles and permissions",
+						description: t("workspaces:nav.governance.rolesPermissions.description"),
 						hasAccess: hasRbacAccess,
 					},
 					{
-						title: "Access Profiles",
+						title: t("workspaces:nav.governance.accessProfiles.title"),
+						testId: "access-profiles",
 						url: "/workspace/governance/access-profiles",
 						icon: ShieldCheck,
-						description: "Manage access profiles for roles",
+						description: t("workspaces:nav.governance.accessProfiles.description"),
 						hasAccess: hasAccessProfilesAccess,
 					},
 					{
-						title: "Projects",
+						title: t("workspaces:nav.governance.projects.title"),
+						testId: "projects",
 						url: "/workspace/governance/projects",
 						icon: SquareKanban,
-						description: "Scope requests to a project's access and budget",
+						description: t("workspaces:nav.governance.projects.description"),
 						hasAccess: hasProjectsAccess,
 					},
 					{
-						title: "Audit Logs",
+						title: t("workspaces:nav.governance.auditLogs.title"),
+						testId: "audit-logs",
 						url: "/workspace/audit-logs",
 						icon: ScrollText,
-						description: "Audit logs and compliance",
+						description: t("workspaces:nav.governance.auditLogs.description"),
 						hasAccess: hasAuditLogsAccess,
 					},
 				],
 			},
 			{
-				title: "Guardrails",
+				title: t("workspaces:nav.guardrails.title"),
+				testId: "guardrails",
 				url: "/workspace/guardrails",
 				icon: Construction,
-				description: "Guardrails configuration",
+				description: t("workspaces:nav.guardrails.description"),
 				hasAccess: hasGuardrailsConfigAccess || hasGuardrailsProvidersAccess,
 				subItems: [
 					{
-						title: "Rules",
+						title: t("workspaces:nav.guardrails.rules.title"),
+						testId: "rules",
 						url: "/workspace/guardrails/configuration",
 						icon: SearchCheck,
-						description: "Guardrail rules",
+						description: t("workspaces:nav.guardrails.rules.description"),
 						hasAccess: hasGuardrailsConfigAccess,
 					},
 					{
-						title: "Providers",
+						title: t("workspaces:nav.guardrails.providers.title"),
+						testId: "providers",
 						url: "/workspace/guardrails/providers",
 						icon: Boxes,
-						description: "Guardrail providers configuration",
+						description: t("workspaces:nav.guardrails.providers.description"),
 						hasAccess: hasGuardrailsProvidersAccess,
 					},
 				],
 			},
 			{
-				title: "Webhooks",
+				title: t("workspaces:nav.webhooks.title"),
+				testId: "webhooks",
 				url: "/workspace/webhooks",
 				icon: Webhook,
-				description: "Async job webhook endpoints",
+				description: t("workspaces:nav.webhooks.description"),
 				hasAccess: hasGovernanceLegacyAccess,
 			},
 			{
-				title: "Edge Control",
+				title: t("workspaces:nav.edgeControl.title"),
+				testId: "edge-control",
 				icon: Hexagon,
-				description: "Edge device management",
+				description: t("workspaces:nav.edgeControl.description"),
 				url: "/workspace/edge-control",
 				hasAccess: hasAnyEdgeControlAccess,
 				subItems: [
 					{
-						title: "Devices",
+						title: t("workspaces:nav.edgeControl.devices.title"),
+						testId: "devices",
 						url: "/workspace/edge-control/devices",
 						icon: LaptopMinimalCheck,
-						description: "Manage edge devices",
+						description: t("workspaces:nav.edgeControl.devices.description"),
 						hasAccess: hasDevicesAccess,
 					},
 					{
-						title: "Approvals",
+						title: t("workspaces:nav.edgeControl.approvals.title"),
+						testId: "approvals",
 						url: "/workspace/edge-control/inventory",
 						icon: BadgeCheck,
-						description: "Approve apps and MCP servers",
+						description: t("workspaces:nav.edgeControl.approvals.description"),
 						hasAccess: hasInventoryAccess,
 					},
 					{
-						title: "Edge Settings",
+						title: t("workspaces:nav.edgeControl.edgeSettings.title"),
+						testId: "edge-settings",
 						url: "/workspace/edge-control/config",
 						icon: Settings,
-						description: "Edge settings",
+						description: t("workspaces:nav.edgeControl.edgeSettings.description"),
 						hasAccess: hasEdgeConfigAccess,
 					},
 				],
 			},
 			{
-				title: "Cluster Config",
+				title: t("workspaces:nav.clusterConfig.title"),
+				testId: "cluster-config",
 				url: "/workspace/cluster",
 				icon: Network,
-				description: "Manage Bifrost cluster",
+				description: t("workspaces:nav.clusterConfig.description"),
 				hasAccess: hasClusterConfigAccess,
 			},
 			{
-				title: "Adaptive Routing",
+				title: t("workspaces:nav.adaptiveRouting.title"),
+				testId: "adaptive-routing",
 				url: "/workspace/adaptive-routing",
 				icon: Shuffle,
-				description: "Manage adaptive routing",
+				description: t("workspaces:nav.adaptiveRouting.description"),
 				hasAccess: isAdaptiveRoutingAllowed,
 				subItems: [
 					{
-						title: "Dashboard",
+						title: t("workspaces:nav.adaptiveRouting.dashboard.title"),
+						testId: "dashboard",
 						url: "/workspace/adaptive-routing",
 						icon: ChartColumnBig,
-						description: "Adaptive routing metrics",
+						description: t("workspaces:nav.adaptiveRouting.dashboard.description"),
 						hasAccess: isAdaptiveRoutingAllowed,
 					},
 					{
-						title: "Incidents",
+						title: t("workspaces:nav.adaptiveRouting.incidents.title"),
+						testId: "incidents",
 						url: "/workspace/adaptive-routing/incidents",
 						icon: TriangleAlert,
-						description: "Adaptive routing incidents",
+						description: t("workspaces:nav.adaptiveRouting.incidents.description"),
 						hasAccess: isAdaptiveRoutingAllowed,
 					},
 					{
-						title: "Settings",
+						title: t("workspaces:nav.adaptiveRouting.settings.title"),
+						testId: "settings",
 						url: "/workspace/adaptive-routing/settings",
 						icon: Settings,
-						description: "Adaptive routing settings",
+						description: t("workspaces:nav.adaptiveRouting.settings.description"),
 						hasAccess: isAdaptiveRoutingAllowed,
 					},
 				],
@@ -1109,109 +1168,123 @@ export default function AppSidebar() {
 			...(isDbConnected
 				? [
 						{
-							title: "Prompt Repository",
+							title: t("workspaces:nav.promptRepository.title"),
+							testId: "prompt-repository",
 							url: "/workspace/prompt-repo",
 							icon: FolderGit,
-							description: "Prompt repository",
+							description: t("workspaces:nav.promptRepository.description"),
 							hasAccess: hasPromptRepositoryAccess,
 						},
 						{
-							title: "Skills Repository",
+							title: t("workspaces:nav.skillsRepository.title"),
+							testId: "skills-repository",
 							url: "/workspace/skills-repo",
 							icon: BookOpenText,
-							description: "Skills repository",
+							description: t("workspaces:nav.skillsRepository.description"),
 							hasAccess: hasSkillsRepositoryAccess,
 						},
 					]
 				: []),
 			{
-				title: "Settings",
+				title: t("workspaces:nav.settings.title"),
+				testId: "settings",
 				url: "/workspace/config",
 				icon: Settings2Icon,
-				description: "Bifrost settings",
+				description: t("workspaces:nav.settings.description"),
 				hasAccess: hasSettingsAccess || hasAuditLogsAccess || hasUserProvisioningAccess || (hasWarpAccess && isWarpEnabled),
 				subItems: [
 					{
-						title: "Client Settings",
+						title: t("workspaces:nav.settings.clientSettings.title"),
+						testId: "client-settings",
 						url: "/workspace/config/client-settings",
 						icon: Settings,
-						description: "Client configuration settings",
+						description: t("workspaces:nav.settings.clientSettings.description"),
 						hasAccess: hasSettingsAccess,
 					},
 					{
-						title: "Compatibility",
+						title: t("workspaces:nav.settings.compatibility.title"),
+						testId: "compatibility",
 						url: "/workspace/config/compatibility",
 						icon: Plug,
-						description: "Compatibility conversion settings",
+						description: t("workspaces:nav.settings.compatibility.description"),
 						hasAccess: hasSettingsAccess,
 					},
 					{
-						title: "Caching",
+						title: t("workspaces:nav.settings.caching.title"),
+						testId: "caching",
 						url: "/workspace/config/caching",
 						icon: DatabaseZap,
-						description: "Caching configuration",
+						description: t("workspaces:nav.settings.caching.description"),
 						hasAccess: hasSettingsAccess,
 					},
 					{
-						title: "Security",
+						title: t("workspaces:nav.settings.security.title"),
+						testId: "security",
 						url: "/workspace/config/security",
 						icon: ShieldCheck,
-						description: "Security settings",
+						description: t("workspaces:nav.settings.security.description"),
 						hasAccess: hasSettingsAccess,
 					},
 					{
-						title: "Warp",
+						title: t("workspaces:nav.settings.warp.title"),
+						testId: "warp",
 						url: "/workspace/config/warp",
 						icon: WarpNavIcon,
-						description: "Warp agent configuration",
+						description: t("workspaces:nav.settings.warp.description"),
 						hasAccess: hasWarpAccess && isWarpEnabled,
 					},
 					...(IS_ENTERPRISE
 						? [
 								{
-									title: "Proxy",
+									title: t("workspaces:nav.settings.proxy.title"),
+									testId: "proxy",
 									url: "/workspace/config/proxy",
 									icon: Globe,
-									description: "Proxy configuration",
+									description: t("workspaces:nav.settings.proxy.description"),
 									hasAccess: hasSettingsAccess,
 								},
 							]
 						: []),
 					{
-						title: "API Keys",
+						title: t("workspaces:nav.settings.apiKeys.title"),
+						testId: "api-keys",
 						url: "/workspace/config/api-keys",
 						icon: KeyRound,
-						description: "API keys management",
+						description: t("workspaces:nav.settings.apiKeys.description"),
 						hasAccess: hasAPIKeyAccess,
 					},
 					{
-						title: "Performance Tuning",
+						title: t("workspaces:nav.settings.performanceTuning.title"),
+						testId: "performance-tuning",
 						url: "/workspace/config/performance-tuning",
 						icon: TrendingUp,
-						description: "Performance tuning settings",
+						description: t("workspaces:nav.settings.performanceTuning.description"),
 						hasAccess: hasSettingsAccess,
 					},
 					{
-						title: "Feature Flags",
+						title: t("workspaces:nav.settings.featureFlags.title"),
+						testId: "feature-flags",
 						url: "/workspace/config/feature-flags",
 						icon: Flag,
-						description: "Toggle feature flags",
+						description: t("workspaces:nav.settings.featureFlags.description"),
 						hasAccess: hasFeatureFlagsAccess,
 					},
 					...(IS_ENTERPRISE
 						? [
 								{
-									title: "Branding",
+									title: t("workspaces:nav.settings.branding.title"),
+									testId: "branding",
 									url: "/workspace/config/branding",
 									icon: Palette,
-									description: "Custom logo and icon",
+									description: t("workspaces:nav.settings.branding.description"),
 									hasAccess: hasSettingsAccess,
 								},
 								{
-									title: "License Info",
+									title: t("workspaces:nav.settings.licenseInfo.title"),
+									testId: "license-info",
 									url: "/workspace/config/license",
 									icon: BadgeInfo,
-									description: "Enterprise license information",
+									description: t("workspaces:nav.settings.licenseInfo.description"),
 									hasAccess: hasSettingsAccess,
 								},
 							]
@@ -1220,6 +1293,7 @@ export default function AppSidebar() {
 			},
 		],
 		[
+			t,
 			hasLogsAccess,
 			hasAPIKeyAccess,
 			hasObservabilityAccess,
@@ -1487,13 +1561,10 @@ export default function AppSidebar() {
 		if (setupRequired) {
 			cards.push({
 				id: "setup-required",
-				title: "Dashboard auth not configured",
+				title: t("workspaces:sidebar.promo.setupTitle"),
 				description: (
 					<div className="flex h-full flex-col gap-2 text-xs text-amber-700 dark:text-amber-300/80" data-testid="setup-required-banner">
-						<p>
-							All management APIs accept the setup token in the <code className="font-semibold">X-Bifrost-Setup-Token</code> header until
-							you create an admin account.
-						</p>
+						<p>{t("workspaces:sidebar.promo.setupBody", { header: <code className="font-semibold">X-Bifrost-Setup-Token</code> })}</p>
 						<div className="mt-auto flex items-center gap-3 pb-1">
 							<Link to="/workspace/config/security" className="text-primary font-medium underline" data-testid="setup-required-banner-link">
 								Create admin
@@ -1505,7 +1576,7 @@ export default function AppSidebar() {
 								className="text-primary font-medium underline"
 								data-testid="setup-required-banner-docs-link"
 							>
-								Docs
+								{t("workspaces:sidebar.promo.setupDocs")}
 							</a>
 						</div>
 					</div>
@@ -1518,10 +1589,10 @@ export default function AppSidebar() {
 		if (coreConfig?.restart_required?.required) {
 			cards.push({
 				id: "restart-required",
-				title: "Restart Required",
+				title: t("workspaces:sidebar.promo.restartTitle"),
 				description: (
 					<div className="text-xs text-amber-700 dark:text-amber-300/80">
-						{coreConfig.restart_required.reason || "Configuration changes require a server restart to take effect."}
+						{coreConfig.restart_required.reason || t("workspaces:sidebar.promo.restartDefaultReason")}
 					</div>
 				),
 				dismissible: false,
@@ -1534,13 +1605,10 @@ export default function AppSidebar() {
 			const remainingSteps = onboardingSteps.length - onboardingDoneCount;
 			cards.push({
 				id: "onboarding-incomplete",
-				title: "Setup checklist incomplete",
+				title: t("workspaces:sidebar.promo.onboardingTitle"),
 				description: (
 					<div className="flex h-full flex-col gap-2 text-xs text-amber-700 dark:text-amber-300/80">
-						<p>
-							{remainingSteps} setup step{remainingSteps === 1 ? "" : "s"} left. Not completing these steps keeps your Bifrost setup
-							vulnerable.
-						</p>
+						<p>{t("workspaces:sidebar.promo.onboardingBody", { count: remainingSteps })}</p>
 						<button
 							type="button"
 							onClick={handleResumeOnboarding}
@@ -1558,7 +1626,7 @@ export default function AppSidebar() {
 		if (showNewReleaseBanner && latestRelease) {
 			cards.push({
 				id: "new-release",
-				title: `${latestRelease.name} is now available.`,
+				title: t("workspaces:sidebar.promo.newReleaseTitle", { name: latestRelease.name }),
 				description: (
 					<div className="flex h-full flex-col gap-2">
 						<img src={newReleaseImage} alt="Bifrost" className="h-[95px] rounded-md object-cover" />
@@ -1568,7 +1636,7 @@ export default function AppSidebar() {
 							rel="noopener noreferrer"
 							className="text-primary mt-auto pb-1 font-medium underline"
 						>
-							View release notes
+							{t("workspaces:sidebar.promo.viewReleaseNotes")}
 						</a>
 					</div>
 				),
@@ -1577,10 +1645,11 @@ export default function AppSidebar() {
 		}
 		// Only show after mounted to ensure cookie is properly hydrated and avoid flash
 		if (!IS_ENTERPRISE && mounted && !isProductionSetupDismissed) {
-			cards.push(productionSetupHelpCard);
+			cards.push(makeProductionSetupHelpCard(t));
 		}
 		return cards;
 	}, [
+		t,
 		setupRequired,
 		coreConfig?.restart_required,
 		showNewReleaseBanner,
@@ -1641,7 +1710,7 @@ export default function AppSidebar() {
 						type="button"
 						data-testid="sidebar-collapse-btn"
 						className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-						aria-label="Collapse sidebar"
+						aria-label={t("workspaces:sidebar.collapseAria")}
 					>
 						<PanelLeftClose className="h-4 w-4" />
 					</button>
@@ -1650,7 +1719,7 @@ export default function AppSidebar() {
 				<button
 					type="button"
 					className="hidden w-full cursor-pointer flex-col items-center gap-2 py-1 group-data-[collapsible=icon]:flex"
-					aria-label="Expand sidebar"
+					aria-label={t("workspaces:sidebar.expandAria")}
 					onClick={toggleSidebar}
 				>
 					<img className="size-[22px] object-contain" src={iconSrc} alt="" width={22} height={22} />
@@ -1679,8 +1748,8 @@ export default function AppSidebar() {
 					<input
 						ref={searchInputRef}
 						type="text"
-						aria-label="Search sidebar navigation"
-						placeholder="Search..."
+						aria-label={t("workspaces:sidebar.searchAria")}
+						placeholder={t("workspaces:sidebar.searchPlaceholder")}
 						value={searchQuery}
 						onChange={(e) => {
 							setSearchQuery(e.target.value);
@@ -1737,7 +1806,7 @@ export default function AppSidebar() {
 							type="button"
 							data-testid="sidebar-expand-btn"
 							className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent flex cursor-pointer items-center justify-center rounded-md transition-colors"
-							aria-label="Expand sidebar"
+							aria-label={t("workspaces:sidebar.expandAria")}
 						>
 							<PanelLeftOpen className="h-4 w-4" />
 						</button>

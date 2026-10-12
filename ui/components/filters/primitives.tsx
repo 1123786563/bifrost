@@ -6,6 +6,7 @@ import { TruncatedLabel } from "@/components/ui/truncatedLabel";
 import { cn } from "@/lib/utils";
 import { ChevronDown, LoaderCircle, Plus, Search } from "lucide-react";
 import { Ref, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 // Building blocks shared by the filter sidebars (logs, MCP logs, webhook
 // deliveries). Lifted verbatim out of mcpFilterSidebar.tsx, where they had been
@@ -113,7 +114,7 @@ export function SearchableCheckboxList({
 	items,
 	isSelected,
 	onToggle,
-	placeholder = "Search...",
+	placeholder,
 	inputRef,
 	testIdPrefix,
 	normalizeTestIdKey = false,
@@ -135,6 +136,7 @@ export function SearchableCheckboxList({
 	onSearch?: (query: string) => void;
 	fetching?: boolean;
 }) {
+	const { t: tPrimitives } = useTranslation(["common", "workspaces"]);
 	const [query, setQuery] = useState("");
 	const normalized = query.trim().toLowerCase();
 	const filtered = normalized ? items.filter((item) => item.label.toLowerCase().includes(normalized)) : items;
@@ -174,7 +176,7 @@ export function SearchableCheckboxList({
 							commitCustom();
 						}
 					}}
-					placeholder={placeholder}
+					placeholder={placeholder ?? tPrimitives("workspaces:filters.searchDefault")}
 					className="h-8 border-0 pl-8 text-xs"
 					data-testid={testIdPrefix ? `${testIdPrefix}-search` : undefined}
 				/>

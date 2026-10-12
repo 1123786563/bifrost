@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, SquareTerminal } from "lucide-react";
 import { usePromptContext } from "../context";
+import { useTranslation } from "react-i18next";
 
 export function EmptyState() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { setPromptSheet, canCreate } = usePromptContext();
 
 	return (
@@ -12,18 +14,18 @@ export function EmptyState() {
 				<p className="text-sm">
 					{canCreate ? (
 						<>
-							Select a prompt from the sidebar or{" "}
+							{t("workspaces:promptsRepo.empty.selectOrCreate")}{" "}
 							<Button
 								variant="link"
 								className="h-auto p-0 text-sm"
 								data-testid="empty-state-create-prompt-link"
 								onClick={() => setPromptSheet({ open: true })}
 							>
-								create a new one
+								{t("workspaces:promptsRepo.empty.createNew")}
 							</Button>
 						</>
 					) : (
-						"Select a prompt from the sidebar"
+						t("workspaces:promptsRepo.empty.noPromptSelected")
 					)}
 				</p>
 			</div>
@@ -32,6 +34,7 @@ export function EmptyState() {
 }
 
 export function PromptsEmptyState() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { setPromptSheet, canCreate } = usePromptContext();
 
 	return (
@@ -40,30 +43,28 @@ export function PromptsEmptyState() {
 				<SquareTerminal className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />
 			</div>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-muted-foreground text-xl font-medium">Build, test, and version your prompts</h1>
+				<h1 className="text-muted-foreground text-xl font-medium">{t("workspaces:promptsRepo.empty.title")}</h1>
 				<div className="text-muted-foreground mx-auto mt-2 w-full max-w-[600px] text-sm font-normal">
-					{canCreate
-						? "Create prompts, test them with different models and parameters in the playground, and version your changes for deployment."
-						: "View prompts and test them with different models and parameters in the playground."}
+					{canCreate ? t("workspaces:promptsRepo.empty.canCreateDesc") : t("workspaces:promptsRepo.empty.viewOnlyDesc")}
 				</div>
 				<div className="mx-auto mt-6 flex flex-row flex-wrap items-center justify-center gap-2">
 					<Button
 						variant="outline"
-						aria-label="Read more about prompt repository (opens in new tab)"
+						aria-label={t("workspaces:promptsRepo.empty.readMoreAria")}
 						data-testid="empty-state-read-more"
 						onClick={() => {
 							window.open(`https://docs.getbifrost.ai/features/prompt-repository?utm_source=bfd`, "_blank", "noopener,noreferrer");
 						}}
 					>
-						Read more <ArrowUpRight className="text-muted-foreground h-3 w-3" />
+						{t("workspaces:promptsRepo.empty.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
 					{canCreate && (
 						<Button
-							aria-label="Create your first prompt"
+							aria-label={t("workspaces:promptsRepo.empty.createFirstAria")}
 							data-testid="empty-state-create-prompt"
 							onClick={() => setPromptSheet({ open: true })}
 						>
-							Create Prompt
+							{t("workspaces:promptsRepo.empty.createPrompt")}
 						</Button>
 					)}
 				</div>

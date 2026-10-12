@@ -10,6 +10,7 @@ import { MCPClient } from "@/lib/types/mcp";
 import { Info, Trash2 } from "lucide-react";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 // One server's tool grant. tools_to_execute: ["*"] = all, [] = none, list = specific.
 // Keyed by name (VK shape); mcp_client_id rides along when known, for by-id resolution.
@@ -74,6 +75,7 @@ export function MCPClientConfigsEditor({
 	emptyState,
 	allClientTools = false,
 }: MCPClientConfigsEditorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Resolved server records, filled in by the resolvers below.
 	const [resolved, setResolved] = useState<Record<string, MCPClient>>({});
 	const handleResolved = useCallback((key: string, client: MCPClient) => {
@@ -85,7 +87,7 @@ export function MCPClientConfigsEditor({
 
 	const handleAddMCPClient = (option: EntitySelectorOption) => {
 		if (value.some((config) => (option.value && config.mcp_client_id === option.value) || config.mcp_client_name === option.label)) {
-			toast.error("This MCP server is already configured");
+			toast.error(t("workspaces:mcpConfigs.duplicate"));
 			return;
 		}
 		onChange([...value, { mcp_client_name: option.label, mcp_client_id: option.value, tools_to_execute: ["*"] }]);
@@ -155,7 +157,7 @@ export function MCPClientConfigsEditor({
 			<MCPClientSelector
 				mode="add"
 				fullWidth
-				placeholder="Select an MCP server to add"
+				placeholder={t("workspaces:mcpConfigs.selectServer")}
 				onSelect={handleAddMCPClient}
 				excludeIds={excludeIds}
 			/>
@@ -169,7 +171,7 @@ export function MCPClientConfigsEditor({
 						<TableHeader>
 							<TableRow>
 								<TableHead>MCP Server</TableHead>
-								<TableHead>Allowed Tools</TableHead>
+								<TableHead>{t("workspaces:mcpConfigs.allowedTools")}</TableHead>
 								<TableHead className="w-[50px]"></TableHead>
 							</TableRow>
 						</TableHeader>
@@ -207,7 +209,7 @@ export function MCPClientConfigsEditor({
 												hideSelectAll
 												options={[
 													{
-														label: "Allow All Tools",
+														label: t("workspaces:mcpConfigs.allowAllTools"),
 														value: "*",
 														description: "Allow all current and future tools",
 													},

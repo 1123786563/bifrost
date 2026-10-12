@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 const DEFAULT_LABEL = "Agent access";
 
@@ -31,6 +32,7 @@ interface AgentGrantsEditorProps {
  * so an explicit grant is never added where it would be redundant.
  */
 export function AgentGrantsEditor({ value, onChange, label = DEFAULT_LABEL, tooltip = DEFAULT_TOOLTIP }: AgentGrantsEditorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const add = (option: { value: string }) => {
 		if (value.includes(option.value)) return;
 		onChange([...value, option.value]);
@@ -54,7 +56,7 @@ export function AgentGrantsEditor({ value, onChange, label = DEFAULT_LABEL, tool
 				</TooltipProvider>
 			</div>
 
-			<AgentSelector mode="add" fullWidth placeholder="Select an agent to add" onSelect={add} excludeIds={value} />
+			<AgentSelector mode="add" fullWidth placeholder={t("workspaces:editors.selectAgent")} onSelect={add} excludeIds={value} />
 
 			{value.length > 0 && (
 				<div className="divide-y overflow-hidden rounded-md border">

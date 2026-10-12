@@ -29,6 +29,7 @@ import { FieldSelector } from "./fieldSelector";
 import { OperatorSelector } from "./operatorSelector";
 import { QueryBuilderWrapper } from "./queryBuilderWrapper";
 import { ValueEditor } from "./valueEditor";
+import { useTranslation } from "react-i18next";
 
 export interface CELFieldDefinition {
 	name: string;
@@ -111,6 +112,7 @@ export function CELRuleBuilder({
 		hideCELExpression: false,
 	},
 }: CELRuleBuilderProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const normalizedInitial = normalizeRoutingRuleGroupQuery(initialQuery ?? defaultQuery);
 	const [query, setQuery] = useState<RuleGroupType>(normalizedInitial);
 	const [celExpression, setCelExpression] = useState("");
@@ -261,8 +263,8 @@ export function CELRuleBuilder({
 									combinatorSelector: CombinatorSelector,
 								}}
 								translations={{
-									addRule: { label: "Add Rule" },
-									addGroup: { label: "Add Rule Group" },
+									addRule: { label: t("workspaces:celBuilder.addRule") },
+									addGroup: { label: t("workspaces:celBuilder.addGroup") },
 								}}
 							/>
 						</QueryBuilderWrapper>
@@ -316,21 +318,18 @@ export function CELRuleBuilder({
 			<AlertDialog open={confirmSwitchToBuilder} onOpenChange={setConfirmSwitchToBuilder}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Switch to the visual builder?</AlertDialogTitle>
-						<AlertDialogDescription>
-							The visual builder can&apos;t import a hand-written CEL expression, so your current CEL will be discarded and the builder will
-							start empty. Copy it first if you want to keep it.
-						</AlertDialogDescription>
+						<AlertDialogTitle>{t("workspaces:celBuilder.switchTitle")}</AlertDialogTitle>
+						<AlertDialogDescription>{t("workspaces:celBuilder.switchDescription")}</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogCancel>{t("common:actions.cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={() => {
 								setConfirmSwitchToBuilder(false);
 								applySwitchToBuilder();
 							}}
 						>
-							Discard CEL &amp; switch
+							{t("workspaces:celBuilder.discardAndSwitch")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

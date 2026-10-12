@@ -11,8 +11,10 @@ import { PromptSheets } from "./components/sheets";
 import { EmptyState, PromptsEmptyState } from "./components/emptyState";
 import PromptsViewHeader from "./components/promptsViewHeader";
 import { usePromptContext } from "./context";
+import { useTranslation } from "react-i18next";
 
 export default function PromptsView() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const isMobile = useIsMobile();
 	const { folders, prompts, foldersLoading, promptsLoading, foldersError, promptsError, isLoadingPlayground, selectedPromptId } =
 		usePromptContext();
@@ -26,7 +28,7 @@ export default function PromptsView() {
 			<div className="no-padding-parent no-border-parent p-4">
 				<Alert variant="destructive">
 					<AlertCircle className="h-4 w-4" />
-					<AlertDescription>Failed to load prompt repository</AlertDescription>
+					<AlertDescription>{t("workspaces:promptsRepo.loadFailed")}</AlertDescription>
 				</Alert>
 			</div>
 		);

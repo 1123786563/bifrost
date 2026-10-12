@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCallback, useMemo } from "react";
 import { FieldSelectorProps, RuleGroupType, RuleType } from "react-querybuilder";
+import { useTranslation } from "react-i18next";
 
 /**
  * Recursively find and update a rule's value by path in the query tree.
@@ -31,6 +32,7 @@ function updateRuleValueAtPath(query: RuleGroupType, targetPath: number[], newVa
 }
 
 export function FieldSelector({ value, handleOnChange, options, rule, path, schema }: FieldSelectorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Check if this is a keyValue field (headers/params)
 	const fieldData = useMemo(() => schema?.fields?.find((f) => "value" in f && f.value === value), [schema?.fields, value]);
 	const isKeyValueField = fieldData && "inputType" in fieldData && fieldData.inputType === "keyValue";
@@ -72,7 +74,7 @@ export function FieldSelector({ value, handleOnChange, options, rule, path, sche
 		<div className="flex items-center gap-2">
 			<Select value={value || ""} onValueChange={handleOnChange}>
 				<SelectTrigger className="w-[180px]" data-testid="cel-builder-field-selector-select">
-					<SelectValue placeholder="Select field..." />
+					<SelectValue placeholder={t("workspaces:celBuilder.selectField")} />
 				</SelectTrigger>
 				<SelectContent>
 					{options.map((option) => {

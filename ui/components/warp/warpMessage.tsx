@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, Brain, Check, ChevronDown, Info, Loader2 } from "lucide-react";
 import { lazy, memo, Suspense, useMemo, useState, type AnchorHTMLAttributes, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 // Lazy: Shiki and recharts are heavy and most answers are plain prose.
 const LazyMarkdown = lazy(() => import("@/components/ui/markdown").then((module) => ({ default: module.Markdown })));
@@ -73,6 +74,7 @@ export function WarpStreamingMessage({
 	toolCalls: WarpTurnToolCall[];
 	isStreaming: boolean;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	return (
 		// Container scroller, not [&_table]:block: the ScrollArea has no horizontal bar to scroll with.
 		<div
@@ -247,6 +249,7 @@ function WarpAnswerLink({ href, children, ...rest }: AnchorHTMLAttributes<HTMLAn
 }
 
 function WarpAnswer({ content, toolCalls }: { content: string; toolCalls?: WarpTurnToolCall[] }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [expanded, setExpanded] = useState(false);
 	// Provenance is always last, so removing it leaves every tool call's offset valid.
 	const { answer, provenance } = splitWarpAnswer(content);
@@ -265,7 +268,7 @@ function WarpAnswer({ content, toolCalls }: { content: string; toolCalls?: WarpT
 						className="hover:text-foreground flex cursor-pointer items-center gap-1 text-[11px] transition-colors"
 					>
 						<Info className="size-3 shrink-0" />
-						<span>What this covers</span>
+						<span>{t("workspaces:warp.whatThisCovers")}</span>
 						<ChevronDown className={cn("size-3 shrink-0 transition-transform", expanded && "rotate-180")} />
 					</button>
 					{expanded && (

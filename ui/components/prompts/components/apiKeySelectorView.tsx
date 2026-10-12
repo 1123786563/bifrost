@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import type { DBKey, VirtualKey } from "@/lib/types/governance";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export function ApiKeySelectorView({
 	providerKeys,
@@ -35,6 +36,7 @@ export function ApiKeySelectorView({
 	onSearchChange?: (search: string) => void;
 	isSearching?: boolean;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [query, setQuery] = useState("");
 
 	// Provider keys are already in memory, so they filter here. Virtual keys
@@ -84,7 +86,7 @@ export function ApiKeySelectorView({
 	return (
 		<div className="flex flex-col gap-2">
 			<Label className="text-muted-foreground text-xs font-medium uppercase">
-				{requireVirtualKey ? "Virtual key" : "Virtual key / API Key"}
+				{requireVirtualKey ? t("workspaces:promptsRepo.apiKey.vkLabel") : t("workspaces:promptsRepo.apiKey.vkApiLabel")}
 			</Label>
 			<Combobox
 				value={value}
@@ -97,7 +99,10 @@ export function ApiKeySelectorView({
 				itemToStringLabel={getLabel}
 			>
 				<ComboboxInput
-					placeholder={placeholder ?? (requireVirtualKey ? "Select virtual key" : "Select API key")}
+					placeholder={
+						placeholder ??
+						(requireVirtualKey ? t("workspaces:promptsRepo.apiKey.selectVk") : t("workspaces:promptsRepo.apiKey.selectApiKey"))
+					}
 					showClear={Boolean(value) && value !== "__auto__"}
 					showTrigger
 					disabled={disabled}
@@ -118,7 +123,7 @@ export function ApiKeySelectorView({
 						{apiKeyOptions.length > 0 && virtualKeyOptions.length > 0 && <ComboboxSeparator />}
 						{virtualKeyOptions.length > 0 && (
 							<ComboboxGroup>
-								<ComboboxLabel>Virtual Keys</ComboboxLabel>
+								<ComboboxLabel>{t("workspaces:promptsRepo.apiKey.vkGroup")}</ComboboxLabel>
 								{virtualKeyOptions.map((o) => (
 									<ComboboxItem key={o.value} value={o.value}>
 										{o.label}

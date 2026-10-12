@@ -1,0 +1,868 @@
+{
+	"nav": {
+		"home": {
+			"title": "Home",
+			"description": "Your usage, keys, budgets and access"
+		},
+		"observability": {
+			"title": "Observability",
+			"description": "Request logs & monitoring",
+			"dashboard": {
+				"title": "Dashboard",
+				"description": "Dashboard"
+			},
+			"llmLogs": {
+				"title": "LLM Logs",
+				"description": "LLM request logs & monitoring"
+			},
+			"mcpLogs": {
+				"title": "MCP Logs",
+				"description": "MCP tool execution logs"
+			},
+			"agentLogs": {
+				"title": "Agent Logs",
+				"description": "Agent request logs"
+			},
+			"connectors": {
+				"title": "Connectors",
+				"description": "Log connectors"
+			},
+			"logsSettings": {
+				"title": "Logs Settings",
+				"description": "Logs configuration"
+			}
+		},
+		"models": {
+			"title": "Models",
+			"description": "Configure models",
+			"modelCatalog": {
+				"title": "Model Catalog",
+				"description": "Overview of providers, keys, and usage"
+			},
+			"modelProviders": {
+				"title": "Model Providers",
+				"description": "Configure models"
+			},
+			"budgetsLimits": {
+				"title": "Budgets & Limits",
+				"description": "Budgets and rate limits"
+			},
+			"routingRules": {
+				"title": "Routing Rules",
+				"description": "Intelligent routing rules"
+			},
+			"complexityRouter": {
+				"title": "Complexity Router",
+				"description": "Complexity tier routing"
+			},
+			"circuitBreaker": {
+				"title": "Circuit Breaker",
+				"description": "Automatic fallback when primary endpoints fail"
+			},
+			"pricingOverrides": {
+				"title": "Pricing Overrides",
+				"description": "Scoped pricing overrides"
+			},
+			"modelSettings": {
+				"title": "Model Settings",
+				"description": "Model and routing configuration"
+			}
+		},
+		"mcpServers": {
+			"title": "MCP Servers",
+			"description": "MCP configuration",
+			"mcpCatalog": {
+				"title": "MCP Catalog",
+				"description": "MCP tool catalog"
+			},
+			"mcpLibrary": {
+				"title": "MCP Library",
+				"description": "Install curated MCP servers"
+			},
+			"virtualMcps": {
+				"title": "Virtual MCPs",
+				"description": "Virtual MCPs"
+			},
+			"authSessions": {
+				"title": "Auth Sessions",
+				"description": "Per-user OAuth sessions"
+			},
+			"oauthGrants": {
+				"title": "OAuth Grants",
+				"description": "Downstream OAuth grants"
+			},
+			"mcpSettings": {
+				"title": "MCP Settings",
+				"description": "MCP configuration"
+			}
+		},
+		"agents": {
+			"title": "Agents",
+			"description": "Register and manage A2A agents",
+			"agentCatalog": {
+				"title": "Agent Catalog",
+				"description": "Registered A2A agents"
+			},
+			"pushConfigs": {
+				"title": "Push Configurations",
+				"description": "Stored A2A push callbacks"
+			},
+			"agentSettings": {
+				"title": "Agent Settings",
+				"description": "Agent Gateway configuration"
+			}
+		},
+		"plugins": {
+			"title": "Plugins",
+			"description": "Manage custom plugins"
+		},
+		"alerting": {
+			"title": "Alerting",
+			"description": "Manage alert channels, rules, and history",
+			"channels": {
+				"title": "Channels",
+				"description": "Configure notification channels"
+			},
+			"rules": {
+				"title": "Rules",
+				"description": "Define alerting rules"
+			},
+			"history": {
+				"title": "History",
+				"description": "Review alert delivery history"
+			}
+		},
+		"governance": {
+			"title": "Governance",
+			"description": "Virtual keys, users, teams, customers & roles",
+			"virtualKeys": {
+				"title": "Virtual Keys",
+				"description": "Manage virtual keys & access"
+			},
+			"orgChart": {
+				"title": "Org Chart",
+				"description": "Budgets and usage across business units, teams and users"
+			},
+			"users": {
+				"title": "Users",
+				"description": "Manage users"
+			},
+			"teams": {
+				"title": "Teams",
+				"description": "Manage teams"
+			},
+			"businessUnits": {
+				"title": "Business Units",
+				"description": "Manage business units"
+			},
+			"customers": {
+				"title": "Customers",
+				"description": "Manage customers"
+			},
+			"userProvisioning": {
+				"title": "User Provisioning",
+				"description": "User management and provisioning"
+			},
+			"rolesPermissions": {
+				"title": "Roles & Permissions",
+				"description": "User roles and permissions"
+			},
+			"accessProfiles": {
+				"title": "Access Profiles",
+				"description": "Manage access profiles for roles"
+			},
+			"projects": {
+				"title": "Projects",
+				"description": "Scope requests to a project's access and budget"
+			},
+			"auditLogs": {
+				"title": "Audit Logs",
+				"description": "Audit logs and compliance"
+			}
+		},
+		"guardrails": {
+			"title": "Guardrails",
+			"description": "Guardrails configuration",
+			"rules": {
+				"title": "Rules",
+				"description": "Guardrail rules"
+			},
+			"providers": {
+				"title": "Providers",
+				"description": "Guardrail providers configuration"
+			}
+		},
+		"webhooks": {
+			"title": "Webhooks",
+			"description": "Async job webhook endpoints"
+		},
+		"edgeControl": {
+			"title": "Edge Control",
+			"description": "Edge device management",
+			"devices": {
+				"title": "Devices",
+				"description": "Manage edge devices"
+			},
+			"approvals": {
+				"title": "Approvals",
+				"description": "Approve apps and MCP servers"
+			},
+			"edgeSettings": {
+				"title": "Edge Settings",
+				"description": "Edge settings"
+			}
+		},
+		"clusterConfig": {
+			"title": "Cluster Config",
+			"description": "Manage Bifrost cluster"
+		},
+		"adaptiveRouting": {
+			"title": "Adaptive Routing",
+			"description": "Manage adaptive routing",
+			"dashboard": {
+				"title": "Dashboard",
+				"description": "Adaptive routing metrics"
+			},
+			"incidents": {
+				"title": "Incidents",
+				"description": "Adaptive routing incidents"
+			},
+			"settings": {
+				"title": "Settings",
+				"description": "Adaptive routing settings"
+			}
+		},
+		"promptRepository": {
+			"title": "Prompt Repository",
+			"description": "Prompt repository"
+		},
+		"skillsRepository": {
+			"title": "Skills Repository",
+			"description": "Skills repository"
+		},
+		"settings": {
+			"title": "Settings",
+			"description": "Bifrost settings",
+			"clientSettings": {
+				"title": "Client Settings",
+				"description": "Client configuration settings"
+			},
+			"compatibility": {
+				"title": "Compatibility",
+				"description": "Compatibility conversion settings"
+			},
+			"caching": {
+				"title": "Caching",
+				"description": "Caching configuration"
+			},
+			"security": {
+				"title": "Security",
+				"description": "Security settings"
+			},
+			"warp": {
+				"title": "Warp",
+				"description": "Warp agent configuration"
+			},
+			"proxy": {
+				"title": "Proxy",
+				"description": "Proxy configuration"
+			},
+			"apiKeys": {
+				"title": "API Keys",
+				"description": "API keys management"
+			},
+			"performanceTuning": {
+				"title": "Performance Tuning",
+				"description": "Performance tuning settings"
+			},
+			"featureFlags": {
+				"title": "Feature Flags",
+				"description": "Toggle feature flags"
+			},
+			"branding": {
+				"title": "Branding",
+				"description": "Custom logo and icon"
+			},
+			"licenseInfo": {
+				"title": "License Info",
+				"description": "Enterprise license information"
+			}
+		}
+	},
+	"topbar": {
+		"links": {
+			"discord": "Discord Server",
+			"github": "GitHub Repository",
+			"reportBug": "Report a bug",
+			"docs": "Full Documentation"
+		},
+		"user": "User",
+		"signOut": "Sign out",
+		"version": "Version",
+		"accountMenuAria": "Account menu",
+		"openMenuAria": "Open menu",
+		"languageGroup": "Language"
+	},
+	"sidebar": {
+		"searchPlaceholder": "Search...",
+		"searchAria": "Search sidebar navigation",
+		"collapseAria": "Collapse sidebar",
+		"expandAria": "Expand sidebar",
+		"promo": {
+			"setupTitle": "Dashboard auth not configured",
+			"setupBody": "All management APIs accept the setup token in the {{header}} header until you create an admin account.",
+			"setupCreateAdmin": "Create admin",
+			"setupDocs": "Docs",
+			"restartTitle": "Restart Required",
+			"restartDefaultReason": "Configuration changes require a server restart to take effect.",
+			"onboardingTitle": "Setup checklist incomplete",
+			"onboardingBody_one": "{{count}} setup step left. Not completing these steps keeps your Bifrost setup vulnerable.",
+			"onboardingBody_other": "{{count}} setup steps left. Not completing these steps keeps your Bifrost setup vulnerable.",
+			"resumeSetup": "Resume setup",
+			"newReleaseTitle": "{{name}} is now available.",
+			"viewReleaseNotes": "View release notes",
+			"helpTitle": "Need help with production setup?",
+			"helpBody": "We offer help with production setup including custom integrations and dedicated support.",
+			"bookDemo": "Book a demo with our team"
+		}
+	},
+	"pageTitle": {
+		"beta": "Beta",
+		"betaWithLabelAria": "{{label}} is in beta",
+		"betaAria": "This page is in beta",
+		"aboutAria": "About this page"
+	},
+	"noPermission": {
+		"title": "You don't have permission to view {{entity}}",
+		"description": "Contact your administrator to request access to this resource."
+	},
+	"notAvailable": {
+		"title": "Config store setup is missing.",
+		"description": "The UI requires a database connection to store configuration data, but no database is currently configured.",
+		"howToPrefix": "To enable the UI, please add the database settings to your config.json (see",
+		"howToSuffix": ").",
+		"docsLink": "documentation"
+	},
+	"loggingDisabled": {
+		"title": "Logging is disabled",
+		"description": "Enable logging to view LLM and MCP request logs, traces, and observability data.",
+		"enable": "Enable logging",
+		"enabling": "Enabling…",
+		"configNotLoaded": "Configuration not loaded",
+		"enabledToast": "Logging enabled."
+	},
+	"formFooter": {
+		"noPermission": "You don't have permission to perform this action",
+		"saving": "Saving...",
+		"fixErrors": "Please fix validation errors",
+		"create": "Create {{label}}",
+		"update": "Update {{label}}"
+	},
+	"copyId": {
+		"copy": "Copy {{noun}}",
+		"copiedToast": "{{label}} copied",
+		"idNoun": "ID"
+	},
+	"theme": {
+		"light": "Light",
+		"dark": "Dark",
+		"system": "System",
+		"toggleAria": "Toggle theme"
+	},
+	"metricStrip": {
+		"unavailableTitle": "These statistics could not be loaded"
+	},
+	"sheetNav": {
+		"prev": "Prev",
+		"next": "Next",
+		"prevAria": "Previous {{entity}}",
+		"nextAria": "Next {{entity}}",
+		"or": "or",
+		"item": "item"
+	},
+	"virtualKeyListItem": {
+		"copyAria": "Copy virtual key",
+		"removeAria": "Remove virtual key",
+		"copiedToast": "Virtual key copied"
+	},
+	"budgetDisplay": {
+		"usageAria": "Budget usage",
+		"overrideTag": "override",
+		"overrideBreakdown": "Base {{base}} + {{extra}} override"
+	},
+	"rateLimit": {
+		"usageAria": "{{label}} usage",
+		"requestNoun": "Request"
+	},
+	"scopeChips": {
+		"showAllAria": "Show all {{count}} scopes"
+	},
+	"filters": {
+		"header": "Filters",
+		"hide": "Hide filters",
+		"show": "Show filters",
+		"showMissingCostOnly": "Show missing cost only",
+		"directCache": "Direct cache",
+		"semanticCache": "Semantic cache",
+		"selectedCount_one": "{{count}} selected",
+		"selectedCount_other": "{{count}} selected",
+		"searchDefault": "Search...",
+		"sections": {
+			"status": "Status",
+			"stopReason": "Stop Reason",
+			"toolCalls": "Tool Calls",
+			"app": "App",
+			"providers": "Providers",
+			"type": "Type",
+			"models": "Models",
+			"aliases": "Aliases",
+			"selectedKeys": "Selected Keys",
+			"virtualKeys": "Virtual Keys",
+			"routingEngines": "Routing Engines",
+			"routingRules": "Routing Rules",
+			"complexityTier": "Complexity Tier",
+			"complexityMechanism": "Complexity Mechanism",
+			"agent": "Agent",
+			"sessionId": "Session ID",
+			"agentCorrelationId": "Agent correlation ID",
+			"parentRequestId": "Parent request ID",
+			"user": "User",
+			"teams": "Teams",
+			"customers": "Customers",
+			"businessUnits": "Business Units",
+			"projects": "Projects",
+			"localCaching": "Local Caching",
+			"metadata": "Metadata",
+			"cost": "Cost",
+			"event": "Event",
+			"outcome": "Outcome",
+			"responseStatus": "Response status",
+			"toolNames": "Tool Names",
+			"servers": "Servers",
+			"webhooks": "Webhooks",
+			"devices": "Devices"
+		},
+		"phStopReason": "Search or add a stop reason",
+		"phFunctionName": "Search or add a function name",
+		"phApps": "Search apps",
+		"phProviders": "Search providers",
+		"phModel": "Search or add a model",
+		"phAlias": "Search or add an alias",
+		"phKeys": "Search keys",
+		"phVirtualKeys": "Search virtual keys",
+		"phEngines": "Search engines",
+		"phRules": "Search rules",
+		"phAgents": "Search agents",
+		"phExactSessionId": "Exact session ID",
+		"phExactAgentCorrelation": "Exact Agent correlation ID",
+		"phParentRequestId": "Parent request ID",
+		"phUser": "Search or add a user",
+		"phTeam": "Search or add a team",
+		"phCustomer": "Search or add a customer",
+		"phBusinessUnit": "Search or add a business unit",
+		"phProject": "Search or add a project",
+		"phMetadata": "Search metadata...",
+		"phCustomValue": "Custom value...",
+		"phTool": "Search or add a tool",
+		"phServer": "Search or add a server",
+		"phWebhooks": "Search webhooks..."
+	},
+	"datePicker": {
+		"pickDate": "Pick a date",
+		"pickDateTime": "Pick a date and time",
+		"fromTime": "From Time",
+		"toTime": "To Time",
+		"timezone": "Select timezone"
+	},
+	"budgetReset": {
+		"title": "Reset budget usage?",
+		"description": "You changed a budget amount or reset frequency on this {{owner}}. Reset current usage to 0, or preserve the existing counters. The reset window keeps its current start and end either way.",
+		"preserve": "Preserve Usage",
+		"reset": "Reset Usage"
+	},
+	"configSync": {
+		"prefix": "This config is synced from",
+		"suffix": ". Any future updates to config.json will overwrite UI changes. If you are using config.json to bootstrap the initial config, you can ignore this alert."
+	},
+	"inputs": {
+		"noLimit": "No limit",
+		"headerName": "Header name",
+		"headerValue": "Header value",
+		"noResults": "No results found.",
+		"failedToLoad": "Failed to load.",
+		"headers": "Headers"
+	},
+	"entitySelect": {
+		"add": {
+			"virtualKey": "Add virtual key names...",
+			"team": "Add team names...",
+			"customer": "Add customer names...",
+			"user": "Add user names...",
+			"provider": "Add provider names...",
+			"apiKey": "Add API key names..."
+		},
+		"none": {
+			"virtualKey": "No virtual keys found",
+			"team": "No teams found",
+			"customer": "No customers found",
+			"user": "No users found",
+			"provider": "No providers found",
+			"apiKey": "No API keys found"
+		}
+	},
+	"multiSelect": {
+		"selectOptions": "Select options",
+		"searchOptions": "Search options...",
+		"searchAria": "Search through available options",
+		"availableAria": "Available options",
+		"noResults": "No results found.",
+		"noneSelected": "No options selected",
+		"countSelected_one": "{{count}} option selected:",
+		"countSelected_other": "{{count}} options selected:",
+		"viewMore": "View more",
+		"viewLess": "View less",
+		"openedAnnounce": "Dropdown opened. {{count}} options available. Use arrow keys to navigate.",
+		"closedAnnounce": "Dropdown closed."
+	},
+	"headersForm": {
+		"previouslySubmitted": "Previously submitted",
+		"overwriteHint": "•••••• (enter new value to overwrite)",
+		"valueFor": "Value for {{key}}",
+		"showValue": "Show value",
+		"hideValue": "Hide value"
+	},
+	"selectors": {
+		"selected": "Selected",
+		"customProviders": "Custom Providers",
+		"allModels": "All Models"
+	},
+	"combobox": {
+		"typeOrSelect": "Type or select...",
+		"noResults": "No results found.",
+		"clearSelection": "Clear selection",
+		"clearSearch": "Clear search"
+	},
+	"providerCard": {
+		"excludeFromRouting": "Exclude from routing",
+		"addModel": "Add model…",
+		"allowAllKeys": "Allow All Keys",
+		"allowAllKeysDesc": "Allow all current and future keys for this provider",
+		"providerKeys": "Provider keys",
+		"allowedModels": "Allowed models",
+		"blockedModels": "Blocked models",
+		"weight": "Weight"
+	},
+	"providerConfigs": {
+		"noneLeft": "No providers left to configure. Click to add",
+		"allowAll": "Allow all providers",
+		"selectToAdd": "Select a provider to add"
+	},
+	"mcpConfigs": {
+		"duplicate": "This MCP server is already configured",
+		"selectServer": "Select an MCP server to add",
+		"allowedTools": "Allowed Tools",
+		"allowAllTools": "Allow All Tools"
+	},
+	"editors": {
+		"selectAgent": "Select an agent to add",
+		"selectVirtualMcp": "Select a Virtual MCP to add"
+	},
+	"overhead": {
+		"serialization": "Serialization",
+		"conversion": "Conversion",
+		"plugins": "Plugins",
+		"middleware": "Middleware",
+		"routing": "Key selection",
+		"processing": "Processing",
+		"protocol_sdk": "Protocol library",
+		"networking": "Networking",
+		"streaming": "Client delivery",
+		"miscellaneous": "Miscellaneous",
+		"other": "Other"
+	},
+	"overheadMembers": {
+		"request_unmarshal": "Request parse",
+		"request_marshal": "Request encode",
+		"response_parse": "Response parse",
+		"response_marshal": "Response encode",
+		"convertor": "Schema conversion",
+		"convertor_stream_in": "Stream convert (inbound)",
+		"convertor_stream_out": "Stream convert (outbound)",
+		"middleware_apikeys": "API",
+		"middleware_scim": "SCIM",
+		"middleware_auth": "Auth",
+		"key_pool": "Key pool",
+		"key_selection": "Key selection",
+		"handle_setup": "Request setup",
+		"pipeline_pre": "Pre-hooks",
+		"pipeline_post": "Post-hooks",
+		"worker_setup": "Worker setup",
+		"worker_handoff": "Worker handoff",
+		"queue_wait": "Queue wait",
+		"attribute_population": "Attribute population",
+		"miscellaneous": "Uncaptured glue",
+		"provider_internal": "Provider processing",
+		"transport_context": "Request context building",
+		"transport_response_headers": "Response headers",
+		"response_finalize": "Response read",
+		"request_sign": "Request signing",
+		"credentials_fetch": "Credential fetch",
+		"stream_backpressure": "Client backpressure",
+		"stream_client_write": "Client write",
+		"scheduling": "Scheduling residual",
+		"a2a_normalize": "Request normalization",
+		"a2a_auth": "Gateway auth",
+		"a2a_prepare": "Upstream client prep",
+		"a2a_encode": "Response encoding",
+		"a2a_dispatch": "A2A SDK handling",
+		"a2a_push_db_authenticate": "Push authentication lookup",
+		"a2a_push_db_bind": "Push task binding",
+		"a2a_push_db_enqueue": "Push enqueue",
+		"a2a_push_db_config": "Push configuration lookup",
+		"a2a_push_db_outcome": "Push outcome update",
+		"a2a_push_db_local": "Push configuration read",
+		"a2a_push_db_save": "Push configuration save",
+		"a2a_push_db_delete": "Push configuration delete",
+		"a2a_push_db_list_due": "Due push lookup",
+		"a2a_push_db_prune": "Push retention cleanup"
+	},
+	"celBuilder": {
+		"addRule": "Add Rule",
+		"addGroup": "Add Rule Group",
+		"switchTitle": "Switch to the visual builder?",
+		"switchDescription": "The visual builder can't import a hand-written CEL expression, so your current CEL will be discarded and the builder will start empty. Copy it first if you want to keep it.",
+		"discardAndSwitch": "Discard CEL & switch",
+		"selectField": "Select field...",
+		"selectOperator": "Select operator...",
+		"selectModels": "Select models...",
+		"searchModel": "Search for a model...",
+		"selectProviders": "Select providers...",
+		"value": "Value"
+	},
+	"misc": {
+		"select": "Select",
+		"viewMore": "View more",
+		"viewLess": "View less",
+		"selectBaseFormat": "Select base format",
+		"searchFormats": "Search formats...",
+		"budgetConfig": "Budget Configuration",
+		"maxSpend": "Maximum Spend (USD)",
+		"searchMcpServers": "Search and select MCP servers...",
+		"noMcpServers": "No MCP servers found",
+		"openServerDetails": "Open server details in new tab",
+		"searchTools": "Search and select tools...",
+		"noResults": "No results found"
+	},
+	"budgetOverride": {
+		"updated": "Budget override updated",
+		"added": "Budget override added",
+		"removed": "Budget override removed",
+		"editOverride": "Edit override",
+		"addOverride": "Add override",
+		"editTitle": "Edit budget override",
+		"addTitle": "Add budget override",
+		"addDescription": "Temporarily add spending capacity without changing the base {{base}} budget.",
+		"managerDescription": "Temporarily add spending capacity to a budget without changing its base limit.",
+		"additionalBudget": "Additional budget",
+		"duration": "Duration",
+		"forCycles": "For a number of reset cycles",
+		"untilRemoved": "Until removed",
+		"resetCycles": "Reset cycles",
+		"firstCycleNote": "The current reset cycle counts as the first cycle.",
+		"validUntil": "Valid until",
+		"currentEffectiveLimit": "Current effective limit:",
+		"invalidInput": "Invalid input"
+	},
+	"notifications": {
+		"ariaWithCount": "Notifications, {{summary}}",
+		"aria": "Notifications",
+		"tab": "Notifications",
+		"jobsTab": "Background jobs",
+		"markAllRead": "Mark all read",
+		"jobFinishedToast": "That job had already finished",
+		"cancelFailedToast": "Couldn't cancel the job",
+		"unread": "{{count}} unread",
+		"running": "{{count}} running"
+	},
+	"sidekiq": {
+		"queued": "Queued",
+		"running": "Running",
+		"completed": "Completed",
+		"failed": "Failed",
+		"cancelled": "Cancelled",
+		"done": "Done",
+		"started": "Started",
+		"finished": "Finished",
+		"aria": "Background jobs",
+		"progressAria": "{{label}} progress"
+	},
+	"columns": {
+		"toggle": "Toggle Columns",
+		"aria": "Column configuration"
+	},
+	"warp": {
+		"deleteConversationTitle": "Delete this conversation?",
+		"deleteConversationBody": "\"{{title}}\" and its messages are removed permanently. This cannot be undone.",
+		"deleteConversationAria": "Delete conversation",
+		"openFailedToast": "Could not open that conversation.",
+		"deleteFailedToast": "Could not delete that conversation.",
+		"whatThisCovers": "What this covers",
+		"question": "Question",
+		"skip": "Skip",
+		"orTypeOwn": "Or type your own answer below."
+	},
+	"onboarding": {
+		"expandAria": "Expand setup checklist",
+		"minimizeAria": "Minimize",
+		"closeAria": "Close for now"
+	},
+	"agentSelect": {
+		"openToAll": "Open to all keys",
+		"disabled": "Disabled"
+	},
+	"promptsRepo": {
+		"promptSheet": {
+			"updated": "Prompt updated",
+			"created": "Prompt created",
+			"editDesc": "Update the prompt name.",
+			"createInFolderDesc": "Create a new prompt in this folder.",
+			"createDesc": "Create a new prompt.",
+			"nameLabel": "Name",
+			"namePh": "Customer Support Assistant",
+			"nameRequired": "Prompt name is required",
+			"nameBlank": "Prompt name cannot be blank",
+			"noPermission": "You do not have permission to change prompts"
+		},
+		"folderSheet": {
+			"updated": "Folder updated",
+			"created": "Folder created",
+			"editDesc": "Update the folder name and description.",
+			"createDesc": "Create a new folder to organize your prompts.",
+			"nameLabel": "Name",
+			"namePh": "My Prompts",
+			"nameRequired": "Folder name is required",
+			"nameBlank": "Folder name cannot be blank",
+			"descLabel": "Description (optional)",
+			"descPh": "Prompts for customer support use cases...",
+			"noPermission": "You do not have permission to change prompt folders"
+		},
+		"commitSheet": {
+			"selectAtLeastOne": "Please select at least one message to commit",
+			"committed": "Version committed",
+			"failed": "Failed to commit version",
+			"title": "Commit as Version",
+			"description": "Select the messages to include in this version. Uncheck any messages you want to exclude.",
+			"deselectAll": "Deselect all",
+			"selectAll": "Select all",
+			"commitMessage": "Commit Message",
+			"commitPh": "Added system message for better context...",
+			"required": "Commit message is required",
+			"blank": "Commit message cannot be blank",
+			"noPermission": "You do not have permission to change prompts"
+		},
+		"settings": {
+			"selectProvider": "Select provider",
+			"selectProviderFirst": "Select a provider first",
+			"selectModel": "Select model"
+		},
+		"sidebar": {
+			"searchPrompts": "Search prompts...",
+			"addAria": "Add prompt or folder",
+			"folderActionsAria": "Folder actions",
+			"promptActionsAria": "Prompt actions"
+		},
+		"messages": {
+			"deleteAria": "Delete message",
+			"attachAria": "Attach file",
+			"editAria": "Edit message",
+			"executedResult": "Executed result",
+			"toolResult": "Tool result",
+			"pasteResult": "Paste tool result...",
+			"submitHint": "Submit all results to continue the conversation.",
+			"executeHint": "Execute or fill each tool call above, then submit together.",
+			"executingAll": "Executing all",
+			"executeAll": "Execute all",
+			"submitting": "Submitting",
+			"submitAll": "Submit all results"
+		},
+		"roles": {
+			"system": "System",
+			"user": "User",
+			"assistant": "Assistant",
+			"tool": "Tool"
+		},
+		"apiKey": {
+			"vkLabel": "Virtual key",
+			"vkApiLabel": "Virtual key / API Key",
+			"selectVk": "Select virtual key",
+			"selectApiKey": "Select API key",
+			"vkGroup": "Virtual Keys"
+		},
+		"input": {
+			"typeMessage": "Type a message...",
+			"selectToRun": "Select a provider and model to run",
+			"runPrompt": "Run prompt"
+		},
+		"alerts": {
+			"deleteFolderTitle": "Delete Folder",
+			"deleteFolderBody": "Are you sure you want to delete \"{{name}}\"? This will also delete all prompts, versions, and sessions in this folder. This action cannot be undone.",
+			"deletePromptTitle": "Delete Prompt",
+			"deletePromptBody": "Are you sure you want to delete \"{{name}}\"? This will also delete all versions and sessions. This action cannot be undone.",
+			"deleting": "Deleting..."
+		},
+		"header": {
+			"sessionSaved": "Session saved",
+			"saveFailed": "Failed to save session",
+			"renameFailed": "Failed to rename session",
+			"unpublishedChanges": "Unpublished Changes",
+			"noSessions": "No sessions found.",
+			"versions": "Versions",
+			"sessionNamePh": "Session name",
+			"renameAria": "Rename session"
+		},
+		"empty": {
+			"noPromptSelected": "Select a prompt from the sidebar",
+			"selectOrCreate": "Select a prompt from the sidebar or",
+			"createNew": "create a new one",
+			"title": "Build, test, and version your prompts",
+			"canCreateDesc": "Create prompts, test them with different models and parameters in the playground, and version your changes for deployment.",
+			"viewOnlyDesc": "View prompts and test them with different models and parameters in the playground.",
+			"readMoreAria": "Read more about prompt repository (opens in new tab)",
+			"readMore": "Read more",
+			"createFirstAria": "Create your first prompt",
+			"createPrompt": "Create Prompt"
+		},
+		"toasts": {
+			"moved": "Prompt moved successfully",
+			"moveFailed": "Failed to move prompt",
+			"folderDeleted": "Folder deleted",
+			"folderDeleteFailed": "Failed to delete folder",
+			"promptDeleted": "Prompt deleted",
+			"promptDeleteFailed": "Failed to delete prompt",
+			"executeToolFailed": "Failed to execute tool",
+			"submitResultsFailed": "Failed to submit tool results"
+		},
+		"loadFailed": "Failed to load prompt repository"
+	},
+	"modelAccess": {
+		"entryTypeAria": "Model entry type",
+		"modelsTab": "Models",
+		"regexTab": "Regex",
+		"noModelsForProvider": "No models available for this provider.",
+		"selectProviderFirst": "Select a provider first.",
+		"noPatternsAllow": "No patterns. Add an RE2 pattern to allow models by name shape.",
+		"noPatternsBlock": "No patterns. Add an RE2 pattern to block models by name shape.",
+		"regexChipTitle": "Regex pattern (case-insensitive, full match)",
+		"noModelsDenyAll": "No models (deny all)",
+		"allExceptAllowed": "All models except those allowed",
+		"noModelsBlocked": "No models blocked"
+	},
+	"misc2": {
+		"hideFilters": "Hide filters",
+		"timeAria": "Time",
+		"dismissAria": "Dismiss",
+		"toggleSidebar": "Toggle Sidebar",
+		"fiscalYearStarts": "Fiscal year starts",
+		"unreadAria": "Unread"
+	}
+}

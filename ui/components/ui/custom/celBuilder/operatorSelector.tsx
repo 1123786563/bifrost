@@ -5,12 +5,14 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OperatorSelectorProps } from "react-querybuilder";
+import { useTranslation } from "react-i18next";
 
 export function OperatorSelector({ value, handleOnChange, options }: OperatorSelectorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	return (
 		<Select value={value || ""} onValueChange={handleOnChange}>
 			<SelectTrigger className="w-[160px]">
-				<SelectValue placeholder="Select operator..." />
+				<SelectValue placeholder={t("workspaces:celBuilder.selectOperator")} />
 			</SelectTrigger>
 			<SelectContent>
 				{options.map((option) => {

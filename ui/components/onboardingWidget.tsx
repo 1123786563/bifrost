@@ -20,6 +20,7 @@ import { AlertTriangle, ChevronRight, Minus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCookies } from "react-cookie";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const MAX_SNOOZE_DAYS = 14;
 
@@ -51,6 +52,7 @@ async function fireConfettiFrom(el: HTMLElement) {
 }
 
 export default function OnboardingWidget() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const navigate = useNavigate();
 	const pathname = useLocation({ select: (l) => l.pathname });
 	// "Remind me later" is a real snooze: it survives navigation and reloads
@@ -156,7 +158,7 @@ export default function OnboardingWidget() {
 		return (
 			<button
 				type="button"
-				aria-label="Expand setup checklist"
+				aria-label={t("workspaces:onboarding.expandAria")}
 				data-testid="onboarding-widget-restore"
 				onClick={() => setMinimized(false)}
 				className="bg-card text-card-foreground fixed right-6 bottom-4 z-40 flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-lg transition-transform hover:scale-105"
@@ -264,7 +266,7 @@ export default function OnboardingWidget() {
 					</div>
 					<div className="flex flex-shrink-0 items-center gap-1">
 						<button
-							aria-label="Minimize"
+							aria-label={t("workspaces:onboarding.minimizeAria")}
 							type="button"
 							data-testid="onboarding-widget-minimize"
 							onClick={() => setMinimized(true)}
@@ -273,7 +275,7 @@ export default function OnboardingWidget() {
 							<Minus className="size-4" />
 						</button>
 						<button
-							aria-label="Close for now"
+							aria-label={t("workspaces:onboarding.closeAria")}
 							type="button"
 							data-testid="onboarding-widget-close"
 							onClick={() => setCookie(HIDDEN_UNTIL_NAV_COOKIE, "true", { path: "/" })}

@@ -6,16 +6,17 @@ import type { SidekiqJob, SidekiqJobStatus } from "@/lib/types/sidekiq";
 import { formatDistanceToNow } from "date-fns";
 import { Check, X } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const statusPresentation: Record<
 	SidekiqJobStatus,
-	{ label: string; variant: "secondary" | "default" | "success" | "destructive" | "outline" }
+	{ labelKey: string; variant: "secondary" | "default" | "success" | "destructive" | "outline" }
 > = {
-	pending: { label: "Queued", variant: "secondary" },
-	running: { label: "Running", variant: "default" },
-	completed: { label: "Completed", variant: "success" },
-	failed: { label: "Failed", variant: "destructive" },
-	cancelled: { label: "Cancelled", variant: "outline" },
+	pending: { labelKey: "workspaces:sidekiq.queued", variant: "secondary" },
+	running: { labelKey: "workspaces:sidekiq.running", variant: "default" },
+	completed: { labelKey: "workspaces:sidekiq.completed", variant: "success" },
+	failed: { labelKey: "workspaces:sidekiq.failed", variant: "destructive" },
+	cancelled: { labelKey: "workspaces:sidekiq.cancelled", variant: "outline" },
 };
 
 interface SidekiqJobsSectionProps {
@@ -26,6 +27,7 @@ interface SidekiqJobsSectionProps {
 }
 
 export default function SidekiqJobsSection({ jobs, cancellingId, onCancel, onDismiss }: SidekiqJobsSectionProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Cancelling is final (a cancelled job is not resumable), so it takes a second click.
 	const [confirmId, setConfirmId] = useState<string>();
 
@@ -33,7 +35,7 @@ export default function SidekiqJobsSection({ jobs, cancellingId, onCancel, onDis
 		return (
 			<section
 				data-testid="sidekiq-jobs-section"
-				aria-label="Background jobs"
+				aria-label={t("workspaces:sidekiq.aria")}
 				className="flex h-44 flex-col items-center justify-center gap-2 px-6 text-center"
 			>
 				<span className="bg-muted text-muted-foreground flex size-9 items-center justify-center rounded-full">
@@ -46,7 +48,7 @@ export default function SidekiqJobsSection({ jobs, cancellingId, onCancel, onDis
 	}
 
 	return (
-		<section data-testid="sidekiq-jobs-section" aria-label="Background jobs">
+		<section data-testid="sidekiq-jobs-section" aria-label={t("workspaces:sidekiq.aria")}>
 			<ul className="max-h-[min(26rem,calc(100vh-8rem))] divide-y overflow-y-auto">
 				{jobs.map((job) => {
 					const presentation = statusPresentation[job.status] ?? statusPresentation.pending;
@@ -58,7 +60,7 @@ export default function SidekiqJobsSection({ jobs, cancellingId, onCancel, onDis
 							<div className="flex items-center gap-2">
 								<span className="min-w-0 flex-1 truncate text-sm font-medium">{sidekiqJobLabel(job.kind)}</span>
 								<Badge variant={presentation.variant} data-testid={`sidekiq-job-status-${job.id}`}>
-									{presentation.label}
+									{t(presentation.labelKey)}
 								</Badge>
 								{!job.cancellable && (
 									<button
@@ -74,16 +76,22 @@ export default function SidekiqJobsSection({ jobs, cancellingId, onCancel, onDis
 							</div>
 							{percent !== undefined && job.progress && (
 								<div className="flex items-center gap-2" data-testid={`sidekiq-job-progress-${job.id}`}>
-									<Progress value={percent} aria-label={`${sidekiqJobLabel(job.kind)} progress`} className="h-1.5 flex-1" />
+									<Progress
+										value={percent}
+										aria-label={t("workspaces:sidekiq.progressAria", { label: sidekiqJobLabel(job.kind) })}
+										className="h-1.5 flex-1"
+									/>
 									<span className="text-muted-foreground w-24 text-right text-[11px] tabular-nums">
-										{job.status === "completed" ? "Done" : `${job.progress.done.toLocaleString()} / ${job.progress.total.toLocaleString()}`}
+										{job.status === "completed"
+											? t("workspaces:sidekiq.done")
+											: `${job.progress.done.toLocaleString()} / ${job.progress.total.toLocaleString()}`}
 									</span>
 								</div>
 							)}
 							{detail && <p className="text-muted-foreground line-clamp-2 text-xs">{detail}</p>}
 							<div className="text-muted-foreground flex items-center justify-between text-[11px]">
 								<span>
-									{job.cancellable ? "Started" : "Finished"}{" "}
+									{job.cancellable ? t("workspaces:sidekiq.started") : t("workspaces:sidekiq.finished")}{" "}
 									{formatDistanceToNow(new Date(job.cancellable ? job.created_at : finishedAt), { addSuffix: true })}
 								</span>
 								{job.cancellable &&

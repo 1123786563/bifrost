@@ -26,6 +26,7 @@ import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { executePrompt, executeToolCall, MCPAuthRequiredError } from "./utils/executor";
+import { useTranslation } from "react-i18next";
 
 interface PromptContextValue {
 	// Data
@@ -127,6 +128,7 @@ export function usePromptContext() {
 }
 
 export function PromptProvider({ children }: { children: ReactNode }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// RBAC permissions
 	const canCreate = useRbac(RbacResource.PromptRepository, RbacOperation.Create);
 	const canUpdate = useRbac(RbacResource.PromptRepository, RbacOperation.Update);
@@ -430,9 +432,9 @@ export function PromptProvider({ children }: { children: ReactNode }) {
 		async (promptId: string, folderId: string | null) => {
 			try {
 				await updatePrompt({ id: promptId, data: { folder_id: folderId } }).unwrap();
-				toast.success("Prompt moved successfully");
+				toast.success(t("workspaces:promptsRepo.toasts.moved"));
 			} catch (err) {
-				toast.error(getErrorMessage(err) || "Failed to move prompt");
+				toast.error(getErrorMessage(err) || t("workspaces:promptsRepo.toasts.moveFailed"));
 			}
 		},
 		[updatePrompt],
@@ -443,13 +445,13 @@ export function PromptProvider({ children }: { children: ReactNode }) {
 
 		try {
 			await deleteFolder(deleteFolderDialog.folder.id).unwrap();
-			toast.success("Folder deleted");
+			toast.success(t("workspaces:promptsRepo.toasts.folderDeleted"));
 			setDeleteFolderDialog({ open: false });
 			if (selectedPrompt?.folder_id === deleteFolderDialog.folder.id) {
 				setUrlState({ promptId: null, sessionId: null, versionId: null });
 			}
 		} catch (err) {
-			toast.error("Failed to delete folder", { description: getErrorMessage(err) });
+			toast.error(t("workspaces:promptsRepo.toasts.folderDeleteFailed"), { description: getErrorMessage(err) });
 		}
 	}, [deleteFolderDialog.folder, deleteFolder, selectedPrompt, setUrlState]);
 
@@ -458,13 +460,13 @@ export function PromptProvider({ children }: { children: ReactNode }) {
 
 		try {
 			await deletePrompt(deletePromptDialog.prompt.id).unwrap();
-			toast.success("Prompt deleted");
+			toast.success(t("workspaces:promptsRepo.toasts.promptDeleted"));
 			setDeletePromptDialog({ open: false });
 			if (selectedPromptId === deletePromptDialog.prompt.id) {
 				setUrlState({ promptId: null, sessionId: null, versionId: null });
 			}
 		} catch (err) {
-			toast.error("Failed to delete prompt", { description: getErrorMessage(err) });
+			toast.error(t("workspaces:promptsRepo.toasts.promptDeleteFailed"), { description: getErrorMessage(err) });
 		}
 	}, [deletePromptDialog.prompt, deletePrompt, selectedPromptId, setUrlState]);
 
@@ -624,7 +626,7 @@ export function PromptProvider({ children }: { children: ReactNode }) {
 				await handleSubmitToolResult(afterIndex, toolCall.id, content);
 			} catch (err) {
 				if (err instanceof MCPAuthRequiredError) throw err;
-				toast.error("Failed to execute tool", {
+				toast.error(t("workspaces:promptsRepo.toasts.executeToolFailed"), {
 					description: getErrorMessage(err),
 				});
 			}
@@ -752,7 +754,7 @@ export function PromptProvider({ children }: { children: ReactNode }) {
 				try {
 					await handleSubmitAllToolResults(afterIndex, successes);
 				} catch (err) {
-					toast.error("Failed to submit tool results", {
+					toast.error(t("workspaces:promptsRepo.toasts.submitResultsFailed"), {
 						description: getErrorMessage(err),
 					});
 				}

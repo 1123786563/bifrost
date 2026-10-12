@@ -1,0 +1,23 @@
+{
+	"error": {
+		"title": "Something went wrong",
+		"description": "Something went wrong. Please refresh the page.",
+		"reload": "Reload"
+	},
+	"notFound": {
+		"title": "Page not found",
+		"description": "The page you are looking for doesn’t exist or has been moved",
+		"goHome": "Go home"
+	},
+	"updating": {
+		"bannerTitle": "Bifrost is upgrading",
+		"bannerDescription": "You can keep working and reload when the upgrade is complete.",
+		"reload": "Reload",
+		"screenTitle": "Bifrost is upgrading",
+		"screenDescription": "A new version of Bifrost is being rolled out. Keep this page open and it will reload automatically when the upgrade is complete.",
+		"stillUpgrading": "Bifrost is still upgrading. If this is taking longer than expected, reach out to your administrator for more information.",
+		"paused": "Automatic reload paused",
+		"waiting": "Waiting for the upgrade to complete",
+		"reloadNow": "Reload now"
+	}
+}

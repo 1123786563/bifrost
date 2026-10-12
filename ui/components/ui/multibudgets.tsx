@@ -5,6 +5,7 @@ import QuarterStartSelect from "@/components/ui/quarterStartSelect";
 import { budgetResetDurationOptions } from "@/lib/constants/governance";
 import { Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface BudgetLineEntry {
 	id?: string;
@@ -31,7 +32,7 @@ interface MultiBudgetLinesProps {
 
 export default function MultiBudgetLines({
 	"data-testid": testId,
-	label = "Budget Configuration",
+	label,
 	lines,
 	onChange,
 	options = budgetResetDurationOptions,
@@ -39,6 +40,7 @@ export default function MultiBudgetLines({
 	showReset,
 	maxLines,
 }: MultiBudgetLinesProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Track which reset durations are already used (for duplicate detection)
 	const usedDurations = useMemo(() => {
 		const counts = new Map<string, number>();
@@ -121,7 +123,7 @@ export default function MultiBudgetLines({
 									id={`${testId}-${index}`}
 									dataTestId={`${testId}-amount-${index}`}
 									labelClassName="font-normal"
-									label="Maximum Spend (USD)"
+									label={t("workspaces:misc.maxSpend")}
 									value={line.max_limit}
 									selectValue={line.reset_duration}
 									onChangeNumber={(value) => updateMaxLimit(index, value)}

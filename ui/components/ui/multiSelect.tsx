@@ -8,6 +8,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 /**
  * Animation types and configurations
@@ -286,7 +287,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 			onValueChange,
 			variant,
 			defaultValue = [],
-			placeholder = "Select options",
+			placeholder,
 			animation = 0,
 			animationConfig,
 			maxCount = 3,
@@ -311,6 +312,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 		},
 		ref,
 	) => {
+		const { t } = useTranslation(["common", "workspaces"]);
 		const [selectedValues, setSelectedValues] = React.useState<string[]>(defaultValue);
 		const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 		const [searchValue, setSearchValue] = React.useState("");
@@ -623,9 +625,9 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 
 			if (isPopoverOpen !== prevIsOpen.current) {
 				if (isPopoverOpen) {
-					announce(`Dropdown opened. ${totalOptions} options available. Use arrow keys to navigate.`);
+					announce(t("workspaces:multiSelect.openedAnnounce", { count: totalOptions }));
 				} else {
-					announce("Dropdown closed.");
+					announce(t("workspaces:multiSelect.closedAnnounce"));
 				}
 				prevIsOpen.current = isPopoverOpen;
 			}
@@ -660,8 +662,8 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 					</div>
 					<div id={selectedCountId} className="sr-only" aria-live="polite">
 						{selectedValues.length === 0
-							? "No options selected"
-							: `${selectedValues.length} option${selectedValues.length === 1 ? "" : "s"} selected: ${selectedValues
+							? t("workspaces:multiSelect.noneSelected")
+							: `${t("workspaces:multiSelect.countSelected", { count: selectedValues.length })} ${selectedValues
 									.map((value) => getOptionByValue(value)?.label)
 									.filter(Boolean)
 									.join(", ")}`}
@@ -833,7 +835,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 						id={listboxId}
 						role="listbox"
 						aria-multiselectable="true"
-						aria-label="Available options"
+						aria-label={t("workspaces:multiSelect.availableAria")}
 						className={cn("w-full overflow-hidden p-0", popoverClassName)}
 						style={{
 							touchAction: "manipulation",
@@ -847,11 +849,11 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 						<Command className={cn("flex w-full flex-col", commandClassName)}>
 							{searchable && (
 								<CommandInput
-									placeholder="Search options..."
+									placeholder={placeholder ?? t("workspaces:multiSelect.searchOptions")}
 									onKeyDown={handleInputKeyDown}
 									value={searchValue}
 									onValueChange={setSearchValue}
-									aria-label="Search through available options"
+									aria-label={t("workspaces:multiSelect.searchAria")}
 									aria-describedby={`${multiSelectId}-search-help`}
 								/>
 							)}
@@ -871,7 +873,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 									scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
 								}}
 							>
-								<CommandEmpty>{emptyIndicator || "No results found."}</CommandEmpty>{" "}
+								<CommandEmpty>{emptyIndicator || t("workspaces:multiSelect.noResults")}</CommandEmpty>{" "}
 								{!hideSelectAll && !searchValue && (
 									<CommandGroup>
 										<CommandItem
@@ -1002,6 +1004,7 @@ MultiSelect.displayName = "MultiSelect";
 // Option descriptions can run long; clamp to 3 lines with a toggle so a verbose
 // description doesn't dominate the list. The toggle shows only when the text overflows.
 function OptionDescription({ text }: { text: string }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const ref = React.useRef<HTMLParagraphElement>(null);
 	const [expanded, setExpanded] = React.useState(false);
 	const [overflowing, setOverflowing] = React.useState(false);
@@ -1032,7 +1035,7 @@ function OptionDescription({ text }: { text: string }) {
 							setExpanded((v) => !v);
 						}}
 					>
-						{expanded ? "View less" : "View more"}
+						{expanded ? t("workspaces:multiSelect.viewLess") : t("workspaces:multiSelect.viewMore")}
 					</button>
 				</div>
 			)}

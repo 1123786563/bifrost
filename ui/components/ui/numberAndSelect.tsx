@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { cleanNumericInput } from "@/lib/utils/strings";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const NumberAndSelect = ({
 	id,
@@ -13,7 +14,7 @@ const NumberAndSelect = ({
 	onChangeSelect,
 	options,
 	labelClassName,
-	placeholder = "No limit",
+	placeholder,
 	dataTestId,
 	inputClassName,
 }: {
@@ -29,6 +30,7 @@ const NumberAndSelect = ({
 	dataTestId?: string;
 	inputClassName?: string;
 }) => {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Internal string state to allow intermediate inputs like "0." or ""
 	const [displayValue, setDisplayValue] = useState(value !== undefined ? String(value) : "");
 
@@ -53,7 +55,7 @@ const NumberAndSelect = ({
 			<Input
 				id={id}
 				data-testid={dataTestId}
-				placeholder={placeholder}
+				placeholder={placeholder ?? t("workspaces:inputs.noLimit")}
 				className={inputClassName}
 				value={displayValue}
 				onChange={(e) => {

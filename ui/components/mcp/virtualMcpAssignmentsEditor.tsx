@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useGetVirtualMCPQuery } from "@/lib/store";
 import { Info, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 const DEFAULT_LABEL = "Virtual MCP Server Configurations";
 
@@ -48,6 +49,7 @@ export function VirtualMcpAssignmentsEditor({
 	label = DEFAULT_LABEL,
 	tooltip = DEFAULT_TOOLTIP,
 }: VirtualMcpAssignmentsEditorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const add = (option: EntitySelectorOption) => {
 		const id = Number(option.value);
 		if (value.includes(id)) return;
@@ -71,7 +73,13 @@ export function VirtualMcpAssignmentsEditor({
 				</TooltipProvider>
 			</div>
 
-			<VirtualMCPSelector mode="add" fullWidth placeholder="Select a Virtual MCP to add" onSelect={add} excludeIds={value.map(String)} />
+			<VirtualMCPSelector
+				mode="add"
+				fullWidth
+				placeholder={t("workspaces:editors.selectVirtualMcp")}
+				onSelect={add}
+				excludeIds={value.map(String)}
+			/>
 
 			{value.length > 0 && (
 				<div className="divide-y overflow-hidden rounded-md border">

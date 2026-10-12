@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Eye, EyeOff, Info, Loader2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface HeadersFormProps {
 	// Required keys — admin-declared, immutable in this form. Labels and
@@ -77,6 +78,7 @@ export default function HeadersForm({
 	onCancel,
 	cancelLabel = "Cancel",
 }: HeadersFormProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [values, setValues] = useState<Record<string, string>>(() => buildInitialValues(requiredKeys, initialValues));
 	const [reveal, setReveal] = useState<Record<string, boolean>>({});
 
@@ -157,7 +159,7 @@ export default function HeadersForm({
 									<Label htmlFor={`${testIdPrefix}-${key}`} className="font-mono text-xs">
 										{key}
 									</Label>
-									{wasSubmitted && <span className="text-muted-foreground text-xs">Previously submitted</span>}
+									{wasSubmitted && <span className="text-muted-foreground text-xs">{t("workspaces:headersForm.previouslySubmitted")}</span>}
 								</div>
 								<div className="relative">
 									<Input
@@ -166,7 +168,7 @@ export default function HeadersForm({
 										autoComplete="off"
 										value={values[key] ?? ""}
 										onChange={(e) => handleChange(key, e.target.value)}
-										placeholder={wasSubmitted ? "•••••• (enter new value to overwrite)" : `Value for ${key}`}
+										placeholder={wasSubmitted ? t("workspaces:headersForm.overwriteHint") : t("workspaces:headersForm.valueFor", { key })}
 										disabled={busy}
 										data-testid={`${testIdPrefix}-input-${key}`}
 									/>
@@ -174,7 +176,7 @@ export default function HeadersForm({
 										type="button"
 										onClick={() => setReveal((r) => ({ ...r, [key]: !r[key] }))}
 										className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
-										aria-label={isRevealed ? "Hide value" : "Show value"}
+										aria-label={isRevealed ? t("workspaces:headersForm.hideValue") : t("workspaces:headersForm.showValue")}
 										data-testid={`${testIdPrefix}-reveal-${key}`}
 									>
 										{isRevealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}

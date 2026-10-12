@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsib
 import { Option } from "./multiselectUtils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 import { cn } from "./utils";
+import { useTranslation } from "react-i18next";
 
 // Types
 export interface SelectedTool {
@@ -51,14 +52,8 @@ interface MCPToolSelectorProps {
 	className?: string;
 }
 
-export function MCPToolSelector({
-	value,
-	onChange,
-	mcpClients,
-	placeholder = "Search and select tools...",
-	disabled = false,
-	className,
-}: MCPToolSelectorProps) {
+export function MCPToolSelector({ value, onChange, mcpClients, placeholder, disabled = false, className }: MCPToolSelectorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
 
 	// Flatten all tools from all MCP clients into searchable options
@@ -165,7 +160,7 @@ export function MCPToolSelector({
 		<div className={cn("space-y-3", className)}>
 			{/* Search dropdown */}
 			<AsyncMultiSelect<ToolOptionMeta>
-				placeholder={placeholder}
+				placeholder={placeholder ?? t("workspaces:misc.searchTools")}
 				disabled={disabled}
 				defaultOptions={availableOptions}
 				reload={reload}
@@ -176,7 +171,7 @@ export function MCPToolSelector({
 				closeMenuOnSelect={true}
 				hideSelectedOptions={true}
 				controlShouldRenderValue={false}
-				noOptionsMessage={() => "No results found"}
+				noOptionsMessage={() => t("workspaces:misc.noResults")}
 				views={{
 					option: (optionProps: OptionProps<ToolOptionMeta>) => {
 						const { Option } = components;

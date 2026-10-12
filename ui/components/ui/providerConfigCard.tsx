@@ -12,6 +12,7 @@ import { cleanNumericInput } from "@/lib/utils/strings";
 import { ChevronDown, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { components, MultiValueProps, OptionProps } from "react-select";
+import { useTranslation } from "react-i18next";
 
 // Generic, core-owned shapes so both the Access Profile (enterprise) and Virtual
 // Key (core) forms can drive this card. `"*"` in allowedModels/keyIds means "all".
@@ -111,6 +112,7 @@ function WeightInput({
 	value?: number | null;
 	onChange: (n: number | undefined) => void;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [display, setDisplay] = useState(value != null ? String(value) : "");
 	useEffect(() => {
 		const displayNum = display === "" ? undefined : parseFloat(display);
@@ -124,7 +126,7 @@ function WeightInput({
 			inputMode="decimal"
 			data-testid={testId}
 			value={display}
-			placeholder="Exclude from routing"
+			placeholder={t("workspaces:providerCard.excludeFromRouting")}
 			onChange={(e) => {
 				const cleaned = cleanNumericInput(e.target.value);
 				setDisplay(cleaned);
@@ -160,6 +162,7 @@ export function ProviderConfigCard({
 	onToggleOpen,
 	defaultOpen = false,
 }: ProviderConfigCardProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [internalOpen, setInternalOpen] = useState(defaultOpen);
 	const open = controlledOpen ?? internalOpen;
 	const toggleOpen = () => (onToggleOpen ? onToggleOpen() : setInternalOpen((o) => !o));
@@ -412,7 +415,7 @@ export function ProviderConfigCard({
 														dataTestId={`${tid}-modelTokenLimit-${index}-${mbIndex}`}
 														labelClassName="font-medium"
 														label="Maximum tokens"
-														placeholder="No limit"
+														placeholder={t("workspaces:inputs.noLimit")}
 														value={mb.rate_limit?.token_max_limit}
 														selectValue={mb.rate_limit?.token_reset_duration || "1h"}
 														onChangeNumber={(v) => {
@@ -445,7 +448,7 @@ export function ProviderConfigCard({
 														dataTestId={`${tid}-modelRequestLimit-${index}-${mbIndex}`}
 														labelClassName="font-medium"
 														label="Maximum requests"
-														placeholder="No limit"
+														placeholder={t("workspaces:inputs.noLimit")}
 														value={mb.rate_limit?.request_max_limit}
 														selectValue={mb.rate_limit?.request_reset_duration || "1h"}
 														onChangeNumber={(v) => {
@@ -496,7 +499,7 @@ export function ProviderConfigCard({
 												});
 												setOpenModelEditor(model);
 											}}
-											placeholder="Add model…"
+											placeholder={t("workspaces:providerCard.addModel")}
 										/>
 									</div>
 								</div>
@@ -537,7 +540,11 @@ export function ProviderConfigCard({
 									const configKeyIds = value.keyIds;
 									const hasWildcard = configKeyIds.includes("*");
 									const allKeyOptions: KeyOption[] = [
-										{ label: "Allow All Keys", value: "*", description: "Allow all current and future keys for this provider" },
+										{
+											label: t("workspaces:providerCard.allowAllKeys"),
+											value: "*",
+											description: t("workspaces:providerCard.allowAllKeysDesc"),
+										},
 										...keys.map((key) => ({
 											label: key.name,
 											value: key.key_id,
@@ -562,7 +569,7 @@ export function ProviderConfigCard({
 									return (
 										<div className="w-[260px] shrink-0 space-y-1.5">
 											<div className="flex h-5 items-center">
-												<Label>Provider keys</Label>
+												<Label>{t("workspaces:providerCard.providerKeys")}</Label>
 											</div>
 											<AsyncMultiSelect
 												hideSelectedOptions
@@ -632,7 +639,7 @@ export function ProviderConfigCard({
 								<ModelAccessSelector
 									className="flex-1"
 									mode="allow"
-									label={<Label>Allowed models</Label>}
+									label={<Label>{t("workspaces:providerCard.allowedModels")}</Label>}
 									data-testid={`${tid}-models-multiselect-${index}`}
 									provider={value.providerName}
 									keys={modelKeyScope}
@@ -645,7 +652,7 @@ export function ProviderConfigCard({
 							<div className="flex items-start gap-3.5">
 								<div className="w-[260px] shrink-0 space-y-1.5">
 									<div className="flex h-5 items-center">
-										<Label htmlFor={`${tid}-weight-${index}`}>Weight</Label>
+										<Label htmlFor={`${tid}-weight-${index}`}>{t("workspaces:providerCard.weight")}</Label>
 									</div>
 									<WeightInput
 										id={`${tid}-weight-${index}`}
@@ -657,7 +664,7 @@ export function ProviderConfigCard({
 								<ModelAccessSelector
 									className="flex-1"
 									mode="block"
-									label={<Label>Blocked models</Label>}
+									label={<Label>{t("workspaces:providerCard.blockedModels")}</Label>}
 									data-testid={`${tid}-blocked-models-multiselect-${index}`}
 									provider={value.providerName}
 									keys={modelKeyScope}
@@ -672,7 +679,7 @@ export function ProviderConfigCard({
 								dataTestId={`${tid}-providerTokenLimit-${index}`}
 								labelClassName="font-medium"
 								label="Maximum tokens"
-								placeholder="No limit"
+								placeholder={t("workspaces:inputs.noLimit")}
 								value={value.rateLimit?.token_max_limit}
 								selectValue={value.rateLimit?.token_reset_duration || "1h"}
 								onChangeNumber={(v) => {
@@ -690,7 +697,7 @@ export function ProviderConfigCard({
 								dataTestId={`${tid}-providerRequestLimit-${index}`}
 								labelClassName="font-medium"
 								label="Maximum requests"
-								placeholder="No limit"
+								placeholder={t("workspaces:inputs.noLimit")}
 								value={value.rateLimit?.request_max_limit}
 								selectValue={value.rateLimit?.request_reset_duration || "1h"}
 								onChangeNumber={(v) => {

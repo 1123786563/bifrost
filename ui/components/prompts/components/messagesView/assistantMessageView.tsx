@@ -6,6 +6,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ComponentPro
 import MessageRoleSwitcher from "./messageRoleSwitcher";
 import { isJson } from "@/lib/utils/validation";
 import { CodeEditor } from "@/components/ui/codeEditor";
+import { useTranslation } from "react-i18next";
 
 const LazyMarkdown = lazy(() => import("@/components/ui/markdown").then((m) => ({ default: m.Markdown })));
 const Markdown = (props: ComponentProps<typeof LazyMarkdown>) => (
@@ -39,6 +40,7 @@ export function AssistantMessageView({
 	onChange: (serialized: SerializedMessage) => void;
 	onRemove?: () => void;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [editMode, setEditMode] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const content = message.content;
@@ -111,7 +113,7 @@ export function AssistantMessageView({
 					{!disabled && !isStreaming && (
 						<button
 							type="button"
-							aria-label="Edit message"
+							aria-label={t("workspaces:promptsRepo.messages.editAria")}
 							data-testid="assistant-msg-edit"
 							onClick={() => setEditMode(true)}
 							className="hover:bg-muted focus:bg-muted rounded-sm p-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
@@ -122,7 +124,7 @@ export function AssistantMessageView({
 					{!disabled && onRemove && (
 						<button
 							type="button"
-							aria-label="Delete message"
+							aria-label={t("workspaces:promptsRepo.messages.deleteAria")}
 							data-testid="assistant-msg-delete"
 							onClick={onRemove}
 							className="hover:bg-muted focus:bg-muted rounded-sm p-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"

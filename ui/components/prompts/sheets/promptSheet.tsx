@@ -9,6 +9,7 @@ import { Prompt } from "@/lib/types/prompts";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface PromptFormData {
 	name: string;
@@ -23,6 +24,7 @@ interface PromptSheetProps {
 }
 
 export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: PromptSheetProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [createPrompt, { isLoading: isCreating }] = useCreatePromptMutation();
 	const [updatePrompt, { isLoading: isUpdating }] = useUpdatePromptMutation();
 
@@ -52,14 +54,14 @@ export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: P
 					id: prompt.id,
 					data: { name: data.name.trim() },
 				}).unwrap();
-				toast.success("Prompt updated");
+				toast.success(t("workspaces:promptsRepo.promptSheet.updated"));
 				onSaved();
 			} else {
 				const result = await createPrompt({
 					name: data.name.trim(),
 					...(folderId ? { folder_id: folderId } : {}),
 				}).unwrap();
-				toast.success("Prompt created");
+				toast.success(t("workspaces:promptsRepo.promptSheet.created"));
 				onSaved(result.prompt.id);
 			}
 			onOpenChange(false);
@@ -83,21 +85,25 @@ export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: P
 					<SheetHeader className="flex flex-col items-start pt-8" headerClassName="px-4 md:px-8">
 						<SheetTitle>{isEditing ? "Rename Prompt" : "Create Prompt"}</SheetTitle>
 						<SheetDescription>
-							{isEditing ? "Update the prompt name." : folderId ? "Create a new prompt in this folder." : "Create a new prompt."}
+							{isEditing
+								? t("workspaces:promptsRepo.promptSheet.editDesc")
+								: folderId
+									? t("workspaces:promptsRepo.promptSheet.createInFolderDesc")
+									: t("workspaces:promptsRepo.promptSheet.createDesc")}
 						</SheetDescription>
 					</SheetHeader>
 
 					<div className="flex grow flex-col gap-6">
 						<div className="grow space-y-4 px-4 md:px-8">
 							<div className="space-y-2">
-								<Label htmlFor="name">Name</Label>
+								<Label htmlFor="name">{t("common:fields.name")}</Label>
 								<Input
 									id="name"
 									data-testid="prompt-name-input"
-									placeholder="Customer Support Assistant"
+									placeholder={t("workspaces:promptsRepo.promptSheet.namePh")}
 									{...register("name", {
-										required: "Prompt name is required",
-										validate: (v) => v.trim().length > 0 || "Prompt name cannot be blank",
+										required: t("workspaces:promptsRepo.promptSheet.nameRequired"),
+										validate: (v) => v.trim().length > 0 || t("workspaces:promptsRepo.promptSheet.nameBlank"),
 									})}
 									autoFocus
 								/>
@@ -113,7 +119,7 @@ export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: P
 								type="submit"
 								data-testid="prompt-submit"
 								disabled={isLoading || !canSave}
-								title={canSave ? undefined : "You do not have permission to change prompts"}
+								title={canSave ? undefined : t("workspaces:promptsRepo.promptSheet.noPermission")}
 							>
 								{isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
 							</Button>

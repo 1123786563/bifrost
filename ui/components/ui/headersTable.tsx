@@ -6,6 +6,7 @@ import { SecretVar } from "@/lib/types/mcp";
 import { cn } from "@/lib/utils";
 import { Trash } from "lucide-react";
 import React, { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 // Support both plain string values and SecretVar objects
 type HeaderValue = string | SecretVar;
@@ -66,15 +67,16 @@ const isValueEmpty = (val: HeaderValue): boolean => {
 export function HeadersTable<T extends HeaderValue>({
 	value,
 	onChange,
-	keyPlaceholder = "Header name",
-	valuePlaceholder = "Header value",
-	label = "Headers",
+	keyPlaceholder,
+	valuePlaceholder,
+	label,
 	disabled = false,
 	useSecretVarInput,
 	fixedKeys,
 	renderKeyInput,
 	renderValueInput,
 }: HeadersTableProps<T>) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Use explicit prop if provided, otherwise detect from existing values
 	const isSecretVarMode = useSecretVarInput ?? Object.values(value || {}).some((v) => isSecretVar(v));
 
@@ -205,9 +207,9 @@ export function HeadersTable<T extends HeaderValue>({
 
 	return (
 		<div className="w-full">
-			{label && (
+			{(label ?? t("workspaces:inputs.headers")) && (
 				<label className="mb-2 block text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-					{label}
+					{label ?? t("workspaces:inputs.headers")}
 				</label>
 			)}
 			<div className="rounded-md border">
@@ -262,7 +264,7 @@ export function HeadersTable<T extends HeaderValue>({
 												/>
 											) : (
 												<Input
-													placeholder={keyPlaceholder}
+													placeholder={keyPlaceholder ?? t("workspaces:inputs.headerName")}
 													value={hasConflict ? conflictKey : key}
 													data-row={index}
 													data-column="key"
@@ -286,7 +288,7 @@ export function HeadersTable<T extends HeaderValue>({
 											})
 										) : isHeaderSecretVar ? (
 											<SecretVarInput
-												placeholder={valuePlaceholder}
+												placeholder={valuePlaceholder ?? t("workspaces:inputs.headerValue")}
 												value={headerValue as SecretVar}
 												data-row={index}
 												data-column="value"
@@ -297,7 +299,7 @@ export function HeadersTable<T extends HeaderValue>({
 											/>
 										) : (
 											<Input
-												placeholder={valuePlaceholder}
+												placeholder={valuePlaceholder ?? t("workspaces:inputs.headerValue")}
 												value={getDisplayValue(headerValue)}
 												data-row={index}
 												data-column="value"

@@ -10,10 +10,12 @@ import {
 } from "@/components/entitySelectors/entitySelector";
 import { useGetAgentsQuery } from "@/lib/store";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export type AgentSelectorProps = EntitySelectorCommonProps & EntitySelectorModeProps;
 
 export function AgentSelector(props: AgentSelectorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { open, setOpen, setSearch, debouncedSearch } = useEntitySelectorSearch();
 
 	const { data, isFetching, isError } = useGetAgentsQuery();
@@ -27,7 +29,11 @@ export function AgentSelector(props: AgentSelectorProps) {
 				label: agent.name,
 				// Surfaces the two states that change what a grant means: an open
 				// agent needs none, a disabled one will not answer.
-				description: agent.allow_by_default ? "Open to all keys" : agent.enabled ? undefined : "Disabled",
+				description: agent.allow_by_default
+					? t("workspaces:agentSelect.openToAll")
+					: agent.enabled
+						? undefined
+						: t("workspaces:agentSelect.disabled"),
 			}));
 	}, [data, debouncedSearch]);
 

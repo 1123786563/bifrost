@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePromptContext } from "../context";
+import { useTranslation } from "react-i18next";
 
 /**
  * Renders the prompt-manager sidebar including search, folder hierarchy, root prompts, and drag-and-drop reorganization.
@@ -35,6 +36,7 @@ import { usePromptContext } from "../context";
  * @returns The sidebar React element containing the search input, folder list, root prompt drop zone, and drag-and-drop provider.
  */
 export function PromptSidebar() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const {
 		folders,
 		prompts,
@@ -182,7 +184,7 @@ export function PromptSidebar() {
 					<div className="relative grow">
 						<Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
 						<Input
-							placeholder="Search prompts..."
+							placeholder={t("workspaces:promptsRepo.sidebar.searchPrompts")}
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							data-testid="sidebar-search"
@@ -196,7 +198,7 @@ export function PromptSidebar() {
 									variant="outline"
 									className="h-8 w-8 shrink-0 bg-transparent"
 									data-testid="sidebar-create-menu"
-									aria-label="Add prompt or folder"
+									aria-label={t("workspaces:promptsRepo.sidebar.addAria")}
 								>
 									<PlusIcon className="h-3.5 w-3.5" />
 								</Button>
@@ -379,6 +381,7 @@ function DroppableFolder({
 	canUpdate,
 	canDelete,
 }: DroppableFolderProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { ref } = useDroppable({ id: `folder-${folder.id}` });
 	const showActions = canCreate || canUpdate || canDelete;
 
@@ -415,7 +418,7 @@ function DroppableFolder({
 								size="icon"
 								className="h-6 w-6 shrink-0 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
 								data-testid={`sidebar-folder-actions-${folder.id}`}
-								aria-label="Folder actions"
+								aria-label={t("workspaces:promptsRepo.sidebar.folderActionsAria")}
 							>
 								<MoreHorizontal className="h-4 w-4" />
 							</Button>
@@ -513,6 +516,7 @@ interface DraggablePromptItemProps {
  * @returns The rendered prompt item JSX element.
  */
 function DraggablePromptItem({ prompt, isSelected, onSelect, onEdit, onDelete, canUpdate, canDelete }: DraggablePromptItemProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { ref, isDragging } = useDraggable({
 		id: `prompt-${prompt.id}`,
 		disabled: !canUpdate,
@@ -554,7 +558,7 @@ function DraggablePromptItem({ prompt, isSelected, onSelect, onEdit, onDelete, c
 							size="icon"
 							className="h-6 w-6 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
 							data-testid={`sidebar-prompt-actions-${prompt.id}`}
-							aria-label="Prompt actions"
+							aria-label={t("workspaces:promptsRepo.sidebar.promptActionsAria")}
 						>
 							<MoreHorizontal className="h-4 w-4" />
 						</Button>

@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { ChevronDownIcon, Loader2Icon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 /** One row in the dropdown, after the consumer has had a say in it. */
 export interface ModelSelectorOption {
@@ -129,6 +130,7 @@ function clientFilter(value: string, search: string): number {
 }
 
 export function ModelSelector(props: ModelSelectorProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const {
 		provider,
 		keys,
@@ -504,7 +506,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 
 					{pinned.length > 0 && (
 						<ComboboxGroup>
-							<ComboboxLabel>Selected</ComboboxLabel>
+							<ComboboxLabel>{t("workspaces:selectors.selected")}</ComboboxLabel>
 							{pinned.map(renderOption)}
 						</ComboboxGroup>
 					)}

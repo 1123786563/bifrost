@@ -3,6 +3,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { fiscalQuarterNote, resetDurationLabels, supportsCalendarAlignment } from "@/lib/constants/governance";
 import { Budget } from "@/lib/types/governance";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { formatCurrency, getEffectiveBudgetLimit, hasActiveBudgetOverride } from "@/lib/utils/governance";
 
 interface BudgetDisplayProps {
@@ -26,6 +27,7 @@ const formatResetDuration = (duration?: string | null, calendarAligned?: boolean
  * the exact current/max spend. Mirrors RateLimitDisplay for visual consistency across tables.
  */
 export function BudgetDisplay({ budgets, calendarAligned, maxVisible }: BudgetDisplayProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	if (!budgets || budgets.length === 0) {
 		return <span className="text-muted-foreground text-sm">-</span>;
 	}
@@ -50,14 +52,20 @@ export function BudgetDisplay({ budgets, calendarAligned, maxVisible }: BudgetDi
 									<span className="text-xs font-medium">
 										{formatCurrency(effectiveMaxLimit)}
 										{b.label ? <span className="text-muted-foreground ml-1 text-xs font-normal">{b.label}</span> : null}
-										{hasOverride ? <span className="text-muted-foreground ml-1 text-[10px]">override</span> : null}
+										{hasOverride ? (
+											<span className="text-muted-foreground ml-1 text-[10px]">{t("workspaces:budgetDisplay.overrideTag")}</span>
+										) : null}
 									</span>
 									<span className="text-muted-foreground text-xs">
 										{formatResetDuration(b.reset_duration, calendarAligned)}
 										{fiscalQuarterNote(b.reset_duration, b.reset_config)}
 									</span>
 								</div>
-								<Progress aria-label="Budget usage" value={pct} className={cn("bg-muted/70 dark:bg-muted/30 h-1.5", barClass)} />
+								<Progress
+									aria-label={t("workspaces:budgetDisplay.usageAria")}
+									value={pct}
+									className={cn("bg-muted/70 dark:bg-muted/30 h-1.5", barClass)}
+								/>
 							</div>
 						</TooltipTrigger>
 						<TooltipContent>
@@ -66,7 +74,10 @@ export function BudgetDisplay({ budgets, calendarAligned, maxVisible }: BudgetDi
 							</p>
 							{hasOverride ? (
 								<p className="text-muted-foreground mt-1 text-xs">
-									Base {formatCurrency(b.max_limit)} + {formatCurrency(b.override_amount ?? 0)} override
+									{t("workspaces:budgetDisplay.overrideBreakdown", {
+										base: formatCurrency(b.max_limit),
+										extra: formatCurrency(b.override_amount ?? 0),
+									})}
 								</p>
 							) : null}
 							{b.reset_duration ? (
