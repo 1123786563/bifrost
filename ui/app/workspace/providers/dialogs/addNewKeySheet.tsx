@@ -1,6 +1,7 @@
 import Provider from "@/components/provider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ModelProvider } from "@/lib/types/config";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ProviderKeyForm from "../views/providerKeyForm";
 
@@ -13,14 +14,21 @@ interface Props {
 }
 
 export default function AddNewKeySheet({ show, onCancel, provider, keyId, providerName }: Props) {
+	const { t } = useTranslation(["common", "providers"]);
 	const isEditing = keyId !== null;
 	const resolvedProviderName = (providerName ?? provider.name).toLowerCase();
 	const isVLLM = resolvedProviderName === "vllm";
 	const isOllamaOrSGL = resolvedProviderName === "ollama" || resolvedProviderName === "sgl";
-	const entityLabel = isVLLM ? "model" : isOllamaOrSGL ? "server" : "key";
+	const entityKey = isVLLM ? "providers:entities.model" : isOllamaOrSGL ? "providers:entities.server" : "providers:entities.key";
+	const entityLabel = t(entityKey);
+	// English capitalizes the entity in sentences; Chinese has no case, so this is a no-op there.
 	const EntityLabel = entityLabel.charAt(0).toUpperCase() + entityLabel.slice(1);
-	const dialogTitle = isEditing ? `Edit ${entityLabel}` : `Add new ${entityLabel}`;
-	const successMessage = isEditing ? `${EntityLabel} updated successfully` : `${EntityLabel} added successfully`;
+	const dialogTitle = isEditing
+		? t("providers:keySheet.editTitle", { entity: entityLabel })
+		: t("providers:keySheet.addTitle", { entity: entityLabel });
+	const successMessage = isEditing
+		? t("providers:keySheet.updatedSuccess", { entity: EntityLabel })
+		: t("providers:keySheet.addedSuccess", { entity: EntityLabel });
 
 	return (
 		<Sheet

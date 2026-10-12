@@ -2,6 +2,7 @@ import { NoPermissionView } from "@/components/noPermissionView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useTranslation } from "react-i18next";
 import AttributesTab from "./attributesTab";
 import OverviewTab from "./overviewTab";
 
@@ -9,6 +10,7 @@ const MODEL_CATALOG_TABS = ["overview", "attributes"] as const;
 type ModelCatalogTab = (typeof MODEL_CATALOG_TABS)[number];
 
 export default function ModelCatalogView() {
+	const { t } = useTranslation(["common", "models"]);
 	const hasAccess = useRbac(RbacResource.ModelProvider, RbacOperation.View);
 
 	// Tab lives in the URL so a refresh (or a shared link) lands on the same tab.
@@ -27,10 +29,10 @@ export default function ModelCatalogView() {
 			<Tabs value={tab} onValueChange={(value) => setTab(value as ModelCatalogTab)} className="flex min-h-0 grow flex-col gap-4">
 				<TabsList className="shrink-0">
 					<TabsTrigger value="overview" data-testid="model-catalog-tab-overview">
-						Overview
+						{t("models:catalog.tabs.overview")}
 					</TabsTrigger>
 					<TabsTrigger value="attributes" data-testid="model-catalog-tab-attributes">
-						Models
+						{t("models:catalog.tabs.attributes")}
 					</TabsTrigger>
 				</TabsList>
 				<TabsContent value="overview" className="min-h-0 overflow-auto">

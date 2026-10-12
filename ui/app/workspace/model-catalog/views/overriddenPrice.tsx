@@ -1,5 +1,6 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatTokenPriceCompact, formatTokenPriceFull } from "@/lib/utils/numbers";
+import { useTranslation } from "react-i18next";
 
 interface OverriddenPriceProps {
 	/** Catalog price from governance_model_pricing. */
@@ -19,6 +20,7 @@ interface OverriddenPriceProps {
  * visually unchanged.
  */
 export default function OverriddenPrice({ base, override, variant, overrideName, testId }: OverriddenPriceProps) {
+	const { t } = useTranslation(["common", "models"]);
 	const format = variant === "compact" ? formatTokenPriceCompact : formatTokenPriceFull;
 
 	if (override === undefined || override === null) {
@@ -37,16 +39,18 @@ export default function OverriddenPrice({ base, override, variant, overrideName,
 					>
 						{/* The strikethrough is visual only, so name each value for screen readers. */}
 						<span className="text-muted-foreground text-xs line-through" data-testid={testId ? `${testId}-original` : undefined}>
-							<span className="sr-only">Original price: </span>
+							<span className="sr-only">{t("models:catalog.price.originalSr")}</span>
 							{format(base)}
 						</span>
 						<span data-testid={testId ? `${testId}-override` : undefined}>
-							<span className="sr-only">Effective price: </span>
+							<span className="sr-only">{t("models:catalog.price.effectiveSr")}</span>
 							{format(override)}
 						</span>
 					</span>
 				</TooltipTrigger>
-				<TooltipContent>{overrideName ? `Overridden by "${overrideName}"` : "Overridden by a custom pricing override"}</TooltipContent>
+				<TooltipContent>
+					{overrideName ? t("models:catalog.price.overriddenBy", { name: overrideName }) : t("models:catalog.price.overriddenGeneric")}
+				</TooltipContent>
 			</Tooltip>
 		</TooltipProvider>
 	);

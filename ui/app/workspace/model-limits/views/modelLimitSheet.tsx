@@ -24,9 +24,11 @@ import { formatCurrency } from "@/lib/utils/governance";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import "@enterprise/lib/registrations/modelLimitScopes";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { TFunction } from "i18next";
 import { Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -36,40 +38,42 @@ interface ModelLimitSheetProps {
 	onCancel: () => void;
 }
 
-const formSchema = z
-	.object({
-		modelName: z.string().min(1, "Model name is required"),
-		provider: z.string().optional(),
-		scope: z.string().optional(),
-		scopeId: z.string().optional(),
-		budgets: z
-			.array(
-				z.object({
-					id: z.string().optional(),
-					max_limit: z.number().nonnegative().optional(),
-					reset_duration: z.string().optional(),
-					reset_config: z.object({ quarter_start_month: z.number().int().min(1).max(12).optional() }).optional(),
-				}),
-			)
-			.optional(),
-		tokenMaxLimit: z.number().int().nonnegative().optional(),
-		tokenResetDuration: z.string().optional(),
-		requestMaxLimit: z.number().int().nonnegative().optional(),
-		requestResetDuration: z.string().optional(),
-	})
-	.refine((data) => data.scope !== "virtual_key" || !!data.scopeId, {
-		message: "Virtual key is required for the Virtual Key scope",
-		path: ["scopeId"],
-	});
+const formSchema = (t: TFunction) =>
+	z
+		.object({
+			modelName: z.string().min(1, t("models:limits.sheet.modelNameRequired")),
+			provider: z.string().optional(),
+			scope: z.string().optional(),
+			scopeId: z.string().optional(),
+			budgets: z
+				.array(
+					z.object({
+						id: z.string().optional(),
+						max_limit: z.number().nonnegative().optional(),
+						reset_duration: z.string().optional(),
+						reset_config: z.object({ quarter_start_month: z.number().int().min(1).max(12).optional() }).optional(),
+					}),
+				)
+				.optional(),
+			tokenMaxLimit: z.number().int().nonnegative().optional(),
+			tokenResetDuration: z.string().optional(),
+			requestMaxLimit: z.number().int().nonnegative().optional(),
+			requestResetDuration: z.string().optional(),
+		})
+		.refine((data) => data.scope !== "virtual_key" || !!data.scopeId, {
+			message: t("models:limits.sheet.virtualKeyRequiredForScope"),
+			path: ["scopeId"],
+		});
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof formSchema>>;
 
 // A limit with no provider applies across all of them; the form spells that absence as a
 // sentinel so the control has something to show. Module level so its identity is stable.
 const ALL_PROVIDERS_VALUE = "all";
-const ALL_PROVIDERS_OPTION = { value: ALL_PROVIDERS_VALUE, label: "All Providers" };
+const ALL_PROVIDERS_LABEL_KEY = "models:limits.sheet.allProviders";
 
 export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: ModelLimitSheetProps) {
+	const { t } = useTranslation(["common", "models"]);
 	const [isOpen, setIsOpen] = useState(true);
 	const isEditing = !!modelConfig;
 	// A readOnly-registered scope (e.g. enterprise's access_profile) is
@@ -124,7 +128,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 
 	const form = useForm<FormData>({
 		mode: "onChange",
-		resolver: zodResolver(formSchema),
+		resolver: zodResolver(formSchema(t)),
 		defaultValues: {
 			modelName: modelConfig?.model_name || "",
 			provider: modelConfig?.provider || "",
@@ -199,7 +203,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 
 	const onSubmit = async (data: FormData) => {
 		if (!canSubmit) {
-			toast.error("You don't have permission to perform this action");
+			toast.error(t("models:limits.sheet.noPermission"));
 			return;
 		}
 
@@ -212,7 +216,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 
 	const saveModelLimit = async (data: FormData, resetBudgetUsage: boolean) => {
 		if (!hasAnyLimit) {
-			form.setError("root", { message: "At least one budget or rate limit is required" });
+			form.setError("root", { message: t("models:limits.sheet.atLeastOneLimit") });
 			return;
 		}
 
@@ -238,11 +242,11 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 
 				let rateLimitPayload:
 					| {
-						token_max_limit?: number | null;
-						token_reset_duration?: string | null;
-						request_max_limit?: number | null;
-						request_reset_duration?: string | null;
-					}
+							token_max_limit?: number | null;
+							token_reset_duration?: string | null;
+							request_max_limit?: number | null;
+							request_reset_duration?: string | null;
+					  }
 					| undefined;
 				if (hasRateLimit) {
 					rateLimitPayload = {
@@ -267,7 +271,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 						reset_budget_usage: resetBudgetUsage || undefined,
 					},
 				}).unwrap();
-				toast.success("Limit updated successfully");
+				toast.success(t("models:limits.sheet.updatedToast"));
 			} else {
 				await createModelConfig({
 					model_name: data.modelName,
@@ -281,18 +285,18 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 					budgets: budgetsPayload.length > 0 ? budgetsPayload : undefined,
 					rate_limit:
 						(data.tokenMaxLimit !== undefined && data.tokenMaxLimit !== null) ||
-							(data.requestMaxLimit !== undefined && data.requestMaxLimit !== null)
+						(data.requestMaxLimit !== undefined && data.requestMaxLimit !== null)
 							? {
-								token_max_limit: data.tokenMaxLimit,
-								token_reset_duration:
-									data.tokenMaxLimit !== undefined && data.tokenMaxLimit !== null ? data.tokenResetDuration || "1h" : undefined,
-								request_max_limit: data.requestMaxLimit,
-								request_reset_duration:
-									data.requestMaxLimit !== undefined && data.requestMaxLimit !== null ? data.requestResetDuration || "1h" : undefined,
-							}
+									token_max_limit: data.tokenMaxLimit,
+									token_reset_duration:
+										data.tokenMaxLimit !== undefined && data.tokenMaxLimit !== null ? data.tokenResetDuration || "1h" : undefined,
+									request_max_limit: data.requestMaxLimit,
+									request_reset_duration:
+										data.requestMaxLimit !== undefined && data.requestMaxLimit !== null ? data.requestResetDuration || "1h" : undefined,
+								}
 							: undefined,
 				}).unwrap();
-				toast.success("Limit created successfully");
+				toast.success(t("models:limits.sheet.createdToast"));
 			}
 
 			onSave();
@@ -307,8 +311,8 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 			<Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
 				<SheetContent className="flex w-full flex-col overflow-x-hidden pt-4" data-testid="model-limit-sheet">
 					<SheetHeader className="flex flex-col items-start p-0 px-4 py-4 md:px-8" headerClassName="mb-0 sticky -top-4 bg-card z-10">
-						<SheetTitle>View Limit</SheetTitle>
-						<SheetDescription>This limit is managed elsewhere and cannot be edited here.</SheetDescription>
+						<SheetTitle>{t("models:limits.sheet.viewTitle")}</SheetTitle>
+						<SheetDescription>{t("models:limits.sheet.viewDesc")}</SheetDescription>
 					</SheetHeader>
 
 					<div className="grow space-y-4 px-4 md:px-8">
@@ -318,34 +322,36 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 								{scopeEntry?.ReadOnlyNotice ? (
 									<scopeEntry.ReadOnlyNotice modelConfig={modelConfig} />
 								) : (
-									<p>This limit is read-only here - it's managed elsewhere.</p>
+									<p>{t("models:limits.sheet.readOnlyNotice")}</p>
 								)}
 							</AlertDescription>
 						</Alert>
 
 						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs font-normal">Provider</Label>
+							<Label className="text-muted-foreground text-xs font-normal">{t("models:limits.sheet.provider")}</Label>
 							<p className="text-sm">
-								{modelConfig.provider ? ProviderLabels[modelConfig.provider as ProviderName] || modelConfig.provider : "All Providers"}
+								{modelConfig.provider
+									? ProviderLabels[modelConfig.provider as ProviderName] || modelConfig.provider
+									: t("models:limits.sheet.allProvidersLabel")}
 							</p>
 						</div>
 						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs font-normal">Model Name</Label>
-							<p className="text-sm">{modelConfig.model_name === "*" ? "All Models" : modelConfig.model_name}</p>
+							<Label className="text-muted-foreground text-xs font-normal">{t("models:limits.sheet.modelName")}</Label>
+							<p className="text-sm">{modelConfig.model_name === "*" ? t("models:limits.sheet.allModels") : modelConfig.model_name}</p>
 						</div>
 						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs font-normal">Scope</Label>
+							<Label className="text-muted-foreground text-xs font-normal">{t("models:limits.sheet.scope")}</Label>
 							<p className="text-sm">{scopeEntry?.displayAsScope ?? scopeEntry?.label}</p>
 						</div>
 						{modelConfig.scope_name ? (
 							<div className="space-y-1">
-								<Label className="text-muted-foreground text-xs font-normal">Target</Label>
+								<Label className="text-muted-foreground text-xs font-normal">{t("models:limits.sheet.target")}</Label>
 								<p className="text-sm">{modelConfig.scope_name}</p>
 							</div>
 						) : null}
 						{scopeEntry?.ManagedByComponent ? (
 							<div className="space-y-1">
-								<Label className="text-muted-foreground text-xs font-normal">Managed By</Label>
+								<Label className="text-muted-foreground text-xs font-normal">{t("models:limits.sheet.managedBy")}</Label>
 								<scopeEntry.ManagedByComponent modelConfig={modelConfig} labelled />
 							</div>
 						) : null}
@@ -353,7 +359,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 						<DottedSeparator />
 
 						<div className="space-y-3">
-							<Label className="text-sm font-medium">Budget</Label>
+							<Label className="text-sm font-medium">{t("models:limits.sheet.budget")}</Label>
 							{budgets.length > 0 ? (
 								<div className="space-y-2">
 									{budgets.map((b) => (
@@ -361,24 +367,26 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 											<p className="font-medium">
 												{formatCurrency(b.current_usage)} / {formatCurrency(b.max_limit)}
 											</p>
-											<p className="text-muted-foreground text-xs">Resets {resetDurationLabels[b.reset_duration] || b.reset_duration}</p>
+											<p className="text-muted-foreground text-xs">
+												{t("models:limits.sheet.resets", { duration: resetDurationLabels[b.reset_duration] || b.reset_duration })}
+											</p>
 										</div>
 									))}
 								</div>
 							) : (
-								<p className="text-muted-foreground text-sm">No budget limits configured.</p>
+								<p className="text-muted-foreground text-sm">{t("models:limits.sheet.noBudgets")}</p>
 							)}
 						</div>
 
 						<DottedSeparator />
 
 						<div className="space-y-3">
-							<Label className="text-sm font-medium">Rate Limits</Label>
+							<Label className="text-sm font-medium">{t("models:limits.sheet.rateLimits")}</Label>
 							{modelConfig.rate_limit?.token_max_limit != null || modelConfig.rate_limit?.request_max_limit != null ? (
 								<div className="bg-muted/50 grid grid-cols-1 gap-4 rounded-lg p-4 md:grid-cols-2">
 									{modelConfig.rate_limit?.token_max_limit != null ? (
 										<div className="space-y-1">
-											<p className="text-muted-foreground text-xs">Tokens</p>
+											<p className="text-muted-foreground text-xs">{t("models:limits.sheet.tokens")}</p>
 											<p className="text-sm font-medium">
 												{modelConfig.rate_limit.token_current_usage.toLocaleString()} /{" "}
 												{modelConfig.rate_limit.token_max_limit.toLocaleString()} (
@@ -390,7 +398,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 									) : null}
 									{modelConfig.rate_limit?.request_max_limit != null ? (
 										<div className="space-y-1">
-											<p className="text-muted-foreground text-xs">Requests</p>
+											<p className="text-muted-foreground text-xs">{t("models:limits.sheet.requests")}</p>
 											<p className="text-sm font-medium">
 												{modelConfig.rate_limit.request_current_usage.toLocaleString()} /{" "}
 												{modelConfig.rate_limit.request_max_limit.toLocaleString()} (
@@ -402,7 +410,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 									) : null}
 								</div>
 							) : (
-								<p className="text-muted-foreground text-sm">No rate limits configured.</p>
+								<p className="text-muted-foreground text-sm">{t("models:limits.sheet.noRateLimits")}</p>
 							)}
 						</div>
 					</div>
@@ -410,7 +418,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 					<div className="bg-card sticky bottom-0 shrink-0 border-t px-4 py-4 md:px-8">
 						<div className="flex items-center justify-end">
 							<Button type="button" variant="outline" onClick={handleClose}>
-								Close
+								{t("common:actions.close")}
 							</Button>
 						</div>
 					</div>
@@ -432,10 +440,8 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 				data-testid="model-limit-sheet"
 			>
 				<SheetHeader className="flex flex-col items-start p-0 py-4" headerClassName="mb-0 sticky -top-4 bg-card z-10 px-4 md:px-8">
-					<SheetTitle>{isEditing ? "Edit Limit" : "Create Limit"}</SheetTitle>
-					<SheetDescription>
-						{isEditing ? "Update budget and rate limit configuration." : "Set up budget and rate limits for a scope."}
-					</SheetDescription>
+					<SheetTitle>{isEditing ? t("models:limits.sheet.editTitle") : t("models:limits.sheet.createTitle")}</SheetTitle>
+					<SheetDescription>{isEditing ? t("models:limits.sheet.editDesc") : t("models:limits.sheet.createDesc")}</SheetDescription>
 				</SheetHeader>
 
 				<Form {...form}>
@@ -447,11 +453,11 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 								name="provider"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Provider</FormLabel>
+										<FormLabel>{t("models:limits.sheet.provider")}</FormLabel>
 										<FormControl>
 											<ProviderSelector
 												data-testid="model-limit-provider-select"
-												allOption={ALL_PROVIDERS_OPTION}
+												allOption={{ value: ALL_PROVIDERS_VALUE, label: t(ALL_PROVIDERS_LABEL_KEY) }}
 												value={field.value || ALL_PROVIDERS_VALUE}
 												onChange={(value: string) =>
 													handleProviderChange(value === ALL_PROVIDERS_VALUE ? "" : value, form.getValues("modelName"), field.onChange)
@@ -470,7 +476,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 								name="modelName"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Model Name</FormLabel>
+										<FormLabel>{t("models:limits.sheet.modelName")}</FormLabel>
 										<FormControl>
 											{isEditing ? (
 												<Select value={field.value} disabled>
@@ -478,7 +484,9 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 														<SelectValue />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value={field.value}>{field.value === "*" ? "All Models" : field.value}</SelectItem>
+														<SelectItem value={field.value}>
+															{field.value === "*" ? t("models:limits.sheet.allModels") : field.value}
+														</SelectItem>
 													</SelectContent>
 												</Select>
 											) : (
@@ -487,7 +495,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 														provider={form.watch("provider") || undefined}
 														value={field.value}
 														onChange={field.onChange}
-														placeholder="Search for a model..."
+														placeholder={t("models:limits.sheet.searchModelPlaceholder")}
 														baseModelsWithoutProvider
 														extraOptions={ALL_MODELS_OPTION}
 														allowCustomModel
@@ -507,7 +515,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 								name="scope"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Scope</FormLabel>
+										<FormLabel>{t("models:limits.sheet.scope")}</FormLabel>
 										<Select
 											value={field.value || "global"}
 											onValueChange={(value) => {
@@ -519,7 +527,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 										>
 											<FormControl>
 												<SelectTrigger className="w-full" data-testid="model-limit-scope-select">
-													<SelectValue placeholder="Global" />
+													<SelectValue placeholder={t("models:limits.sheet.globalPlaceholder")} />
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
@@ -583,7 +591,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 							<div className="space-y-4">
 								<MultiBudgetLines
 									data-testid="model-limit-budget-lines"
-									label="Budget"
+									label={t("models:limits.sheet.budgetLabel")}
 									lines={(form.watch("budgets") ?? []).map((b) => ({
 										id: b.id,
 										max_limit: b.max_limit,
@@ -598,7 +606,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 
 							{/* Rate Limiting Configuration */}
 							<div className="space-y-4">
-								<Label className="text-sm font-medium">Rate Limits</Label>
+								<Label className="text-sm font-medium">{t("models:limits.sheet.rateLimits")}</Label>
 
 								<FormField
 									control={form.control}
@@ -608,7 +616,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 											<NumberAndSelect
 												id="modelTokenMaxLimit"
 												labelClassName="font-normal"
-												label="Maximum Tokens"
+												label={t("models:limits.sheet.maximumTokens")}
 												value={field.value}
 												selectValue={form.watch("tokenResetDuration") || "1h"}
 												onChangeNumber={(value) => field.onChange(value)}
@@ -628,7 +636,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 											<NumberAndSelect
 												id="modelRequestMaxLimit"
 												labelClassName="font-normal"
-												label="Maximum Requests"
+												label={t("models:limits.sheet.maximumRequests")}
 												value={field.value}
 												selectValue={form.watch("requestResetDuration") || "1h"}
 												onChangeNumber={(value) => field.onChange(value)}
@@ -647,11 +655,13 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 								<>
 									<DottedSeparator />
 									<div className="space-y-3">
-										<Label className="text-sm font-medium">Current Usage</Label>
+										<Label className="text-sm font-medium">{t("models:limits.sheet.currentUsage")}</Label>
 										<div className="bg-muted/50 grid grid-cols-1 gap-4 rounded-lg p-4 md:grid-cols-2">
 											{(modelConfig?.budgets ?? []).map((b) => (
 												<div key={b.id} className="space-y-1">
-													<p className="text-muted-foreground text-xs">Budget ({b.reset_duration})</p>
+													<p className="text-muted-foreground text-xs">
+														{t("models:limits.sheet.budgetWith", { duration: b.reset_duration })}
+													</p>
 													<p className="text-sm font-medium">
 														${b.current_usage.toFixed(2)} / ${b.max_limit.toFixed(2)}
 													</p>
@@ -659,7 +669,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 											))}
 											{modelConfig?.rate_limit?.token_max_limit && (
 												<div className="space-y-1">
-													<p className="text-muted-foreground text-xs">Tokens</p>
+													<p className="text-muted-foreground text-xs">{t("models:limits.sheet.tokens")}</p>
 													<p className="text-sm font-medium">
 														{modelConfig.rate_limit.token_current_usage.toLocaleString()} /{" "}
 														{modelConfig.rate_limit.token_max_limit.toLocaleString()}
@@ -668,7 +678,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 											)}
 											{modelConfig?.rate_limit?.request_max_limit && (
 												<div className="space-y-1">
-													<p className="text-muted-foreground text-xs">Requests</p>
+													<p className="text-muted-foreground text-xs">{t("models:limits.sheet.requests")}</p>
 													<p className="text-sm font-medium">
 														{modelConfig.rate_limit.request_current_usage.toLocaleString()} /{" "}
 														{modelConfig.rate_limit.request_max_limit.toLocaleString()}
@@ -684,12 +694,16 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 						{/* Footer */}
 						<div className="bg-card sticky bottom-0 shrink-0 border-t px-4 py-4 md:px-8">
 							<div className="flex items-center justify-end gap-3">
-								{!canSubmit && <p className="text-destructive text-sm">You don't have permission to perform this action</p>}
+								{!canSubmit && <p className="text-destructive text-sm">{t("models:limits.sheet.noPermission")}</p>}
 								<Button type="button" variant="outline" onClick={handleClose}>
-									Cancel
+									{t("common:actions.cancel")}
 								</Button>
 								<Button type="submit" data-testid="model-limit-button-submit" disabled={isLoading || !form.formState.isDirty || !canSubmit}>
-									{isLoading ? "Saving..." : isEditing ? "Save Changes" : "Create Limit"}
+									{isLoading
+										? t("models:limits.sheet.saving")
+										: isEditing
+											? t("models:limits.sheet.saveChanges")
+											: t("models:limits.sheet.createLimit")}
 								</Button>
 							</div>
 						</div>

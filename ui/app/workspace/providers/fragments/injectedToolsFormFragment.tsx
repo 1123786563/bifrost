@@ -10,6 +10,7 @@ import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { buildProviderUpdatePayload } from "../views/utils";
 import {
@@ -25,12 +26,12 @@ import {
 
 const SAVED_CLIENT_PAGE_SIZE = 50;
 
-const TOOL_PLACEHOLDERS: Record<ReturnType<typeof toolMenuState>, string> = {
-	"no-server": "Pick an MCP server first",
-	loading: "Loading tools...",
-	error: "Could not load tools",
-	empty: "This MCP server exposes no tools",
-	ready: "Pick a tool",
+const TOOL_PLACEHOLDER_KEYS: Record<ReturnType<typeof toolMenuState>, string> = {
+	"no-server": "providers:webSearch.placeholders.noServer",
+	loading: "providers:webSearch.placeholders.loading",
+	error: "providers:webSearch.placeholders.error",
+	empty: "providers:webSearch.placeholders.empty",
+	ready: "providers:webSearch.placeholders.ready",
 };
 
 interface InjectedToolsFormFragmentProps {
@@ -66,6 +67,7 @@ function useSavedClientId(clientName: string): SavedClientState & { retry: () =>
 }
 
 export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmentProps) {
+	const { t } = useTranslation(["common", "providers"]);
 	const dispatch = useAppDispatch();
 	const hasUpdateProviderAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Update);
 	const [updateProvider, { isLoading: isUpdatingProvider }] = useUpdateProviderMutation();
@@ -132,28 +134,24 @@ export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmen
 		updateProvider(buildProviderUpdatePayload(provider, { injected_tools: injectedTools }))
 			.unwrap()
 			.then(() => {
-				toast.success(injectedTools ? "Web search tool updated" : "Web search tool removed");
+				toast.success(injectedTools ? t("providers:webSearch.updatedToast") : t("providers:webSearch.removedToast"));
 				form.reset(data ?? { mcp_client_id: "", mcp_client_name: "", tool_name: "" });
 			})
 			.catch((err) => {
-				toast.error("Failed to update web search tool", { description: getErrorMessage(err) });
+				toast.error(t("providers:webSearch.updateFailed"), { description: getErrorMessage(err) });
 			});
 	};
 
 	return (
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(save)} className="space-y-6 px-4 md:px-6" data-testid="provider-config-web-search-content">
-				<p className="text-muted-foreground text-xs">
-					Pick an MCP tool to serve as web search for every chat and responses request to this provider. Bifrost adds the tool to each
-					request, replaces any native web search the client sends, runs the tool itself when the model calls it, and returns only the final
-					answer.
-				</p>
+				<p className="text-muted-foreground text-xs">{t("providers:webSearch.description")}</p>
 				<FormField
 					control={form.control}
 					name="mcp_client_id"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>MCP server</FormLabel>
+							<FormLabel>{t("providers:webSearch.mcpServer")}</FormLabel>
 							<FormControl>
 								<div data-testid="provider-web-search-client-select">
 									<MCPClientSelector
@@ -170,17 +168,17 @@ export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmen
 							</FormControl>
 							{savedClientStatus === "loading" && !form.formState.isDirty && (
 								<p className="text-muted-foreground text-xs" data-testid="provider-web-search-client-loading">
-									Loading saved MCP server &quot;{savedClientName}&quot;...
+									{t("providers:webSearch.loadingSaved", { name: savedClientName })}
 								</p>
 							)}
 							{savedClientStatus === "missing" && !form.formState.isDirty && (
 								<p className="text-destructive text-xs" data-testid="provider-web-search-client-missing">
-									The saved MCP server &quot;{savedClientName}&quot; no longer exists. Pick another one.
+									{t("providers:webSearch.savedMissing", { name: savedClientName })}
 								</p>
 							)}
 							{savedClientStatus === "error" && !form.formState.isDirty && (
 								<div className="text-destructive flex items-center gap-2 text-xs" data-testid="provider-web-search-client-error">
-									Could not load the saved MCP server &quot;{savedClientName}&quot;.
+									{t("providers:webSearch.savedError", { name: savedClientName })}
 									<Button
 										type="button"
 										variant="outline"
@@ -188,7 +186,7 @@ export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmen
 										onClick={resolvedClient.retry}
 										data-testid="provider-web-search-client-retry"
 									>
-										Retry
+										{t("common:actions.retry")}
 									</Button>
 								</div>
 							)}
@@ -201,11 +199,11 @@ export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmen
 					name="tool_name"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Tool</FormLabel>
+							<FormLabel>{t("providers:webSearch.tool")}</FormLabel>
 							<Select value={field.value} onValueChange={field.onChange} disabled={lockPickers || menuState !== "ready"}>
 								<FormControl>
 									<SelectTrigger className="w-full" data-testid="provider-web-search-tool-select">
-										<SelectValue placeholder={TOOL_PLACEHOLDERS[menuState]} />
+										<SelectValue placeholder={t(TOOL_PLACEHOLDER_KEYS[menuState])} />
 									</SelectTrigger>
 								</FormControl>
 								<SelectContent>
@@ -218,7 +216,7 @@ export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmen
 							</Select>
 							{menuState === "error" && (
 								<div className="text-destructive flex items-center gap-2 text-xs" data-testid="provider-web-search-tool-error">
-									Could not load this server's tools.
+									{t("providers:webSearch.toolsError")}
 									<Button
 										type="button"
 										variant="outline"
@@ -226,7 +224,7 @@ export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmen
 										onClick={() => toolsQuery.refetch()}
 										data-testid="provider-web-search-tool-retry"
 									>
-										Retry
+										{t("common:actions.retry")}
 									</Button>
 								</div>
 							)}
@@ -244,7 +242,7 @@ export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmen
 							disabled={!hasUpdateProviderAccess || isUpdatingProvider}
 							onClick={() => save(null)}
 						>
-							Remove
+							{t("common:actions.remove")}
 						</Button>
 					)}
 					<Button
@@ -253,7 +251,7 @@ export function InjectedToolsFormFragment({ provider }: InjectedToolsFormFragmen
 						disabled={!form.formState.isDirty || !form.formState.isValid || !hasUpdateProviderAccess || isUpdatingProvider}
 						isLoading={isUpdatingProvider}
 					>
-						Save Web Search Tool
+						{t("providers:webSearch.save")}
 					</Button>
 				</div>
 			</form>

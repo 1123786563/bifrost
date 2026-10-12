@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ModelProvider } from "@/lib/types/config";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	ApiStructureFormFragment,
 	BetaHeadersFormFragment,
@@ -31,59 +32,60 @@ const availableTabs = (hasCustomProviderConfig: boolean, hasGovernanceAccess: bo
 	if (hasCustomProviderConfig) {
 		tabs.push({
 			id: "api-structure",
-			label: "API Structure",
+			labelKey: "providers:configSheet.tabs.apiStructure",
 		});
 	}
 	tabs.push({
 		id: "network",
-		label: "Network",
+		labelKey: "providers:configSheet.tabs.network",
 	});
 	tabs.push({
 		id: "proxy",
-		label: "Proxy",
+		labelKey: "providers:configSheet.tabs.proxy",
 	});
 	tabs.push({
 		id: "performance",
-		label: "Performance",
+		labelKey: "providers:configSheet.tabs.performance",
 	});
 	if (hasGovernanceAccess) {
 		tabs.push({
 			id: "governance",
-			label: "Governance",
+			labelKey: "providers:configSheet.tabs.governance",
 		});
 	}
 	if (isAnthropicFamily) {
 		tabs.push({
 			id: "beta-headers",
-			label: "Beta Headers",
+			labelKey: "providers:configSheet.tabs.betaHeaders",
 		});
 	}
 	tabs.push({
 		id: "prompt-cache",
-		label: "Prompt Caching",
+		labelKey: "providers:configSheet.tabs.promptCache",
 	});
 	tabs.push({
 		id: "pricing",
-		label: "Pricing",
+		labelKey: "providers:configSheet.tabs.pricing",
 	});
 	tabs.push({
 		id: "web-search",
-		label: "Web Search",
+		labelKey: "providers:configSheet.tabs.webSearch",
 	});
 	tabs.push({
 		id: "debugging",
-		label: "Debugging",
+		labelKey: "providers:configSheet.tabs.debugging",
 	});
 	if (isOpenAI) {
 		tabs.push({
 			id: "openai-config",
-			label: "OpenAI Config",
+			labelKey: "providers:configSheet.tabs.openaiConfig",
 		});
 	}
 	return tabs;
 };
 
 export default function ProviderConfigSheet({ show, onCancel, provider }: Props) {
+	const { t } = useTranslation(["common", "providers"]);
 	const [selectedTab, setSelectedTab] = useState<string | undefined>(undefined);
 	const hasGovernanceAccess = useRbac(RbacResource.Governance, RbacOperation.View);
 	const hasCustomProviderConfig = !!provider.custom_provider_config;
@@ -118,7 +120,7 @@ export default function ProviderConfigSheet({ show, onCancel, provider }: Props)
 							<div className="flex items-center">
 								<Provider provider={provider.name} size={24} className="mt-0" />
 							</div>
-							Provider configuration
+							{t("providers:configSheet.title")}
 						</div>
 					</SheetTitle>
 				</SheetHeader>
@@ -136,7 +138,7 @@ export default function ProviderConfigSheet({ show, onCancel, provider }: Props)
 											data-testid={`provider-tab-${tab.id}`}
 											className="flex-none px-3 whitespace-nowrap"
 										>
-											{tab.label}
+											{t(tab.labelKey)}
 										</TabsTrigger>
 									))}
 								</TabsList>

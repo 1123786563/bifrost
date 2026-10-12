@@ -10,34 +10,42 @@ import type { PricingOverrideMatchType, PricingOverridePatch } from "@/lib/types
 export const REQUEST_TYPE_GROUPS = [
 	{
 		label: "Chat / Text / Responses",
+		key: "chat",
 		types: ["chat_completion", "text_completion", "responses"],
 	},
 	{
 		label: "Embedding",
+		key: "embedding",
 		types: ["embedding"],
 	},
 	{
 		label: "Rerank",
+		key: "rerank",
 		types: ["rerank"],
 	},
 	{
 		label: "Decisions",
+		key: "decisions",
 		types: ["decisions"],
 	},
 	{
 		label: "Audio",
+		key: "audio",
 		types: ["speech", "transcription", "live"],
 	},
 	{
 		label: "Image",
+		key: "image",
 		types: ["image_generation", "image_variation", "image_edit"],
 	},
 	{
 		label: "Video",
+		key: "video",
 		types: ["video_generation", "video_remix"],
 	},
 	{
 		label: "OCR",
+		key: "ocr",
 		types: ["ocr"],
 	},
 ] as const;
