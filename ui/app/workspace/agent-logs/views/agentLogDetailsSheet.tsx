@@ -38,6 +38,8 @@ import { Link } from "@tanstack/react-router";
 import { format, isValid } from "date-fns";
 import { ChevronDown, Download, Loader2, MoreVertical, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { toast } from "sonner";
 import { A2APayloadView } from "./a2aPayloadView";
 import {
@@ -103,7 +105,8 @@ function InteractiveValue({
 	testId?: string;
 	className?: string;
 }) {
-	const { copy } = useCopyToClipboard({ successMessage: "Copied" });
+	const { t } = useTranslation(["common"]);
+	const { copy } = useCopyToClipboard({ successMessage: t("common:actions.copied") });
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
@@ -123,13 +126,13 @@ function InteractiveValue({
 						filter ? "cursor-pointer" : "cursor-context-menu",
 						className,
 					)}
-					aria-label={filter ? `Filter by ${label}` : label}
+					aria-label={filter ? t("logs:agent.filterBy", { label }) : label}
 					data-testid={testId}
 				>
 					{value}
 				</button>
 			</TooltipTrigger>
-			<TooltipContent>{filter ? "Click to filter · Right-click to copy" : "Right-click to copy"}</TooltipContent>
+			<TooltipContent>{filter ? t("logs:agent.clickFilterRightCopy") : t("logs:agent.rightClickCopy")}</TooltipContent>
 		</Tooltip>
 	);
 }
@@ -225,7 +228,7 @@ function getPluginLogCount(pluginLogs?: string): number {
 }
 
 function eventLabel(row: AgentLogSummary): string {
-	if (row.event_type === "artifact_update") return "Artifact updated";
+	if (row.event_type === "artifact_update") return i18n.t("logs:agent.artifactUpdated");
 	if (row.event_type === "status_update" && row.task_state)
 		return row.task_state
 			.replace(/^TASK_STATE_/, "")
@@ -236,16 +239,16 @@ function eventLabel(row: AgentLogSummary): string {
 			.replace(/^TASK_STATE_/, "")
 			.replaceAll("_", " ")
 			.toLowerCase()}`;
-	if (row.event_type === "message") return "Message received";
-	return (row.event_type || "Event").replaceAll("_", " ");
+	if (row.event_type === "message") return i18n.t("logs:agent.messageReceived");
+	return (row.event_type || i18n.t("logs:agent.event")).replaceAll("_", " ");
 }
 
 function eventExplanation(row: AgentLogSummary): string {
-	if (row.event_type === "artifact_update") return "The agent emitted or updated output for this task.";
-	if (row.event_type === "status_update") return "The agent reported a task state change.";
-	if (row.event_type === "task") return "The agent returned the current task snapshot.";
-	if (row.event_type === "message") return "The agent emitted a message without creating or updating a task.";
-	return "A protocol event observed while this operation was active.";
+	if (row.event_type === "artifact_update") return i18n.t("logs:agent.artifactUpdatedDesc");
+	if (row.event_type === "status_update") return i18n.t("logs:agent.statusUpdateDesc");
+	if (row.event_type === "task") return i18n.t("logs:agent.taskSnapshotDesc");
+	if (row.event_type === "message") return i18n.t("logs:agent.messageDesc");
+	return i18n.t("logs:agent.protocolEventDesc");
 }
 
 function EventDetailValue({
@@ -276,42 +279,43 @@ function EventDetailValue({
 }
 
 function FormattedEventDetail({ detail, onFilter }: { detail: AgentLogDetail; onFilter?: (filters: FilterTarget) => void }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const timestamp = detail.timestamp ? new Date(detail.timestamp) : null;
 	const fields: [string, string | number | undefined, FilterTarget | undefined][] = [
-		["Event ID", detail.id, { search: detail.id }],
-		["Sequence", detail.event_sequence, undefined],
-		["Event type", detail.event_type, undefined],
-		["Task state", detail.task_state, detail.task_state ? { task_state: [detail.task_state] } : undefined],
-		["Task ID", detail.task_id, detail.task_id ? { task_id: detail.task_id } : undefined],
-		["Context ID", detail.context_id, detail.context_id ? { context_id: detail.context_id } : undefined],
-		["Message ID", detail.message_id, detail.message_id ? { search: detail.message_id } : undefined],
-		["Artifact ID", detail.artifact_id, detail.artifact_id ? { search: detail.artifact_id } : undefined],
-		["Request ID", detail.request_id, { request_id: detail.request_id }],
-		["Trace ID", detail.trace_id, detail.trace_id ? { trace_id: detail.trace_id } : undefined],
-		["Agent", detail.agent_name, { agent_name: [detail.agent_name] }],
-		["Operation", detail.operation, { operation: [detail.operation] }],
-		["Status", detail.status, { status: [detail.status] }],
-		["Content type", detail.content_type, undefined],
-		["User ID", detail.user_id, detail.user_id ? { user_id: [detail.user_id] } : undefined],
-		["Virtual key ID", detail.virtual_key_id, detail.virtual_key_id ? { virtual_key_id: [detail.virtual_key_id] } : undefined],
-		["Push config ID", detail.push_config_id, detail.push_config_id ? { push_config_id: detail.push_config_id } : undefined],
-		["Delivery ID", detail.delivery_id, detail.delivery_id ? { delivery_id: detail.delivery_id } : undefined],
-		["Attempt ID", detail.attempt_id, detail.attempt_id ? { attempt_id: detail.attempt_id } : undefined],
+		[t("logs:agent.eventId"), detail.id, { search: detail.id }],
+		[t("logs:agent.sequence"), detail.event_sequence, undefined],
+		[t("logs:agent.eventType"), detail.event_type, undefined],
+		[t("logs:agent.taskState"), detail.task_state, detail.task_state ? { task_state: [detail.task_state] } : undefined],
+		[t("logs:agent.taskId"), detail.task_id, detail.task_id ? { task_id: detail.task_id } : undefined],
+		[t("logs:agent.contextId"), detail.context_id, detail.context_id ? { context_id: detail.context_id } : undefined],
+		[t("logs:agent.messageId"), detail.message_id, detail.message_id ? { search: detail.message_id } : undefined],
+		[t("logs:agent.artifactId"), detail.artifact_id, detail.artifact_id ? { search: detail.artifact_id } : undefined],
+		[t("logs:agent.requestId"), detail.request_id, { request_id: detail.request_id }],
+		[t("logs:agent.traceId"), detail.trace_id, detail.trace_id ? { trace_id: detail.trace_id } : undefined],
+		[t("logs:agent.agent"), detail.agent_name, { agent_name: [detail.agent_name] }],
+		[t("logs:agent.operation"), detail.operation, { operation: [detail.operation] }],
+		[t("common:fields.status"), detail.status, { status: [detail.status] }],
+		[t("logs:agent.contentType"), detail.content_type, undefined],
+		[t("logs:agent.userId"), detail.user_id, detail.user_id ? { user_id: [detail.user_id] } : undefined],
+		[t("logs:agent.virtualKeyId"), detail.virtual_key_id, detail.virtual_key_id ? { virtual_key_id: [detail.virtual_key_id] } : undefined],
+		[t("logs:agent.pushConfigId"), detail.push_config_id, detail.push_config_id ? { push_config_id: detail.push_config_id } : undefined],
+		[t("logs:agent.deliveryId"), detail.delivery_id, detail.delivery_id ? { delivery_id: detail.delivery_id } : undefined],
+		[t("logs:agent.attemptId"), detail.attempt_id, detail.attempt_id ? { attempt_id: detail.attempt_id } : undefined],
 	];
 
 	return (
 		<div className="space-y-3">
 			<details className="group rounded-sm border">
 				<summary className="hover:bg-muted/30 flex cursor-pointer items-center justify-between px-3 py-2 text-sm transition">
-					<span className="font-medium">Event details</span>
+					<span className="font-medium">{t("logs:agent.eventDetails")}</span>
 					<span className="text-muted-foreground flex items-center gap-2 text-xs">
-						IDs, timing, and correlation
+						{t("logs:agent.idsTimingCorrelation")}
 						<ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
 					</span>
 				</summary>
 				<div className="grid grid-cols-1 gap-x-5 gap-y-3 border-t p-3 sm:grid-cols-2">
 					<EventDetailValue
-						label="Timestamp"
+						label={t("logs:agent.timestamp")}
 						value={timestamp && isValid(timestamp) ? format(timestamp, "yyyy-MM-dd HH:mm:ss.SSS") : detail.timestamp}
 					/>
 					{fields.map(([label, value, filter]) => (
@@ -344,6 +348,7 @@ export function AgentLogDetailSheet({
 	hasPrev = false,
 	hasNext = false,
 }: AgentLogDetailSheetProps) {
+	const { t } = useTranslation(["common", "logs"]);
 	const {
 		data: fullLog,
 		isLoading,
@@ -456,10 +461,19 @@ export function AgentLogDetailSheet({
 	const isPushRelated = Boolean(displayLog.push_config_id || displayLog.delivery_id || displayLog.attempt_id);
 	const governanceLinks = (
 		[
-			["User", "Users", "/workspace/governance/users", "selected_user", displayLog.user_name, displayLog.user_id, undefined, undefined],
 			[
-				"Team",
-				"Teams",
+				t("logs:columns.user"),
+				t("logs:mcp.users"),
+				"/workspace/governance/users",
+				"selected_user",
+				displayLog.user_name,
+				displayLog.user_id,
+				undefined,
+				undefined,
+			],
+			[
+				t("logs:columns.team"),
+				t("logs:mcp.teams"),
 				"/workspace/governance/teams",
 				"selected_team",
 				displayLog.team_name,
@@ -468,8 +482,8 @@ export function AgentLogDetailSheet({
 				displayLog.team_ids,
 			],
 			[
-				"Customer",
-				"Customers",
+				t("logs:columns.customer"),
+				t("logs:mcp.customers"),
 				"/workspace/governance/customers",
 				"selected_customer",
 				displayLog.customer_name,
@@ -478,8 +492,8 @@ export function AgentLogDetailSheet({
 				displayLog.customer_ids,
 			],
 			[
-				"Business Unit",
-				"Business Units",
+				t("logs:columns.businessUnit"),
+				t("logs:mcp.businessUnits"),
 				"/workspace/governance/business-units",
 				"selected_business_unit",
 				displayLog.business_unit_name,
@@ -488,8 +502,8 @@ export function AgentLogDetailSheet({
 				displayLog.business_unit_ids,
 			],
 			[
-				"Project",
-				"Projects",
+				t("logs:columns.project"),
+				t("logs:mcp.projects"),
 				"/workspace/governance/projects",
 				"selected_project",
 				displayLog.project_name,
@@ -512,45 +526,49 @@ export function AgentLogDetailSheet({
 	const diagnosticSections = (
 		[
 			{
-				title: "Record identifiers",
+				title: t("logs:agent.recordIdentifiers"),
 				fields: [
-					["Record ID", displayLog.id, { search: displayLog.id }],
-					["Request ID", displayLog.request_id, { request_id: displayLog.request_id }],
-					["Trace ID", displayLog.trace_id, displayLog.trace_id ? { trace_id: displayLog.trace_id } : undefined],
+					[t("logs:agent.recordId"), displayLog.id, { search: displayLog.id }],
+					[t("logs:agent.requestId"), displayLog.request_id, { request_id: displayLog.request_id }],
+					[t("logs:agent.traceId"), displayLog.trace_id, displayLog.trace_id ? { trace_id: displayLog.trace_id } : undefined],
 				],
 			},
 			{
-				title: "Protocol correlation",
+				title: t("logs:agent.protocolCorrelation"),
 				fields: [
-					["Task ID", displayLog.task_id, displayLog.task_id ? { task_id: displayLog.task_id } : undefined],
-					["Context ID", displayLog.context_id, displayLog.context_id ? { context_id: displayLog.context_id } : undefined],
-					["Message ID", displayLog.message_id, displayLog.message_id ? { search: displayLog.message_id } : undefined],
+					[t("logs:agent.taskId"), displayLog.task_id, displayLog.task_id ? { task_id: displayLog.task_id } : undefined],
+					[t("logs:agent.contextId"), displayLog.context_id, displayLog.context_id ? { context_id: displayLog.context_id } : undefined],
+					[t("logs:agent.messageId"), displayLog.message_id, displayLog.message_id ? { search: displayLog.message_id } : undefined],
 					[
-						"Request Message ID",
+						t("logs:agent.requestMessageId"),
 						displayLog.request_message_id,
 						displayLog.request_message_id ? { search: displayLog.request_message_id } : undefined,
 					],
 					[
-						"Response Message ID",
+						t("logs:agent.responseMessageId"),
 						displayLog.response_message_id,
 						displayLog.response_message_id ? { search: displayLog.response_message_id } : undefined,
 					],
-					["Artifact ID", displayLog.artifact_id, displayLog.artifact_id ? { search: displayLog.artifact_id } : undefined],
-					["Event Sequence", displayLog.event_sequence, undefined],
-					["Event Type", displayLog.event_type, undefined],
-					["Task State", displayLog.task_state, displayLog.task_state ? { task_state: [displayLog.task_state] } : undefined],
+					[t("logs:agent.artifactId"), displayLog.artifact_id, displayLog.artifact_id ? { search: displayLog.artifact_id } : undefined],
+					[t("logs:agent.eventSequence"), displayLog.event_sequence, undefined],
+					[t("logs:agent.eventType"), displayLog.event_type, undefined],
+					[t("logs:agent.taskState"), displayLog.task_state, displayLog.task_state ? { task_state: [displayLog.task_state] } : undefined],
 				],
 			},
 			{
-				title: "Push correlation",
+				title: t("logs:agent.pushCorrelation"),
 				fields: [
 					[
-						"Push Config ID",
+						t("logs:agent.pushConfigId"),
 						displayLog.push_config_id,
 						displayLog.push_config_id ? { push_config_id: displayLog.push_config_id } : undefined,
 					],
-					["Delivery ID", displayLog.delivery_id, displayLog.delivery_id ? { delivery_id: displayLog.delivery_id } : undefined],
-					["Attempt ID", displayLog.attempt_id, displayLog.attempt_id ? { attempt_id: displayLog.attempt_id } : undefined],
+					[
+						t("logs:agent.deliveryId"),
+						displayLog.delivery_id,
+						displayLog.delivery_id ? { delivery_id: displayLog.delivery_id } : undefined,
+					],
+					[t("logs:agent.attemptId"), displayLog.attempt_id, displayLog.attempt_id ? { attempt_id: displayLog.attempt_id } : undefined],
 				],
 			},
 		] satisfies { title: string; fields: [string, string | number | undefined, FilterTarget | undefined][] }[]
@@ -620,7 +638,7 @@ export function AgentLogDetailSheet({
 											}}
 										>
 											<Trash2 className="h-4 w-4" />
-											Delete log
+											{t("logs:details.deleteLog")}
 										</DropdownMenuItem>
 									</>
 								) : null}
@@ -632,7 +650,7 @@ export function AgentLogDetailSheet({
 								<AlertDialogDescription>This action cannot be undone. This will permanently delete the log entry.</AlertDialogDescription>
 							</AlertDialogHeader>
 							<AlertDialogFooter>
-								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								<AlertDialogCancel>{t("common:actions.cancel")}</AlertDialogCancel>
 								<AlertDialogAction
 									onClick={async (e) => {
 										e.preventDefault();
@@ -642,7 +660,7 @@ export function AgentLogDetailSheet({
 											setDeleteDialogOpen(false);
 											onOpenChange(false);
 										} catch (err) {
-											const errorMessage = err instanceof Error ? err.message : "Failed to delete log";
+											const errorMessage = err instanceof Error ? err.message : t("logs:mcp.deleteFailed");
 											toast.error(errorMessage);
 											// Keep dialog open on error so user can see the error and retry
 										}
@@ -668,14 +686,14 @@ export function AgentLogDetailSheet({
 								</div>
 								<div className="mt-3">
 									<IdRow
-										label="Agent"
+										label={t("logs:agent.agent")}
 										value={displayLog.agent_name}
 										filter={{ agent_name: [displayLog.agent_name] }}
 										onFilter={onFilter}
 										testId="a2alogdetails-copy-agent-button"
 									/>
 									<IdRow
-										label="Request"
+										label={t("logs:mcp.request")}
 										value={displayLog.request_id}
 										filter={{ request_id: displayLog.request_id }}
 										onFilter={onFilter}
@@ -683,7 +701,7 @@ export function AgentLogDetailSheet({
 									/>
 									{displayLog.push_config_id && (
 										<IdRow
-											label="Push Config"
+											label={t("logs:agent.pushConfig")}
 											value={displayLog.push_config_id}
 											filter={{ push_config_id: displayLog.push_config_id }}
 											onFilter={onFilter}
@@ -695,7 +713,7 @@ export function AgentLogDetailSheet({
 											<span className="text-muted-foreground w-24 shrink-0 text-[10.5px] font-semibold tracking-wider uppercase">Task</span>
 											<InteractiveValue
 												value={displayLog.task_id}
-												label="Task"
+												label={t("logs:agent.task")}
 												filter={{ task_id: displayLog.task_id }}
 												onFilter={onFilter}
 												className="font-mono text-[13px]"
@@ -709,7 +727,7 @@ export function AgentLogDetailSheet({
 											</span>
 											<InteractiveValue
 												value={displayLog.context_id}
-												label="Context"
+												label={t("logs:agent.context")}
 												filter={{ context_id: displayLog.context_id }}
 												onFilter={onFilter}
 												className="font-mono text-[13px]"
@@ -740,7 +758,7 @@ export function AgentLogDetailSheet({
 							)}
 						>
 							<HeroStat
-								label="Latency"
+								label={t("logs:columns.latency")}
 								valueClass="text-primary"
 								value={hasValidLatency ? formatLatency(displayLog.latency!) : "—"}
 								sub={
@@ -751,25 +769,30 @@ export function AgentLogDetailSheet({
 								hasRightBorder
 							/>
 							<HeroStat
-								label="Downstream"
+								label={t("logs:agent.downstream")}
 								value={displayLog.downstream_transport || "—"}
 								valueClass="font-mono text-[15px]"
 								hasRightBorder
 							/>
-							<HeroStat label="Upstream" value={displayLog.upstream_transport || "—"} valueClass="font-mono text-[15px]" hasRightBorder />
 							<HeroStat
-								label="Operation"
+								label={t("logs:agent.upstream")}
+								value={displayLog.upstream_transport || "—"}
+								valueClass="font-mono text-[15px]"
+								hasRightBorder
+							/>
+							<HeroStat
+								label={t("logs:agent.operation")}
 								value={displayLog.operation || "—"}
 								valueClass="whitespace-normal overflow-visible break-all font-mono text-[15px]"
 								hasRightBorder
 							/>
-							{correlatedRows.length > 0 && <HeroStat label="Events" value={String(totalCorrelatedEvents)} />}
+							{correlatedRows.length > 0 && <HeroStat label={t("logs:agent.events")} value={String(totalCorrelatedEvents)} />}
 						</div>
 					</div>
 
 					<details className="group bg-card rounded-sm border" open={false}>
 						<summary className="hover:bg-muted/30 flex cursor-pointer items-center justify-between px-4 py-2.5 text-sm transition">
-							<span className="text-foreground font-medium">More details</span>
+							<span className="text-foreground font-medium">{t("logs:mcp.moreDetails")}</span>
 							<span className="text-muted-foreground flex items-center gap-2 text-xs">
 								<span className="hidden md:inline">
 									{hasTimings ? "timings, identifiers and correlation" : "identifiers and correlation"}
@@ -781,43 +804,43 @@ export function AgentLogDetailSheet({
 							{hasTimings && (
 								<>
 									<div className="space-y-4">
-										<BlockHeader title="Timings" />
+										<BlockHeader title={t("logs:details.timings")} />
 										<div className="grid w-full grid-cols-1 items-center justify-between gap-4 md:grid-cols-3">
 											{hasValidTimestamp && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="Start Timestamp"
+													label={t("logs:details.startTimestamp")}
 													value={format(timestampDate!, "yyyy-MM-dd hh:mm:ss aa")}
 												/>
 											)}
 											{endTimestamp && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="End Timestamp"
+													label={t("logs:details.endTimestamp")}
 													value={format(endTimestamp, "yyyy-MM-dd hh:mm:ss aa")}
 												/>
 											)}
 											{hasValidLatency && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="Latency"
-													tooltip="Total end-to-end request time: upstream plus Bifrost overhead."
+													label={t("logs:columns.latency")}
+													tooltip={t("logs:details.latencyTooltip")}
 													value={<div>{displayLog.latency!.toFixed(2)}ms</div>}
 												/>
 											)}
 											{displayLog.upstream_latency != null && !isNaN(displayLog.upstream_latency) && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="Upstream Latency"
-													tooltip="Time spent waiting on the upstream agent."
+													label={t("logs:details.upstreamLatency")}
+													tooltip={t("logs:agent.upstreamLatencyTooltip")}
 													value={<div>{displayLog.upstream_latency.toFixed(2)}ms</div>}
 												/>
 											)}
 											{displayLog.overhead_latency != null && !isNaN(displayLog.overhead_latency) && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="Bifrost Overhead"
-													tooltip="Time added by Bifrost itself: routing, plugins, and processing."
+													label={t("logs:details.bifrostOverhead")}
+													tooltip={t("logs:details.bifrostOverheadTooltip")}
 													value={<div>{displayLog.overhead_latency.toFixed(2)}ms</div>}
 												/>
 											)}
@@ -830,16 +853,16 @@ export function AgentLogDetailSheet({
 								</>
 							)}
 							<div className="space-y-4">
-								<BlockHeader title="Request details" />
+								<BlockHeader title={t("logs:details.requestDetails")} />
 								<div className="grid w-full grid-cols-1 items-start gap-4 md:grid-cols-3">
 									<LogEntryDetailsView
 										className="w-full"
-										label="Agent"
+										label={t("logs:agent.agent")}
 										value={<span className="font-mono">{displayLog.agent_name}</span>}
 									/>
 									<LogEntryDetailsView
 										className="w-full"
-										label="Operation"
+										label={t("logs:agent.operation")}
 										value={<span className="font-mono">{displayLog.operation}</span>}
 									/>
 									<LogEntryDetailsView className="w-full" label="Status" value={displayLog.status} />
@@ -849,7 +872,7 @@ export function AgentLogDetailSheet({
 									{displayLog.virtual_key_id && (
 										<LogEntryDetailsView
 											className="w-full"
-											label="Virtual key"
+											label={t("logs:columns.virtualKey")}
 											value={
 												<Link
 													to="/workspace/governance/virtual-keys"
@@ -933,17 +956,17 @@ export function AgentLogDetailSheet({
 						<TabsList className="bg-muted/60 h-10 w-fit">
 							{hasConversation && (
 								<TabsTrigger value="conversation" className="px-3">
-									Conversation
+									{t("logs:agent.tabConversation")}
 								</TabsTrigger>
 							)}
 							{!isConversationOperation && !isPushConversationOperation && hasPayload && (
 								<TabsTrigger value="payload" className="px-3">
-									Payload
+									{t("logs:agent.tabPayload")}
 								</TabsTrigger>
 							)}
 							{correlatedRows.length > 0 && (
 								<TabsTrigger value="events" className="px-3">
-									Events
+									{t("logs:agent.events")}
 									{correlatedRows.length > 0 ? (
 										<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 											{totalCorrelatedEvents}
@@ -953,7 +976,7 @@ export function AgentLogDetailSheet({
 							)}
 							{pluginLogCount > 0 && (
 								<TabsTrigger value="plugins" className="px-3">
-									Plugin Logs
+									{t("logs:pluginLogs.title")}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{pluginLogCount}
 									</span>
@@ -961,7 +984,7 @@ export function AgentLogDetailSheet({
 							)}
 							{logCorrelation && llmCount > 0 ? (
 								<TabsTrigger value="llm-logs" className="px-3">
-									LLM Logs{" "}
+									{t("logs:agent.llmLogs")}{" "}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{llmCount}
 									</span>
@@ -969,14 +992,14 @@ export function AgentLogDetailSheet({
 							) : null}
 							{logCorrelation && mcpCount > 0 ? (
 								<TabsTrigger value="mcp-logs" className="px-3">
-									MCP Logs{" "}
+									{t("logs:agent.mcpLogs")}{" "}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{mcpCount}
 									</span>
 								</TabsTrigger>
 							) : null}
 							<TabsTrigger value="raw" className="px-3">
-								Raw JSON
+								{t("logs:details.tabRawJson")}
 							</TabsTrigger>
 						</TabsList>
 
@@ -1046,10 +1069,10 @@ export function AgentLogDetailSheet({
 															>
 																<TabsList aria-label="Event view" className="h-6 rounded-sm p-0.5">
 																	<TabsTrigger value="formatted" className="rounded-[3px] px-2 text-[11px] leading-5">
-																		Formatted
+																		{t("logs:agent.formatted")}
 																	</TabsTrigger>
 																	<TabsTrigger value="raw" className="rounded-[3px] px-2 text-[11px] leading-5">
-																		Raw JSON
+																		{t("logs:details.tabRawJson")}
 																	</TabsTrigger>
 																</TabsList>
 															</Tabs>
@@ -1059,7 +1082,7 @@ export function AgentLogDetailSheet({
 												{isExpanded && (
 													<div className="border-t p-3">
 														{showRaw ? (
-															<PayloadBlock title="Raw event record" code={rawEventRecord(eventDetail)} />
+															<PayloadBlock title={t("logs:agent.rawEventRecord")} code={rawEventRecord(eventDetail)} />
 														) : (
 															<FormattedEventDetail detail={eventDetail} onFilter={onFilter} />
 														)}
@@ -1090,7 +1113,7 @@ export function AgentLogDetailSheet({
 						) : null}
 
 						<TabsContent value="raw" className="space-y-4">
-							<PayloadBlock title="Raw record" code={JSON.stringify(displayLog, null, 2)} />
+							<PayloadBlock title={t("logs:agent.rawRecord")} code={JSON.stringify(displayLog, null, 2)} />
 						</TabsContent>
 
 						{pluginLogCount > 0 && detail?.plugin_logs && (

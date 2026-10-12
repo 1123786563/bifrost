@@ -24,6 +24,8 @@ import { ColumnDef } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import { ArrowUpDown, ChevronRight, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 // Passed to useReactTable({ meta }) by the logs page so the expander column can
 // read/toggle chain expansion without threading props through column factories.
@@ -59,12 +61,13 @@ function batchAccountingDisplay(log: LogEntry): { model: string; usage: LLMUsage
 }
 
 function LogActionsMenu({ log, onDelete }: { log: LogEntry; onDelete: (log: LogEntry) => void }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
 		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
 			<DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
-				<Button variant="ghost" size="icon" data-testid="log-actions-btn" aria-label="Log actions" className="h-7 w-7">
+				<Button variant="ghost" size="icon" data-testid="log-actions-btn" aria-label={t("logs:columns.logActions")} className="h-7 w-7">
 					<MoreHorizontal className="h-4 w-4" />
 				</Button>
 			</DropdownMenuTrigger>
@@ -80,7 +83,7 @@ function LogActionsMenu({ log, onDelete }: { log: LogEntry; onDelete: (log: LogE
 					}}
 				>
 					<Trash2 className="h-4 w-4" />
-					Delete
+					{t("common:actions.delete")}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
@@ -226,6 +229,7 @@ export function LogMessageCell({
 	/** Table rows are a fixed height, so a realtime turn's lines tighten to fit two of them instead of being cut mid-line. */
 	compact?: boolean;
 }) {
+	const { t } = useTranslation(["logs"]);
 	const input = getMessage(log);
 	const isLargePayload = log.is_large_payload_request || log.is_large_payload_response;
 	const realtimeMessages = log.object === "realtime.turn" ? getRealtimeTurnMessages(log) : null;
@@ -235,7 +239,7 @@ export function LogMessageCell({
 			{isLargePayload && (
 				<span
 					className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-400"
-					title="Large payload - streamed directly to provider"
+					title={t("logs:columns.largePayloadTitle")}
 				>
 					LP
 				</span>
@@ -260,7 +264,14 @@ export function LogMessageCell({
 				<div className={cn(contentClassName, "truncate font-mono text-[12px] font-normal")}>
 					{input ||
 						(isLargePayload
-							? `Large payload ${log.is_large_payload_request && log.is_large_payload_response ? "request & response" : log.is_large_payload_request ? "request" : "response"}`
+							? t("logs:columns.largePayload", {
+									kind:
+										log.is_large_payload_request && log.is_large_payload_response
+											? t("logs:columns.payloadRequestResponse")
+											: log.is_large_payload_request
+												? t("logs:columns.payloadRequest")
+												: t("logs:columns.payloadResponse"),
+								})
 							: "-")}
 				</div>
 			)}
@@ -273,15 +284,15 @@ export function LogMessageCell({
 // requests sharing a session_id (counted as turns), a chain is one request's
 // fallback attempts linked by parent_request_id. A settled batch or video nests
 // its cost row the same way, so a chain under one is "linked", not "fallbacks".
-function chainSummary(log: LogEntry, count: number): string {
-	if (log.batch_debug || log.video_debug) return `${count} linked`;
-	return `${count} fallback${count === 1 ? "" : "s"}`;
+function chainSummary(log: LogEntry, count: number, t: TFunction): string {
+	if (log.batch_debug || log.video_debug) return t("logs:columns.linkedCount", { count });
+	return t("logs:columns.fallbackCount", { count });
 }
 
-function nestedRowLabel(log: DisplayLogEntry): string {
-	if (log.__rowKind === "session-member") return `turn ${log.__turn ?? ""}`.trim();
-	if (log.batch_debug?.accounting || log.video_debug?.accounting) return "settled cost";
-	return log.fallback_index > 0 ? `fallback ${log.fallback_index}` : "linked";
+function nestedRowLabel(log: DisplayLogEntry, t: TFunction): string {
+	if (log.__rowKind === "session-member") return t("logs:columns.turnLabel", { turn: log.__turn ?? "" }).trim();
+	if (log.batch_debug?.accounting || log.video_debug?.accounting) return t("logs:columns.settledCost");
+	return log.fallback_index > 0 ? t("logs:columns.fallbackIndex", { index: log.fallback_index }) : t("logs:columns.linked");
 }
 
 // Tree geometry, in px from the cell's left edge. The trunk sits under the
@@ -366,6 +377,7 @@ function GroupToggle({
 }
 
 export const createColumns = (
+	t: TFunction,
 	onDelete: (log: LogEntry) => void,
 	hasDeleteAccess = true,
 	metadataKeys: string[] = [],
@@ -401,12 +413,19 @@ export const createColumns = (
 											className="pl-[15px]"
 											label={
 												<span className="truncate">
-													{nestedRowLabel(log)}
+													{nestedRowLabel(log, t)}
 													<span className="text-muted-foreground/70 ml-1 tabular-nums">+{childCount}</span>
 												</span>
 											}
-											ariaLabel={isExpanded ? "Collapse linked rows" : `Expand ${chainSummary(log, childCount)} of this turn`}
-											tooltip={`${nestedRowLabel(log)} of this session, with ${chainSummary(log, childCount)} (same parent_request_id)`}
+											ariaLabel={
+												isExpanded
+													? t("logs:columns.collapseLinked")
+													: t("logs:columns.expandOfTurn", { summary: chainSummary(log, childCount, t) })
+											}
+											tooltip={t("logs:columns.sessionChildTooltip", {
+												label: nestedRowLabel(log, t),
+												summary: chainSummary(log, childCount, t),
+											})}
 											isExpanded={isExpanded}
 											isLoading={meta.loadingChainIds.has(log.id)}
 											onToggle={() => meta.onToggleChain(log)}
@@ -422,7 +441,7 @@ export const createColumns = (
 									style={{ paddingLeft: TREE_TRUNK_X[depth - 1] + 8 }}
 								>
 									<TreeBranch log={log} opensChildren={false} />
-									<span className="truncate">{nestedRowLabel(log)}</span>
+									<span className="truncate">{nestedRowLabel(log, t)}</span>
 								</div>
 							);
 						}
@@ -433,15 +452,15 @@ export const createColumns = (
 						const sessionCount = log.session_child_count ?? 0;
 						if (sessionCount > 0) {
 							const isExpanded = meta.expandedSessionIds.has(log.id);
-							const others = `${sessionCount} more request${sessionCount === 1 ? "" : "s"}`;
+							const others = t("logs:columns.moreRequests", { count: sessionCount });
 							return (
 								<GroupToggle
 									testId="log-session-expand-btn"
 									className="pl-1"
 									stubX={TREE_TRUNK_X[0]}
-									label={<span className="truncate tabular-nums">{sessionCount + 1} turns</span>}
-									ariaLabel={isExpanded ? "Collapse this session" : `Expand ${others} in this session`}
-									tooltip={`Session of ${sessionCount + 1} requests sharing a session_id. Expand to see the other ${others.replace("more ", "")}.`}
+									label={<span className="truncate tabular-nums">{t("logs:columns.turnsCount", { count: sessionCount + 1 })}</span>}
+									ariaLabel={isExpanded ? t("logs:columns.collapseSession") : t("logs:columns.expandInSession", { others })}
+									tooltip={t("logs:columns.sessionTooltip", { count: sessionCount + 1, others: sessionCount })}
 									isExpanded={isExpanded}
 									isLoading={meta.loadingSessionIds.has(log.id) || meta.loadingChainIds.has(log.id)}
 									onToggle={() => meta.onToggleSession(log)}
@@ -451,14 +470,14 @@ export const createColumns = (
 						const childCount = log.child_count ?? 0;
 						if (!childCount) return null;
 						const isExpanded = meta.expandedChainIds.has(log.id);
-						const summary = chainSummary(log, childCount);
+						const summary = chainSummary(log, childCount, t);
 						return (
 							<GroupToggle
 								testId="log-chain-expand-btn"
 								className="pl-1"
 								stubX={TREE_TRUNK_X[0]}
 								label={<span className="truncate tabular-nums">{summary}</span>}
-								ariaLabel={isExpanded ? "Collapse linked rows" : `Expand ${summary}`}
+								ariaLabel={isExpanded ? t("logs:columns.collapseLinked") : t("logs:columns.expandSummary", { summary })}
 								tooltip={
 									log.batch_debug || log.video_debug
 										? `${summary} row${childCount === 1 ? "" : "s"}: the settled cost (same parent_request_id)`
@@ -499,7 +518,7 @@ export const createColumns = (
 				const date = timestamp ? new Date(timestamp) : null;
 				const isValid = date && date.toString() !== "Invalid Date";
 				if (!isValid) {
-					return <div className="truncate text-xs">N/A</div>;
+					return <div className="truncate text-xs">{t("logs:chat.na")}</div>;
 				}
 				// The row opens the detail sheet on click, which a keyboard can't do. This
 				// button is that entry point: it has no handler of its own, so Enter and
@@ -508,7 +527,7 @@ export const createColumns = (
 					<button
 						type="button"
 						data-testid="logs-row-open-btn"
-						aria-label={`${format(date, "MMM dd HH:mm:ss")} ${formatDistanceToNow(date, { addSuffix: true })}, open log details`}
+						aria-label={`${format(date, "MMM dd HH:mm:ss")} ${formatDistanceToNow(date, { addSuffix: true })}, ${t("logs:columns.openLogDetails")}`}
 						className="focus-visible:ring-ring flex cursor-pointer flex-col rounded-sm text-left leading-tight focus-visible:ring-2 focus-visible:outline-none"
 					>
 						<span className="font-mono text-xs tabular-nums">{format(date, "MMM dd  HH:mm:ss")}</span>
@@ -519,7 +538,7 @@ export const createColumns = (
 		},
 		{
 			id: "request_type",
-			header: "Type",
+			header: t("logs:columns.type"),
 			size: 150,
 			cell: ({ row }) => {
 				return (
@@ -537,13 +556,13 @@ export const createColumns = (
 		},
 		{
 			accessorKey: "input",
-			header: "Message",
+			header: t("logs:columns.message"),
 			size: 350,
 			cell: ({ row }) => <LogMessageCell log={row.original} compact />,
 		},
 		{
 			accessorKey: "model",
-			header: "Model",
+			header: t("logs:columns.model"),
 			size: 280,
 			cell: ({ row }) => {
 				const provider = row.original.provider as ProviderName | undefined;
@@ -555,9 +574,11 @@ export const createColumns = (
 						{provider ? <RenderProviderIcon provider={provider as ProviderIconType} size="xs" /> : null}
 						<div className="flex min-w-0 flex-col leading-tight">
 							<TruncatedLabel truncateFrom="start" className="font-mono text-[12px]">
-								{modelLabel || "N/A"}
+								{modelLabel || t("logs:chat.na")}
 							</TruncatedLabel>
-							<span className="text-muted-foreground truncate text-[10.5px]">{provider ? getProviderLabel(provider) : "N/A"}</span>
+							<span className="text-muted-foreground truncate text-[10.5px]">
+								{provider ? getProviderLabel(provider) : t("logs:chat.na")}
+							</span>
 						</div>
 					</div>
 				);
@@ -566,7 +587,7 @@ export const createColumns = (
 		{
 			id: "app",
 			accessorKey: "app",
-			header: "App",
+			header: t("logs:columns.app"),
 			size: 140,
 			cell: ({ row }) => {
 				const app = row.original.app ? mapAppToClientApp(row.original.app) : mapUserAgentToApp(row.original.user_agent);
@@ -592,7 +613,7 @@ export const createColumns = (
 			cell: ({ row }) => {
 				const latency = row.original.latency;
 				if (latency === undefined || latency === null) {
-					return <div className="pl-4 font-mono text-xs">N/A</div>;
+					return <div className="pl-4 font-mono text-xs">{t("logs:chat.na")}</div>;
 				}
 				const tone = latency >= 5000 ? "bg-chart-error" : latency >= 2000 ? "bg-chart-warning" : "bg-chart-success";
 				const pct = Math.min(100, (latency / 5000) * 100);
@@ -626,16 +647,18 @@ export const createColumns = (
 							<TooltipTrigger asChild>
 								<div className="flex flex-col items-start gap-0.5 pl-4 leading-tight">
 									<span className="font-mono text-[12px] tabular-nums">{formatCompactNumber(row.original.session_total_tokens ?? 0)}</span>
-									<span className="text-muted-foreground font-mono text-[10.5px] tabular-nums">{sessionCount + 1} requests</span>
+									<span className="text-muted-foreground font-mono text-[10.5px] tabular-nums">
+										{t("logs:columns.requestsCount", { count: sessionCount + 1 })}
+									</span>
 								</div>
 							</TooltipTrigger>
-							<TooltipContent>Total across {sessionCount + 1} requests in this session. Expand the row to see them.</TooltipContent>
+							<TooltipContent>{t("logs:columns.sessionTotalTooltip", { count: sessionCount + 1 })}</TooltipContent>
 						</Tooltip>
 					);
 				}
 				const tokenUsage = row.original.token_usage ?? batchAccountingDisplay(row.original)?.usage;
 				if (!tokenUsage) {
-					return <div className="pl-4 font-mono text-xs">N/A</div>;
+					return <div className="pl-4 font-mono text-xs">{t("logs:chat.na")}</div>;
 				}
 				const prompt = tokenUsage.prompt_tokens ?? 0;
 				const completion = tokenUsage.completion_tokens ?? 0;
@@ -684,7 +707,7 @@ export const createColumns = (
 							<TooltipTrigger asChild>
 								<div className="pl-4 font-mono text-sm tabular-nums">{formatCost(row.original.session_total_cost ?? 0)}</div>
 							</TooltipTrigger>
-							<TooltipContent>Total across {sessionCount + 1} requests in this session. Expand the row to see them.</TooltipContent>
+							<TooltipContent>{t("logs:columns.sessionTotalTooltip", { count: sessionCount + 1 })}</TooltipContent>
 						</Tooltip>
 					);
 				}
@@ -696,7 +719,7 @@ export const createColumns = (
 								<TooltipTrigger asChild>
 									<div className="text-muted-foreground pl-4 font-mono text-sm tabular-nums">{formatCost(batchCost)}</div>
 								</TooltipTrigger>
-								<TooltipContent>Settled cost of this batch, billed once.</TooltipContent>
+								<TooltipContent>{t("logs:columns.batchSettledTooltip")}</TooltipContent>
 							</Tooltip>
 						);
 					}
@@ -713,14 +736,12 @@ export const createColumns = (
 								{/* The expand chevron only exists in the grouped view, so pointing at
 								    it anywhere else sends people looking for a control that is not there. */}
 								<TooltipContent>
-									{groupedView
-										? "Settled after this request completed. Expand the row to see it."
-										: "Settled after this request completed, on its own row."}
+									{groupedView ? t("logs:columns.settledExpandTooltip") : t("logs:columns.settledOwnRowTooltip")}
 								</TooltipContent>
 							</Tooltip>
 						);
 					}
-					return <div className="pl-4 font-mono text-[12px]">N/A</div>;
+					return <div className="pl-4 font-mono text-[12px]">{t("logs:chat.na")}</div>;
 				}
 				return <div className="pl-4 font-mono text-sm tabular-nums">{formatCost(row.original.cost)}</div>;
 			},
@@ -730,7 +751,7 @@ export const createColumns = (
 	const attributionColumns: ColumnDef<LogEntry>[] = [
 		{
 			id: "session",
-			header: "Session",
+			header: t("logs:columns.session"),
 			size: 170,
 			cell: ({ row }) => {
 				const sessionId = row.original.session_id;
@@ -755,7 +776,7 @@ export const createColumns = (
 		},
 		{
 			id: "service_tier",
-			header: "Service Tier",
+			header: t("logs:columns.serviceTier"),
 			size: 130,
 			cell: ({ row }) => {
 				const tier = row.original.service_tier;
@@ -771,19 +792,19 @@ export const createColumns = (
 		},
 		{
 			id: "virtual_key",
-			header: "Virtual Key",
+			header: t("logs:columns.virtualKey"),
 			size: 170,
 			cell: ({ row }) => <AttributionCell name={row.original.virtual_key_name} id={row.original.virtual_key_id} />,
 		},
 		{
 			id: "routing_rule",
-			header: "Routing Rule",
+			header: t("logs:columns.routingRule"),
 			size: 170,
 			cell: ({ row }) => <AttributionCell name={row.original.routing_rule_name} id={row.original.routing_rule_id} />,
 		},
 		{
 			id: "team",
-			header: "Team",
+			header: t("logs:columns.team"),
 			size: 150,
 			cell: ({ row }) => (
 				<AttributionCell
@@ -796,7 +817,7 @@ export const createColumns = (
 		},
 		{
 			id: "customer",
-			header: "Customer",
+			header: t("logs:columns.customer"),
 			size: 150,
 			cell: ({ row }) => (
 				<AttributionCell
@@ -809,13 +830,13 @@ export const createColumns = (
 		},
 		{
 			id: "user",
-			header: "User",
+			header: t("logs:columns.user"),
 			size: 150,
 			cell: ({ row }) => <AttributionCell name={row.original.user_name} id={row.original.user_id} />,
 		},
 		{
 			id: "business_unit",
-			header: "Business Unit",
+			header: t("logs:columns.businessUnit"),
 			size: 150,
 			cell: ({ row }) => (
 				<AttributionCell
@@ -828,7 +849,7 @@ export const createColumns = (
 		},
 		{
 			id: "project",
-			header: "Project",
+			header: t("logs:columns.project"),
 			size: 150,
 			cell: ({ row }) => <AttributionCell name={row.original.project_name} id={row.original.project_id} />,
 		},

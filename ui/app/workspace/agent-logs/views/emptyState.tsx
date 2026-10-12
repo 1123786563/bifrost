@@ -1,4 +1,5 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { CodeEditor } from "@/components/ui/codeEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,6 +41,7 @@ interface AgentEmptyStateProps {
 }
 
 export function AgentEmptyState({ error }: AgentEmptyStateProps) {
+	const { t } = useTranslation(["logs"]);
 	const examples = useMemo(() => {
 		const baseUrl = getExampleBaseUrl();
 		const headers = `-H "Content-Type: application/json" \\
@@ -76,9 +78,7 @@ export function AgentEmptyState({ error }: AgentEmptyStateProps) {
 			{error && (
 				<Alert>
 					<AlertTriangle className="h-4 w-4" />
-					<AlertDescription>
-						{isUnexpectedError ? "Looks like you haven't configured the log store in your config file." : error}
-					</AlertDescription>
+					<AlertDescription>{isUnexpectedError ? t("logs:empty.unexpectedError") : error}</AlertDescription>
 				</Alert>
 			)}
 

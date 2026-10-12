@@ -15,6 +15,7 @@ import type { ColumnOrderState, ColumnPinningState, VisibilityState } from "@tan
 import { ColumnDef, flexRender, getCoreRowModel, SortingState, useReactTable } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface DataTableProps {
 	columns: ColumnDef<AgentLogSummary>[];
@@ -56,6 +57,7 @@ export function AgentLogsDataTable({
 	onTogglePin,
 	onReorderColumns,
 }: DataTableProps) {
+	const { t } = useTranslation(["common", "logs"]);
 	const [sorting, setSorting] = useState<SortingState>([
 		{ id: pagination.sort_by === "latency" ? "duration" : pagination.sort_by, desc: pagination.order === "desc" },
 	]);
@@ -169,12 +171,12 @@ export function AgentLogsDataTable({
 										{polling ? (
 											<>
 												<RefreshCw className="h-4 w-4 animate-spin" />
-												Waiting for new Agent Logs...
+												{t("logs:agent.waiting")}
 											</>
 										) : (
 											<Button variant="ghost" size="sm" onClick={onRefresh} disabled={loading} data-testid="agent-logs-table-refresh-btn">
 												<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-												Refresh
+												{t("common:actions.refresh")}
 											</Button>
 										)}
 									</div>
@@ -218,7 +220,11 @@ export function AgentLogsDataTable({
 				{/* Pagination Footer */}
 				<div className="flex items-center justify-between text-xs" data-testid="pagination">
 					<div className="text-muted-foreground flex items-center gap-2">
-						{startItemDisplay.toLocaleString()}-{endItemDisplay.toLocaleString()} of {totalItems.toLocaleString()} entries
+						{t("logs:table.range", {
+							from: startItemDisplay.toLocaleString(),
+							to: endItemDisplay.toLocaleString(),
+							total: totalItems.toLocaleString(),
+						})}
 					</div>
 
 					<div className="flex items-center gap-2">
@@ -228,15 +234,13 @@ export function AgentLogsDataTable({
 							onClick={() => goToPage(currentPage - 1)}
 							disabled={currentPage <= 1}
 							data-testid="prev-page"
-							aria-label="Previous page"
+							aria-label={t("logs:table.previousPage")}
 						>
 							<ChevronLeft className="size-3" />
 						</Button>
 
 						<div className="flex items-center gap-1">
-							<span>Page</span>
-							<span>{currentPage}</span>
-							<span>of {totalPages}</span>
+							<span>{t("logs:table.pageOf", { current: currentPage, total: totalPages })}</span>
 						</div>
 
 						<Button
@@ -245,7 +249,7 @@ export function AgentLogsDataTable({
 							onClick={() => goToPage(currentPage + 1)}
 							disabled={totalPages === 0 || currentPage >= totalPages}
 							data-testid="next-page"
-							aria-label="Next page"
+							aria-label={t("logs:table.nextPage")}
 						>
 							<ChevronRight className="size-3" />
 						</Button>

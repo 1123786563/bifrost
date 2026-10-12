@@ -7,6 +7,7 @@ import { TriStateCheckbox } from "@/components/ui/tristateCheckbox";
 import { getErrorMessage, useGetLoadedPluginsQuery, useGetPluginQuery, useUpdatePluginMutation } from "@/lib/store";
 import { PluginSpanFilter } from "@/lib/types/config";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 interface PluginTracingSheetProps {
@@ -63,6 +64,7 @@ function PluginRow({ name, checked, onChange }: { name: string; checked: boolean
 }
 
 export default function PluginTracingSheet({ open, onClose, pluginName, destination, showOverheadToggle = true }: PluginTracingSheetProps) {
+	const { t } = useTranslation(["common", "logs"]);
 	// All currently loaded plugins (built-in, enterprise, custom, and auto-loaded) that can
 	// emit spans, named to match the connector's span filter. One flat list — the backend
 	// already returns the complete set, so there's no built-in/custom split to maintain.
@@ -95,11 +97,11 @@ export default function PluginTracingSheet({ open, onClose, pluginName, destinat
 			// Toggles haven't been initialized from persisted config yet (e.g. the plugin list
 			// is still loading for an include-mode filter). Saving now would build an empty
 			// filter and wipe the stored plugin_span_filter, so block until init completes.
-			toast.error("Plugin list is still loading. Please wait before saving.");
+			toast.error(t("logs:observability.pluginListLoading"));
 			return;
 		}
 		if (!targetPlugin) {
-			toast.error(`${destination} is not configured yet. Save its configuration before configuring plugin tracing.`);
+			toast.error(t("logs:observability.destinationNotConfigured", { destination }));
 			return;
 		}
 		const filter = buildFilter(toggles);
@@ -115,18 +117,18 @@ export default function PluginTracingSheet({ open, onClose, pluginName, destinat
 					config,
 				},
 			}).unwrap();
-			toast.success("Tracing configuration saved");
+			toast.success(t("logs:observability.tracingSaved"));
 			onClose();
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		}
-	}, [toggles, exportOverheadSpans, showOverheadToggle, targetPlugin, updatePlugin, onClose, pluginName, destination]);
+	}, [toggles, exportOverheadSpans, showOverheadToggle, targetPlugin, updatePlugin, onClose, pluginName, destination, t]);
 
 	return (
 		<Sheet open={open} onOpenChange={onClose}>
 			<SheetContent className="flex w-full flex-col overflow-hidden p-4 md:p-8">
 				<SheetHeader className="flex flex-col items-start p-0">
-					<SheetTitle>Configure Tracing</SheetTitle>
+					<SheetTitle>{t("logs:observability.configureTracing")}</SheetTitle>
 					<SheetDescription>
 						Choose which spans are exported to {destination}. Disabling a plugin removes its spans from traces without affecting execution.
 					</SheetDescription>
@@ -148,7 +150,7 @@ export default function PluginTracingSheet({ open, onClose, pluginName, destinat
 											return updated;
 										});
 									}}
-									ariaLabel="Toggle all plugin tracing"
+									ariaLabel={t("logs:observability.toggleAllPluginTracing")}
 									data-testid="plugin-tracing-select-all"
 								/>
 							</div>
@@ -190,17 +192,17 @@ export default function PluginTracingSheet({ open, onClose, pluginName, destinat
 					</Alert>
 					<div className="flex justify-end gap-2 pt-2">
 						<Button type="button" variant="outline" onClick={onClose} disabled={isLoading} data-testid="plugin-tracing-cancel-button">
-							Cancel
+							{t("common:actions.cancel")}
 						</Button>
 						<Button
 							onClick={handleSave}
 							disabled={isLoading || !wasOpenRef.current || !hasUpdateAccess}
-							title={hasUpdateAccess ? undefined : "You do not have permission to change observability settings"}
+							title={hasUpdateAccess ? undefined : t("logs:observability.noPermission")}
 							isLoading={isLoading}
 							data-testid="plugin-tracing-save-button"
 							type="button"
 						>
-							Save
+							{t("common:actions.save")}
 						</Button>
 					</div>
 				</div>

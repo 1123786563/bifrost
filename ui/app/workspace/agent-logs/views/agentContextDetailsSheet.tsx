@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { format, isValid } from "date-fns";
 import { ArrowDown, ArrowUp, CheckCircle, ChevronLeft, ChevronRight, Clock, Filter, Loader2, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { toast } from "sonner";
 import { A2APartsView, A2APayloadView, TaskStateBadge } from "./a2aPayloadView";
 import { CorrelatedLogsContent, useCorrelatedLogCounts } from "./correlatedLogs";
@@ -177,8 +179,15 @@ function buildSessionContent(log: AgentLogOperation): SessionContent[] {
 }
 
 function ConversationMessage({ item, timestamp, context }: { item: SessionContent; timestamp?: string; context?: string }) {
+	const { t } = useTranslation(["logs"]);
 	const user = item.role === "user";
-	const label = user ? "You" : item.kind === "artifact" ? "Artifact" : item.kind === "status" ? "Agent update" : "Agent response";
+	const label = user
+		? t("logs:agent.you")
+		: item.kind === "artifact"
+			? t("logs:agent.artifact")
+			: item.kind === "status"
+				? t("logs:agent.agentUpdate")
+				: t("logs:agent.agentResponse");
 	return (
 		<div className="flex gap-3">
 			<div className="flex flex-col items-center pt-1.5">
@@ -289,18 +298,18 @@ interface ProtocolActivityDefinition {
 }
 
 const PROTOCOL_ACTIVITY_DEFINITIONS: Record<string, ProtocolActivityDefinition> = {
-	GetTask: { label: "Task state fetched", showsTaskState: true },
-	ListTasks: { label: "Tasks listed" },
-	CancelTask: { label: "Task cancellation requested", showsTaskState: true },
-	SubscribeToTask: { label: "Task update stream", showsTaskState: true },
-	CreateTaskPushNotificationConfig: { label: "Push notifications configured" },
-	GetTaskPushNotificationConfig: { label: "Push configuration fetched" },
-	ListTaskPushNotificationConfigs: { label: "Push configurations listed" },
-	DeleteTaskPushNotificationConfig: { label: "Push configuration deleted" },
-	push_notification: { label: "Task update received", showsTaskState: true },
-	push_delivery: { label: "Push notification forwarded" },
-	GetAgentCard: { label: "Public Agent Card fetched" },
-	GetExtendedAgentCard: { label: "Extended Agent Card fetched" },
+	GetTask: { label: i18n.t("logs:agent.opTaskStateFetched"), showsTaskState: true },
+	ListTasks: { label: i18n.t("logs:agent.opTasksListed") },
+	CancelTask: { label: i18n.t("logs:agent.opTaskCancelRequested"), showsTaskState: true },
+	SubscribeToTask: { label: i18n.t("logs:agent.opTaskUpdateStream"), showsTaskState: true },
+	CreateTaskPushNotificationConfig: { label: i18n.t("logs:agent.opPushNotificationsConfigured") },
+	GetTaskPushNotificationConfig: { label: i18n.t("logs:agent.opPushConfigFetched") },
+	ListTaskPushNotificationConfigs: { label: i18n.t("logs:agent.opPushConfigsListed") },
+	DeleteTaskPushNotificationConfig: { label: i18n.t("logs:agent.opPushConfigDeleted") },
+	push_notification: { label: i18n.t("logs:agent.opTaskUpdateReceived"), showsTaskState: true },
+	push_delivery: { label: i18n.t("logs:agent.opPushNotificationForwarded") },
+	GetAgentCard: { label: i18n.t("logs:agent.opPublicAgentCardFetched") },
+	GetExtendedAgentCard: { label: i18n.t("logs:agent.opExtendedAgentCardFetched") },
 };
 
 function protocolActivityDefinition(operation: string): ProtocolActivityDefinition {
@@ -387,6 +396,7 @@ export function A2AOperationConversation({
 	showTimestamp?: boolean;
 	allowPushConversation?: boolean;
 }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const timestamp = new Date(log.timestamp);
 	const conversationOperation =
 		isA2AConversationOperation(log.operation) || (allowPushConversation && isA2APushConversationOperation(log.operation));
@@ -409,8 +419,8 @@ export function A2AOperationConversation({
 					context={
 						index === 0 && allowPushConversation && isA2APushConversationOperation(log.operation)
 							? log.operation === "push_notification"
-								? "Push notification received from Agent"
-								: "Push notification sent to client callback"
+								? t("logs:agent.pushReceived")
+								: t("logs:agent.pushSentToClient")
 							: undefined
 					}
 				/>
@@ -468,6 +478,7 @@ export function AgentContextDetailsSheet({
 	onLogClick,
 	onFilterContext,
 }: AgentContextDetailsSheetProps) {
+	const { t } = useTranslation(["common", "logs"]);
 	const [triggerGetLogs] = useLazyGetAgentLogOperationsQuery();
 	const [logs, setLogs] = useState<AgentLogOperation[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -503,7 +514,7 @@ export function AgentContextDetailsSheet({
 				});
 				if (seq !== requestSeq.current) return;
 				if (result.error) {
-					toast.error("Failed to load context", { description: getErrorMessage(result.error) });
+					toast.error(t("logs:agent.loadContextFailed"), { description: getErrorMessage(result.error) });
 					return;
 				}
 				if (result.data) {
@@ -523,7 +534,7 @@ export function AgentContextDetailsSheet({
 				if (seq === requestSeq.current) setLoading(false);
 			}
 		},
-		[contextId, currentLogId, filters, positionedSelection, positioningKey, sortOrder, triggerGetLogs],
+		[contextId, currentLogId, filters, positionedSelection, positioningKey, sortOrder, triggerGetLogs, t],
 	);
 
 	useEffect(() => {
@@ -543,22 +554,22 @@ export function AgentContextDetailsSheet({
 	useEffect(() => {
 		if (!open || !contextId) return;
 		void loadPage(page);
-	}, [contextId, loadPage, open, page]);
+	}, [contextId, loadPage, open, page, t]);
 
 	const totalPages = Math.max(1, Math.ceil(totalCount / CONTEXT_PAGE_SIZE));
 
 	const statsSummary = [
-		{ label: "Operations", value: stats?.total_entries ?? 0, icon: Clock },
-		{ label: "Successful", value: stats?.success_count ?? 0, icon: CheckCircle },
-		{ label: "Failed", value: stats?.error_count ?? 0, icon: XCircle },
-		{ label: "Avg duration", value: formatLatency(stats?.average_latency ?? 0), icon: Clock },
+		{ label: t("logs:agent.operationCount"), value: stats?.total_entries ?? 0, icon: Clock },
+		{ label: t("logs:agent.successful"), value: stats?.success_count ?? 0, icon: CheckCircle },
+		{ label: t("logs:metrics.failed"), value: stats?.error_count ?? 0, icon: XCircle },
+		{ label: t("logs:agent.avgDuration"), value: formatLatency(stats?.average_latency ?? 0), icon: Clock },
 	] as const;
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent className="flex w-full flex-col gap-4 overflow-x-hidden p-4 sm:max-w-[60%] md:p-8">
 				<SheetHeader className="flex min-w-0 flex-col items-start px-0" headerClassName="mb-0">
-					<SheetTitle>Agent session</SheetTitle>
+					<SheetTitle>{t("logs:agent.sessionTitle")}</SheetTitle>
 					<code className="text-muted-foreground block max-w-full truncate text-xs" title={contextId || undefined}>
 						{contextId}
 					</code>
@@ -575,11 +586,11 @@ export function AgentContextDetailsSheet({
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
 						<Button variant="outline" size="sm" onClick={() => contextId && onFilterContext(contextId)}>
-							<Filter className="size-4" /> Filter session
+							<Filter className="size-4" /> {t("logs:agent.filterSession")}
 						</Button>
 						<Button variant="outline" size="sm" onClick={() => setSortOrder((order) => (order === "asc" ? "desc" : "asc"))}>
 							{sortOrder === "asc" ? <ArrowUp className="size-4" /> : <ArrowDown className="size-4" />}
-							{sortOrder === "asc" ? "Earliest first" : "Latest first"}
+							{sortOrder === "asc" ? t("logs:session.earliestFirst") : t("logs:session.latestFirst")}
 						</Button>
 					</div>
 				</div>
@@ -593,11 +604,11 @@ export function AgentContextDetailsSheet({
 					{llmCount > 0 || mcpCount > 0 ? (
 						<TabsList className="bg-muted/60 h-10 w-fit">
 							<TabsTrigger value="operations" className="px-3">
-								Operations
+								{t("logs:agent.operationCount")}
 							</TabsTrigger>
 							{llmCount > 0 ? (
 								<TabsTrigger value="llm-logs" className="px-3">
-									LLM Logs{" "}
+									{t("logs:agent.llmLogs")}{" "}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{llmCount}
 									</span>
@@ -605,7 +616,7 @@ export function AgentContextDetailsSheet({
 							) : null}
 							{mcpCount > 0 ? (
 								<TabsTrigger value="mcp-logs" className="px-3">
-									MCP Logs{" "}
+									{t("logs:agent.mcpLogs")}{" "}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{mcpCount}
 									</span>
@@ -644,7 +655,7 @@ export function AgentContextDetailsSheet({
 										size="sm"
 										onClick={() => setPage((current) => Math.max(0, current - 1))}
 										disabled={loading || page === 0}
-										aria-label="Previous page"
+										aria-label={t("logs:table.previousPage")}
 									>
 										<ChevronLeft className="size-3" />
 									</Button>
@@ -658,7 +669,7 @@ export function AgentContextDetailsSheet({
 										size="sm"
 										onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
 										disabled={loading || page >= totalPages - 1}
-										aria-label="Next page"
+										aria-label={t("logs:table.nextPage")}
 									>
 										<ChevronRight className="size-3" />
 									</Button>

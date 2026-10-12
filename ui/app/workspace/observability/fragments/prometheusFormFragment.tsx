@@ -14,6 +14,7 @@ import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Copy, Info, Plus, Trash, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm, type Resolver } from "react-hook-form";
 
 interface PrometheusFormFragmentProps {
@@ -64,6 +65,7 @@ export function PrometheusFormFragment({
 	isLoading = false,
 	metricsEndpoint,
 }: PrometheusFormFragmentProps) {
+	const { t } = useTranslation(["common", "logs"]);
 	const hasPrometheusAccess = useRbac(RbacResource.Observability, RbacOperation.Update);
 	const [isSaving, setIsSaving] = useState(false);
 	const { copy, copied } = useCopyToClipboard();
@@ -114,7 +116,6 @@ export function PrometheusFormFragment({
 	// Reset only the fields belonging to the given tab. The other tab's pending
 	// edits are preserved so a Reset on one tab feels scoped.
 
-
 	// One Save and one Reset for the whole form, matching the OTEL fragment. Save
 	// always submitted the entire config, and the per-tab gating is what hid the
 	// plugin-level toggles from anyone working on the Push tab.
@@ -132,10 +133,10 @@ export function PrometheusFormFragment({
 	const saveDisabled = !hasPrometheusAccess || !formDirty || formIsInvalid;
 	let tooltipMsg = "";
 	if (!formDirty) {
-		tooltipMsg = "No changes made";
+		tooltipMsg = t("logs:observability.noChanges");
 	} else if (formIsInvalid) {
-		const where = hasPullErrors ? "Pull-based" : hasPushErrors ? "Push-based" : "";
-		tooltipMsg = where ? `Fix validation errors in the ${where} tab before saving` : "Fix validation errors before saving";
+		const where = hasPullErrors ? t("logs:prom.pullBased") : hasPushErrors ? t("logs:prom.pushBased") : "";
+		tooltipMsg = where ? t("logs:observability.fixErrorsInTab", { where }) : t("logs:observability.fixErrors");
 	}
 
 	const renderFormActions = () => (
@@ -148,8 +149,8 @@ export function PrometheusFormFragment({
 						onClick={onDelete}
 						disabled={isDeleting || !hasPrometheusAccess}
 						data-testid="prometheus-connector-delete-btn"
-						title="Delete connector"
-						aria-label="Delete connector"
+						title={t("logs:observability.deleteConnector")}
+						aria-label={t("logs:observability.deleteConnector")}
 					>
 						<Trash2 className="size-4" />
 					</Button>
@@ -170,7 +171,7 @@ export function PrometheusFormFragment({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button type="submit" disabled={saveDisabled} isLoading={isSaving} data-testid="prometheus-save-btn">
-								Save Prometheus Configuration
+								{t("logs:prom.saveConfig")}
 							</Button>
 						</TooltipTrigger>
 						{tooltipMsg && (
@@ -187,53 +188,53 @@ export function PrometheusFormFragment({
 	return (
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-					<div className="flex items-center justify-between gap-4">
-						<div className="flex flex-col gap-1">
-							<h3 className="text-sm font-medium">Overhead breakdown</h3>
-							<p className="text-muted-foreground text-xs">Export per-component Bifrost overhead latency as a histogram.</p>
-						</div>
-						<FormField
-							control={form.control}
-							name="overhead_breakdown_enabled"
-							render={({ field }) => (
-								<FormItem className="flex items-center gap-2">
-									<FormLabel className="text-muted-foreground text-sm font-medium">Enabled</FormLabel>
-									<FormControl>
-										<Switch
-											checked={field.value}
-											onCheckedChange={field.onChange}
-											disabled={!hasPrometheusAccess}
-											data-testid="prometheus-overhead-breakdown-toggle"
-										/>
-									</FormControl>
-								</FormItem>
-							)}
-						/>
+				<div className="flex items-center justify-between gap-4">
+					<div className="flex flex-col gap-1">
+						<h3 className="text-sm font-medium">{t("logs:otel.overheadBreakdown")}</h3>
+						<p className="text-muted-foreground text-xs">{t("logs:otel.overheadBreakdownDesc")}</p>
 					</div>
+					<FormField
+						control={form.control}
+						name="overhead_breakdown_enabled"
+						render={({ field }) => (
+							<FormItem className="flex items-center gap-2">
+								<FormLabel className="text-muted-foreground text-sm font-medium">{t("common:state.enabled")}</FormLabel>
+								<FormControl>
+									<Switch
+										checked={field.value}
+										onCheckedChange={field.onChange}
+										disabled={!hasPrometheusAccess}
+										data-testid="prometheus-overhead-breakdown-toggle"
+									/>
+								</FormControl>
+							</FormItem>
+						)}
+					/>
+				</div>
 
-					<div className="flex items-center justify-between gap-4">
-						<div className="flex flex-col gap-1">
-							<h3 className="text-sm font-medium">User labels</h3>
-							<p className="text-muted-foreground text-xs">Add user data labels to metrics</p>
-						</div>
-						<FormField
-							control={form.control}
-							name="user_labels_enabled"
-							render={({ field }) => (
-								<FormItem className="flex items-center gap-2">
-									<FormLabel className="text-muted-foreground text-sm font-medium">Enabled</FormLabel>
-									<FormControl>
-										<Switch
-											checked={field.value}
-											onCheckedChange={field.onChange}
-											disabled={!hasPrometheusAccess}
-											data-testid="prometheus-user-labels-toggle"
-										/>
-									</FormControl>
-								</FormItem>
-							)}
-						/>
+				<div className="flex items-center justify-between gap-4">
+					<div className="flex flex-col gap-1">
+						<h3 className="text-sm font-medium">{t("logs:prom.userLabels")}</h3>
+						<p className="text-muted-foreground text-xs">{t("logs:prom.userLabelsDesc")}</p>
 					</div>
+					<FormField
+						control={form.control}
+						name="user_labels_enabled"
+						render={({ field }) => (
+							<FormItem className="flex items-center gap-2">
+								<FormLabel className="text-muted-foreground text-sm font-medium">{t("common:state.enabled")}</FormLabel>
+								<FormControl>
+									<Switch
+										checked={field.value}
+										onCheckedChange={field.onChange}
+										disabled={!hasPrometheusAccess}
+										data-testid="prometheus-user-labels-toggle"
+									/>
+								</FormControl>
+							</FormItem>
+						)}
+					/>
+				</div>
 
 				<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "pull" | "push")}>
 					<TabsList className="gap-2">
@@ -249,15 +250,15 @@ export function PrometheusFormFragment({
 					<TabsContent value="pull" className="mt-2 space-y-4">
 						<div className="flex items-center justify-between gap-4">
 							<div className="flex flex-col gap-1">
-								<h3 className="text-sm font-medium">Pull-based Scraping</h3>
-								<p className="text-muted-foreground text-xs">Prometheus can scrape metrics from the /metrics endpoint</p>
+								<h3 className="text-sm font-medium">{t("logs:prom.pullScraping")}</h3>
+								<p className="text-muted-foreground text-xs">{t("logs:prom.pullScrapingDesc")}</p>
 							</div>
 							<FormField
 								control={form.control}
 								name="metrics_enabled"
 								render={({ field }) => (
 									<FormItem className="flex items-center gap-2">
-										<FormLabel className="text-muted-foreground text-sm font-medium">Enabled</FormLabel>
+										<FormLabel className="text-muted-foreground text-sm font-medium">{t("common:state.enabled")}</FormLabel>
 										<FormControl>
 											<Switch
 												checked={field.value}
@@ -274,7 +275,7 @@ export function PrometheusFormFragment({
 						<div className="bg-muted/50 rounded-md p-4">
 							<div className="flex items-center justify-between">
 								<div className="flex flex-col gap-1">
-									<span className="text-sm font-medium">Metrics Endpoint</span>
+									<span className="text-sm font-medium">{t("logs:otel.metricsEndpoint")}</span>
 									<code className="text-muted-foreground text-xs">{metricsEndpoint || "http://<bifrost-host>:<port>/metrics"}</code>
 								</div>
 								{metricsEndpoint && (
@@ -287,7 +288,7 @@ export function PrometheusFormFragment({
 										data-testid="prometheus-copy-endpoint"
 									>
 										<Copy className="mr-2 h-3 w-3" />
-										{copied ? "Copied!" : "Copy"}
+										{copied ? t("logs:observability.copiedExclaim") : t("common:actions.copy")}
 									</Button>
 								)}
 							</div>
@@ -295,7 +296,6 @@ export function PrometheusFormFragment({
 								Configure your Prometheus server to scrape this endpoint. Served only while Pull-based scraping is enabled.
 							</p>
 						</div>
-
 					</TabsContent>
 
 					{/* Push-based tab: gates the push gateway loop */}
@@ -314,7 +314,7 @@ export function PrometheusFormFragment({
 								name="push_gateway_enabled"
 								render={({ field }) => (
 									<FormItem className="flex items-center gap-2">
-										<FormLabel className="text-muted-foreground text-sm font-medium">Enabled</FormLabel>
+										<FormLabel className="text-muted-foreground text-sm font-medium">{t("common:state.enabled")}</FormLabel>
 										<FormControl>
 											<Switch
 												checked={field.value}
@@ -342,7 +342,7 @@ export function PrometheusFormFragment({
 								name="prometheus_config.push_gateway_url"
 								render={({ field }) => (
 									<FormItem className="w-full">
-										<FormLabel>Push Gateway URL</FormLabel>
+										<FormLabel>{t("logs:prom.pushGatewayUrl")}</FormLabel>
 										<FormControl>
 											<SecretVarInput
 												placeholder="http://pushgateway:9091 or env.PUSHGATEWAY_URL"
@@ -351,7 +351,7 @@ export function PrometheusFormFragment({
 												{...field}
 											/>
 										</FormControl>
-										<FormDescription>URL of your Prometheus Push Gateway</FormDescription>
+										<FormDescription>{t("logs:prom.pushGatewayUrlDesc")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -363,11 +363,11 @@ export function PrometheusFormFragment({
 									name="prometheus_config.job_name"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Job Name</FormLabel>
+											<FormLabel>{t("logs:prom.jobName")}</FormLabel>
 											<FormControl>
 												<Input placeholder="bifrost" disabled={!hasPrometheusAccess} data-testid="prometheus-job-name" {...field} />
 											</FormControl>
-											<FormDescription>Job label for metrics</FormDescription>
+											<FormDescription>{t("logs:prom.jobNameDesc")}</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}
@@ -378,7 +378,7 @@ export function PrometheusFormFragment({
 									name="prometheus_config.push_interval"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Push Interval (seconds)</FormLabel>
+											<FormLabel>{t("logs:otel.pushInterval")}</FormLabel>
 											<FormControl>
 												<Input
 													type="number"
@@ -390,7 +390,7 @@ export function PrometheusFormFragment({
 													onChange={(e) => field.onChange(parseInt(e.target.value) || 15)}
 												/>
 											</FormControl>
-											<FormDescription>How often to push (1-300s)</FormDescription>
+											<FormDescription>{t("logs:prom.pushIntervalShortDesc")}</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}
@@ -403,7 +403,7 @@ export function PrometheusFormFragment({
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel className="flex items-center gap-2">
-											Instance ID
+											{t("logs:prom.instanceId")}
 											<TooltipProvider>
 												<Tooltip>
 													<TooltipTrigger asChild>
@@ -419,7 +419,7 @@ export function PrometheusFormFragment({
 										</FormLabel>
 										<FormControl>
 											<Input
-												placeholder="Auto-generated from hostname"
+												placeholder={t("logs:prom.autoGeneratedFromHostname")}
 												disabled={!hasPrometheusAccess}
 												data-testid="prometheus-instance-id"
 												{...field}
@@ -442,12 +442,12 @@ export function PrometheusFormFragment({
 										data-testid="prometheus-add-basic-auth"
 									>
 										<Plus className="mr-2 h-3 w-3" />
-										Add Basic Auth
+										{t("logs:prom.addBasicAuth")}
 									</Button>
 								) : (
 									<>
 										<div className="flex items-center justify-between">
-											<span className="text-sm font-medium">Basic Authentication</span>
+											<span className="text-sm font-medium">{t("logs:prom.basicAuthentication")}</span>
 											<Button
 												type="button"
 												variant="ghost"
@@ -456,7 +456,7 @@ export function PrometheusFormFragment({
 												disabled={!hasPrometheusAccess}
 												className="text-muted-foreground hover:text-destructive h-auto p-1"
 												data-testid="prometheus-remove-basic-auth"
-												aria-label="Remove basic auth"
+												aria-label={t("logs:prom.removeBasicAuth")}
 											>
 												<Trash className="h-4 w-4" />
 											</Button>
@@ -467,7 +467,7 @@ export function PrometheusFormFragment({
 												name="prometheus_config.basic_auth_username"
 												render={({ field }) => (
 													<FormItem>
-														<FormLabel>Username</FormLabel>
+														<FormLabel>{t("logs:prom.username")}</FormLabel>
 														<FormControl>
 															<SecretVarInput
 																placeholder="Username or env.PG_USER"
@@ -486,7 +486,7 @@ export function PrometheusFormFragment({
 												name="prometheus_config.basic_auth_password"
 												render={({ field }) => (
 													<FormItem>
-														<FormLabel>Password</FormLabel>
+														<FormLabel>{t("logs:prom.password")}</FormLabel>
 														<FormControl>
 															<SecretVarInput
 																type="password"
@@ -507,7 +507,6 @@ export function PrometheusFormFragment({
 								)}
 							</div>
 						</div>
-
 					</TabsContent>
 				</Tabs>
 

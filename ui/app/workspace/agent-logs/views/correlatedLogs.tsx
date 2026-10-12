@@ -26,10 +26,29 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { format, isValid } from "date-fns";
 import { ChevronLeft, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 10;
-const LLM_HEADERS = ["Time", "", "Type", "Message", "Model", "App", "Latency", "Tokens", "Cost"];
-const MCP_HEADERS = ["Time", "", "Tool", "Server", "App", "Latency", "Cost"];
+const LLM_HEADER_KEYS = [
+	"logs:columns.time",
+	"",
+	"logs:columns.type",
+	"logs:columns.message",
+	"logs:columns.model",
+	"logs:columns.app",
+	"logs:columns.latency",
+	"logs:columns.tokens",
+	"logs:columns.cost",
+];
+const MCP_HEADER_KEYS = [
+	"logs:columns.time",
+	"",
+	"logs:mcp.tool",
+	"logs:mcp.server",
+	"logs:columns.app",
+	"logs:columns.latency",
+	"logs:columns.cost",
+];
 
 type Correlation = { session_id: string } | { agent_correlation_id: string };
 type CorrelatedLogKind = "llm" | "mcp";
@@ -65,6 +84,7 @@ function Pagination({
 	loading: boolean;
 	onPageChange: (page: number) => void;
 }) {
+	const { t } = useTranslation(["logs"]);
 	const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 	if (total <= PAGE_SIZE) return null;
 	return (
@@ -76,7 +96,7 @@ function Pagination({
 				<Button
 					variant="ghost"
 					size="sm"
-					aria-label="Previous page"
+					aria-label={t("logs:table.previousPage")}
 					disabled={loading || page === 0}
 					onClick={() => onPageChange(page - 1)}
 				>
@@ -88,7 +108,7 @@ function Pagination({
 				<Button
 					variant="ghost"
 					size="sm"
-					aria-label="Next page"
+					aria-label={t("logs:table.nextPage")}
 					disabled={loading || page >= totalPages - 1}
 					onClick={() => onPageChange(page + 1)}
 				>
@@ -100,7 +120,9 @@ function Pagination({
 }
 
 function CorrelatedTableHeader({ kind }: { kind: CorrelatedLogKind }) {
-	const headers = kind === "llm" ? LLM_HEADERS : MCP_HEADERS;
+	const { t } = useTranslation(["logs"]);
+	const headerKeys = kind === "llm" ? LLM_HEADER_KEYS : MCP_HEADER_KEYS;
+	const headers = headerKeys.map((key) => (key ? t(key) : ""));
 	return (
 		<TableHeader className="sticky top-0 z-10 bg-[#f9f9f9] dark:bg-[#27272a]">
 			<TableRow>
@@ -179,6 +201,7 @@ function CorrelatedLLMRow({ log, search }: { log: LogEntry; search: Record<strin
 }
 
 function CorrelatedMCPRow({ log, search }: { log: MCPToolLogEntry; search: Record<string, string> }) {
+	const { t } = useTranslation(["logs"]);
 	const navigate = useNavigate();
 	const timestamp = new Date(log.timestamp);
 	const preview = getMCPArgumentPreview(log);
@@ -201,7 +224,7 @@ function CorrelatedMCPRow({ log, search }: { log: MCPToolLogEntry; search: Recor
 			</TableCell>
 			<TableCell>
 				<Badge variant="secondary" className="w-fit max-w-full truncate font-mono">
-					{log.source === "native" ? "Local" : log.server_label || "-"}
+					{log.source === "native" ? t("logs:mcp.local") : log.server_label || "-"}
 				</Badge>
 			</TableCell>
 			<TableCell>
@@ -224,6 +247,7 @@ export function CorrelatedLogsContent({
 	active: boolean;
 	sortOrder?: "asc" | "desc";
 }) {
+	const { t } = useTranslation(["logs"]);
 	const location = useLocation();
 	const [page, setPage] = useState(0);
 	useEffect(() => setPage(0), [correlation, sortOrder]);
@@ -271,18 +295,18 @@ export function CorrelatedLogsContent({
 				<div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
 					{isLLM ? (
 						<>
-							<Stat label="Requests" value={(llmStats?.total_requests ?? 0).toLocaleString()} />
-							<Stat label="Cost" value={formatCost(llmStats?.total_cost ?? 0)} />
-							<Stat label="Tokens" value={(llmStats?.total_tokens ?? 0).toLocaleString()} />
-							<Stat label="Success" value={`${(llmStats?.success_rate ?? 0).toFixed(1)}%`} />
-							<Stat label="Avg latency" value={formatLatency(llmStats?.average_latency ?? 0)} />
+							<Stat label={t("logs:metrics.requests")} value={(llmStats?.total_requests ?? 0).toLocaleString()} />
+							<Stat label={t("logs:metrics.cost")} value={formatCost(llmStats?.total_cost ?? 0)} />
+							<Stat label={t("logs:columns.tokens")} value={(llmStats?.total_tokens ?? 0).toLocaleString()} />
+							<Stat label={t("logs:chart.success")} value={`${(llmStats?.success_rate ?? 0).toFixed(1)}%`} />
+							<Stat label={t("logs:agent.avgLatency")} value={formatLatency(llmStats?.average_latency ?? 0)} />
 						</>
 					) : (
 						<>
-							<Stat label="Executions" value={(mcpStats?.total_executions ?? 0).toLocaleString()} />
-							<Stat label="Cost" value={formatCost(mcpStats?.total_cost ?? 0)} />
-							<Stat label="Success" value={`${(mcpStats?.success_rate ?? 0).toFixed(1)}%`} />
-							<Stat label="Avg latency" value={formatLatency(mcpStats?.average_latency ?? 0)} />
+							<Stat label={t("logs:agent.executions")} value={(mcpStats?.total_executions ?? 0).toLocaleString()} />
+							<Stat label={t("logs:metrics.cost")} value={formatCost(mcpStats?.total_cost ?? 0)} />
+							<Stat label={t("logs:chart.success")} value={`${(mcpStats?.success_rate ?? 0).toFixed(1)}%`} />
+							<Stat label={t("logs:agent.avgLatency")} value={formatLatency(mcpStats?.average_latency ?? 0)} />
 						</>
 					)}
 				</div>

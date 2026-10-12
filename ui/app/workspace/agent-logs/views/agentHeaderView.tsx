@@ -7,6 +7,7 @@ import type { AgentLogFilters } from "@/lib/types/agentLogs";
 import { getRangeForPeriod, TIME_PERIODS } from "@/lib/utils/timeRange";
 import { Radio, RefreshCw, Search, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface AgentHeaderViewProps {
 	filters: AgentLogFilters;
@@ -38,6 +39,7 @@ export function AgentHeaderView({
 	onToggleColumnVisibility,
 	onResetColumns,
 }: AgentHeaderViewProps) {
+	const { t } = useTranslation(["logs"]);
 	const [timezone, setTimezone] = useTimezonePreference();
 	const [startTime, setStartTime] = useState<Date | undefined>(filters.start_time ? new Date(filters.start_time) : undefined);
 	const [endTime, setEndTime] = useState<Date | undefined>(filters.end_time ? new Date(filters.end_time) : undefined);
@@ -101,7 +103,7 @@ export function AgentHeaderView({
 				<Input
 					type="text"
 					className="!h-7 rounded-tl-none rounded-tr-sm rounded-br-sm rounded-bl-none border-none bg-slate-50 shadow-none outline-none focus-visible:ring-0 dark:bg-zinc-900"
-					placeholder="Search agent, operation, or any identifier"
+					placeholder={t("logs:agent.searchPlaceholder")}
 					value={localSearch}
 					onChange={(e) => handleSearchChange(e.target.value)}
 					data-testid="agent-logs-header-search-input"
@@ -110,7 +112,7 @@ export function AgentHeaderView({
 					<button
 						type="button"
 						onClick={clearSearch}
-						aria-label="Clear search"
+						aria-label={t("logs:agent.clearSearch")}
 						className="text-muted-foreground hover:text-foreground mr-2 transition-colors"
 						data-testid="agent-logs-header-search-clear-btn"
 					>

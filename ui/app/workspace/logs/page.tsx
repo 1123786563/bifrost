@@ -26,6 +26,7 @@ import { dateUtils } from "@/lib/types/logs";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { useLocation } from "@tanstack/react-router";
 import { AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { parseAsSafeArrayOf, parseAsSafeString } from "@/lib/queryParamsParser";
 import { getLiveToggleState } from "@/lib/utils/timeRange";
 import { parseAsBoolean, parseAsFloat, parseAsInteger, parseAsString, useQueryStates } from "nuqs";
@@ -36,6 +37,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 const chainChildrenPageLimit = 1000;
 
 export default function LogsPage() {
+	const { t } = useTranslation(["logs"]);
 	const [error, setError] = useState<string | null>(null);
 	const [showEmptyState, setShowEmptyState] = useState(false);
 	const hasCheckedEmptyState = useRef(false);
@@ -706,8 +708,8 @@ export default function LogsPage() {
 	}, [userAgentMappingsData?.mappings]);
 
 	const columns = useMemo(
-		() => createColumns(handleDelete, hasDeleteAccess, metadataKeys, customAppIcons, grouped, handleFilterBySessionId),
-		[customAppIcons, handleDelete, hasDeleteAccess, metadataKeys, grouped, handleFilterBySessionId],
+		() => createColumns(t, handleDelete, hasDeleteAccess, metadataKeys, customAppIcons, grouped, handleFilterBySessionId),
+		[customAppIcons, handleDelete, hasDeleteAccess, metadataKeys, grouped, handleFilterBySessionId, t],
 	);
 
 	const columnIds = useMemo(
@@ -717,25 +719,25 @@ export default function LogsPage() {
 
 	const COLUMN_LABELS: Record<string, string> = useMemo(
 		() => ({
-			timestamp: "Time",
-			request_type: "Type",
-			input: "Message",
-			provider: "Provider",
-			model: "Model",
-			app: "App",
-			latency: "Latency",
-			tokens: "Tokens",
-			cost: "Cost",
-			session: "Session",
-			service_tier: "Service Tier",
-			virtual_key: "Virtual Key",
-			routing_rule: "Routing Rule",
-			team: "Team",
-			customer: "Customer",
-			user: "User",
-			business_unit: "Business Unit",
+			timestamp: t("logs:columns.time"),
+			request_type: t("logs:columns.type"),
+			input: t("logs:columns.message"),
+			provider: t("logs:columns.provider"),
+			model: t("logs:columns.model"),
+			app: t("logs:columns.app"),
+			latency: t("logs:columns.latency"),
+			tokens: t("logs:columns.tokens"),
+			cost: t("logs:columns.cost"),
+			session: t("logs:columns.session"),
+			service_tier: t("logs:columns.serviceTier"),
+			virtual_key: t("logs:columns.virtualKey"),
+			routing_rule: t("logs:columns.routingRule"),
+			team: t("logs:columns.team"),
+			customer: t("logs:columns.customer"),
+			user: t("logs:columns.user"),
+			business_unit: t("logs:columns.businessUnit"),
 		}),
-		[],
+		[t],
 	);
 
 	const DEFAULT_HIDDEN_COLUMNS = useMemo(

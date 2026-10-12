@@ -4,6 +4,7 @@ import { LOG_LEVEL_BADGE_CLASSES, meetsMinLogLevel, type LogLevel } from "@/lib/
 import { format } from "date-fns";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import LogLevelTabs from "./logLevelTabs";
 import { parsePluginLogs } from "./pluginLogsView.utils";
 
@@ -20,6 +21,7 @@ function formatPluginName(name: string): string {
 }
 
 export default function PluginLogsView({ pluginLogs }: PluginLogsViewProps) {
+	const { t } = useTranslation(["logs"]);
 	const [minLevel, setMinLevel] = useState<LogLevel>("debug");
 	const parsed = useMemo(() => parsePluginLogs(pluginLogs), [pluginLogs]);
 
@@ -28,7 +30,7 @@ export default function PluginLogsView({ pluginLogs }: PluginLogsViewProps) {
 	return (
 		<div>
 			<div className="flex items-center justify-between gap-3 py-3">
-				<div className="text-sm font-semibold">Plugin Logs</div>
+				<div className="text-sm font-semibold">{t("logs:pluginLogs.title")}</div>
 				<LogLevelTabs value={minLevel} onChange={setMinLevel} testId="plugin-logs-level-filter" />
 			</div>
 			<div className="flex flex-col gap-2 pb-3">
@@ -41,13 +43,17 @@ export default function PluginLogsView({ pluginLogs }: PluginLogsViewProps) {
 }
 
 function PluginSection({ name, entries, minLevel }: { name: string; entries: PluginLogEntry[]; minLevel: LogLevel }) {
+	const { t } = useTranslation(["logs"]);
 	const [isOpen, setIsOpen] = useState(false);
 	const visible = useMemo(
 		() => entries.filter((entry) => meetsMinLogLevel(entry.level, minLevel)).sort((a, b) => a.timestamp - b.timestamp),
 		[entries, minLevel],
 	);
 	// At the debug floor nothing is hidden, so the plain total reads better than "N of N".
-	const count = minLevel === "debug" ? `(${entries.length})` : `(${visible.length} of ${entries.length})`;
+	const count =
+		minLevel === "debug"
+			? `(${entries.length})`
+			: `(${t("logs:pluginLogs.visibleOf", { visible: visible.length, total: entries.length })})`;
 
 	return (
 		<div className="rounded-md border">
@@ -67,7 +73,7 @@ function PluginSection({ name, entries, minLevel }: { name: string; entries: Plu
 			{isOpen && (
 				<div className="custom-scrollbar max-h-[300px] overflow-y-auto border-t">
 					{visible.length === 0 ? (
-						<div className="text-muted-foreground px-4 py-2 text-xs">No entries at or above {minLevel}.</div>
+						<div className="text-muted-foreground px-4 py-2 text-xs">{t("logs:pluginLogs.noEntries", { level: minLevel })}</div>
 					) : (
 						visible.map((entry, idx) => (
 							<div key={idx} className="flex items-start gap-3 border-b px-4 py-1.5 font-mono text-xs last:border-b-0">

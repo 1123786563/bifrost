@@ -22,12 +22,13 @@ import { useLocation } from "@tanstack/react-router";
 import { AlertCircle, CheckCircle, Clock, Hash, XCircle } from "lucide-react";
 import { parseAsBoolean, parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AgentContextDetailsSheet } from "./views/agentContextDetailsSheet";
 import { AgentFilterSidebar } from "./views/agentFilterSidebar";
 import { AgentHeaderView } from "./views/agentHeaderView";
 import { AgentLogDetailSheet } from "./views/agentLogDetailsSheet";
 import { AgentLogsDataTable } from "./views/agentLogsTable";
-import { AGENT_COLUMN_LABELS, createAgentColumns } from "./views/columns";
+import { createAgentColumns, getAgentColumnLabels } from "./views/columns";
 import { AgentEmptyState } from "./views/emptyState";
 
 // Filters carried in the URL, matching the backend's query parameter names.
@@ -57,6 +58,7 @@ const PROBE_ARGS = {
 };
 
 export default function AgentLogsPage() {
+	const { t } = useTranslation(["logs"]);
 	const [error, setError] = useState<string | null>(null);
 	const didWidenPeriod = useRef(false);
 	const hasDeleteAccess = useRbac(RbacResource.AgentLogs, RbacOperation.Delete);
@@ -247,31 +249,31 @@ export default function AgentLogsPage() {
 	const statCards = useMemo(
 		() => [
 			{
-				title: "Operations",
+				title: t("logs:agent.operationCount"),
 				value: <NumberFlow value={statsData?.total_entries ?? 0} format={COMPACT_NUMBER_FORMAT} />,
 				icon: <Hash className="size-4" />,
 			},
 			{
-				title: "Success Rate",
+				title: t("logs:metrics.successRate"),
 				value: (
 					<NumberFlow value={statsData?.success_rate ?? 0} format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }} suffix="%" />
 				),
 				icon: <CheckCircle className="size-4" />,
 			},
 			{
-				title: "Failed Operations",
+				title: t("logs:agent.failedOperations"),
 				value: <NumberFlow value={statsData?.error_count ?? 0} format={COMPACT_NUMBER_FORMAT} />,
 				icon: <XCircle className="size-4" />,
 			},
 			{
-				title: "Avg Duration",
+				title: t("logs:agent.avgDuration"),
 				value: (
 					<NumberFlow value={statsData?.average_latency ?? 0} format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }} suffix="ms" />
 				),
 				icon: <Clock className="size-4" />,
 			},
 		],
-		[statsData],
+		[statsData, t],
 	);
 
 	// Derive data directly from RTK
@@ -423,7 +425,7 @@ export default function AgentLogsPage() {
 		[deleteLogs, hasDeleteAccess, urlState.selected_log, setUrlState, refreshAllData],
 	);
 
-	const columns = useMemo(() => createAgentColumns(hasDeleteAccess ? handleDelete : undefined), [hasDeleteAccess, handleDelete]);
+	const columns = useMemo(() => createAgentColumns(t, hasDeleteAccess ? handleDelete : undefined), [hasDeleteAccess, handleDelete, t]);
 
 	const columnIds = useMemo(
 		() => columns.map((col) => ("id" in col && col.id ? col.id : "accessorKey" in col ? String(col.accessorKey) : "")).filter(Boolean),
@@ -556,7 +558,7 @@ export default function AgentLogsPage() {
 								onRefresh={refreshAllData}
 								loading={logsIsFetching}
 								columnEntries={columnEntries}
-								columnLabels={AGENT_COLUMN_LABELS}
+								columnLabels={getAgentColumnLabels(t)}
 								onToggleColumnVisibility={toggleColumnVisibility}
 								onResetColumns={resetColumns}
 							/>

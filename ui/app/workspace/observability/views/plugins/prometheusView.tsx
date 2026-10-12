@@ -1,4 +1,5 @@
 import { getErrorMessage, useAppSelector, useUpdatePluginMutation } from "@/lib/store";
+import { useTranslation } from "react-i18next";
 import { type SecretVar, PrometheusFormSchema } from "@/lib/types/schemas";
 import { toOptionalSecretVarPayload } from "@/lib/utils/secretVarForm";
 import { useMemo } from "react";
@@ -30,6 +31,7 @@ interface PrometheusViewProps {
 }
 
 export default function PrometheusView({ onDelete, isDeleting }: PrometheusViewProps) {
+	const { t } = useTranslation(["logs"]);
 	const selectedPlugin = useAppSelector((state) => state.plugin.selectedPlugin);
 	const currentConfig = useMemo(() => {
 		const telemetryConfig = (selectedPlugin?.config as TelemetryConfig) ?? {};
@@ -81,10 +83,10 @@ export default function PrometheusView({ onDelete, isDeleting }: PrometheusViewP
 				.unwrap()
 				.then(() => {
 					resolve();
-					toast.success("Prometheus configuration updated successfully");
+					toast.success(t("logs:prom.updatedSuccess"));
 				})
 				.catch((err) => {
-					toast.error("Failed to update Prometheus configuration", {
+					toast.error(t("logs:prom.updateFailed"), {
 						description: getErrorMessage(err),
 					});
 					reject(err);
@@ -95,10 +97,7 @@ export default function PrometheusView({ onDelete, isDeleting }: PrometheusViewP
 	return (
 		<div className="flex w-full flex-col gap-4">
 			<div className="flex w-full flex-col gap-3">
-				<div className="text-muted-foreground mb-2 text-xs font-normal">
-					Expose Bifrost metrics for Prometheus to scrape from the <code>/metrics</code> endpoint, or push them to a Prometheus Push
-          Gateway.
-        </div>
+				<div className="text-muted-foreground mb-2 text-xs font-normal">{t("logs:prom.exposeNote")}</div>
 				<PrometheusFormFragment
 					onSave={handlePrometheusConfigSave}
 					currentConfig={currentConfig}

@@ -8,6 +8,7 @@ import type { MCPToolLogEntry } from "@/lib/types/logs";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { format, formatDistanceToNow, isValid } from "date-fns";
 import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import type { TFunction } from "i18next";
 
 // Helper function to validate status and return a safe Status value
 const getValidatedStatus = (status: string): Status => {
@@ -21,6 +22,7 @@ const getValidatedStatus = (status: string): Status => {
 };
 
 export const createMCPColumns = (
+	t: TFunction,
 	handleDelete: (log: MCPToolLogEntry) => Promise<void>,
 	hasDeleteAccess: boolean,
 	customAppIcons: Record<string, string> = {},
@@ -46,7 +48,7 @@ export const createMCPColumns = (
 		accessorKey: "timestamp",
 		header: ({ column }) => (
 			<Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-				Time
+				{t("logs:columns.time")}
 				<ArrowUpDown className="ml-2 h-4 w-4" />
 			</Button>
 		),
@@ -67,7 +69,7 @@ export const createMCPColumns = (
 	},
 	{
 		accessorKey: "tool_name",
-		header: "Tool Name",
+		header: t("logs:mcp.toolName"),
 		size: 300,
 		cell: ({ row }) => {
 			const toolName = row.getValue("tool_name") as string;
@@ -93,16 +95,16 @@ export const createMCPColumns = (
 	},
 	{
 		accessorKey: "source",
-		header: "Source",
+		header: t("logs:mcp.source"),
 		size: 90,
-		cell: ({ row }) => <Badge variant="secondary">{row.original.source === "native" ? "Native" : "MCP"}</Badge>,
+		cell: ({ row }) => <Badge variant="secondary">{row.original.source === "native" ? t("logs:mcp.native") : "MCP"}</Badge>,
 	},
 	{
 		accessorKey: "server_label",
-		header: "Server",
+		header: t("logs:mcp.server"),
 		size: 150,
 		cell: ({ row }) => {
-			const serverLabel = row.original.source === "native" ? "Local" : (row.getValue("server_label") as string);
+			const serverLabel = row.original.source === "native" ? t("logs:mcp.local") : (row.getValue("server_label") as string);
 			return serverLabel ? (
 				<Badge variant="secondary" className="font-mono">
 					{serverLabel}
@@ -115,7 +117,7 @@ export const createMCPColumns = (
 	{
 		id: "app",
 		accessorKey: "app",
-		header: "App",
+		header: t("logs:columns.app"),
 		size: 140,
 		cell: ({ row }) => {
 			const appKey = row.original.app || row.original.app_key;
@@ -148,7 +150,7 @@ export const createMCPColumns = (
 							? `${latency.toLocaleString()}ms`
 							: presentation.inspectionDuration != null
 								? `${presentation.inspectionDuration}ms`
-								: "Not recorded"}
+								: t("logs:mcp.notRecorded")}
 					</span>
 					<span className="text-muted-foreground block text-xs">{presentation.durationLabel}</span>
 				</div>
@@ -157,7 +159,7 @@ export const createMCPColumns = (
 	},
 	{
 		accessorKey: "cost",
-		header: "Cost",
+		header: t("logs:columns.cost"),
 		size: 120,
 		cell: ({ row }) => {
 			const cost = row.original.cost;
@@ -167,17 +169,22 @@ export const createMCPColumns = (
 	},
 	{
 		id: "virtual_key",
-		header: "Virtual Key",
+		header: t("logs:columns.virtualKey"),
 		size: 170,
 		cell: ({ row }) => {
 			const value = row.original.virtual_key?.name ?? row.original.virtual_key_name ?? row.original.virtual_key_id;
 			return <div className="max-w-[180px] truncate font-mono text-xs">{value || "-"}</div>;
 		},
 	},
-	{ id: "user", header: "User", size: 150, cell: ({ row }) => <AttributionCell name={row.original.user_name} id={row.original.user_id} /> },
+	{
+		id: "user",
+		header: t("logs:columns.user"),
+		size: 150,
+		cell: ({ row }) => <AttributionCell name={row.original.user_name} id={row.original.user_id} />,
+	},
 	{
 		id: "team",
-		header: "Team",
+		header: t("logs:columns.team"),
 		size: 150,
 		cell: ({ row }) => (
 			<AttributionCell
@@ -190,7 +197,7 @@ export const createMCPColumns = (
 	},
 	{
 		id: "customer",
-		header: "Customer",
+		header: t("logs:columns.customer"),
 		size: 150,
 		cell: ({ row }) => (
 			<AttributionCell
@@ -203,7 +210,7 @@ export const createMCPColumns = (
 	},
 	{
 		id: "business_unit",
-		header: "Business Unit",
+		header: t("logs:columns.businessUnit"),
 		size: 150,
 		cell: ({ row }) => (
 			<AttributionCell
@@ -216,11 +223,16 @@ export const createMCPColumns = (
 	},
 	{
 		id: "project",
-		header: "Project",
+		header: t("logs:columns.project"),
 		size: 150,
 		cell: ({ row }) => <AttributionCell name={row.original.project_name} id={row.original.project_id} />,
 	},
-	{ id: "device", header: "Device", size: 150, cell: ({ row }) => <AttributionCell name={undefined} id={row.original.device_id} /> },
+	{
+		id: "device",
+		header: t("logs:mcp.device"),
+		size: 150,
+		cell: ({ row }) => <AttributionCell name={undefined} id={row.original.device_id} />,
+	},
 	...(hasDeleteAccess
 		? [
 				{

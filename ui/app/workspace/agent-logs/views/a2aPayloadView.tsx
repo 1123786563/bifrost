@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { format, isValid } from "date-fns";
 import { AlertCircle, ChevronDown, Download, ExternalLink, FileText, Webhook } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 /**
  * Structured renderer for A2A payload bodies.
@@ -122,10 +124,11 @@ function Disclosure({ summary, meta, children }: { summary: string; meta?: strin
 }
 
 function UnclaimedFields({ source, claimed }: { source: Record<string, unknown>; claimed: string[] }) {
+	const { t } = useTranslation(["logs"]);
 	const rest = unclaimedFields(source, claimed);
 	if (!rest) return null;
 	return (
-		<Disclosure summary="Other fields" meta={Object.keys(rest).join(", ")}>
+		<Disclosure summary={t("logs:agent.otherFields")} meta={Object.keys(rest).join(", ")}>
 			<JsonBlock code={prettyPrint(rest)} maxHeight={280} />
 		</Disclosure>
 	);
@@ -133,6 +136,7 @@ function UnclaimedFields({ source, claimed }: { source: Record<string, unknown>;
 
 /** Plain text that wraps, clamped to a preview until expanded. */
 function CollapsibleText({ text, preview = 8 }: { text: string; preview?: number }) {
+	const { t } = useTranslation(["logs"]);
 	const [open, setOpen] = useState(false);
 	const lines = text.split("\n");
 	const hasMore = lines.length > preview;
@@ -146,7 +150,7 @@ function CollapsibleText({ text, preview = 8 }: { text: string; preview?: number
 					onClick={() => setOpen((value) => !value)}
 					className="text-primary mt-1.5 inline-flex items-center gap-1 text-[11.5px] font-medium hover:underline"
 				>
-					{open ? "Show less" : `Show ${lines.length - preview} more lines`}
+					{open ? t("logs:responses.showLess") : t("logs:responses.showMoreLines", { count: lines.length - preview })}
 					<ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
 				</button>
 			)}
@@ -202,9 +206,10 @@ function safeMediaSource(source: string): string | null {
 }
 
 function FilePartView({ source, mediaType, filename }: { source: string; mediaType?: string; filename?: string }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const safeSource = safeMediaSource(source);
 	const type = (mediaType ?? "application/octet-stream").toLowerCase();
-	const label = filename ?? "File";
+	const label = filename ?? t("logs:agent.file");
 	const inlineSafe = type !== "image/svg+xml" && type !== "text/html" && type !== "application/xhtml+xml";
 
 	if (safeSource && inlineSafe && type.startsWith("image/")) {
@@ -232,7 +237,7 @@ function FilePartView({ source, mediaType, filename }: { source: string; mediaTy
 					className="text-primary inline-flex shrink-0 items-center gap-1 hover:underline"
 				>
 					{source.startsWith("data:") ? <Download className="size-3.5" /> : <ExternalLink className="size-3.5" />}
-					{source.startsWith("data:") ? "Download" : "View"}
+					{source.startsWith("data:") ? t("common:actions.download") : t("logs:agent.view")}
 				</a>
 			) : (
 				<FileText className="text-muted-foreground size-4 shrink-0" />
@@ -306,10 +311,10 @@ export function A2APartsView({ parts }: { parts: unknown[] }) {
 const MESSAGE_CLAIMED = ["role", "parts", "messageId", "taskId", "contextId"];
 
 function messageRoleLabel(role: string | undefined): string {
-	if (!role) return "Message";
+	if (!role) return i18n.t("logs:agent.message");
 	const normalized = role.replace(/^ROLE_/, "").toLowerCase();
-	if (normalized === "user") return "User";
-	if (normalized === "agent" || normalized === "assistant") return "Agent";
+	if (normalized === "user") return i18n.t("logs:agent.you");
+	if (normalized === "agent" || normalized === "assistant") return i18n.t("logs:agent.agent");
 	return normalized.replace(/_/g, " ");
 }
 
@@ -404,6 +409,7 @@ function ArtifactView({ artifact }: { artifact: unknown }) {
 // ---------------------------------------------------------------------------
 
 function PushConfigView({ config }: { config: Record<string, unknown> }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const url = asString(config.url);
 	const id = asString(config.id);
 	const taskId = asString(config.taskId);
@@ -436,7 +442,7 @@ function PushConfigView({ config }: { config: Record<string, unknown> }) {
 				</div>
 			)}
 			{(id || taskId || token || authentication) && (
-				<Disclosure summary="Configuration details">
+				<Disclosure summary={t("logs:agent.configurationDetails")}>
 					<OperationParametersView
 						params={{
 							...(id ? { configurationId: id } : {}),
@@ -526,7 +532,10 @@ function taskTitle(task: Record<string, unknown>, index?: number): string {
 	}
 
 	const firstArtifact = asRecord((asArray(task.artifacts) ?? [])[0]);
-	return asString(firstArtifact?.name) ?? (index === undefined ? "Task" : `Task ${index + 1}`);
+	return (
+		asString(firstArtifact?.name) ??
+		(index === undefined ? i18n.t("logs:agent.task") : i18n.t("logs:agent.taskIndex", { index: index + 1 }))
+	);
 }
 
 function TaskArtifactView({ artifact }: { artifact: unknown }) {
@@ -551,6 +560,7 @@ function TaskArtifactView({ artifact }: { artifact: unknown }) {
 }
 
 function TaskView({ task, showIdentity = true }: { task: Record<string, unknown>; showIdentity?: boolean }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const status = asRecord(task.status);
 	const state = asString(status?.state);
 	const timestamp = formatTimestamp(status?.timestamp);
@@ -607,7 +617,7 @@ function TaskView({ task, showIdentity = true }: { task: Record<string, unknown>
 			)}
 
 			{history.length > 0 && (
-				<Disclosure summary="Conversation history" meta={`${history.length} ${history.length === 1 ? "message" : "messages"}`}>
+				<Disclosure summary={t("logs:agent.conversationHistory")} meta={t("logs:agent.messageCount", { count: history.length })}>
 					<MessageList messages={history} />
 				</Disclosure>
 			)}
@@ -684,7 +694,8 @@ function labelFromKey(value: string): string {
 }
 
 function AgentCardView({ card }: { card: Record<string, unknown> }) {
-	const name = asString(card.name) ?? "Agent card";
+	const { t } = useTranslation(["common", "logs"]);
+	const name = asString(card.name) ?? t("logs:agent.agentCard");
 	const description = asString(card.description);
 	const version = asString(card.version);
 	const provider = asRecord(card.provider);
@@ -716,7 +727,7 @@ function AgentCardView({ card }: { card: Record<string, unknown> }) {
 					{description && <div className="text-muted-foreground text-[12.5px] leading-relaxed">{description}</div>}
 					{(providerName || providerURL) && (
 						<div className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-[11.5px]">
-							<span>{providerName ?? "Provider"}</span>
+							<span>{providerName ?? t("logs:columns.provider")}</span>
 							{providerURL && (
 								<a
 									href={providerURL}
@@ -755,7 +766,7 @@ function AgentCardView({ card }: { card: Record<string, unknown> }) {
 				)}
 
 				{interfaces.length > 0 && (
-					<Disclosure summary="Interfaces" meta={`${interfaces.length}`}>
+					<Disclosure summary={t("logs:agent.interfaces")} meta={`${interfaces.length}`}>
 						<div className="space-y-2">
 							{interfaces.map((entry, index) => {
 								const iface = asRecord(entry);
@@ -777,7 +788,7 @@ function AgentCardView({ card }: { card: Record<string, unknown> }) {
 				)}
 
 				{skills.length > 0 && (
-					<Disclosure summary="Skills" meta={`${skills.length}`}>
+					<Disclosure summary={t("logs:agent.skills")} meta={`${skills.length}`}>
 						<div className="space-y-2">
 							{skills.map((entry, index) => {
 								const skill = asRecord(entry);
@@ -817,7 +828,8 @@ function AgentCardView({ card }: { card: Record<string, unknown> }) {
 }
 
 function ParameterValue({ value }: { value: unknown }) {
-	if (typeof value === "boolean") return <span>{value ? "Yes" : "No"}</span>;
+	const { t } = useTranslation(["common", "logs"]);
+	if (typeof value === "boolean") return <span>{value ? t("logs:agent.yes") : t("logs:agent.no")}</span>;
 	if (typeof value === "string" || typeof value === "number") return <span className="font-mono break-all">{String(value)}</span>;
 	if (Array.isArray(value) && value.every((item) => typeof item === "string" || typeof item === "number")) {
 		return (
@@ -834,11 +846,13 @@ function ParameterValue({ value }: { value: unknown }) {
 }
 
 function OperationParametersView({ params }: { params: Record<string, unknown> }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const fields = Object.entries(params).filter(([, value]) => value !== null && value !== undefined && value !== "");
 	return (
 		<dl className="divide-y">
 			{fields.map(([key, value]) => {
-				const label = key === "id" || key === "taskId" ? "Task ID" : key === "contextId" ? "Context ID" : labelFromKey(key);
+				const label =
+					key === "id" || key === "taskId" ? t("logs:agent.taskId") : key === "contextId" ? t("logs:agent.contextId") : labelFromKey(key);
 				return (
 					<div key={key} className="grid gap-1 py-2.5 first:pt-0 last:pb-0 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
 						<dt className="text-muted-foreground text-[11px] font-medium uppercase">{label}</dt>
@@ -853,6 +867,7 @@ function OperationParametersView({ params }: { params: Record<string, unknown> }
 }
 
 function TaskCollectionView({ response }: { response: Record<string, unknown> }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const tasks = asArray(response.tasks) ?? [];
 	const totalSize = typeof response.totalSize === "number" ? response.totalSize : tasks.length;
 	const pageSize = typeof response.pageSize === "number" ? response.pageSize : undefined;
@@ -905,7 +920,7 @@ function TaskCollectionView({ response }: { response: Record<string, unknown> })
 				<div className="text-muted-foreground py-6 text-center text-sm">No tasks returned.</div>
 			)}
 			{nextPageToken && (
-				<Disclosure summary="Pagination details">
+				<Disclosure summary={t("logs:agent.paginationDetails")}>
 					<OperationParametersView params={{ nextPageToken }} />
 				</Disclosure>
 			)}
@@ -1072,9 +1087,11 @@ interface A2APayloadViewProps {
 }
 
 function payloadSectionTitle(operation: string | undefined, kind: "request" | "response"): string {
-	if (operation === "push_notification") return kind === "request" ? "Received update" : "Acknowledgement";
-	if (operation === "push_delivery") return kind === "request" ? "Forwarded update" : "Delivery response";
-	return kind === "request" ? "Request" : "Response";
+	if (operation === "push_notification")
+		return kind === "request" ? i18n.t("logs:agent.receivedUpdate") : i18n.t("logs:agent.acknowledgement");
+	if (operation === "push_delivery")
+		return kind === "request" ? i18n.t("logs:agent.forwardedUpdate") : i18n.t("logs:agent.deliveryResponse");
+	return kind === "request" ? i18n.t("logs:agent.request") : i18n.t("logs:agent.responseLabel");
 }
 
 function PushRelaySummary({
@@ -1086,6 +1103,7 @@ function PushRelaySummary({
 	status?: string;
 	value: unknown;
 }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const root = asRecord(value);
 	const update = asRecord(root?.statusUpdate) ?? asRecord(root?.artifactUpdate) ?? root;
 	const isDelivery = operation === "push_delivery";
@@ -1095,9 +1113,7 @@ function PushRelaySummary({
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<span className="text-sm font-medium">
-					{isDelivery ? "Update forwarded to the client callback" : "Update received from the agent"}
-				</span>
+				<span className="text-sm font-medium">{isDelivery ? t("logs:agent.updateForwarded") : t("logs:agent.updateReceived")}</span>
 				{(succeeded || failed) && (
 					<Badge
 						variant="outline"
@@ -1106,7 +1122,7 @@ function PushRelaySummary({
 							succeeded ? "border-emerald-500/30 text-emerald-700 dark:text-emerald-400" : "border-destructive/40 text-destructive",
 						)}
 					>
-						{succeeded ? (isDelivery ? "Delivered" : "Accepted") : "Failed"}
+						{succeeded ? (isDelivery ? t("logs:agent.delivered") : t("logs:agent.accepted")) : t("logs:metrics.failed")}
 					</Badge>
 				)}
 			</div>
@@ -1124,6 +1140,7 @@ export function A2APayloadView({
 	errorDetails,
 	showSectionTitles = true,
 }: A2APayloadViewProps) {
+	const { t } = useTranslation(["common", "logs"]);
 	const errorRecord = asRecord(errorDetails);
 	const sections: ReactNode[] = [];
 
@@ -1165,7 +1182,7 @@ export function A2APayloadView({
 	if (errorDetails !== undefined && errorDetails !== null) {
 		sections.push(
 			<div key="error" className="space-y-3">
-				{showSectionTitles && <BlockHeader title="Error Details" />}
+				{showSectionTitles && <BlockHeader title={t("logs:mcp.errorDetails")} />}
 				{errorRecord ? <ErrorView error={errorRecord} /> : <JsonBlock code={prettyPrint(errorDetails)} />}
 			</div>,
 		);

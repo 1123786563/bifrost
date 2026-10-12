@@ -6,6 +6,7 @@ import type { AgentLogStatus, AgentLogSummary } from "@/lib/types/agentLogs";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { format, formatDistanceToNow, isValid } from "date-fns";
 import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import type { TFunction } from "i18next";
 
 // Coerce an unknown status string into one of the three states the backend
 // writes, so a surprising value still renders instead of breaking the row.
@@ -21,15 +22,15 @@ function shortId(id: string | undefined): string {
 	return id.length > 12 ? `${id.slice(0, 12)}…` : id;
 }
 
-export const AGENT_COLUMN_LABELS: Record<string, string> = {
-	timestamp: "Time",
-	agent_name: "Agent",
-	operation: "Operation",
-	input: "Message",
-	context: "Context",
-	task: "Task",
-	duration: "Duration",
-};
+export const getAgentColumnLabels = (t: TFunction): Record<string, string> => ({
+	timestamp: t("logs:columns.time"),
+	agent_name: t("logs:agent.agent"),
+	operation: t("logs:agent.operation"),
+	input: t("logs:columns.message"),
+	context: t("logs:agent.context"),
+	task: t("logs:agent.task"),
+	duration: t("logs:media.fields.duration"),
+});
 
 function collectTextParts(value: unknown, result: string[]): void {
 	if (typeof value === "string") {
@@ -69,7 +70,7 @@ function getAgentInputPreview(input?: string): string {
 	return input;
 }
 
-export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Promise<void>): ColumnDef<AgentLogSummary>[] => [
+export const createAgentColumns = (t: TFunction, handleDelete?: (log: AgentLogSummary) => Promise<void>): ColumnDef<AgentLogSummary>[] => [
 	{
 		accessorKey: "status",
 		header: "",
@@ -105,7 +106,7 @@ export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Prom
 	},
 	{
 		accessorKey: "agent_name",
-		header: "Agent",
+		header: t("logs:agent.agent"),
 		size: 160,
 		cell: ({ row }) => (
 			<Badge variant="secondary" className="max-w-full font-mono">
@@ -115,7 +116,7 @@ export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Prom
 	},
 	{
 		accessorKey: "operation",
-		header: "Operation",
+		header: t("logs:agent.operation"),
 		size: 220,
 		cell: ({ row }) => (
 			<div className="min-w-0 space-y-0.5 py-1">
@@ -126,7 +127,7 @@ export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Prom
 	},
 	{
 		accessorKey: "input",
-		header: "Message",
+		header: t("logs:columns.message"),
 		size: 350,
 		cell: ({ row }) => {
 			const preview = getAgentInputPreview(row.original.input);
@@ -139,7 +140,7 @@ export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Prom
 	},
 	{
 		id: "context",
-		header: "Context",
+		header: t("logs:agent.context"),
 		size: 130,
 		cell: ({ row }) => (
 			<span className="font-mono text-xs" title={row.original.context_id}>
@@ -149,7 +150,7 @@ export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Prom
 	},
 	{
 		id: "task",
-		header: "Task",
+		header: t("logs:agent.task"),
 		size: 130,
 		cell: ({ row }) => (
 			<span className="font-mono text-xs" title={row.original.task_id}>
@@ -162,7 +163,7 @@ export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Prom
 		accessorKey: "latency",
 		header: ({ column }) => (
 			<Button variant="ghost" className="-ml-3 h-8 px-2" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-				Duration
+				{t("logs:media.fields.duration")}
 				<ArrowUpDown className="ml-2 size-3.5" />
 			</Button>
 		),
@@ -184,7 +185,13 @@ export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Prom
 							<div className="flex justify-center">
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
-										<Button variant="ghost" size="icon" data-testid="log-actions-btn" aria-label="Log actions" className="h-7 w-7">
+										<Button
+											variant="ghost"
+											size="icon"
+											data-testid="log-actions-btn"
+											aria-label={t("logs:columns.logActions")}
+											className="h-7 w-7"
+										>
 											<MoreHorizontal className="h-4 w-4" />
 										</Button>
 									</DropdownMenuTrigger>
@@ -199,7 +206,7 @@ export const createAgentColumns = (handleDelete?: (log: AgentLogSummary) => Prom
 											}}
 										>
 											<Trash2 className="h-4 w-4" />
-											Delete
+											{t("common:actions.delete")}
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>

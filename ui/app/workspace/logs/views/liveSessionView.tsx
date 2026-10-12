@@ -1,6 +1,8 @@
 import { Clipboard, Mic } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { formatCost } from "@/app/workspace/dashboard/utils/chartUtils";
+import i18n from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { LiveDelegationLog, LiveSessionLog, LiveTranscriptLine, ResponsesMessage } from "@/lib/types/logs";
@@ -37,6 +39,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function TranscriptLine({ line, last, mapping }: { line: LiveTranscriptLine; last: boolean; mapping?: Record<string, string> }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const assistant = line.role === "assistant";
 	const range = line.start_ms !== undefined ? `${formatClock(line.start_ms)}–${formatClock(line.end_ms)}` : "";
 	return (
@@ -47,7 +50,7 @@ function TranscriptLine({ line, last, mapping }: { line: LiveTranscriptLine; las
 			</div>
 			<div className="min-w-0 flex-1 pb-3">
 				<div className="mb-1 flex items-center gap-2">
-					<span className="text-foreground text-[11.5px] font-semibold">{assistant ? "Assistant" : "User"}</span>
+					<span className="text-foreground text-[11.5px] font-semibold">{assistant ? t("logs:live.assistant") : t("logs:live.user")}</span>
 					{range ? <span className="text-muted-foreground font-mono text-[11px]">{range}</span> : null}
 				</div>
 				<div
@@ -66,13 +69,13 @@ function TranscriptLine({ line, last, mapping }: { line: LiveTranscriptLine; las
 }
 
 function CopyChip({ text }: { text: string }) {
-	const { copy } = useCopyToClipboard({ successMessage: "Copied" });
+	const { copy } = useCopyToClipboard({ successMessage: i18n.t("common:actions.copied") });
 	return (
 		<button
 			type="button"
 			onClick={() => copy(text)}
 			className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-mono text-[11px] transition"
-			aria-label="Copy response id"
+			aria-label={i18n.t("logs:live.copyResponseId")}
 			data-testid="logdetails-live-delegation-copy-response-id"
 		>
 			{text}
@@ -91,8 +94,11 @@ function hasVisibleContent(item: ResponsesMessage): boolean {
 // DelegationCard is one task the backend ran for the session: when, on which model, what it
 // cost, and its items on the same timeline the Responses view draws.
 function DelegationCard({ delegation, mapping }: { delegation: LiveDelegationLog; mapping?: Record<string, string> }) {
+	const { t } = useTranslation(["logs"]);
 	const usage = delegation.usage;
-	const tokens = usage ? `${formatCompactNumber(usage.prompt_tokens)} in / ${formatCompactNumber(usage.completion_tokens)} out` : "";
+	const tokens = usage
+		? `${formatCompactNumber(usage.prompt_tokens)} ${t("logs:live.tokensIn")} / ${formatCompactNumber(usage.completion_tokens)} ${t("logs:live.tokensOut")}`
+		: "";
 	const cost = delegation.cost !== undefined ? formatCost(delegation.cost) : "";
 	const items = (delegation.output ?? []).filter(hasVisibleContent);
 	return (
@@ -118,7 +124,7 @@ function DelegationCard({ delegation, mapping }: { delegation: LiveDelegationLog
 					))}
 				</div>
 			) : !delegation.error ? (
-				<div className="text-muted-foreground text-[12px] italic">No answer</div>
+				<div className="text-muted-foreground text-[12px] italic">{t("logs:live.noAnswer")}</div>
 			) : null}
 			{delegation.response_ids?.length ? (
 				<div className="flex flex-wrap gap-1">
@@ -134,6 +140,7 @@ function DelegationCard({ delegation, mapping }: { delegation: LiveDelegationLog
 // LiveSessionView is the detail panel of a GPT Live session: how it ran, the conversation on
 // its timeline, and every call the backend made on its behalf.
 export default function LiveSessionView({ session, mapping }: LiveSessionViewProps) {
+	const { t } = useTranslation(["logs"]);
 	const transcript = session.transcript ?? [];
 	const delegations = session.delegations ?? [];
 	const voiceCost = session.voice_cost ?? 0;
@@ -144,7 +151,7 @@ export default function LiveSessionView({ session, mapping }: LiveSessionViewPro
 			<div className="w-full rounded-sm border">
 				<div className="flex items-center gap-2 border-b px-6 py-2 text-sm font-medium">
 					<Mic className="h-4 w-4" />
-					Live Session
+					{t("logs:live.session")}
 					{session.transport ? (
 						<Badge variant="outline" className="ml-1 font-mono text-[10px] uppercase">
 							{session.transport}
@@ -152,16 +159,16 @@ export default function LiveSessionView({ session, mapping }: LiveSessionViewPro
 					) : null}
 				</div>
 				<div className="divide-border/70 grid grid-cols-2 md:grid-cols-4 md:divide-x">
-					<Stat label="Voice time" value={formatVoiceTime(session.voice_seconds)} />
-					<Stat label="Voice cost" value={formatCost(voiceCost)} />
-					<Stat label="Backend cost" value={formatCost(backendCost)} />
-					<Stat label="Delegations" value={String(delegations.length)} />
+					<Stat label={t("logs:live.voiceTime")} value={formatVoiceTime(session.voice_seconds)} />
+					<Stat label={t("logs:live.voiceCost")} value={formatCost(voiceCost)} />
+					<Stat label={t("logs:live.backendCost")} value={formatCost(backendCost)} />
+					<Stat label={t("logs:live.delegations")} value={String(delegations.length)} />
 				</div>
 			</div>
 
 			{transcript.length > 0 && (
 				<div className="w-full rounded-sm border">
-					<div className="border-b px-6 py-2 text-sm font-medium">Transcript</div>
+					<div className="border-b px-6 py-2 text-sm font-medium">{t("logs:live.transcript")}</div>
 					<div className="p-6">
 						{transcript.map((line, index) => (
 							<TranscriptLine
@@ -177,7 +184,7 @@ export default function LiveSessionView({ session, mapping }: LiveSessionViewPro
 
 			{delegations.length > 0 && (
 				<div className="w-full rounded-sm border">
-					<div className="border-b px-6 py-2 text-sm font-medium">Delegations</div>
+					<div className="border-b px-6 py-2 text-sm font-medium">{t("logs:live.delegations")}</div>
 					<div className="divide-y">
 						{delegations.map((delegation) => (
 							<DelegationCard key={delegation.request_id} delegation={delegation} mapping={mapping} />

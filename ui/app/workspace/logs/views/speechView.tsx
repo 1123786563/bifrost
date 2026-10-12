@@ -1,6 +1,8 @@
+import i18n from "@/lib/i18n";
 import { BifrostSpeech, SpeechInput } from "@/lib/types/logs";
 import { AlertCircle, Play, Volume2 } from "lucide-react";
 import React, { Component } from "react";
+import { useTranslation } from "react-i18next";
 import AudioPlayer from "./audioPlayer";
 
 interface SpeechViewProps {
@@ -29,7 +31,9 @@ class AudioErrorBoundary extends Component<{ children: React.ReactNode }, { hasE
 			return (
 				<div className="flex items-center gap-2 rounded-sm border border-red-200 bg-red-50 p-4 text-sm text-red-800">
 					<AlertCircle className="h-4 w-4" />
-					<span>Failed to load audio player: {this.state.error?.message || "Unknown error"}</span>
+					<span>
+						{i18n.t("logs:media.fields.audioLoadFailed", { message: this.state.error?.message || i18n.t("common:state.unknown") })}
+					</span>
 				</div>
 			);
 		}
@@ -39,6 +43,7 @@ class AudioErrorBoundary extends Component<{ children: React.ReactNode }, { hasE
 }
 
 export default function SpeechView({ speechInput, speechOutput, isStreaming }: SpeechViewProps) {
+	const { t } = useTranslation(["logs"]);
 	return (
 		<div className="space-y-4">
 			{/* Speech Input */}
@@ -46,7 +51,7 @@ export default function SpeechView({ speechInput, speechOutput, isStreaming }: S
 				<div className="w-full rounded-sm border">
 					<div className="flex items-center gap-2 border-b px-6 py-2 text-sm font-medium">
 						<Volume2 className="h-4 w-4" />
-						Speech Input
+						{t("logs:media.fields.speechInput")}
 					</div>
 					<div className="space-y-4 p-6">
 						<div className="font-mono text-xs">{speechInput.input}</div>
@@ -59,7 +64,7 @@ export default function SpeechView({ speechInput, speechOutput, isStreaming }: S
 				<div className="w-full rounded-sm border">
 					<div className="flex items-center gap-2 border-b px-6 py-2 text-sm font-medium">
 						<Play className="h-4 w-4" />
-						Speech Output
+						{t("logs:media.fields.speechOutput")}
 					</div>
 					<div className="space-y-4 p-6">
 						<AudioErrorBoundary>
