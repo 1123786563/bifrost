@@ -4,6 +4,7 @@ import { SecretVarInput } from "@/components/ui/secretVarInput";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import type { Control } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 interface OAuthAdvancedFieldsProps {
 	// Loosely typed on purpose: shared between the create form (CreateMCPClientRequest)
@@ -77,6 +78,7 @@ export function OAuthAdvancedFields({
 	registrationUrlTestId,
 	onFieldTouched,
 }: OAuthAdvancedFieldsProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	return (
 		<>
 			{beforeFields}
@@ -217,7 +219,7 @@ export function OAuthAdvancedFields({
 							data-testid={scopesTestId}
 						/>
 					</FormControl>
-					<p className="text-muted-foreground text-xs">Comma-separated.</p>
+					<p className="text-muted-foreground text-xs">{t("mcp:registry.sheet.scopesHelper")}</p>
 				</FormItem>
 				{resource.mode === "field" ? (
 					<FormField

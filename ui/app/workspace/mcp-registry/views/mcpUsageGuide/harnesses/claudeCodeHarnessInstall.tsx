@@ -1,6 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { buildClaudeCodeCommand } from "../commandBuilders";
+import { useTranslation } from "react-i18next";
 import { HarnessCommandSection } from "../harnessCommandSection";
 import type { ClaudeScope, HarnessInstallProps } from "../types";
 import { getRegistrationLabel } from "../utils";
@@ -13,6 +14,7 @@ export function ClaudeCodeHarnessInstall({
 	selectedServers,
 	serverScope,
 }: HarnessInstallProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const [scope, setScope] = useState<ClaudeScope>("local");
 
 	const command = useMemo(
@@ -36,16 +38,16 @@ export function ClaudeCodeHarnessInstall({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="local">Local</SelectItem>
-						<SelectItem value="project">Project</SelectItem>
-						<SelectItem value="user">User</SelectItem>
+						<SelectItem value="local">{t("mcp:usageGuide.scope.local")}</SelectItem>
+						<SelectItem value="project">{t("mcp:usageGuide.scope.project")}</SelectItem>
+						<SelectItem value="user">{t("mcp:usageGuide.scope.user")}</SelectItem>
 					</SelectContent>
 				</Select>
 			}
 			emptyMessage={emptyMessage}
 			harnessName="Claude Code"
 			logoSrc="/images/harness/claudecode.svg"
-			registrationLabel={getRegistrationLabel(serverScope, selectedServers)}
+			registrationLabel={getRegistrationLabel(serverScope, selectedServers, t)}
 		/>
 	);
 }

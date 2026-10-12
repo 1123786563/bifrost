@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Trans, useTranslation } from "react-i18next";
 
 // Mirrors the backend Slugify: lowercase, keep [a-z0-9], collapse other runs to a single
 // hyphen, trim leading/trailing hyphens. Keep in sync with framework/configstore Slugify.
@@ -43,51 +44,57 @@ export default function VirtualMCPGeneralTab({
 	setEnabled,
 	isCreate,
 }: VirtualMCPGeneralTabProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	// The endpoint the server will actually serve: the typed slug if present, else derived from the name.
 	const previewSlug = slugify(endpointSlug.trim() || name);
 	return (
 		<div className="flex flex-col gap-5">
 			<div className="flex flex-col gap-2">
-				<Label htmlFor="vmcp-name">Name</Label>
+				<Label htmlFor="vmcp-name">{t("common:fields.name")}</Label>
 				<Input
 					id="vmcp-name"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
-					placeholder="Machine Learning Team"
+					placeholder={t("mcp:virtualMcps.general.namePlaceholder")}
 					data-testid="virtual-mcp-name-input"
 				/>
 			</div>
 
 			<div className="flex flex-col gap-2">
-				<Label htmlFor="vmcp-slug">Endpoint slug</Label>
+				<Label htmlFor="vmcp-slug">{t("mcp:virtualMcps.general.slugLabel")}</Label>
 				<Input
 					id="vmcp-slug"
 					value={endpointSlug}
 					onChange={(e) => setEndpointSlug(e.target.value)}
-					placeholder="Leave blank to derive from the name"
+					placeholder={t("mcp:virtualMcps.general.slugPlaceholder")}
 					disabled={!isCreate}
 					className="font-mono"
 					data-testid="virtual-mcp-slug-input"
 				/>
 				<p className="text-muted-foreground text-xs">
-					{isCreate
-						? "The URL-safe path this Virtual MCP is served at. Immutable after creation."
-						: "The endpoint slug cannot be changed after creation."}
+					{isCreate ? t("mcp:virtualMcps.general.slugCreateHint") : t("mcp:virtualMcps.general.slugEditHint")}
 				</p>
 				{isCreate && previewSlug && (
 					<p className="text-muted-foreground text-xs" data-testid="virtual-mcp-slug-preview">
-						Served at <span className="text-foreground font-mono">/mcp/{previewSlug}</span>
+						<Trans
+							t={t}
+							i18nKey="mcp:virtualMcps.general.servedAt"
+							values={{ endpoint: `/mcp/${previewSlug}` }}
+							components={[<span key="0" className="text-foreground font-mono" />]}
+						>
+							Served at <span className="text-foreground font-mono">{"{{endpoint}}"}</span>
+						</Trans>
 					</p>
 				)}
 			</div>
 
 			<div className="flex flex-col gap-2">
-				<Label htmlFor="vmcp-description">Description</Label>
+				<Label htmlFor="vmcp-description">{t("common:fields.description")}</Label>
 				<Textarea
 					id="vmcp-description"
 					value={description}
 					onChange={(e) => setDescription(e.target.value)}
-					placeholder="What this Virtual MCP is for (optional)"
+					placeholder={t("mcp:virtualMcps.general.descriptionPlaceholder")}
 					rows={3}
 					data-testid="virtual-mcp-description-input"
 				/>
@@ -95,8 +102,8 @@ export default function VirtualMCPGeneralTab({
 
 			<div className="flex items-center justify-between rounded-md border p-3">
 				<div className="flex flex-col gap-0.5">
-					<Label htmlFor="vmcp-enabled">Enabled</Label>
-					<p className="text-muted-foreground text-xs">When disabled, the endpoint stops serving and is not resolved for any key.</p>
+					<Label htmlFor="vmcp-enabled">{t("common:state.enabled")}</Label>
+					<p className="text-muted-foreground text-xs">{t("mcp:virtualMcps.general.enabledHint")}</p>
 				</div>
 				<Switch id="vmcp-enabled" checked={enabled} onCheckedChange={setEnabled} data-testid="virtual-mcp-enabled-switch" />
 			</div>

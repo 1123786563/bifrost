@@ -1,6 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { buildCodexConfig } from "../commandBuilders";
+import { useTranslation } from "react-i18next";
 import { HarnessCommandSection } from "../harnessCommandSection";
 import type { CodexConfigScope, HarnessInstallProps } from "../types";
 import { getRegistrationLabel, getUserHomePrefix } from "../utils";
@@ -14,6 +15,7 @@ export function CodexHarnessInstall({
 	selectedServers,
 	serverScope,
 }: HarnessInstallProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const [configScope, setConfigScope] = useState<CodexConfigScope>("user");
 
 	const config = useMemo(
@@ -39,17 +41,17 @@ export function CodexHarnessInstall({
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="user">User</SelectItem>
-							<SelectItem value="project">Project</SelectItem>
+							<SelectItem value="user">{t("mcp:usageGuide.scope.user")}</SelectItem>
+							<SelectItem value="project">{t("mcp:usageGuide.scope.project")}</SelectItem>
 						</SelectContent>
 					</Select>
 				}
-				copySuccessMessage="Config copied"
+				copySuccessMessage={t("mcp:usageGuide.configCopied")}
 				emptyMessage={emptyMessage}
 				harnessName="Codex"
 				label="config.toml"
 				logoSrc="/images/harness/codex.svg"
-				registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers)}`}
+				registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers, t)}`}
 			/>
 		</div>
 	);

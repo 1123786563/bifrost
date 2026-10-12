@@ -32,6 +32,7 @@ import AgentAccessProfiles from "@enterprise/components/agent-gateway/agentAcces
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { AlertTriangle, ChevronDown, ChevronRight, Info, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AgentEndpoints } from "./agentEndpoints";
 
 const AGENT_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -45,9 +46,11 @@ function capabilityLabel(name: string) {
 		.replace(/^./, (value) => value.toUpperCase());
 }
 
-function validateAgentName(name: string): string | null {
-	if (name.length < 1 || name.length > 255) return "Name must be 1-255 characters.";
-	if (!AGENT_NAME_PATTERN.test(name)) return "Use lowercase letters, digits, and hyphens; no leading, trailing, or consecutive hyphens.";
+type SheetT = (key: string, opts?: Record<string, unknown>) => string;
+
+function validateAgentName(name: string, t: SheetT): string | null {
+	if (name.length < 1 || name.length > 255) return t("mcp:agents.sheet.nameLen");
+	if (!AGENT_NAME_PATTERN.test(name)) return t("mcp:agents.sheet.namePattern");
 	return null;
 }
 
@@ -121,31 +124,30 @@ function authForRequirement(result: InspectAgentCardResponse, index: number): Ag
 	};
 }
 
-function requirementGap(result: InspectAgentCardResponse, index: number): string | null {
+function requirementGap(result: InspectAgentCardResponse, index: number, t: SheetT): string | null {
 	const names = result.security_requirements[index] ?? [];
 	const schemes = names.map((name) => result.security_schemes.find((scheme) => scheme.name === name));
-	if (schemes.some((scheme) => !scheme)) return "The card references a missing security scheme.";
+	if (schemes.some((scheme) => !scheme)) return t("mcp:agents.sheet.gapMissing");
 	const oauthCount = schemes.filter((scheme) => scheme?.type === "oauth2" || scheme?.type === "openIdConnect").length;
 	const headerCount = schemes.filter((scheme) => scheme && headerName(scheme)).length;
-	if (oauthCount > 1) return "The gateway supports one OAuth client per upstream.";
-	if (oauthCount && headerCount) return "The gateway cannot combine OAuth with static header credentials.";
+	if (oauthCount > 1) return t("mcp:agents.sheet.gapOauth");
+	if (oauthCount && headerCount) return t("mcp:agents.sheet.gapCombine");
 	const headers = schemes.flatMap((scheme) => {
 		const header = scheme ? headerName(scheme) : null;
 		return header ? [header] : [];
 	});
-	if (new Set(headers).size !== headers.length) return "The gateway cannot store separate credentials for the same HTTP header.";
-	return "The gateway does not support this query, cookie, or HTTP credential.";
+	if (new Set(headers).size !== headers.length) return t("mcp:agents.sheet.gapSameHeader");
+	return t("mcp:agents.sheet.gapUnsupported");
 }
 
 function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange: (next: AgentTLSConfig) => void }) {
+	const { t } = useTranslation(["common", "mcp"]);
 	return (
 		<>
 			<div className="flex items-center justify-between gap-4">
 				<div className="space-y-0.5">
-					<Label>Skip TLS verification</Label>
-					<p className="text-muted-foreground text-sm">
-						Disable TLS certificate verification. Use only in trusted isolated environments. Takes priority over CA certificate.
-					</p>
+					<Label>{t("mcp:agents.sheet.tls.skip")}</Label>
+					<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.tls.skipHint")}</p>
 				</div>
 				<Switch
 					checked={value.insecure_skip_verify ?? false}
@@ -153,10 +155,8 @@ function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange: (next
 				/>
 			</div>
 			<div className="space-y-1">
-				<Label>CA Certificate (PEM) (Optional)</Label>
-				<p className="text-muted-foreground text-sm">
-					PEM-encoded CA certificate to trust for agent connections, such as a self-signed or private CA.
-				</p>
+				<Label>{t("mcp:agents.sheet.tls.caCert")}</Label>
+				<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.tls.caCertHint")}</p>
 				<SecretVarInput
 					variant="textarea"
 					rows={4}
@@ -167,7 +167,7 @@ function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange: (next
 			</div>
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 				<div className="space-y-1">
-					<Label>mTLS Client Certificate (PEM) (Optional)</Label>
+					<Label>{t("mcp:agents.sheet.tls.clientCert")}</Label>
 					<SecretVarInput
 						variant="textarea"
 						rows={4}
@@ -177,7 +177,7 @@ function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange: (next
 					/>
 				</div>
 				<div className="space-y-1">
-					<Label>mTLS Client Key (PEM) (Optional)</Label>
+					<Label>{t("mcp:agents.sheet.tls.clientKey")}</Label>
 					<SecretVarInput
 						variant="textarea"
 						rows={4}
@@ -192,11 +192,12 @@ function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange: (next
 }
 
 function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (next: AgentOAuthConfig) => void }) {
+	const { t } = useTranslation(["common", "mcp"]);
 	return (
 		<div className="space-y-4">
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 				<div className="space-y-1">
-					<Label>Provider URL</Label>
+					<Label>{t("mcp:agents.sheet.oauth.providerUrl")}</Label>
 					<Input
 						value={value.provider_url ?? ""}
 						placeholder="https://auth.example.com"
@@ -204,7 +205,7 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 					/>
 				</div>
 				<div className="space-y-1">
-					<Label>Discovery URL</Label>
+					<Label>{t("mcp:agents.sheet.oauth.discoveryUrl")}</Label>
 					<Input
 						value={value.discovery_url ?? ""}
 						placeholder="https://auth.example.com/.well-known/openid-configuration"
@@ -213,7 +214,7 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 				</div>
 			</div>
 			<div className="space-y-1">
-				<Label>Token URL</Label>
+				<Label>{t("mcp:agents.sheet.oauth.tokenUrl")}</Label>
 				<Input
 					value={value.token_url ?? ""}
 					placeholder="https://auth.example.com/oauth/token"
@@ -222,7 +223,7 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 			</div>
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 				<div className="space-y-1">
-					<Label>Client ID</Label>
+					<Label>{t("mcp:agents.sheet.oauth.clientId")}</Label>
 					<SecretVarInput
 						value={value.client_id}
 						placeholder="your-client-id or env.OAUTH_CLIENT_ID"
@@ -230,7 +231,7 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 					/>
 				</div>
 				<div className="space-y-1">
-					<Label>Client secret</Label>
+					<Label>{t("mcp:agents.sheet.oauth.clientSecret")}</Label>
 					<SecretVarInput
 						value={value.client_secret}
 						placeholder="your-client-secret or env.OAUTH_CLIENT_SECRET"
@@ -239,7 +240,7 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 				</div>
 			</div>
 			<div className="space-y-1">
-				<Label>Scopes</Label>
+				<Label>{t("mcp:agents.sheet.oauth.scopes")}</Label>
 				<Input
 					value={value.scopes?.join(" ") ?? ""}
 					placeholder="read write"
@@ -247,7 +248,7 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 				/>
 			</div>
 			<div className="space-y-1">
-				<Label>Resource</Label>
+				<Label>{t("mcp:agents.sheet.oauth.resource")}</Label>
 				<Input
 					value={value.resource ?? ""}
 					placeholder="https://agent.example.com"
@@ -271,6 +272,7 @@ function AuthFields({
 	disabled?: boolean;
 	requiredHeaderKeys?: string[];
 }) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const changeKind = (type: AgentAuthType) =>
 		onChange({
 			...emptyAuth(),
@@ -283,15 +285,15 @@ function AuthFields({
 	return (
 		<fieldset disabled={disabled} className="space-y-4 disabled:opacity-70">
 			<div className="space-y-2">
-				<Label>Authentication type</Label>
+				<Label>{t("mcp:agents.sheet.authType")}</Label>
 				<Select value={value.type} onValueChange={changeKind} disabled={readOnlyAuth}>
 					<SelectTrigger className="w-full">
-						<SelectValue placeholder="Select authentication type" />
+						<SelectValue placeholder={t("mcp:agents.sheet.authTypePlaceholder")} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="none">None</SelectItem>
-						<SelectItem value="headers">Headers</SelectItem>
-						<SelectItem value="oauth">OAuth 2.0 client credentials</SelectItem>
+						<SelectItem value="none">{t("common:state.none")}</SelectItem>
+						<SelectItem value="headers">{t("mcp:sessions.type.headers")}</SelectItem>
+						<SelectItem value="oauth">{t("mcp:agents.sheet.oauthCreds")}</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
@@ -303,7 +305,7 @@ function AuthFields({
 							onChange={(headers) => onChange({ ...value, headers })}
 							fixedKeys={requiredHeaderKeys}
 							useSecretVarInput
-							label="Advertised credential headers"
+							label={t("mcp:agents.sheet.advertisedHeaders")}
 						/>
 					)}
 					<HeadersTable
@@ -318,7 +320,7 @@ function AuthFields({
 							})
 						}
 						useSecretVarInput
-						label="Extra headers"
+						label={t("mcp:agents.sheet.extraHeaders")}
 					/>
 				</div>
 			)}
@@ -329,7 +331,7 @@ function AuthFields({
 						value={value.headers ?? {}}
 						onChange={(headers) => onChange({ ...value, headers })}
 						useSecretVarInput
-						label="Extra headers"
+						label={t("mcp:agents.sheet.extraHeaders")}
 					/>
 				</div>
 			)}
@@ -344,6 +346,7 @@ interface AgentSheetProps {
 }
 
 export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const isEditing = !!agent;
 	const canSave = useRbac(RbacResource.AgentGateway, isEditing ? RbacOperation.Update : RbacOperation.Create);
 	const [createAgent, { isLoading: isCreating }] = useCreateAgentMutation();
@@ -406,7 +409,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 
 	const handleInspect = async () => {
 		if (!agentCardUrl.trim() || !/^https?:\/\//i.test(agentCardUrl.trim())) {
-			setAgentCardUrlError("Enter a valid http(s) URL.");
+			setAgentCardUrlError(t("mcp:agents.sheet.invalidUrl"));
 			return;
 		}
 		setInspectionError(null);
@@ -426,7 +429,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 		.map((scheme) => (scheme ? headerName(scheme) : null))
 		.filter((name): name is string => !!name);
 	const unsupportedRequirement = !!inspection && !selectedAuth;
-	const unsupportedReason = inspection && unsupportedRequirement ? requirementGap(inspection, selectedRequirement) : null;
+	const unsupportedReason = inspection && unsupportedRequirement ? requirementGap(inspection, selectedRequirement, t) : null;
 	const expectedSchemes = selectedAuth?.security_schemes ?? [];
 	const authMismatch =
 		!!inspection &&
@@ -436,20 +439,20 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 	const isBlocked = !manualMode && ((!isEditing && !inspection) || unsupportedRequirement);
 
 	const handleSave = async () => {
-		const validation = validateAgentName(name);
+		const validation = validateAgentName(name, t);
 		if (validation) {
 			setNameError(validation);
 			return;
 		}
 		if (!agentCardUrl.trim() || !/^https?:\/\//i.test(agentCardUrl.trim())) {
-			setAgentCardUrlError("Enter a valid http(s) URL.");
+			setAgentCardUrlError(t("mcp:agents.sheet.invalidUrl"));
 			return;
 		}
 		if (isBlocked) {
 			setInspectionError(
 				unsupportedRequirement
-					? (unsupportedReason ?? "The selected card requirement cannot be executed.")
-					: "Fetch the current agent card, or enable Advanced manual mode.",
+					? (unsupportedReason ?? t("mcp:agents.sheet.requirementNotExecutable"))
+					: t("mcp:agents.sheet.fetchOrManual"),
 			);
 			return;
 		}
@@ -467,10 +470,13 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 		try {
 			if (agent) await updateAgent({ name: agent.name, data: { ...payload, enabled: agent.enabled } }).unwrap();
 			else await createAgent({ name, enabled: true, ...payload }).unwrap();
-			toast({ title: "Success", description: agent ? "Agent updated successfully" : "Agent registered successfully" });
+			toast({
+				title: t("common:state.success"),
+				description: agent ? t("mcp:agents.sheet.updatedToast") : t("mcp:agents.sheet.registeredToast"),
+			});
 			onSaved();
 		} catch (error) {
-			toast({ title: "Unable to save agent", description: getErrorMessage(error), variant: "destructive" });
+			toast({ title: t("mcp:agents.sheet.saveFailed"), description: getErrorMessage(error), variant: "destructive" });
 		}
 	};
 
@@ -482,38 +488,34 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 				onEscapeKeyDown={onClose}
 			>
 				<SheetHeader className="w-full flex-col items-start gap-1 p-0 py-4" headerClassName="mb-0 sticky -top-4 bg-card z-10 px-4 md:px-8">
-					<SheetTitle className="font-medium">{name.trim() || "New Agent"}</SheetTitle>
-					<SheetDescription className="line-clamp-2">
-						{inspection?.description || "Register an A2A agent and configure how Bifrost connects to it."}
-					</SheetDescription>
+					<SheetTitle className="font-medium">{name.trim() || t("mcp:agents.empty.newAgent")}</SheetTitle>
+					<SheetDescription className="line-clamp-2">{inspection?.description || t("mcp:agents.sheet.desc")}</SheetDescription>
 				</SheetHeader>
 				<div className="grow space-y-6 px-4 pb-6 md:px-8">
 					<div className="space-y-4">
-						<SectionHeader title="Basic Information" description="Identify this agent and fetch its A2A card." />
+						<SectionHeader title={t("mcp:agents.sheet.basicTitle")} description={t("mcp:agents.sheet.basicDesc")} />
 						<div className="space-y-2">
-							<Label>Name</Label>
+							<Label>{t("common:fields.name")}</Label>
 							<Input
 								value={name}
 								placeholder="accounting-agent"
 								disabled={isEditing}
 								onChange={(event) => {
 									setName(event.target.value);
-									setNameError(event.target.value ? validateAgentName(event.target.value) : null);
+									setNameError(event.target.value ? validateAgentName(event.target.value, t) : null);
 								}}
 							/>
 							{nameError && <p className="text-destructive text-sm">{nameError}</p>}
 							{grpc && name.length > 63 && (
 								<Alert variant="warning" data-testid="agent-grpc-name-length-warning">
 									<AlertTriangle className="h-4 w-4" />
-									<AlertTitle>gRPC is unavailable for this agent name</AlertTitle>
-									<AlertDescription>
-										gRPC routing uses the agent name as a DNS label, which is limited to 63 characters. JSON-RPC and REST remain available.
-									</AlertDescription>
+									<AlertTitle>{t("mcp:agents.sheet.grpcUnavailable")}</AlertTitle>
+									<AlertDescription>{t("mcp:agents.sheet.grpcUnavailableDesc")}</AlertDescription>
 								</Alert>
 							)}
 						</div>
 						<div className="space-y-2">
-							<Label>Agent card URL</Label>
+							<Label>{t("mcp:agents.col.agentCardUrl")}</Label>
 							<div className="flex gap-2">
 								<Input
 									value={agentCardUrl}
@@ -533,17 +535,14 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 									disabled={!agentCardUrl.trim()}
 								>
 									<RefreshCw className="h-4 w-4" />
-									Fetch agent card
+									{t("mcp:agents.sheet.fetchCard")}
 								</Button>
 							</div>
 							{agentCardUrlError && <p className="text-destructive text-sm">{agentCardUrlError}</p>}
 						</div>
 					</div>
 					<div className="space-y-4">
-						<SectionHeader
-							title="Agent card authentication"
-							description="Used only for the server-side card fetch. It is never reused for agent requests."
-						/>
+						<SectionHeader title={t("mcp:agents.sheet.cardAuthTitle")} description={t("mcp:agents.sheet.cardAuthDesc")} />
 						<AuthFields
 							value={cardAuth}
 							onChange={(next) => {
@@ -555,8 +554,8 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 					<Collapsible open={cardTLSOpen} onOpenChange={setCardTLSOpen}>
 						<CollapsibleTrigger className="flex w-full items-center justify-between gap-3 py-1 text-left">
 							<div>
-								<p className="text-sm font-medium">Agent card TLS / Certificate</p>
-								<p className="text-muted-foreground text-sm">Custom certificate verification for HTTPS card discovery.</p>
+								<p className="text-sm font-medium">{t("mcp:agents.sheet.cardTlsTitle")}</p>
+								<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.cardTlsDesc")}</p>
 							</div>
 							{cardTLSOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
 						</CollapsibleTrigger>
@@ -577,9 +576,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 					)}
 					{!inspection && !inspectionError && (
 						<div className="text-muted-foreground rounded-md border border-dashed p-5 text-center text-sm">
-							{isInspecting
-								? "Fetching the agent card…"
-								: "Fetch the agent card to preview its capabilities, interfaces, and authentication."}
+							{isInspecting ? t("mcp:agents.sheet.fetchingCard") : t("mcp:agents.sheet.fetchCardHint")}
 						</div>
 					)}
 					{inspection && (
@@ -587,12 +584,12 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0 space-y-1">
 									<div className="flex flex-wrap items-center gap-2">
-										<p className="font-medium">{inspection.name || "Agent card fetched"}</p>
+										<p className="font-medium">{inspection.name || t("mcp:agents.sheet.cardFetched")}</p>
 										{inspection.version && <Badge variant="outline">v{inspection.version}</Badge>}
 									</div>
 									{inspection.provider && (
 										<p className="text-muted-foreground text-sm">
-											Provided by{" "}
+											{t("mcp:agents.sheet.providedBy")}{" "}
 											{inspection.provider_url ? (
 												<a href={inspection.provider_url} target="_blank" rel="noreferrer" className="text-foreground hover:underline">
 													{inspection.provider}
@@ -609,37 +606,37 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 											rel="noreferrer"
 											className="text-muted-foreground block text-xs hover:underline"
 										>
-											Documentation
+											{t("mcp:agents.sheet.documentation")}
 										</a>
 									)}
 								</div>
-								<Badge variant="success">Ready</Badge>
+								<Badge variant="success">{t("mcp:agents.sheet.ready")}</Badge>
 							</div>
 							<div className="grid grid-cols-2 gap-3 text-sm">
 								<div>
-									<p className="text-muted-foreground text-xs">Interfaces</p>
+									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.interfaces")}</p>
 									<p>{inspection.interfaces?.length ?? 0}</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-xs">Skills</p>
+									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.skills")}</p>
 									<p>{inspection.skills?.length ?? 0}</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-xs">Signatures</p>
+									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.signatures")}</p>
 									<p>{inspection.signature_count}</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-xs">Input modes</p>
-									<p className="break-all">{inspection.default_input_modes?.join(", ") || "Not declared"}</p>
+									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.inputModes")}</p>
+									<p className="break-all">{inspection.default_input_modes?.join(", ") || t("mcp:agents.sheet.notDeclared")}</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-xs">Output modes</p>
-									<p className="break-all">{inspection.default_output_modes?.join(", ") || "Not declared"}</p>
+									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.outputModes")}</p>
+									<p className="break-all">{inspection.default_output_modes?.join(", ") || t("mcp:agents.sheet.notDeclared")}</p>
 								</div>
 							</div>
 							{Object.values(inspection.capabilities).some(Boolean) && (
 								<div className="space-y-2">
-									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Capabilities</p>
+									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("mcp:agents.sheet.capabilities")}</p>
 									<div className="flex flex-wrap gap-2">
 										{Object.entries(inspection.capabilities)
 											.sort(([left], [right]) => left.localeCompare(right))
@@ -648,42 +645,40 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 													key={name}
 													variant={supported ? "default" : "outline"}
 													className={supported ? undefined : "text-muted-foreground line-through opacity-60"}
-													title={supported ? "Supported" : "Not supported"}
+													title={supported ? t("mcp:agents.sheet.supported") : t("mcp:agents.sheet.notSupported")}
 												>
 													{capabilityLabel(name)}
 												</Badge>
 											))}
 									</div>
 									{inspection.capabilities.extendedAgentCard && (
-										<p className="text-muted-foreground text-xs leading-relaxed">
-											Bifrost can retrieve the extended card through the gateway using the configured agent request authentication.
-										</p>
+										<p className="text-muted-foreground text-xs leading-relaxed">{t("mcp:agents.sheet.extendedCard")}</p>
 									)}
 								</div>
 							)}
 							{inspection.interfaces && inspection.interfaces.length > 0 && (
 								<div className="space-y-2">
-									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Interfaces</p>
+									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("mcp:agents.sheet.interfaces")}</p>
 									{inspection.interfaces.map((item) => (
 										<div key={`${item.protocol_binding}-${item.url}`} className="flex items-start justify-between gap-3 text-sm">
 											<span className="font-medium">{item.protocol_binding}</span>
 											<span className="text-muted-foreground text-right break-all">
 												{item.protocol_version} · {item.url}
-												{item.tenant && <span className="block">Tenant: {item.tenant}</span>}
+												{item.tenant && <span className="block">{t("mcp:agents.sheet.tenantLabel", { tenant: item.tenant })}</span>}
 											</span>
 										</div>
 									))}
 								</div>
 							)}
 							<div className="space-y-2">
-								<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Advertised authentication</p>
+								<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("mcp:agents.sheet.advertisedAuth")}</p>
 								<div className="flex flex-wrap gap-2">
 									{inspection.security_requirements.length === 0 ? (
-										<Badge variant="outline">None</Badge>
+										<Badge variant="outline">{t("common:state.none")}</Badge>
 									) : (
 										inspection.security_requirements.map((requirement, index) => (
 											<Badge key={`${requirement.join("-")}-${index}`} variant="outline">
-												{requirement.length ? requirement.join(" + ") : "None"}
+												{requirement.length ? requirement.join(" + ") : t("common:state.none")}
 											</Badge>
 										))
 									)}
@@ -691,7 +686,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 							</div>
 							{inspection.extensions && inspection.extensions.length > 0 && (
 								<div className="space-y-2">
-									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Extensions</p>
+									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("mcp:agents.sheet.extensions")}</p>
 									<div className="flex flex-wrap gap-2">
 										{inspection.extensions.map((extension) => (
 											<TooltipProvider key={extension.uri}>
@@ -716,7 +711,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 							{inspection.skills && inspection.skills.length > 0 && (
 								<Collapsible open={skillsOpen} onOpenChange={setSkillsOpen}>
 									<CollapsibleTrigger className="flex w-full items-center justify-between text-sm font-medium">
-										<span>Skills ({inspection.skills.length})</span>
+										<span>{t("mcp:agents.sheet.skillsCount", { count: inspection.skills.length })}</span>
 										{skillsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
 									</CollapsibleTrigger>
 									<CollapsibleContent className="space-y-3 pt-3">
@@ -729,20 +724,22 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 												)}
 												{(skill.input_modes?.length || skill.output_modes?.length) && (
 													<p className="text-muted-foreground text-xs">
-														{skill.input_modes?.length ? `Input: ${skill.input_modes.join(", ")}` : ""}
+														{skill.input_modes?.length ? t("mcp:agents.sheet.inputLabel", { modes: skill.input_modes.join(", ") }) : ""}
 														{skill.input_modes?.length && skill.output_modes?.length ? " · " : ""}
-														{skill.output_modes?.length ? `Output: ${skill.output_modes.join(", ")}` : ""}
+														{skill.output_modes?.length ? t("mcp:agents.sheet.outputLabel", { modes: skill.output_modes.join(", ") }) : ""}
 													</p>
 												)}
 												{skill.security_requirements && skill.security_requirements.length > 0 && (
 													<p className="text-muted-foreground text-xs">
-														Authentication:{" "}
-														{skill.security_requirements.map((requirement) => requirement.join(" + ") || "None").join(" or ")}
+														{t("mcp:agents.sheet.authenticationLabel")}{" "}
+														{skill.security_requirements
+															.map((requirement) => requirement.join(" + ") || t("common:state.none"))
+															.join(` ${t("mcp:agents.sheet.or")} `)}
 													</p>
 												)}
 												{skill.examples && skill.examples.length > 0 && (
 													<div className="text-muted-foreground text-xs">
-														<p className="font-medium">Examples</p>
+														<p className="font-medium">{t("mcp:agents.sheet.examples")}</p>
 														<ul className="list-disc space-y-0.5 pl-4">
 															{skill.examples.map((example) => (
 																<li key={example}>{example}</li>
@@ -765,12 +762,15 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 					<DottedSeparator />
 					<div className="space-y-4">
 						<SectionHeader
-							title={`Agent request authentication${isEditing && !inspection && !manualMode ? " (refetch card to enable editing)" : ""}`}
-							description="Choose one advertised alternative. Schemes joined with + are required together."
+							title={
+								t("mcp:agents.sheet.runtimeAuthTitle") +
+								(isEditing && !inspection && !manualMode ? t("mcp:agents.sheet.runtimeAuthSuffix") : "")
+							}
+							description={t("mcp:agents.sheet.runtimeAuthDesc")}
 						/>
 						{inspection && inspection.security_requirements.length > 1 && (
 							<div className="space-y-1">
-								<Label>Security requirement</Label>
+								<Label>{t("mcp:agents.sheet.securityRequirement")}</Label>
 								<Select value={String(selectedRequirement)} onValueChange={(value) => applyRequirement(inspection, Number(value))}>
 									<SelectTrigger>
 										<SelectValue />
@@ -778,7 +778,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 									<SelectContent>
 										{inspection.security_requirements.map((requirement, index) => (
 											<SelectItem key={index} value={String(index)}>
-												{requirement.length ? requirement.join(" + ") : "None"}
+												{requirement.length ? requirement.join(" + ") : t("common:state.none")}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -787,7 +787,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 						)}
 						{!inspection && !manualMode && !isEditing && (
 							<div className="text-muted-foreground rounded-md border border-dashed p-5 text-center text-sm">
-								Fetch the agent card to configure its advertised request authentication.
+								{t("mcp:agents.sheet.fetchToConfigure")}
 							</div>
 						)}
 						{(selectedAuth || manualMode || isEditing) && (
@@ -802,17 +802,14 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 						<div className="rounded-md border">
 							<div className="flex items-center justify-between gap-4 p-3">
 								<div className="space-y-0.5">
-									<Label>Forward Bifrost authentication to agent</Label>
-									<p className="text-muted-foreground text-sm">
-										For agents that already use Bifrost for LLM or MCP calls. Configure the agent to send this authentication with those
-										calls so access and usage stay attributed to the requester.
-									</p>
+									<Label>{t("mcp:agents.sheet.forwardAuth")}</Label>
+									<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.forwardAuthHint")}</p>
 								</div>
 								<Switch checked={forwardAcceptedCredential} onCheckedChange={setForwardAcceptedCredential} />
 							</div>
 							{forwardAcceptedCredential && (
 								<div className="bg-muted/30 space-y-2 border-t p-3">
-									<Label>When authentication headers conflict</Label>
+									<Label>{t("mcp:agents.sheet.conflictLabel")}</Label>
 									<Select
 										value={forwardAcceptedCredentialOverridesAuth ? "incoming" : "configured"}
 										onValueChange={(value) => setForwardAcceptedCredentialOverridesAuth(value === "incoming")}
@@ -821,27 +818,22 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="configured">Use configured agent authentication</SelectItem>
-											<SelectItem value="incoming">Overwrite with incoming Bifrost authentication</SelectItem>
+											<SelectItem value="configured">{t("mcp:agents.sheet.conflictConfigured")}</SelectItem>
+											<SelectItem value="incoming">{t("mcp:agents.sheet.conflictIncoming")}</SelectItem>
 										</SelectContent>
 									</Select>
-									<p className="text-muted-foreground text-sm">
-										Applies only when the accepted credential and configured agent authentication use the same header. Other forwarded
-										headers are unchanged.
-									</p>
+									<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.conflictHint")}</p>
 								</div>
 							)}
 						</div>
 						{unsupportedReason && !manualMode && <p className="text-destructive text-sm">{unsupportedReason}</p>}
-						{authMismatch && !manualMode && (
-							<p className="text-sm text-amber-700">Request authentication no longer matches the selected card requirement.</p>
-						)}
+						{authMismatch && !manualMode && <p className="text-sm text-amber-700">{t("mcp:agents.sheet.authMismatch")}</p>}
 					</div>
 					<Collapsible open={runtimeTLSOpen} onOpenChange={setRuntimeTLSOpen}>
 						<CollapsibleTrigger className="flex w-full items-center justify-between gap-3 py-1 text-left">
 							<div>
-								<p className="text-sm font-medium">Runtime TLS / Certificate</p>
-								<p className="text-muted-foreground text-sm">Custom certificate verification for agent requests.</p>
+								<p className="text-sm font-medium">{t("mcp:agents.sheet.runtimeTlsTitle")}</p>
+								<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.runtimeTlsDesc")}</p>
 							</div>
 							{runtimeTLSOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
 						</CollapsibleTrigger>
@@ -853,17 +845,17 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 					</Collapsible>
 					<DottedSeparator />
 					<div className="space-y-4">
-						<SectionHeader title="Agent Behavior" description="Control whether this agent receives traffic and who may reach it." />
+						<SectionHeader title={t("mcp:agents.sheet.behaviorTitle")} description={t("mcp:agents.sheet.behaviorDesc")} />
 						<div className="divide-y rounded-md border">
 							<div className="flex items-center justify-between p-3">
 								<div className="flex items-center gap-2">
-									<Label>Allow by default</Label>
+									<Label>{t("mcp:agents.filters.allowedByDefault")}</Label>
 									<TooltipProvider>
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<Info className="text-muted-foreground h-4 w-4" />
 											</TooltipTrigger>
-											<TooltipContent>Any valid virtual key can reach this agent.</TooltipContent>
+											<TooltipContent>{t("mcp:agents.sheet.allowByDefaultHint")}</TooltipContent>
 										</Tooltip>
 									</TooltipProvider>
 								</div>
@@ -873,8 +865,8 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 					</div>
 					<div className="space-y-4">
 						<SectionHeader
-							title="Virtual Key Grants"
-							description="Keys granted here can reach this agent through the gateway."
+							title={t("mcp:agents.sheet.vkGrantsTitle")}
+							description={t("mcp:agents.sheet.vkGrantsDesc")}
 							action={
 								<VirtualKeySelector
 									mode="add"
@@ -883,7 +875,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 									trigger={
 										<Button type="button" variant="outline" size="sm">
 											<Plus className="h-4 w-4" />
-											Add Virtual Key
+											{t("mcp:addVirtualKey")}
 										</Button>
 									}
 								/>
@@ -891,7 +883,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 						/>
 						{virtualKeyIds.length === 0 ? (
 							<div className="text-muted-foreground rounded-md border border-dashed p-5 text-center text-sm">
-								{allowByDefault ? "Every valid virtual key can reach this agent." : "No virtual keys granted yet."}
+								{allowByDefault ? t("mcp:agents.sheet.vkEveryValid") : t("mcp:agents.sheet.vkNoneGranted")}
 							</div>
 						) : (
 							<div className="divide-y rounded-md border">
@@ -902,7 +894,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 										secret={vkById.get(id)?.value}
 										fallbackLabel={id}
 										onRemove={() => setVirtualKeyIds((current) => current.filter((value) => value !== id))}
-										removeAriaLabel="Revoke virtual key grant"
+										removeAriaLabel={t("mcp:agents.sheet.revokeGrantAria")}
 									/>
 								))}
 							</div>
@@ -911,16 +903,14 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 					<DottedSeparator />
 					<Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
 						<CollapsibleTrigger className="flex w-full items-center justify-between gap-3 py-1 text-left">
-							<p className="text-sm font-medium">Advanced settings</p>
+							<p className="text-sm font-medium">{t("mcp:agents.sheet.advanced")}</p>
 							{advancedOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
 						</CollapsibleTrigger>
 						<CollapsibleContent className="space-y-5 pt-4">
 							<div className="flex items-center justify-between rounded-md border p-3">
 								<div>
-									<Label>Manual authentication</Label>
-									<p className="text-muted-foreground text-xs">
-										Bypass card-derived blocking and allow custom runtime authentication and extra headers.
-									</p>
+									<Label>{t("mcp:agents.sheet.manualAuth")}</Label>
+									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.manualAuthHint")}</p>
 								</div>
 								<Switch
 									checked={manualMode}
@@ -931,21 +921,19 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 								/>
 							</div>
 							<div className="space-y-1">
-								<Label>Tenant (optional)</Label>
-								<p className="text-muted-foreground text-xs">Advertise this tenant identifier on the served agent card.</p>
+								<Label>{t("mcp:agents.sheet.tenant")}</Label>
+								<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.tenantHint")}</p>
 								<Input value={tenant} placeholder="tenant-a" onChange={(event) => setTenant(event.target.value)} />
 							</div>
 							<div className="space-y-3">
 								<div className="flex items-start justify-between gap-3">
 									<div className="space-y-1">
-										<Label>Extension URIs</Label>
-										<p className="text-muted-foreground text-xs">
-											Allow these A2A extensions to be advertised and activated for this agent.
-										</p>
+										<Label>{t("mcp:agents.sheet.extensionUris")}</Label>
+										<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.extensionUrisHint")}</p>
 									</div>
 									<Button type="button" variant="outline" size="sm" onClick={() => setExtensionUris((current) => [...current, ""])}>
 										<Plus className="h-4 w-4" />
-										Add URI
+										{t("mcp:agents.sheet.addUri")}
 									</Button>
 								</div>
 								{extensionUris.map((uri, index) => (
@@ -980,7 +968,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 				</div>
 				<div className="bg-card sticky bottom-0 flex justify-end gap-2 border-t px-4 py-4 md:px-8">
 					<Button type="button" variant="outline" onClick={onClose}>
-						Cancel
+						{t("common:actions.cancel")}
 					</Button>
 					<Button
 						type="button"
@@ -988,7 +976,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 						disabled={isCreating || isUpdating || !canSave || !!nameError || !name || !agentCardUrl}
 						isLoading={isCreating || isUpdating}
 					>
-						{agent ? "Save Changes" : "Create"}
+						{agent ? t("mcp:agents.sheet.saveChanges") : t("common:actions.create")}
 					</Button>
 				</div>
 			</SheetContent>

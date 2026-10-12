@@ -6,6 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useGetVirtualKeysQuery } from "@/lib/store";
 import { PanelLeftClose, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const COLLAPSE_STORAGE_KEY = "agents-filter-sidebar-collapsed";
 const VK_PAGE_SIZE = 25;
@@ -29,20 +30,20 @@ export const EMPTY_AGENT_FILTERS: AgentFilters = {
 
 interface FilterOption {
 	value: string;
-	label: string;
+	labelKey: string;
 }
 
 const STATUS_OPTIONS: FilterOption[] = [
-	{ value: "true", label: "Enabled" },
-	{ value: "false", label: "Disabled" },
+	{ value: "true", labelKey: "common:state.enabled" },
+	{ value: "false", labelKey: "common:state.disabled" },
 ];
 
 // Upstream auth is derived from which credentials a registration carries:
 // discovery_auth is sent when fetching the card, runtime_auth on proxied calls.
 const UPSTREAM_AUTH_OPTIONS: FilterOption[] = [
-	{ value: "discovery", label: "Discovery" },
-	{ value: "runtime", label: "Runtime" },
-	{ value: "none", label: "None" },
+	{ value: "discovery", labelKey: "mcp:agents.filters.discovery" },
+	{ value: "runtime", labelKey: "mcp:agents.filters.runtime" },
+	{ value: "none", labelKey: "common:state.none" },
 ];
 
 // Reserved key for the pinned "Allowed by default" row, namespaced so it can
@@ -55,6 +56,7 @@ interface SidebarProps {
 }
 
 export function AgentsFilterSidebar({ filters, onFiltersChange }: SidebarProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const isMobile = useIsMobile();
 	const [collapsed, setCollapsed] = useState(false);
 
@@ -79,24 +81,22 @@ export function AgentsFilterSidebar({ filters, onFiltersChange }: SidebarProps) 
 	}, []);
 
 	const activeFilterCount = useMemo(
-		() =>
-			filters.status.length +
-			filters.upstream_auth.length +
-			filters.virtual_keys.length +
-			(filters.only_allowed_by_default ? 1 : 0),
+		() => filters.status.length + filters.upstream_auth.length + filters.virtual_keys.length + (filters.only_allowed_by_default ? 1 : 0),
 		[filters],
 	);
 
 	const handleReset = useCallback(() => onFiltersChange(EMPTY_AGENT_FILTERS), [onFiltersChange]);
 
 	if (collapsed) {
-		return <FilterSidebarTrigger activeFilterCount={activeFilterCount} onClick={toggleCollapsed} testId="agentsFilterSidebar-toggle-show" />;
+		return (
+			<FilterSidebarTrigger activeFilterCount={activeFilterCount} onClick={toggleCollapsed} testId="agentsFilterSidebar-toggle-show" />
+		);
 	}
 
 	return (
 		<div className="bg-card fixed inset-y-2 left-2 z-40 flex h-auto w-[calc(100vw-1rem)] max-w-72 shrink-0 flex-col rounded-md border shadow-xl md:static md:h-full md:w-64 md:max-w-none md:rounded-md md:shadow-none">
 			<div className="flex h-11 items-center justify-between border-b pr-2 pl-5">
-				<span className="text-sm font-semibold">Filters</span>
+				<span className="text-sm font-semibold">{t("mcp:sessions.filters.title")}</span>
 				<div className="flex items-center gap-1">
 					{activeFilterCount > 0 && (
 						<Button
@@ -107,7 +107,7 @@ export function AgentsFilterSidebar({ filters, onFiltersChange }: SidebarProps) 
 							data-testid="agentsFilterSidebar-reset-button"
 						>
 							<RotateCcw className="size-3" />
-							Reset
+							{t("common:actions.reset")}
 						</Button>
 					)}
 					<Button
@@ -115,8 +115,8 @@ export function AgentsFilterSidebar({ filters, onFiltersChange }: SidebarProps) 
 						size="icon"
 						className="size-7"
 						onClick={toggleCollapsed}
-						title="Hide filters"
-						aria-label="Hide filters"
+						title={t("mcp:sessions.filters.hide")}
+						aria-label={t("mcp:sessions.filters.hide")}
 						data-testid="agentsFilterSidebar-toggle-hide"
 					>
 						<PanelLeftClose className="size-4" />
@@ -127,16 +127,16 @@ export function AgentsFilterSidebar({ filters, onFiltersChange }: SidebarProps) 
 			<ScrollArea className="flex flex-1 overflow-y-auto p-2 pb-0" viewportClassName="no-table">
 				<div className="flex grow flex-col gap-1">
 					<CheckboxFilterSection
-						title="Status"
-						options={STATUS_OPTIONS}
+						title={t("common:fields.status")}
+						options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
 						selected={filters.status}
 						defaultOpen
 						onChange={(status) => onFiltersChange({ ...filters, status })}
 						testIdPrefix="agents-filter-status"
 					/>
 					<CheckboxFilterSection
-						title="Upstream Auth"
-						options={UPSTREAM_AUTH_OPTIONS}
+						title={t("mcp:agents.filters.upstreamAuth")}
+						options={UPSTREAM_AUTH_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
 						selected={filters.upstream_auth}
 						onChange={(upstream_auth) => onFiltersChange({ ...filters, upstream_auth })}
 						testIdPrefix="agents-filter-upstream-auth"
@@ -157,7 +157,7 @@ function CheckboxFilterSection({
 	testIdPrefix,
 }: {
 	title: string;
-	options: FilterOption[];
+	options: { value: string; label: string }[];
 	selected: string[];
 	defaultOpen?: boolean;
 	onChange: (selected: string[]) => void;
@@ -191,6 +191,7 @@ function CheckboxFilterSection({
 // together — an agent matches if it is allowed by default or granted one of the
 // selected keys.
 function VKAccessFilterSection({ filters, onFiltersChange }: SidebarProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const hasActive = filters.only_allowed_by_default || filters.virtual_keys.length > 0;
 	const [opened, setOpened] = useState(hasActive);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -215,16 +216,21 @@ function VKAccessFilterSection({ filters, onFiltersChange }: SidebarProps) {
 	};
 
 	return (
-		<FilterSection title="Access" defaultOpen={hasActive} onOpenChange={setOpened} testId="agents-filter-vk-access-toggle">
+		<FilterSection
+			title={t("mcp:virtualMcps.tab.access")}
+			defaultOpen={hasActive}
+			onOpenChange={setOpened}
+			testId="agents-filter-vk-access-toggle"
+		>
 			<CheckboxFilterItem
-				label="Allowed by default"
+				label={t("mcp:agents.filters.allowedByDefault")}
 				checked={filters.only_allowed_by_default}
 				onCheckedChange={() => toggle(ALLOWED_BY_DEFAULT_KEY)}
 				testId={`agents-filter-vk-checkbox-${ALLOWED_BY_DEFAULT_KEY}`}
 			/>
 			<SearchableCheckboxList
 				inputRef={searchInputRef}
-				placeholder="Search virtual keys"
+				placeholder={t("mcp:sessions.filters.searchVirtualKeys")}
 				items={virtualKeys.map((vk) => ({ key: vk.id, label: vk.name }))}
 				isSelected={isSelected}
 				onToggle={toggle}

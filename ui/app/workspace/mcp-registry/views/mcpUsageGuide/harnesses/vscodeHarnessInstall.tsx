@@ -1,6 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { buildVSCodeConfig, buildVSCodeDeeplink } from "../commandBuilders";
+import { useTranslation } from "react-i18next";
 import { HarnessCommandSection } from "../harnessCommandSection";
 import type { HarnessInstallProps, VSCodeConfigScope } from "../types";
 import { getRegistrationLabel } from "../utils";
@@ -14,6 +15,7 @@ export function VSCodeHarnessInstall({
 	selectedServers,
 	serverScope,
 }: HarnessInstallProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const [configScope, setConfigScope] = useState<VSCodeConfigScope>("workspace");
 
 	const serverArgs = useMemo(
@@ -46,18 +48,18 @@ export function VSCodeHarnessInstall({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="workspace">Workspace</SelectItem>
-						<SelectItem value="user">User</SelectItem>
+						<SelectItem value="workspace">{t("mcp:usageGuide.scope.workspace")}</SelectItem>
+						<SelectItem value="user">{t("mcp:usageGuide.scope.user")}</SelectItem>
 					</SelectContent>
 				</Select>
 			}
-			copySuccessMessage="Config copied"
+			copySuccessMessage={t("mcp:usageGuide.configCopied")}
 			deeplink={deeplink}
 			emptyMessage={emptyMessage}
 			harnessName="VS Code"
-			label="Config"
+			label={t("mcp:usageGuide.configLabel")}
 			logoSrc="/images/harness/vscode.svg"
-			registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers)}`}
+			registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers, t)}`}
 		/>
 	);
 }

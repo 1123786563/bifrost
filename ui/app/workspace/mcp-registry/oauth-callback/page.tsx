@@ -11,8 +11,10 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function MCPRegistryOAuthCallbackPage() {
+	const { t } = useTranslation(["common", "mcp"]);
 	const [closeAttempted, setCloseAttempted] = useState(false);
 
 	useEffect(() => {
@@ -40,12 +42,14 @@ export default function MCPRegistryOAuthCallbackPage() {
 	return (
 		<div className="mx-auto flex min-h-[60vh] w-full max-w-xl items-center justify-center p-6">
 			<div className="bg-card w-full rounded-lg border p-8 text-center shadow-sm">
-				<h1 className="text-xl font-semibold">{status === "success" ? "Authorization complete" : "Authorization failed"}</h1>
+				<h1 className="text-xl font-semibold">{status === "success" ? t("mcp:oauthCallback.complete") : t("mcp:oauthCallback.failed")}</h1>
 				{error && <p className="text-destructive mt-2 text-sm">{error}</p>}
-				<p className="text-muted-foreground mt-4 text-sm">{closeAttempted ? "You can close this tab." : "This window can be closed."}</p>
+				<p className="text-muted-foreground mt-4 text-sm">
+					{closeAttempted ? t("mcp:oauthCallback.closeTab") : t("mcp:oauthCallback.closeWindow")}
+				</p>
 				<div className="mt-6">
 					<Button asChild variant="outline" data-testid="mcp-callback-back-button">
-						<Link to="/workspace/mcp-registry">Back to MCP registry</Link>
+						<Link to="/workspace/mcp-registry">{t("mcp:oauthCallback.back")}</Link>
 					</Button>
 				</div>
 			</div>

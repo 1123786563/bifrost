@@ -7,6 +7,7 @@ import { useGetAgentsQuery } from "@/lib/store/apis/agentsApi";
 import type { AgentRegistrationView } from "@/lib/types/agents";
 import { parseAsArrayOf, parseAsBoolean, parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { AgentsFilterSidebar, type AgentFilters } from "./views/agentsFilterSidebar";
 import AgentsTable from "./views/agentsTable";
 
@@ -37,6 +38,7 @@ function matchesFilters(agent: AgentRegistrationView, filters: AgentFilters): bo
 }
 
 export default function AgentGatewayPage() {
+	const { t } = useTranslation(["common", "mcp"]);
 	const [urlState, setUrlState] = useQueryStates(
 		{
 			search: parseAsString.withDefault(""),
@@ -110,10 +112,10 @@ export default function AgentGatewayPage() {
 	if (error && !data) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-3 text-center" data-testid="agents-load-error">
-				<p className="text-sm font-medium">Failed to load agents.</p>
+				<p className="text-sm font-medium">{t("mcp:agents.loadFailed")}</p>
 				<p className="text-muted-foreground max-w-md text-sm">{getErrorMessage(error)}</p>
 				<Button variant="outline" size="sm" onClick={() => void refetch()}>
-					Retry
+					{t("common:actions.retry")}
 				</Button>
 			</div>
 		);

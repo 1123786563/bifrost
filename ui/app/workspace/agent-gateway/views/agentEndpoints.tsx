@@ -1,9 +1,11 @@
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Check, Copy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // One copyable endpoint row, matching the MCP sheet's endpoint block styling.
 function EndpointRow({ label, endpoint, testId }: { label: string; endpoint: string; testId: string }) {
-	const { copy, copied } = useCopyToClipboard({ successMessage: "Endpoint copied" });
+	const { t } = useTranslation(["common", "mcp"]);
+	const { copy, copied } = useCopyToClipboard({ successMessage: t("mcp:agents.endpointCopied") });
 	return (
 		<div className="bg-muted/40 text-muted-foreground flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
 			<div className="flex min-w-0 flex-col">
@@ -14,7 +16,7 @@ function EndpointRow({ label, endpoint, testId }: { label: string; endpoint: str
 				type="button"
 				onClick={() => copy(endpoint)}
 				className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
-				aria-label={`Copy ${label} URL`}
+				aria-label={t("mcp:agents.copyEndpointAria", { label })}
 				data-testid={testId}
 			>
 				{copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
@@ -34,13 +36,14 @@ export function AgentEndpoints({
 	baseUrl: string;
 	grpc?: { baseDomain: string; port: number };
 }) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const prefix = `/agents/a2a/${agentName}`;
 	const grpcEndpoint = grpc && agentName.length <= 63 ? `${agentName}.${grpc.baseDomain}:${grpc.port}` : undefined;
 	return (
 		<div className="flex flex-col gap-2">
-			<div className="text-sm font-medium">Gateway endpoints</div>
+			<div className="text-sm font-medium">{t("mcp:agents.endpoints.title")}</div>
 			<EndpointRow
-				label="Agent card"
+				label={t("mcp:agents.endpoints.agentCard")}
 				endpoint={`${baseUrl}${prefix}/.well-known/agent-card.json`}
 				testId={`agent-endpoint-copy-card-${agentName}`}
 			/>

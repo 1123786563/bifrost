@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info, TriangleAlert } from "lucide-react";
 import type { Control } from "react-hook-form";
 import { useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 interface TokenExchangeScopesFieldProps {
 	variant: "input" | "textarea";
@@ -105,6 +106,7 @@ export function TokenExchangeFields({
 	scopes,
 	gridClassName = "grid grid-cols-1 gap-4 md:grid-cols-2",
 }: TokenExchangeFieldsProps) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const useIdPCredentials = useWatch({ control, name: "token_exchange.use_idp_credentials" });
 	const credentialFieldsDisabled = disabled || !!useIdPCredentials;
 
@@ -146,7 +148,7 @@ export function TokenExchangeFields({
 												aria-checked={!checked}
 												data-testid={`${useIdPCredentialsTestId}-dedicated`}
 											>
-												Dedicated application
+												{t("mcp:registry.sheet.dedicatedApp")}
 											</Button>
 											<Button
 												type="button"
@@ -163,7 +165,7 @@ export function TokenExchangeFields({
 												aria-checked={checked}
 												data-testid={`${useIdPCredentialsTestId}-idp`}
 											>
-												Identity provider application
+												{t("mcp:registry.sheet.idpApp")}
 											</Button>
 										</div>
 									</FormControl>
