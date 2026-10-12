@@ -7,12 +7,14 @@ import { CoreConfig, DefaultCoreConfig } from "@/lib/types/config";
 import { SecretVar } from "@/lib/types/schemas";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 const secretVarEquals = (a?: SecretVar, b?: SecretVar) =>
 	(a?.value ?? "") === (b?.value ?? "") && (a?.ref ?? "") === (b?.ref ?? "") && (a?.type ?? "plain_text") === (b?.type ?? "plain_text");
 
 export default function AgentGatewayView() {
+	const { t } = useTranslation(["common", "settings"]);
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
 	const { data: bifrostConfig, isLoading: isConfigLoading, error: configError, refetch } = useGetCoreConfigQuery({ fromDB: true });
 	const config = bifrostConfig?.client_config;
@@ -47,7 +49,7 @@ export default function AgentGatewayView() {
 		const savedRevision = draftRevision.current;
 		try {
 			if (!bifrostConfig) {
-				toast.error("Configuration not loaded. Please refresh and try again.");
+				toast.error(t("settings:shared.notLoaded"));
 				return;
 			}
 			await updateCoreConfig({
@@ -58,11 +60,11 @@ export default function AgentGatewayView() {
 				},
 			}).unwrap();
 			syncedRevision.current = savedRevision;
-			toast.success("Agent Gateway settings updated successfully.");
+			toast.success(t("settings:agentGateway.saved"));
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		}
-	}, [bifrostConfig, localConfig, updateCoreConfig]);
+	}, [t, bifrostConfig, localConfig, updateCoreConfig, t]);
 
 	if (isConfigLoading && !bifrostConfig) {
 		return <FullPageLoader />;
@@ -71,13 +73,13 @@ export default function AgentGatewayView() {
 	if (configError && !bifrostConfig) {
 		return (
 			<div className="mx-auto w-full max-w-7xl space-y-4 px-4 py-6" data-testid="agent-gateway-settings-load-error">
-				<PageTitle title="Agent Gateway Settings">Configure Agent Gateway (A2A) settings.</PageTitle>
+				<PageTitle title={t("settings:agentGateway.title")}>{t("settings:agentGateway.subtitle")}</PageTitle>
 				<div className="border-destructive/30 bg-destructive/5 flex flex-col gap-3 rounded-sm border p-4">
-					<p className="text-destructive text-sm font-medium">Failed to load Agent Gateway settings.</p>
+					<p className="text-destructive text-sm font-medium">{t("settings:agentGateway.loadError")}</p>
 					<p className="text-muted-foreground text-sm">{getErrorMessage(configError)}</p>
 					<div>
 						<Button variant="outline" size="sm" onClick={() => void refetch()}>
-							Retry
+							{t("common:actions.retry")}
 						</Button>
 					</div>
 				</div>
@@ -87,21 +89,21 @@ export default function AgentGatewayView() {
 
 	return (
 		<div className="mx-auto w-full max-w-7xl space-y-4 px-4 py-6" data-testid="agent-gateway-settings-view">
-			<PageTitle title="Agent Gateway Settings">Configure Agent Gateway (A2A) settings.</PageTitle>
+			<PageTitle title={t("settings:agentGateway.title")}>{t("settings:agentGateway.subtitle")}</PageTitle>
 			<div className="space-y-4">
 				<div className="space-y-2 rounded-sm border p-4">
 					<label htmlFor="a2a-external-client-url" className="text-sm font-medium">
-						External Client URL
+						{t("settings:agentGateway.externalClientUrl")}
 					</label>
 					<p className="text-muted-foreground text-sm">
-						Bifrost&apos;s public base URL, used for served agent cards and push-notification callback URLs. If left blank, agent cards fall
-						back to the incoming <code className="text-xs">Host</code> header and <b>push notifications are disabled</b>. Supports env var
-						syntax (e.g. <code className="text-xs">env.BIFROST_EXTERNAL_URL</code>).
+						{t("settings:agentGateway.externalUrlDescription1")} <code className="text-xs">Host</code>{" "}
+						{t("settings:agentGateway.externalUrlDescription2")} <b>{t("settings:shared.pushNotificationsDisabled")}</b>
+						{t("settings:agentGateway.externalUrlDescription3")} <code className="text-xs">env.BIFROST_EXTERNAL_URL</code>).
 					</p>
 					<SecretVarInput
 						id="a2a-external-client-url"
 						data-testid="a2a-external-client-url-input"
-						placeholder="https://bifrost.example.com or env.BIFROST_EXTERNAL_URL"
+						placeholder={t("settings:agentGateway.externalUrlPlaceholder")}
 						value={localConfig.a2a_external_client_url}
 						onChange={handleExternalURLChange}
 						disabled={!config || !hasSettingsUpdateAccess}
@@ -114,7 +116,7 @@ export default function AgentGatewayView() {
 					disabled={!hasChanges || isLoading || !hasSettingsUpdateAccess}
 					data-testid="agent-gateway-settings-save-btn"
 				>
-					{isLoading ? "Saving..." : "Save Changes"}
+					{isLoading ? t("common:state.saving") : t("settings:shared.saveChanges")}
 				</Button>
 			</div>
 		</div>

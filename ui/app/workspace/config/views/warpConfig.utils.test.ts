@@ -11,6 +11,23 @@ import {
 	warpModelsPayload,
 	type WarpEmbeddingFields,
 } from "./warpConfig.utils";
+import type { TFunction } from "i18next";
+
+// Minimal en translator so assertions keep matching the English copy.
+const en: Record<string, string> = {
+	"settings:warp.validation.connectVectorStore": "Connect a vector store before enabling Warp.",
+	"settings:warp.validation.chooseProvider": "Choose an embedding provider.",
+	"settings:warp.validation.chooseModel": "Choose an embedding model.",
+	"settings:warp.validation.dimensionPositive": "Embedding dimension must be positive.",
+	"settings:warp.validation.namespaceRequired": "Vector store namespace is required.",
+	"settings:warp.validation.thresholdRange": "Similarity threshold must be greater than 0 and at most 1.",
+	"settings:warp.validation.searchLimitRange": "Search limit must be between 1 and 25.",
+	"settings:warp.validation.chooseProviderModelEnable": "Choose a provider and model to enable Warp.",
+	"settings:warp.validation.chooseProviderModelOrRemove": "Choose a provider and model, or remove this model.",
+	"settings:warp.validation.alreadyListed": "This provider and model is already listed.",
+};
+const t = ((key: string, opts?: Record<string, unknown>) =>
+	(en[key] ?? key).replace(/\{\{(\w+)\}\}/g, (_, v) => String(opts?.[v] ?? ""))) as TFunction;
 
 const valid: WarpEmbeddingFields = {
 	embeddingProvider: "openai",
@@ -23,10 +40,10 @@ const valid: WarpEmbeddingFields = {
 
 describe("Warp embedding configuration", () => {
 	it("requires a connected vector store and complete embedding space when enabled", () => {
-		expect(validateWarpEmbedding(valid, true, false)).toContain("vector store");
-		expect(validateWarpEmbedding({ ...valid, embeddingModel: "" }, true, true)).toContain("embedding model");
-		expect(validateWarpEmbedding(valid, true, true)).toBeNull();
-		expect(validateWarpEmbedding({ ...valid, embeddingModel: "" }, false, false)).toBeNull();
+		expect(validateWarpEmbedding(valid, true, false, t)).toContain("vector store");
+		expect(validateWarpEmbedding({ ...valid, embeddingModel: "" }, true, true, t)).toContain("embedding model");
+		expect(validateWarpEmbedding(valid, true, true, t)).toBeNull();
+		expect(validateWarpEmbedding({ ...valid, embeddingModel: "" }, false, false, t)).toBeNull();
 	});
 
 	it("detects provider, model, and dimension changes as a new embedding space", () => {
@@ -174,9 +191,9 @@ describe("Warp model rows", () => {
 
 	it("lets the default stay blank only while Warp is off", () => {
 		const blank = [{ provider: "", model: "", apiKeyID: "" }];
-		expect(validateWarpModelRows(blank, false)).toEqual([null]);
-		expect(validateWarpModelRows(blank, true)).toEqual(["Choose a provider and model to enable Warp."]);
-		expect(validateWarpModelRows([{ provider: "openai", model: "", apiKeyID: "" }], true)[0]).toContain("Choose a provider and model");
+		expect(validateWarpModelRows(blank, false, t)).toEqual([null]);
+		expect(validateWarpModelRows(blank, true, t)).toEqual(["Choose a provider and model to enable Warp."]);
+		expect(validateWarpModelRows([{ provider: "openai", model: "", apiKeyID: "" }], true, t)[0]).toContain("Choose a provider and model");
 	});
 
 	it("never accepts a half-filled additional model, enabled or not", () => {
@@ -184,8 +201,8 @@ describe("Warp model rows", () => {
 			{ provider: "openai", model: "gpt-4o", apiKeyID: "" },
 			{ provider: "anthropic", model: "", apiKeyID: "" },
 		];
-		expect(validateWarpModelRows(rows, false)).toEqual([null, "Choose a provider and model, or remove this model."]);
-		expect(validateWarpModelRows(rows, true)[1]).toContain("remove this model");
+		expect(validateWarpModelRows(rows, false, t)).toEqual([null, "Choose a provider and model, or remove this model."]);
+		expect(validateWarpModelRows(rows, true, t)[1]).toContain("remove this model");
 	});
 
 	it("flags a repeated provider and model on the later row, whatever its key", () => {
@@ -197,6 +214,7 @@ describe("Warp model rows", () => {
 					{ provider: "openai", model: " gpt-4o ", apiKeyID: "key-2" },
 				],
 				true,
+				t,
 			),
 		).toEqual([null, null, "This provider and model is already listed."]);
 	});

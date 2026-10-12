@@ -1,4 +1,5 @@
 import type { WarpBackfillJob, WarpConfig } from "@/lib/types/warp";
+import type { TFunction } from "i18next";
 /**
  * Validation helpers for the Warp settings form.
  *
@@ -42,10 +43,10 @@ export function isFiniteNumber(value: unknown): value is number {
  * No upper bound: the per-owner conversation cap already limits the table, so
  * how long a transcript stays readable is a policy choice with no ceiling.
  */
-export function validateWarpRetentionDays(value: unknown): true | string {
-	if (typeof value !== "number" || !Number.isFinite(value)) return "A value is required";
-	if (!Number.isInteger(value)) return "Must be a whole number of days";
-	if (value < 0) return "Must be 0 or more days (0 keeps the default)";
+export function validateWarpRetentionDays(value: unknown, t: TFunction): true | string {
+	if (typeof value !== "number" || !Number.isFinite(value)) return t("settings:warp.validation.required");
+	if (!Number.isInteger(value)) return t("settings:warp.validation.wholeDays");
+	if (value < 0) return t("settings:warp.validation.daysMin");
 	return true;
 }
 

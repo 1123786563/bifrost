@@ -1,0 +1,75 @@
+{
+	"list": {
+		"title": "插件",
+		"add": "添加插件"
+	},
+	"empty": {
+		"title": "自定义插件让你用自己的业务逻辑扩展 Bifrost",
+		"description": "构建并部署插件，实现自定义集成、工作流自动化和 AI 治理。",
+		"readMore": "了解更多",
+		"readMoreLabel": "阅读更多关于自定义插件的内容（在新标签页打开）"
+	},
+	"view": {
+		"noSelection": "未选择插件",
+		"title": "插件配置",
+		"namePlaceholder": "插件名称",
+		"nameDescription": "插件的名称",
+		"types": "类型",
+		"enableDisableDescription": "启用或禁用此插件",
+		"path": "路径",
+		"pathPlaceholder": "插件路径",
+		"pathDescription": "插件在文件系统中的路径",
+		"logs": "日志",
+		"delete": "删除插件",
+		"saveChanges": "保存更改"
+	},
+	"form": {
+		"nameLabel": "插件名称 *",
+		"namePlaceholder": "例如 my-custom-plugin",
+		"pathLabel": "插件路径/URL *",
+		"pathPlaceholder": "例如 /path/to/plugin.so 或 https://example.com/plugin.so",
+		"addConfig": "添加配置",
+		"configLabel": "配置（JSON）",
+		"configDescription": "JSON 格式的插件配置",
+		"infoEdit": "更新你的插件配置。插件名称和路径为只读。",
+		"infoNew": "通过提供 Bifrost 部署可访问的绝对文件路径或 HTTP URL（.so）来安装自定义插件。",
+		"learnMore": "了解自定义插件的更多用法",
+		"nameRequired": "名称为必填项",
+		"pluginNameRequired": "插件名称为必填项",
+		"namePattern": "插件名称只能包含字母、数字、连字符和下划线",
+		"pathRequired": "插件路径/URL 为必填项",
+		"pathInvalid": "请输入有效的绝对文件路径（以 / 开头）或 HTTP/HTTPS URL",
+		"configInvalid": "配置必须是有效的 JSON"
+	},
+	"sheet": {
+		"installTitle": "安装新插件",
+		"updateTitle": "更新插件",
+		"installDescription": "通过提供名称、路径/URL 和可选配置来添加自定义插件。",
+		"updateDescription": "更新插件配置。注意：插件名称和路径无法更改。",
+		"installAction": "安装插件",
+		"updateAction": "更新插件"
+	},
+	"sequence": {
+		"title": "编辑插件顺序",
+		"description": "拖动插件到内置插件区块的上方或下方，以控制执行顺序。",
+		"builtin": "内置插件",
+		"configPrecedence": "如果你的 config.json 文件已配置插件顺序，重启 Bifrost 后它将优先于 UI 中配置的顺序。",
+		"save": "保存顺序"
+	},
+	"dialog": {
+		"deleteTitle": "删除插件",
+		"confirmBody": "确定要删除插件 \"{{name}}\" 吗？此操作无法撤销。",
+		"deleting": "删除中..."
+	},
+	"messages": {
+		"invalidJson": "配置中的 JSON 无效",
+		"invalidJsonConfig": "无效的 JSON 配置",
+		"updated": "插件更新成功",
+		"updateFailed": "更新插件失败",
+		"created": "插件创建成功",
+		"deleted": "插件删除成功",
+		"deleteFailed": "删除插件失败",
+		"fixErrors": "提交前请修正表单错误",
+		"sequenceUpdated": "插件顺序已更新"
+	}
+}

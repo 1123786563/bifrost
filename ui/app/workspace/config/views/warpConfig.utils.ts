@@ -1,6 +1,7 @@
 import { EmbeddingSupportedProviders } from "@/lib/constants/logs";
 import type { ModelProvider } from "@/lib/types/config";
 import type { WarpConfig, WarpConfigInput } from "@/lib/types/warp";
+import { type TFunction } from "i18next";
 import { v4 as uuid } from "uuid";
 
 export interface WarpEmbeddingFields {
@@ -19,15 +20,20 @@ export const supportsWarpEmbedding = (provider: ModelProvider): boolean => {
 	return (EmbeddingSupportedProviders as readonly string[]).includes(provider.name);
 };
 
-export const validateWarpEmbedding = (fields: WarpEmbeddingFields, enabled: boolean, vectorStoreConnected: boolean): string | null => {
+export const validateWarpEmbedding = (
+	fields: WarpEmbeddingFields,
+	enabled: boolean,
+	vectorStoreConnected: boolean,
+	t: TFunction,
+): string | null => {
 	if (!enabled) return null;
-	if (!vectorStoreConnected) return "Connect a vector store before enabling Warp.";
-	if (!fields.embeddingProvider) return "Choose an embedding provider.";
-	if (!fields.embeddingModel.trim()) return "Choose an embedding model.";
-	if (fields.embeddingDimension <= 0) return "Embedding dimension must be positive.";
-	if (!fields.namespace.trim()) return "Vector store namespace is required.";
-	if (fields.threshold <= 0 || fields.threshold > 1) return "Similarity threshold must be greater than 0 and at most 1.";
-	if (fields.searchLimit < 1 || fields.searchLimit > 25) return "Search limit must be between 1 and 25.";
+	if (!vectorStoreConnected) return t("settings:warp.validation.connectVectorStore");
+	if (!fields.embeddingProvider) return t("settings:warp.validation.chooseProvider");
+	if (!fields.embeddingModel.trim()) return t("settings:warp.validation.chooseModel");
+	if (fields.embeddingDimension <= 0) return t("settings:warp.validation.dimensionPositive");
+	if (!fields.namespace.trim()) return t("settings:warp.validation.namespaceRequired");
+	if (fields.threshold <= 0 || fields.threshold > 1) return t("settings:warp.validation.thresholdRange");
+	if (fields.searchLimit < 1 || fields.searchLimit > 25) return t("settings:warp.validation.searchLimitRange");
 	return null;
 };
 
@@ -117,18 +123,18 @@ export const warpModelRowsChanged = (rows: WarpModelValues[], config: WarpModelF
  * in over several sittings. An additional row is never a draft of anything: it
  * is either a complete choice or it should not be in the list.
  */
-export const validateWarpModelRows = (rows: WarpModelValues[], enabled: boolean): (string | null)[] => {
+export const validateWarpModelRows = (rows: WarpModelValues[], enabled: boolean, t: TFunction): (string | null)[] => {
 	const seen = new Set<string>();
 	return rows.map((row, index) => {
 		const provider = row.provider.trim();
 		const model = row.model.trim();
 		if (!provider || !model) {
-			if (index === 0) return enabled ? "Choose a provider and model to enable Warp." : null;
-			return "Choose a provider and model, or remove this model.";
+			if (index === 0) return enabled ? t("settings:warp.validation.chooseProviderModelEnable") : null;
+			return t("settings:warp.validation.chooseProviderModelOrRemove");
 		}
 		// The pair is how a question names its model, so a repeat would be ambiguous between two keys.
 		const pair = `${provider}\u0000${model}`;
-		if (seen.has(pair)) return "This provider and model is already listed.";
+		if (seen.has(pair)) return t("settings:warp.validation.alreadyListed");
 		seen.add(pair);
 		return null;
 	});

@@ -1,6 +1,22 @@
 import { coreConfigSchema } from "@/lib/types/schemas";
 import { describe, expect, it } from "vitest";
 import { CODE_MODE_LIMIT_FIELDS, codeModeLimitsEqual, parseCodeModeLimitInput, validateCodeModeLimits } from "./codeModeLimits.utils";
+import type { TFunction } from "i18next";
+
+// Minimal en translator so assertions keep matching the English copy.
+const en: Record<string, string> = {
+	"settings:mcp.codeMode.negative": "{{label}} must not be negative.",
+	"settings:mcp.codeMode.valueMin": "Max value size must be at least {{min}} bytes.",
+	"settings:mcp.codeMode.depthMax": "Max nesting depth must be at most {{max}}.",
+	...Object.fromEntries(
+		CODE_MODE_LIMIT_FIELDS.flatMap((f) => [
+			[f.labelKey, f.labelKey],
+			[f.descriptionKey, f.descriptionKey],
+		]),
+	),
+};
+const t = ((key: string, opts?: Record<string, unknown>) =>
+	(en[key] ?? key).replace(/\{\{(\w+)\}\}/g, (_, v) => String(opts?.[v] ?? ""))) as TFunction;
 
 describe("CODE_MODE_LIMIT_FIELDS", () => {
 	it("covers every server limit with its default", () => {
@@ -47,16 +63,16 @@ describe("parseCodeModeLimitInput", () => {
 
 describe("validateCodeModeLimits", () => {
 	it("accepts defaults and large limits", () => {
-		expect(validateCodeModeLimits(undefined)).toBeNull();
+		expect(validateCodeModeLimits(undefined, t)).toBeNull();
 		expect(
-			validateCodeModeLimits({ max_steps: 1e9, max_memory_bytes: 2 ** 34, max_tool_calls: 100000, max_nesting_depth: 1000 }),
+			validateCodeModeLimits({ max_steps: 1e9, max_memory_bytes: 2 ** 34, max_tool_calls: 100000, max_nesting_depth: 1000 }, t),
 		).toBeNull();
 	});
 
 	it("enforces the server's bounds", () => {
-		expect(validateCodeModeLimits({ max_value_bytes: 1023 })).toMatch(/at least 1024/);
-		expect(validateCodeModeLimits({ max_nesting_depth: 1001 })).toMatch(/at most 1000/);
-		expect(validateCodeModeLimits({ max_steps: -1 })).toMatch(/negative/);
+		expect(validateCodeModeLimits({ max_value_bytes: 1023 }, t)).toMatch(/at least 1024/);
+		expect(validateCodeModeLimits({ max_nesting_depth: 1001 }, t)).toMatch(/at most 1000/);
+		expect(validateCodeModeLimits({ max_steps: -1 }, t)).toMatch(/must not be negative/);
 	});
 });
 describe("coreConfigSchema mcp_code_mode_limits", () => {
