@@ -6,6 +6,9 @@ import { createRoot } from "react-dom/client";
 // Tailwind + global styles (also declares @font-face for local Geist fonts).
 import "@/app/globals.css";
 
+// Initialize i18n before the router renders so first paint already has translations.
+import "@/lib/i18n";
+
 import { ErrorComponent } from "./__error";
 import { NotFoundComponent } from "./__notFound";
 import { UpdatingBanner, UpdatingScreen } from "./__updating";
