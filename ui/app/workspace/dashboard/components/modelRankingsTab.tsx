@@ -7,6 +7,7 @@ import type { ModelHistogramResponse, ModelRankingEntry, ModelRankingsResponse }
 import { COMPACT_NUMBER_FORMAT, formatCompactNumber as formatNumber } from "@/lib/utils/numbers";
 import NumberFlow from "@number-flow/react";
 import { memo, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
 	displayModelLabel,
@@ -43,6 +44,7 @@ function formatLatency(ms: number): string {
 
 // Tooltip for the usage share chart
 function UsageShareTooltip({ active, payload, models, modelLabels }: any) {
+	const { t } = useTranslation("dashboard");
 	if (!active || !payload || !payload.length) return null;
 	const data = payload[0]?.payload;
 	if (!data) return null;
@@ -61,7 +63,7 @@ function UsageShareTooltip({ active, payload, models, modelLabels }: any) {
 							<span className="flex items-center gap-1.5">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: isOther ? OTHER_SERIES_COLOR : getModelColor(idx) }} />
 								<StartTruncatedLabel className={`max-w-[220px] text-zinc-600 dark:text-zinc-400${isUnnamed ? " italic" : ""}`}>
-									{displayModelLabel(model, modelLabels)}
+									{displayModelLabel(model, modelLabels, t)}
 								</StartTruncatedLabel>
 							</span>
 							<span className="font-medium">{val.toLocaleString()}</span>
@@ -89,6 +91,7 @@ function TopModelsChart({
 	startTime: number;
 	endTime: number;
 }) {
+	const { t } = useTranslation("dashboard");
 	const { chartData, displayModels } = useMemo(() => {
 		if (!modelData?.buckets || !modelData.bucket_size_seconds) {
 			return { chartData: [], displayModels: [] };
@@ -160,12 +163,12 @@ function TopModelsChart({
 
 	return (
 		<ChartCard
-			title="Top Models"
+			title={t("charts.topModels")}
 			loading={loadingModels}
 			testId="dashboard-rankings-top-models"
 			className="z-[1]"
 			autoHeight
-			totalLabel="Total"
+			totalLabel={t("terms.total")}
 			total={grandTotal !== null ? <NumberFlow value={grandTotal} format={COMPACT_NUMBER_FORMAT} /> : undefined}
 			totalTooltip={grandTotal !== null ? grandTotal.toLocaleString("en-US") : undefined}
 		>
@@ -214,7 +217,7 @@ function TopModelsChart({
 						</ResponsiveContainer>
 					</ChartErrorBoundary>
 				) : (
-					<div className="text-muted-foreground flex h-full items-center justify-center text-sm">No data available</div>
+					<div className="text-muted-foreground flex h-full items-center justify-center text-sm">{t("empty.noData")}</div>
 				)}
 			</div>
 			<div className="py-2">
@@ -225,7 +228,7 @@ function TopModelsChart({
 							<div key={m.model} className="flex items-center gap-2 text-sm">
 								<span className="text-muted-foreground w-4 text-right text-xs">{m.model === OTHER_SERIES_KEY ? "" : `${idx + 1}.`}</span>
 								<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: m.color }} />
-								<StartTruncatedLabel className="flex-1 font-medium">{displayModelLabel(m.model, modelLabels)}</StartTruncatedLabel>
+								<StartTruncatedLabel className="flex-1 font-medium">{displayModelLabel(m.model, modelLabels, t)}</StartTruncatedLabel>
 								<span className="shrink-0 text-right text-xs tabular-nums">
 									<span className="font-medium">{formatNumber(m.total)}</span>
 									<span className="text-muted-foreground ml-1">{m.pct.toFixed(1)}%</span>
@@ -240,6 +243,7 @@ function TopModelsChart({
 }
 
 function ModelRankingsTabImpl({ rankingsData, loading, modelData, loadingModels, startTime, endTime }: ModelRankingsTabProps) {
+	const { t } = useTranslation("dashboard");
 	const [sortField, setSortField] = useState<SortField>("total_requests");
 	const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
@@ -294,21 +298,19 @@ function ModelRankingsTabImpl({ rankingsData, loading, modelData, loadingModels,
 				</Card>
 			) : !rankingsData?.rankings?.length ? (
 				<Card className="rounded-sm p-4 shadow-none">
-					<div className="text-muted-foreground flex h-[200px] items-center justify-center text-sm">
-						No model usage data available for this time period.
-					</div>
+					<div className="text-muted-foreground flex h-[200px] items-center justify-center text-sm">{t("rankings.noModelData")}</div>
 				</Card>
 			) : (
 				<Card className="rounded-sm p-2 shadow-none" data-testid="dashboard-model-rankings-table">
-					<span className="text-primary pl-2 text-sm font-medium">Model Rankings</span>
+					<span className="text-primary pl-2 text-sm font-medium">{t("tabs.modelRankings")}</span>
 					<Table>
 						<TableHeader>
 							<TableRow>
 								<TableHead className="w-12">#</TableHead>
-								<TableHead>Model</TableHead>
+								<TableHead>{t("terms.model")}</TableHead>
 								<TableHead className="text-right">
 									<SortableHeader
-										label="Requests"
+										label={t("terms.requests")}
 										field="total_requests"
 										currentSort={sortField}
 										currentOrder={sortOrder}
@@ -317,7 +319,7 @@ function ModelRankingsTabImpl({ rankingsData, loading, modelData, loadingModels,
 								</TableHead>
 								<TableHead className="text-right">
 									<SortableHeader
-										label="Success Rate"
+										label={t("terms.successRate")}
 										field="success_rate"
 										currentSort={sortField}
 										currentOrder={sortOrder}
@@ -326,7 +328,7 @@ function ModelRankingsTabImpl({ rankingsData, loading, modelData, loadingModels,
 								</TableHead>
 								<TableHead className="text-right">
 									<SortableHeader
-										label="Tokens"
+										label={t("terms.tokens")}
 										field="total_tokens"
 										currentSort={sortField}
 										currentOrder={sortOrder}
@@ -334,11 +336,17 @@ function ModelRankingsTabImpl({ rankingsData, loading, modelData, loadingModels,
 									/>
 								</TableHead>
 								<TableHead className="text-right">
-									<SortableHeader label="Cost" field="total_cost" currentSort={sortField} currentOrder={sortOrder} onSort={handleSort} />
+									<SortableHeader
+										label={t("terms.cost")}
+										field="total_cost"
+										currentSort={sortField}
+										currentOrder={sortOrder}
+										onSort={handleSort}
+									/>
 								</TableHead>
 								<TableHead className="text-right">
 									<SortableHeader
-										label="Avg Latency"
+										label={t("terms.avgLatency")}
 										field="avg_latency"
 										currentSort={sortField}
 										currentOrder={sortOrder}
@@ -347,7 +355,7 @@ function ModelRankingsTabImpl({ rankingsData, loading, modelData, loadingModels,
 								</TableHead>
 								<TableHead className="text-right">
 									<SortableHeader
-										label="Throughput"
+										label={t("terms.throughput")}
 										field="throughput"
 										currentSort={sortField}
 										currentOrder={sortOrder}
@@ -367,7 +375,7 @@ function ModelRankingsTabImpl({ rankingsData, loading, modelData, loadingModels,
 											) : (
 												<span className="text-muted-foreground shrink-0 text-xs">{entry.provider}</span>
 											)}
-											<span className="font-medium">{displayModelLabel(entry.model, modelLabels)}</span>
+											<span className="font-medium">{displayModelLabel(entry.model, modelLabels, t)}</span>
 											{entry.canonical_model_name && entry.canonical_model_name !== entry.model && (
 												<span className="text-muted-foreground truncate font-mono text-xs">{entry.model}</span>
 											)}

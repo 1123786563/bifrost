@@ -1,0 +1,121 @@
+{
+	"tabs": {
+		"overview": "Overview",
+		"providerUsage": "Provider Usage",
+		"modelRankings": "Model Rankings",
+		"mcpUsage": "MCP usage",
+		"teamRankings": "Team Rankings",
+		"userRankings": "User Rankings",
+		"virtualKeyRankings": "Virtual Key Rankings",
+		"customerRankings": "Customer Rankings",
+		"buRankings": "BU Rankings",
+		"projectRankings": "Project Rankings",
+		"appRankings": "App Rankings"
+	},
+	"dimensions": {
+		"team": "Team",
+		"user": "User",
+		"virtualKey": "Virtual Key",
+		"customer": "Customer",
+		"businessUnit": "Business Unit",
+		"project": "Project",
+		"app": "App"
+	},
+	"series": {
+		"other": "Other",
+		"unnamed": "(unnamed)"
+	},
+	"charts": {
+		"cost": "Cost",
+		"requestVolume": "Request Volume",
+		"tokenUsage": "Token Usage",
+		"externalCacheHitRate": "External Cache Hit Rate",
+		"localCacheHitRate": "Local Cache Hit Rate",
+		"modelUsage": "Model Usage",
+		"latency": "Latency",
+		"bifrostOverhead": "Bifrost Overhead",
+		"throughput": "Throughput",
+		"providerCost": "Provider Cost",
+		"providerTokenUsage": "Provider Token Usage",
+		"providerLatency": "Provider Latency",
+		"providerThroughput": "Provider Throughput",
+		"mcpToolCalls": "MCP Tool Calls",
+		"mcpCost": "MCP Cost",
+		"topMcpTools": "Top 10 MCP Tools",
+		"topModels": "Top Models",
+		"topDimension": "Top {{dimension}}s"
+	},
+	"terms": {
+		"total": "Total",
+		"avg": "Avg",
+		"success": "Success",
+		"error": "Error",
+		"cancelled": "Cancelled",
+		"input": "Input",
+		"output": "Output",
+		"cached": "Cached",
+		"p90": "P90",
+		"p95": "P95",
+		"p99": "P99",
+		"tokensPerSec": "Tokens/sec",
+		"model": "Model",
+		"requests": "Requests",
+		"successRate": "Success Rate",
+		"tokens": "Tokens",
+		"cost": "Cost",
+		"avgLatency": "Avg Latency",
+		"throughput": "Throughput",
+		"count": "Count",
+		"completionTokens": "Completion tokens",
+		"moreSeries_one": "+{{count}} more",
+		"moreSeries_other": "+{{count}} more",
+		"requestsCount_one": "{{count}} request",
+		"requestsCount_other": "{{count}} requests"
+	},
+	"meters": {
+		"external": {
+			"ofInputTokens": "of input tokens cached by provider",
+			"infoAria": "More information about external cache hit rate",
+			"note": "This reflects provider-level caching, not Bifrost semantic cache hits.",
+			"cachedLabel": "Cached: {{count}}",
+			"inputLabel": "Input: {{count}}"
+		},
+		"local": {
+			"ofRequests": "of requests served from local cache",
+			"directLabel": "Direct: {{count}}",
+			"semanticLabel": "Semantic: {{count}}"
+		}
+	},
+	"rankings": {
+		"dimensionTitle": "{{dimension}} Rankings",
+		"noModelData": "No model usage data available for this time period.",
+		"noDimensionData": "No {{dimension}} usage data available for this time period.",
+		"totalRequests": "Total Requests",
+		"totalRequestsAttributed": "Total Requests (attributed)",
+		"actualRequestsSent": "Actual number of requests sent",
+		"attributedRequests": "Attributed Requests",
+		"attributedNote": "Attributed - a request counts toward each {{dimension}} it belongs to, so this can exceed the actual request count.",
+		"attributedExceedNote": "A request counts toward each {{dimension}} it belongs to, so this can exceed the total request count.",
+		"new": "new"
+	},
+	"filters": {
+		"allModels": "All Models",
+		"allProviders": "All Providers",
+		"allTools": "All Tools",
+		"allServers": "All Servers",
+		"filterByModel": "Filter by model",
+		"chartType": "Chart type",
+		"barChart": "Bar chart",
+		"lineChart": "Line chart"
+	},
+	"export": {
+		"label": "Export",
+		"exporting": "Exporting...",
+		"thisTab": "This tab ({{tab}})",
+		"allTabs": "All tabs",
+		"currentTab": "Current Tab"
+	},
+	"empty": {
+		"noData": "No data available"
+	}
+}

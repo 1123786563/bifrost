@@ -1,5 +1,6 @@
 import type { LatencyHistogramResponse } from "@/lib/types/logs";
 import { memo, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatFullTimestamp, formatLatency, formatTimestamp, LATENCY_COLORS } from "../../utils/chartUtils";
 import { barShape } from "./barShape";
@@ -14,6 +15,7 @@ interface LatencyChartProps {
 }
 
 function CustomTooltip({ active, payload }: any) {
+	const { t } = useTranslation("dashboard");
 	if (!active || !payload || !payload.length) return null;
 
 	const data = payload[0]?.payload;
@@ -26,7 +28,7 @@ function CustomTooltip({ active, payload }: any) {
 				<div className="flex items-center justify-between gap-4">
 					<span className="flex items-center gap-1.5">
 						<span className="h-2 w-2 rounded-full" style={{ backgroundColor: LATENCY_COLORS.avg }} />
-						<span className="text-zinc-600 dark:text-zinc-400">Avg</span>
+						<span className="text-zinc-600 dark:text-zinc-400">{t("terms.avg")}</span>
 					</span>
 					<span className="font-medium">{formatLatency(data.avg_latency)}</span>
 				</div>
@@ -52,7 +54,7 @@ function CustomTooltip({ active, payload }: any) {
 					<span className="font-medium">{formatLatency(data.p99_latency)}</span>
 				</div>
 				<div className="flex items-center justify-between gap-4 border-t border-zinc-200 pt-1 dark:border-zinc-700">
-					<span className="text-zinc-600 dark:text-zinc-400">Requests</span>
+					<span className="text-zinc-600 dark:text-zinc-400">{t("terms.requests")}</span>
 					<span className="font-medium">{data.total_requests.toLocaleString()}</span>
 				</div>
 			</div>
@@ -61,6 +63,7 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 function LatencyChartImpl({ data, chartType, startTime, endTime }: LatencyChartProps) {
+	const { t } = useTranslation("dashboard");
 	const chartData = useMemo(() => {
 		if (!data?.buckets || !data.bucket_size_seconds) {
 			return [];
@@ -74,7 +77,7 @@ function LatencyChartImpl({ data, chartType, startTime, endTime }: LatencyChartP
 	}, [data]);
 
 	if (!data?.buckets || chartData.length === 0) {
-		return <div className="text-muted-foreground flex h-full items-center justify-center text-sm">No data available</div>;
+		return <div className="text-muted-foreground flex h-full items-center justify-center text-sm">{t("empty.noData")}</div>;
 	}
 
 	const commonProps = {

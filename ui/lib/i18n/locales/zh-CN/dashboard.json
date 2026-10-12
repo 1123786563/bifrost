@@ -1,0 +1,121 @@
+{
+	"tabs": {
+		"overview": "概览",
+		"providerUsage": "Provider 使用情况",
+		"modelRankings": "模型排行",
+		"mcpUsage": "MCP 使用",
+		"teamRankings": "团队排行",
+		"userRankings": "用户排行",
+		"virtualKeyRankings": "Virtual Key 排行",
+		"customerRankings": "客户排行",
+		"buRankings": "BU 排行",
+		"projectRankings": "项目排行",
+		"appRankings": "应用排行"
+	},
+	"dimensions": {
+		"team": "团队",
+		"user": "用户",
+		"virtualKey": "Virtual Key",
+		"customer": "客户",
+		"businessUnit": "业务单元",
+		"project": "项目",
+		"app": "应用"
+	},
+	"series": {
+		"other": "其他",
+		"unnamed": "（未命名）"
+	},
+	"charts": {
+		"cost": "成本",
+		"requestVolume": "请求量",
+		"tokenUsage": "Token 用量",
+		"externalCacheHitRate": "外部缓存命中率",
+		"localCacheHitRate": "本地缓存命中率",
+		"modelUsage": "模型用量",
+		"latency": "延迟",
+		"bifrostOverhead": "Bifrost 开销",
+		"throughput": "吞吐量",
+		"providerCost": "Provider 成本",
+		"providerTokenUsage": "Provider Token 用量",
+		"providerLatency": "Provider 延迟",
+		"providerThroughput": "Provider 吞吐量",
+		"mcpToolCalls": "MCP 工具调用",
+		"mcpCost": "MCP 成本",
+		"topMcpTools": "MCP 工具 Top 10",
+		"topModels": "模型排行",
+		"topDimension": "{{dimension}}排行"
+	},
+	"terms": {
+		"total": "总计",
+		"avg": "平均",
+		"success": "成功",
+		"error": "错误",
+		"cancelled": "已取消",
+		"input": "输入",
+		"output": "输出",
+		"cached": "已缓存",
+		"p90": "P90",
+		"p95": "P95",
+		"p99": "P99",
+		"tokensPerSec": "Token/秒",
+		"model": "模型",
+		"requests": "请求数",
+		"successRate": "成功率",
+		"tokens": "Token 数",
+		"cost": "成本",
+		"avgLatency": "平均延迟",
+		"throughput": "吞吐量",
+		"count": "次数",
+		"completionTokens": "补全 Token 数",
+		"moreSeries_one": "还有 {{count}} 项",
+		"moreSeries_other": "还有 {{count}} 项",
+		"requestsCount_one": "{{count}} 次请求",
+		"requestsCount_other": "{{count}} 次请求"
+	},
+	"meters": {
+		"external": {
+			"ofInputTokens": "的输入 Token 已被 Provider 缓存",
+			"infoAria": "了解外部缓存命中率的更多信息",
+			"note": "这反映的是 Provider 级缓存，而非 Bifrost 语义缓存命中。",
+			"cachedLabel": "已缓存：{{count}}",
+			"inputLabel": "输入：{{count}}"
+		},
+		"local": {
+			"ofRequests": "的请求由本地缓存提供",
+			"directLabel": "直接：{{count}}",
+			"semanticLabel": "语义：{{count}}"
+		}
+	},
+	"rankings": {
+		"dimensionTitle": "{{dimension}}排行",
+		"noModelData": "此时间段内暂无模型使用数据。",
+		"noDimensionData": "此时间段内暂无{{dimension}}使用数据。",
+		"totalRequests": "总请求数",
+		"totalRequestsAttributed": "总请求数（归因）",
+		"actualRequestsSent": "实际发送的请求数",
+		"attributedRequests": "归因请求数",
+		"attributedNote": "归因——一个请求会计入其所属的每个{{dimension}}，因此该数值可能超过实际请求数。",
+		"attributedExceedNote": "一个请求会计入其所属的每个{{dimension}}，因此该数值可能超过总请求数。",
+		"new": "新增"
+	},
+	"filters": {
+		"allModels": "全部模型",
+		"allProviders": "全部 Providers",
+		"allTools": "全部工具",
+		"allServers": "全部服务器",
+		"filterByModel": "按模型筛选",
+		"chartType": "图表类型",
+		"barChart": "柱状图",
+		"lineChart": "折线图"
+	},
+	"export": {
+		"label": "导出",
+		"exporting": "正在导出…",
+		"thisTab": "此标签页（{{tab}}）",
+		"allTabs": "全部标签页",
+		"currentTab": "当前标签页"
+	},
+	"empty": {
+		"noData": "暂无数据"
+	}
+}
