@@ -1,0 +1,344 @@
+{
+	"docs": {
+		"header": {
+			"badge": "文档",
+			"title": "强化你的 Bifrost 技术栈",
+			"subtitle": "使用 Bifrost 构建生产级 AI 应用所需的一切知识",
+			"viewFullDocumentation": "查看完整文档",
+			"quickStartGuide": "快速入门指南"
+		},
+		"readMore": "了解更多",
+		"sections": {
+			"quickStart": {
+				"title": "快速入门",
+				"description": "30 秒内让 Bifrost 跑起来",
+				"badge": "热门",
+				"items": {
+					"httpTransportSetup": "HTTP Transport 配置",
+					"goPackageUsage": "Go 包使用",
+					"dockerGuide": "Docker 指南"
+				}
+			},
+			"architecture": {
+				"title": "架构",
+				"description": "深入了解 Bifrost 的设计与性能",
+				"items": {
+					"systemOverview": "系统概览",
+					"requestFlow": "请求流程",
+					"concurrencyModel": "并发模型",
+					"designDecisions": "设计决策"
+				}
+			},
+			"usageGuides": {
+				"title": "使用指南",
+				"description": "完整的 API 参考与配置指南",
+				"badge": "内容全面",
+				"items": {
+					"providersSetup": "Provider 配置",
+					"keyManagement": "密钥管理",
+					"errorHandling": "错误处理",
+					"memoryNetworking": "内存与网络"
+				}
+			},
+			"contributing": {
+				"title": "参与贡献",
+				"description": "帮助所有人改进 Bifrost",
+				"items": {
+					"contributingGuide": "贡献指南",
+					"addingProviders": "新增 Provider",
+					"pluginDevelopment": "插件开发",
+					"codeConventions": "代码规范"
+				}
+			},
+			"integrations": {
+				"title": "集成示例",
+				"description": "实用示例与测试代码",
+				"items": {
+					"openai": "OpenAI 集成",
+					"anthropic": "Anthropic 集成",
+					"genai": "GenAI 集成",
+					"migrationGuides": "迁移指南"
+				}
+			},
+			"benchmarks": {
+				"title": "性能基准",
+				"description": "性能指标与指南",
+				"items": {
+					"rpsTestResults": "5K RPS 测试结果",
+					"performanceMetrics": "性能指标",
+					"configurationTuning": "配置调优",
+					"hardwareComparisons": "硬件对比"
+				}
+			}
+		},
+		"featured": {
+			"mcp": {
+				"title": "MCP 文档",
+				"description": "Model Context Protocol 集成的完整指南",
+				"content": "了解如何借助 MCP 支持、工具调用和外部集成构建强大的 AI Agent。",
+				"buttonText": "查看 MCP 指南"
+			},
+			"governance": {
+				"title": "治理插件",
+				"description": "完整的访问控制、预算与限流指南",
+				"content": "掌握 Virtual Key、分层预算、限流与用量跟踪，构建安全的 AI 基础设施。",
+				"buttonText": "查看治理指南"
+			}
+		}
+	},
+	"skills": {
+		"actionsForAriaLabel": "{{name}} 的操作",
+		"downloadZip": "下载 ZIP",
+		"downloadZipAriaLabel": "下载 ZIP",
+		"searchFilesPlaceholder": "搜索文件...",
+		"delete": {
+			"title": "删除 {{name}}？",
+			"description": "此操作无法撤销。技能、其文件及版本历史将被永久删除。",
+			"deleting": "删除中...",
+			"confirm": "删除技能"
+		},
+		"list": {
+			"title": "技能仓库",
+			"subtitle": "管理面向 AI 编程助手的 Agent Skills 分发",
+			"searchPlaceholder": "搜索技能...",
+			"searchAriaLabel": "按名称搜索技能",
+			"emptyTitle": "在 Bifrost 中创建、版本化并分享 Agent Skills",
+			"emptyDescription": "在一个地方管理 SKILL.md 指令与配套文件，发布不可变版本，并将其作为可安装插件提供给 Claude Code、Codex 及其他支持技能的客户端。",
+			"readMore": "了解更多",
+			"readMoreAriaLabel": "了解更多关于技能的内容（在新标签页打开）",
+			"addSkill": "添加技能",
+			"addSkillAriaLabel": "添加技能",
+			"columns": {
+				"version": "版本",
+				"files": "文件",
+				"updated": "更新时间"
+			},
+			"fileCountSuffix_one": " 个文件",
+			"fileCountSuffix_other": " 个文件",
+			"noMatch": "没有符合搜索条件的技能",
+			"noSkillsYet": "尚未创建任何技能",
+			"createFirst": "创建你的第一个技能",
+			"paginationEntries": "第 {{from}}-{{to}} 条，共 {{total}} 条",
+			"paginationPage": "第 {{page}} 页，共 {{pages}} 页",
+			"previousPageAriaLabel": "上一页",
+			"nextPageAriaLabel": "下一页",
+			"sortByAriaLabel": "按{{label}}排序",
+			"downloadAll": "下载全部技能",
+			"downloadAllAriaLabel": "下载全部技能",
+			"downloading": "下载中...",
+			"loadFailed": "技能加载失败",
+			"marketplace": {
+				"register": "注册为 Marketplace",
+				"copyHint": "复制 marketplace URL 或 CLI 命令",
+				"copyAriaLabel": {
+					"claudeDesktop": "复制 Claude Desktop 和 Cowork 的 marketplace Git URL",
+					"claude": "复制 Claude Code 命令",
+					"codex": "复制 Codex 命令"
+				},
+				"gitUnavailable": "服务器上没有安装 Git。请安装 git 并重启 Bifrost，以启用面向 Claude Code 和 Codex 的 marketplace 注册。",
+				"allSkillsVersion": "all-skills 版本",
+				"allSkillsVersionHint": "注册为 marketplace 后，将提供一个 \"all-skills\" 插件，可一次性安装本仓库中的全部技能。其版本会在变更时自动升级；如有需要，也可通过下拉菜单手动升级。",
+				"bump": "升级 {{type}}"
+			},
+			"toasts": {
+				"skillDeleted": "技能已删除",
+				"deleteFailed": "删除技能失败",
+				"versionBumped": "all-skills 版本已升级到 {{version}}",
+				"bumpFailed": "升级 all-skills 版本失败",
+				"downloadFailed": "下载技能失败",
+				"copyFailed": "复制到剪贴板失败",
+				"downloadSkillFailed": "下载技能失败"
+			}
+		},
+		"creator": {
+			"createdToast": "技能创建成功",
+			"createFailed": "创建技能失败",
+			"noPermission": "你没有创建技能的权限。"
+		},
+		"details": {
+			"notFound": "未找到技能",
+			"backToList": "返回列表",
+			"invalidVersion": "版本号无效",
+			"savedServingToast": "技能已保存并开始提供该版本",
+			"savedToast": "版本保存成功",
+			"updateFailed": "更新技能失败"
+		},
+		"editor": {
+			"breadcrumbSkills": "技能",
+			"newSkillPlaceholder": "<新技能>",
+			"newBreadcrumb": "新建",
+			"securityAlert": "添加到技能中的文件可以通过 marketplace URL 免登录下载。任何能访问此 Bifrost 服务器的人都可以直接请求这些文件，因此请勿上传密钥、凭据、私有代码或其他敏感文件。",
+			"nameLabel": "名称",
+			"nameLockedAriaLabel": "技能名称在创建后无法更改",
+			"nameLockedTooltip": "名称在创建后无法更改。",
+			"detailsPane": "详情",
+			"skillMetadata": "技能元数据",
+			"filesPane": "文件",
+			"bodyTabEdit": "编辑",
+			"bodyTabPreview": "预览",
+			"atHintPrefix": "使用",
+			"atHintSuffix": "引用文件",
+			"previewRaw": "预览原始 SKILL.md",
+			"previewRawAriaLabel": "预览原始 SKILL.md",
+			"creating": "创建中...",
+			"createSkill": "创建技能",
+			"createSkillAriaLabel": "创建技能",
+			"saving": "保存中...",
+			"saveAndServeAriaLabel": "保存并提供服务",
+			"saveAndServe": "保存并提供服务",
+			"previewDialogTitle": "SKILL.md 预览",
+			"copiedRawAriaLabel": "已复制原始 SKILL.md",
+			"copyRawAriaLabel": "复制原始 SKILL.md",
+			"copiedRawToast": "已复制原始 SKILL.md",
+			"copyRawFailedToast": "复制原始 SKILL.md 失败",
+			"descriptionPlaceholder": "这个技能是做什么的？",
+			"descriptionCount": "{{count}}/1024",
+			"specFields": "规范字段",
+			"license": "许可证",
+			"licensePlaceholder": "MIT（可选）",
+			"compatibility": "兼容性",
+			"compatibilityPlaceholder": "Claude Code, Codex（可选）",
+			"allowedTools": "允许的工具",
+			"allowedToolsPlaceholder": "Bash Read Grep（可选）",
+			"metadataHelperPrefix": "平铺的键值对，嵌套在 SKILL.md 的",
+			"metadataHelperSuffix": "之下",
+			"extraFrontmatter": "额外 Frontmatter",
+			"extraFrontmatterHelper": "有效的 JSON，会合并进 SKILL.md 的 YAML frontmatter",
+			"versionLabel": "版本",
+			"createVersionTitle": "创建技能",
+			"saveVersionTitle": "保存新版本",
+			"createVersionHint": "为该技能设置初始版本。",
+			"saveVersionHint": "为这些更改选择一个新的版本号。",
+			"bumpHint": "可升级 major（2.x.x）、minor（1.1.x）或 patch（1.0.1）。"
+		},
+		"header": {
+			"viewRaw": "查看原始 SKILL.md",
+			"rawDialogTitle": "原始 SKILL.md",
+			"license": "许可证",
+			"noLicense": "未定义许可证",
+			"compatibility": "兼容性",
+			"noCompatibility": "未定义兼容性",
+			"allowedTools": "允许的工具",
+			"noAllowedTools": "未定义允许的工具",
+			"showMore": "显示更多",
+			"showLess": "收起",
+			"copiedRawAriaLabel": "已复制原始 SKILL.md",
+			"copyRawAriaLabel": "复制原始 SKILL.md",
+			"copiedRawToast": "已复制原始 SKILL.md",
+			"copyRawFailedToast": "复制原始 SKILL.md 失败"
+		},
+		"shared": {
+			"optional": "可选",
+			"aboutAriaLabel": "关于{{title}}",
+			"metadata": "元数据",
+			"key": "键",
+			"value": "值",
+			"externalLinkTitle": "打开外部链接？",
+			"externalLinkDescription": "此链接将在 Bifrost 之外的新浏览器标签页中打开。",
+			"openLink": "打开链接",
+			"skillMdBody": "SKILL.md 正文",
+			"preview": "预览",
+			"raw": "原始内容",
+			"emptyBody": "（空）",
+			"collapseAriaLabel": "收起 {{name}}",
+			"expandAriaLabel": "展开 {{name}}",
+			"itemCount_one": "{{count}} 项",
+			"itemCount_other": "{{count}} 项",
+			"fileActionsAriaLabel": "文件操作",
+			"expandAll": "全部展开",
+			"collapseAll": "全部收起",
+			"files": "文件",
+			"extraFrontmatter": "额外 Frontmatter"
+		},
+		"files": {
+			"source": {
+				"viaText": "通过文本",
+				"text": "文本",
+				"viaUrl": "通过 URL",
+				"url": "URL",
+				"viaDataUrl": "通过 data URL",
+				"dataUrl": "Data URL",
+				"viaUpload": "通过上传",
+				"upload": "上传"
+			},
+			"root": "根目录",
+			"location": "位置：{{location}}",
+			"filenameLabel": "文件名",
+			"filenameAriaLabel": "文件名",
+			"sourceUrlLabel": "来源 URL",
+			"sourceUrlAriaLabel": "来源 URL",
+			"dataUrlLabel": "Data URL",
+			"dataUrlAriaLabel": "Data URL",
+			"fileContentPlaceholder": "文件内容...",
+			"fileContentAriaLabel": "文件内容",
+			"chooseFileAriaLabel": "选择要上传的文件",
+			"searchFilesAriaLabel": "搜索文件",
+			"selectFileError": "请选择要上传的文件",
+			"liveReferenceHint": "此来源会保存为实时引用。Bifrost 将在获取该技能文件时读取此 URL。",
+			"liveReferenceHintShort": "此来源会保存为实时引用。Bifrost 会在获取该技能文件时读取此 URL。",
+			"uploadAndAdd": "上传并添加",
+			"add": "添加",
+			"uploading": "上传中...",
+			"pathExistsToast": "该路径下已存在同名文件",
+			"folderExistsError": "此处已存在同名文件夹",
+			"emptyFolder": "空文件夹",
+			"emptyFolderHint": "在包含文件之前不会保存。",
+			"renameAriaLabel": "重命名文件",
+			"rename": "重命名",
+			"moveTo": "移动到…",
+			"addFile": "添加文件",
+			"fromText": "从文本",
+			"fromUrl": "从 URL",
+			"fromDataUrl": "从 data URL",
+			"addFolder": "添加文件夹",
+			"uploadFolder": "上传文件夹",
+			"deleteFolder": "删除文件夹",
+			"uploadingFolderFiles": "正在上传文件夹文件 {{completed}}/{{total}}",
+			"intoFolder": " 到 {{folder}}/",
+			"intoRoot": " 到根目录",
+			"deleteFolderTitle": "删除文件夹？",
+			"removeFolderFilesPrefix": "这将会从技能草稿中移除文件夹 ",
+			"removeFolderFilesSuffix": "、其嵌套文件夹及其中所有文件。",
+			"removeFolderNestedPrefix": "这将会从技能草稿中移除文件夹 ",
+			"removeFolderNestedSuffix": " 及其嵌套文件夹。该文件夹的层级结构中没有文件。",
+			"removeFolderEmptyPrefix": "这将会从技能草稿中移除空文件夹 ",
+			"removeFolderEmptySuffix": "。",
+			"filesLabel": "文件",
+			"removeFileTitle": "移除文件？",
+			"removeLocalPrefix": "这将会从技能草稿中移除 ",
+			"removeLocalSuffix": "。",
+			"removeTrackedSuffix": "。只有在保存这些更改后，该文件才会停止被跟踪。如果在保存前需要找回它，请重新加载页面以放弃此草稿状态；其他未保存的更改也会一并丢失。",
+			"restoreWarning": "保存之后，恢复该文件需要重新添加或重新上传。",
+			"removeFile": "移除文件",
+			"previewAfterSaving": "保存后即可预览。",
+			"unsavedChangesAriaLabel": "未保存的更改",
+			"saveFile": "保存文件",
+			"downloadAriaLabel": "下载 {{name}}",
+			"loadFailed": "无法加载文件内容。",
+			"uploadedFile": "已上传的文件",
+			"unknownType": "未知类型",
+			"uploadedNoEdit": "已上传的文件无法在此编辑。查看页面中提供预览；如需更改此文件，请将其删除并重新上传。",
+			"binaryNoEdit": "二进制 data URL 无法作为文本编辑。可下载查看，或删除后重新上传以替换此文件。",
+			"metadataKeyPlaceholder": "元数据键",
+			"metadataValuePlaceholder": "元数据值"
+		},
+		"versions": {
+			"trigger": "版本",
+			"searchPlaceholder": "搜索版本...",
+			"noMatch": "没有符合搜索条件的版本",
+			"noneYet": "暂无版本",
+			"serving": "提供中",
+			"loadFailed": "版本加载失败",
+			"detailTitle": "版本 {{version}}",
+			"shiftedToast": "已切换到版本 {{version}}",
+			"shiftFailed": "切换版本失败",
+			"shifting": "切换中...",
+			"shiftToVersion": "切换到此版本",
+			"loadVersionFailed": "版本加载失败",
+			"versionDataNotFound": "未找到版本数据",
+			"versionsForAriaLabel": "{{name}} 的版本",
+			"addNewVersion": "添加新版本",
+			"addNewVersionAriaLabel": "添加新版本"
+		}
+	}
+}

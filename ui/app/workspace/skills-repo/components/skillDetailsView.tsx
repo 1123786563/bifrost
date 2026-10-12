@@ -23,6 +23,7 @@ import { ArrowLeft, Download, MoreHorizontal, Plus, Loader2, Trash2 } from "luci
 import { getApiBaseUrl } from "@/lib/utils/port";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { type SkillFormState, composeFrontmatter, useSkillForm } from "./helpers";
 import { SkillHeader } from "./shared";
 import { SkillFormFields } from "../forms/skillEditFormFields";
@@ -43,6 +44,7 @@ export function SkillDetailView({
 	setIsEditing: (editing: boolean) => void;
 	onBack: () => void;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const hasEditAccess = useRbac(RbacResource.SkillsRepository, RbacOperation.Update);
 	const hasDeleteAccess = useRbac(RbacResource.SkillsRepository, RbacOperation.Delete);
 
@@ -110,7 +112,7 @@ export function SkillDetailView({
 		if (!form.runValidation()) return;
 		const bumpErr = validateVersionBump(form.version, highestVersion);
 		if (bumpErr) {
-			toast.error("Invalid version", { description: bumpErr });
+			toast.error(t("playground:skills.details.invalidVersion"), { description: bumpErr });
 			return;
 		}
 
@@ -120,10 +122,10 @@ export function SkillDetailView({
 				id: skillId,
 				data: { ...payload, serve },
 			}).unwrap();
-			toast.success(serve ? "Skill saved and now serving this version" : "Version saved successfully");
+			toast.success(serve ? t("playground:skills.details.savedServingToast") : t("playground:skills.details.savedToast"));
 			setIsEditing(false);
 		} catch (err: unknown) {
-			toast.error("Failed to update skill", {
+			toast.error(t("playground:skills.details.updateFailed"), {
 				description: getErrorMessage(err),
 			});
 		}
@@ -132,10 +134,10 @@ export function SkillDetailView({
 	const handleDelete = async () => {
 		try {
 			await deleteSkill(skillId).unwrap();
-			toast.success("Skill deleted");
+			toast.success(t("playground:skills.list.toasts.skillDeleted"));
 			onBack();
 		} catch (err: unknown) {
-			toast.error("Failed to delete skill", {
+			toast.error(t("playground:skills.list.toasts.deleteFailed"), {
 				description: getErrorMessage(err),
 			});
 		}
@@ -154,10 +156,10 @@ export function SkillDetailView({
 	if (!skill) {
 		return (
 			<div className="flex w-full flex-1 flex-col items-center justify-center p-4">
-				<p className="text-muted-foreground text-sm">Skill not found</p>
+				<p className="text-muted-foreground text-sm">{t("playground:skills.details.notFound")}</p>
 				<Button variant="outline" size="sm" className="mt-3" onClick={onBack}>
 					<ArrowLeft className="h-3.5 w-3.5" />
-					Back to list
+					{t("playground:skills.details.backToList")}
 				</Button>
 			</div>
 		);
@@ -211,13 +213,13 @@ export function SkillDetailView({
 									dropdownTrigger={{
 										className: "bg-transparent",
 										dataTestId: "skill-versions-popover-trigger",
-										"aria-label": `Versions for ${skill.name}`,
+										"aria-label": t("playground:skills.versions.versionsForAriaLabel", { name: skill.name }),
 									}}
 									button={{
 										dataTestId: "skill-add-version-btn",
 										className: "bg-transparent",
 										disabled: !hasEditAccess,
-										"aria-label": "Add new version",
+										"aria-label": t("playground:skills.versions.addNewVersionAriaLabel"),
 									}}
 									dropdownContent={{
 										align: "end",
@@ -238,11 +240,16 @@ export function SkillDetailView({
 									}}
 								>
 									<Plus className="h-3.5 w-3.5" />
-									<span className="hidden md:inline">Add New Version</span>
+									<span className="hidden md:inline">{t("playground:skills.versions.addNewVersion")}</span>
 								</SplitButton>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${skill.name}`}>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8"
+											aria-label={t("playground:skills.actionsForAriaLabel", { name: skill.name })}
+										>
 											<MoreHorizontal className="h-4 w-4" />
 										</Button>
 									</DropdownMenuTrigger>
@@ -250,7 +257,7 @@ export function SkillDetailView({
 										<DropdownMenuItem className="cursor-pointer" asChild>
 											<a href={`${getApiBaseUrl()}/skills/serve/${encodeURIComponent(skill.name)}/download.zip`} download>
 												<Download className="h-4 w-4" />
-												Download ZIP
+												{t("playground:skills.downloadZip")}
 											</a>
 										</DropdownMenuItem>
 										{hasDeleteAccess && (
@@ -264,7 +271,7 @@ export function SkillDetailView({
 												}}
 											>
 												<Trash2 className="h-4 w-4" />
-												Delete
+												{t("common:actions.delete")}
 											</DropdownMenuItem>
 										)}
 									</DropdownMenuContent>
@@ -272,20 +279,18 @@ export function SkillDetailView({
 								<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 									<AlertDialogContent>
 										<AlertDialogHeader>
-											<AlertDialogTitle>Delete {skill.name}?</AlertDialogTitle>
-											<AlertDialogDescription>
-												This action cannot be undone. The skill, its files, and version history will be permanently deleted.
-											</AlertDialogDescription>
+											<AlertDialogTitle>{t("playground:skills.delete.title", { name: skill.name })}</AlertDialogTitle>
+											<AlertDialogDescription>{t("playground:skills.delete.description")}</AlertDialogDescription>
 										</AlertDialogHeader>
 										<AlertDialogFooter>
-											<AlertDialogCancel>Cancel</AlertDialogCancel>
+											<AlertDialogCancel>{t("common:actions.cancel")}</AlertDialogCancel>
 											<AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
 												{isDeleting ? (
 													<>
-														<Loader2 className="h-3.5 w-3.5 animate-spin" /> Deleting...
+														<Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("playground:skills.delete.deleting")}
 													</>
 												) : (
-													"Delete skill"
+													t("playground:skills.delete.confirm")
 												)}
 											</AlertDialogAction>
 										</AlertDialogFooter>

@@ -38,6 +38,7 @@ import {
 	X,
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
 import { FilePreviewPane, getFileServeUrl } from "./filePreview";
 import { formatYamlRecord } from "./helpers";
 
@@ -92,6 +93,7 @@ export function HeaderMetaItem({
 
 /** Shows the description clamped to 3 lines with a Show more/less toggle when it overflows. */
 function ClampedDescription({ description }: { description: string }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const [expanded, setExpanded] = useState(false);
 	const [isOverflowing, setIsOverflowing] = useState(false);
 	const textRef = useRef<HTMLParagraphElement>(null);
@@ -121,7 +123,7 @@ function ClampedDescription({ description }: { description: string }) {
 						onClick={() => setExpanded(false)}
 						className="ml-1 cursor-pointer text-xs font-medium text-blue-600 transition-colors hover:underline dark:text-blue-400"
 					>
-						Show less
+						{t("playground:skills.header.showLess")}
 					</button>
 				)}
 			</p>
@@ -132,7 +134,7 @@ function ClampedDescription({ description }: { description: string }) {
 					className="bg-card absolute right-0 bottom-0 cursor-pointer pr-4 pl-8 text-xs font-medium text-blue-600 transition-colors hover:underline dark:text-blue-400"
 				>
 					<span className="from-card pointer-events-none absolute top-0 right-full h-full w-8 bg-gradient-to-l to-transparent" />
-					Show more
+					{t("playground:skills.header.showMore")}
 				</button>
 			)}
 		</div>
@@ -168,10 +170,11 @@ export function SkillHeader({
 	onBack?: () => void;
 	sticky?: boolean;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const [showRawDialog, setShowRawDialog] = useState(false);
 	const { copy: copyRawSkillMd, copied: copiedRawSkillMd } = useCopyToClipboard({
-		successMessage: "Copied raw SKILL.md",
-		errorMessage: "Failed to copy raw SKILL.md",
+		successMessage: t("playground:skills.header.copiedRawToast"),
+		errorMessage: t("playground:skills.header.copyRawFailedToast"),
 	});
 
 	return (
@@ -193,7 +196,7 @@ export function SkillHeader({
 										onClick={onBack}
 										className="hover:text-foreground cursor-pointer transition-colors"
 									>
-										Skills
+										{t("playground:skills.editor.breadcrumbSkills")}
 									</button>
 								</li>
 								<li aria-hidden="true" className="text-muted-foreground/60">
@@ -217,7 +220,7 @@ export function SkillHeader({
 							className="h-auto shrink-0 px-1 py-0 text-xs text-blue-600 dark:text-blue-400"
 							onClick={() => setShowRawDialog(true)}
 						>
-							View raw SKILL.md
+							{t("playground:skills.header.viewRaw")}
 						</Button>
 					)}
 				</div>
@@ -228,7 +231,7 @@ export function SkillHeader({
 							{downloadSkillName && (
 								<Button variant="outline" size="sm" asChild>
 									<a href={`${getApiBaseUrl()}/skills/serve/${encodeURIComponent(downloadSkillName)}/download.zip`} download>
-										Download ZIP
+										{t("playground:skills.downloadZip")}
 									</a>
 								</Button>
 							)}
@@ -241,9 +244,24 @@ export function SkillHeader({
 				<ClampedDescription description={description} />
 				<TooltipProvider>
 					<div className="mt-4 flex flex-wrap items-center gap-2 pb-2">
-						<HeaderMetaItem label="License" value={license} missingText="No license defined" icon={Scale} />
-						<HeaderMetaItem label="Compatibility" value={compatibility} missingText="No compatibility defined" icon={Bot} />
-						<HeaderMetaItem label="Allowed tools" value={allowedTools} missingText="No allowed tools defined" icon={Hammer} />
+						<HeaderMetaItem
+							label={t("playground:skills.header.license")}
+							value={license}
+							missingText={t("playground:skills.header.noLicense")}
+							icon={Scale}
+						/>
+						<HeaderMetaItem
+							label={t("playground:skills.header.compatibility")}
+							value={compatibility}
+							missingText={t("playground:skills.header.noCompatibility")}
+							icon={Bot}
+						/>
+						<HeaderMetaItem
+							label={t("playground:skills.header.allowedTools")}
+							value={allowedTools}
+							missingText={t("playground:skills.header.noAllowedTools")}
+							icon={Hammer}
+						/>
 					</div>
 				</TooltipProvider>
 			</div>
@@ -254,7 +272,7 @@ export function SkillHeader({
 						className="h-[90vh] w-full border-0 p-0 sm:w-[85vw] sm:max-w-[85vw] md:w-[75vw] md:max-w-[75vw]"
 					>
 						<DialogHeader className="sr-only">
-							<DialogTitle>Raw SKILL.md</DialogTitle>
+							<DialogTitle>{t("playground:skills.header.rawDialogTitle")}</DialogTitle>
 						</DialogHeader>
 						<div className="bg-muted relative overflow-hidden rounded-sm border shadow-lg">
 							<div className="absolute top-3 right-3 z-10 flex items-center gap-1">
@@ -263,13 +281,15 @@ export function SkillHeader({
 									size="icon"
 									className="bg-background/70 text-muted-foreground hover:bg-card hover:text-foreground h-8 w-8 rounded-sm"
 									onClick={() => copyRawSkillMd(composedSkillMd)}
-									aria-label={copiedRawSkillMd ? "Raw SKILL.md copied" : "Copy raw SKILL.md"}
+									aria-label={
+										copiedRawSkillMd ? t("playground:skills.header.copiedRawAriaLabel") : t("playground:skills.header.copyRawAriaLabel")
+									}
 								>
 									{copiedRawSkillMd ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
 								</Button>
 								<DialogClose className="text-muted-foreground hover:bg-card hover:text-foreground flex h-8 w-8 cursor-pointer items-center justify-center rounded-sm transition-colors">
 									<X className="h-4 w-4" />
-									<span className="sr-only">Close</span>
+									<span className="sr-only">{t("common:actions.close")}</span>
 								</DialogClose>
 							</div>
 							<ScrollArea className="h-full" viewportClassName="bg-muted">
@@ -296,18 +316,19 @@ export function FormSection({
 	optional?: boolean;
 	helperText?: React.ReactNode;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	return (
 		<section className={cn("flex flex-col gap-2", className)}>
 			<div className="flex items-center gap-1.5">
 				<Label>{title}</Label>
-				{optional && <span className="text-muted-foreground text-xs">optional</span>}
+				{optional && <span className="text-muted-foreground text-xs">{t("playground:skills.shared.optional")}</span>}
 				{helperText && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<button
 								type="button"
 								className="text-muted-foreground hover:text-foreground inline-flex h-4 w-4 items-center justify-center"
-								aria-label={`About ${title}`}
+								aria-label={t("playground:skills.shared.aboutAriaLabel", { title })}
 							>
 								<Info className="h-3.5 w-3.5" aria-hidden="true" />
 							</button>
@@ -336,14 +357,15 @@ export function ReadOnlyYamlBlock({ title, value, className }: { title: string; 
 
 // ---------- ReadOnlyMetadataTable ----------
 export function ReadOnlyMetadataTable({ value, className }: { value: Record<string, unknown>; className?: string }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const entries = Object.entries(value);
 
 	return (
-		<FormSection title="Metadata" className={cn("flex flex-1 flex-col", className)}>
+		<FormSection title={t("playground:skills.shared.metadata")} className={cn("flex flex-1 flex-col", className)}>
 			<div className="flex flex-1 flex-col rounded-sm border">
 				<div className="bg-muted/30 sticky top-0 z-10 grid grid-cols-1 border-b px-3 py-2 text-sm font-medium sm:grid-cols-2">
-					<span>Key</span>
-					<span>Value</span>
+					<span>{t("playground:skills.shared.key")}</span>
+					<span>{t("playground:skills.shared.value")}</span>
 				</div>
 				<div className="text-muted-foreground flex-1 divide-y overflow-y-auto">
 					{entries.map(([key, item]) => (
@@ -410,6 +432,7 @@ export function SkillMarkdown({
 	onSelectFile?: (path: string) => void;
 	className?: string;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const [externalLink, setExternalLink] = useState<{
 		href: string;
 		label: string;
@@ -470,8 +493,8 @@ export function SkillMarkdown({
 			<Dialog open={externalLink != null} onOpenChange={(open) => !open && setExternalLink(null)}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Open external link?</DialogTitle>
-						<DialogDescription>This link opens outside Bifrost in a new browser tab.</DialogDescription>
+						<DialogTitle>{t("playground:skills.shared.externalLinkTitle")}</DialogTitle>
+						<DialogDescription>{t("playground:skills.shared.externalLinkDescription")}</DialogDescription>
 					</DialogHeader>
 					<div className="bg-muted/40 rounded-sm border px-3 py-2">
 						<p className="truncate text-sm font-medium">{externalLink?.label}</p>
@@ -479,7 +502,7 @@ export function SkillMarkdown({
 					</div>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => setExternalLink(null)}>
-							Cancel
+							{t("common:actions.cancel")}
 						</Button>
 						<Button
 							onClick={() => {
@@ -489,7 +512,7 @@ export function SkillMarkdown({
 							}}
 						>
 							<ExternalLink className="h-4 w-4" />
-							Open link
+							{t("playground:skills.shared.openLink")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -507,18 +530,19 @@ export function ReadOnlySkillBody({
 	files?: SkillFileEntry[];
 	onSelectFile?: (path: string) => void;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const [activeTab, setActiveTab] = useState("preview");
 
 	return (
 		<Tabs defaultValue="preview" onValueChange={setActiveTab} className="flex min-h-0 w-full flex-1 flex-col gap-2">
 			<div className="flex items-center justify-between gap-2">
-				<h2 className="text-foreground text-base leading-[normal] font-semibold">SKILL.md Body</h2>
+				<h2 className="text-foreground text-base leading-[normal] font-semibold">{t("playground:skills.shared.skillMdBody")}</h2>
 				<TabsList className="bg-muted h-8">
 					<TabsTrigger value="preview" className="h-6 px-2.5 text-xs">
-						Preview
+						{t("playground:skills.shared.preview")}
 					</TabsTrigger>
 					<TabsTrigger value="raw" className="h-6 px-2.5 text-xs">
-						Raw
+						{t("playground:skills.shared.raw")}
 					</TabsTrigger>
 				</TabsList>
 			</div>
@@ -534,7 +558,9 @@ export function ReadOnlySkillBody({
 					</div>
 				</TabsContent>
 				<TabsContent value="raw" className="m-0 flex-1 overflow-y-auto">
-					<pre className="min-h-full p-4 font-mono text-xs leading-5 whitespace-pre-wrap">{body || "(empty)"}</pre>
+					<pre className="min-h-full p-4 font-mono text-xs leading-5 whitespace-pre-wrap">
+						{body || t("playground:skills.shared.emptyBody")}
+					</pre>
 				</TabsContent>
 			</div>
 		</Tabs>
@@ -617,6 +643,7 @@ export function ReadOnlyFileTree({
 	// Filters the tree to files whose path matches (case-insensitive substring).
 	searchQuery?: string;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const query = searchQuery.trim().toLowerCase();
 	const filteredFiles = useMemo(() => (query ? files.filter((f) => f.path.toLowerCase().includes(query)) : files), [files, query]);
 	const treeData = useMemo((): TreeNode<FileTreeNodeData>[] => {
@@ -771,7 +798,13 @@ export function ReadOnlyFileTree({
 							}}
 							role={hasChildren || isDownloadable ? "button" : "presentation"}
 							tabIndex={hasChildren || isDownloadable ? 0 : undefined}
-							aria-label={isFolder ? `${isExpanded ? "Collapse" : "Expand"} ${item.name}` : item.name}
+							aria-label={
+								isFolder
+									? t(isExpanded ? "playground:skills.shared.collapseAriaLabel" : "playground:skills.shared.expandAriaLabel", {
+											name: item.name,
+										})
+									: item.name
+							}
 						>
 							<TreeRowChevron hasChildren={hasChildren} isExpanded={isExpanded} />
 							<TreeRowIcon isSkillMd={isSkillMd} isFile={isFile} isFolder={isFolder} isExpanded={isExpanded} />
@@ -781,9 +814,7 @@ export function ReadOnlyFileTree({
 							</span>
 
 							{isFolder && !isExpanded && item.childCount != null && item.childCount > 0 && (
-								<span className="text-muted-foreground text-xs">
-									{item.childCount} item{item.childCount !== 1 ? "s" : ""}
-								</span>
+								<span className="text-muted-foreground text-xs">{t("playground:skills.shared.itemCount", { count: item.childCount })}</span>
 							)}
 
 							{/* Download context menu (file + SKILL.md rows) */}
@@ -798,14 +829,19 @@ export function ReadOnlyFileTree({
 								>
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
-											<Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Actions for ${item.name}`}>
+											<Button
+												variant="ghost"
+												size="icon"
+												className="h-6 w-6"
+												aria-label={t("playground:skills.actionsForAriaLabel", { name: item.name })}
+											>
 												<MoreHorizontal className="h-3.5 w-3.5" />
 											</Button>
 										</DropdownMenuTrigger>
 										<DropdownMenuContent align="end">
 											<DropdownMenuItem className="cursor-pointer" onSelect={() => downloadFile()}>
 												<Download className="h-3.5 w-3.5" />
-												Download
+												{t("common:actions.download")}
 											</DropdownMenuItem>
 										</DropdownMenuContent>
 									</DropdownMenu>
@@ -821,23 +857,28 @@ export function ReadOnlyFileTree({
 								>
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
-											<Button variant="ghost" size="icon" className="h-6 w-6" aria-label="File actions">
+											<Button
+												variant="ghost"
+												size="icon"
+												className="h-6 w-6"
+												aria-label={t("playground:skills.shared.fileActionsAriaLabel")}
+											>
 												<MoreHorizontal className="h-3.5 w-3.5" />
 											</Button>
 										</DropdownMenuTrigger>
 										<DropdownMenuContent align="end">
 											<DropdownMenuItem className="cursor-pointer" disabled={isAllExpanded} onSelect={() => onExpandAll()}>
 												<ChevronsUpDown className="h-3.5 w-3.5" />
-												Expand all
+												{t("playground:skills.shared.expandAll")}
 											</DropdownMenuItem>
 											<DropdownMenuItem className="cursor-pointer" disabled={isAllCollapsed} onSelect={() => onCollapseAll()}>
 												<ChevronsDownUp className="h-3.5 w-3.5" />
-												Collapse all
+												{t("playground:skills.shared.collapseAll")}
 											</DropdownMenuItem>
 											<DropdownMenuItem className="cursor-pointer" asChild>
 												<a href={downloadUrl} download>
 													<Download className="h-3.5 w-3.5" />
-													Download ZIP
+													{t("playground:skills.downloadZip")}
 												</a>
 											</DropdownMenuItem>
 										</DropdownMenuContent>
@@ -853,7 +894,7 @@ export function ReadOnlyFileTree({
 
 	if (bare) return tree;
 
-	return <FormSection title="Files">{tree}</FormSection>;
+	return <FormSection title={t("playground:skills.shared.files")}>{tree}</FormSection>;
 }
 
 export function SkillReadOnlyContent({
@@ -873,6 +914,7 @@ export function SkillReadOnlyContent({
 	composedSkillMd: string;
 	className?: string;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const isMobile = useIsMobile();
 	const METADATA_KEY = "__metadata__";
 	const FRONTMATTER_KEY = "__extra_frontmatter__";
@@ -903,7 +945,7 @@ export function SkillReadOnlyContent({
 									selected === METADATA_KEY ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/10" : "bg-card hover:bg-muted",
 								)}
 							>
-								Metadata
+								{t("playground:skills.shared.metadata")}
 							</button>
 						)}
 						{hasFrontmatter && (
@@ -918,7 +960,7 @@ export function SkillReadOnlyContent({
 										: "bg-card hover:bg-muted",
 								)}
 							>
-								Extra Frontmatter
+								{t("playground:skills.shared.extraFrontmatter")}
 							</button>
 						)}
 					</div>
@@ -941,7 +983,7 @@ export function SkillReadOnlyContent({
 				{selected === METADATA_KEY && metadata ? (
 					<ReadOnlyMetadataTable value={metadata} />
 				) : selected === FRONTMATTER_KEY && extraFrontmatter ? (
-					<ReadOnlyYamlBlock title="Extra Frontmatter" value={extraFrontmatter} />
+					<ReadOnlyYamlBlock title={t("playground:skills.shared.extraFrontmatter")} value={extraFrontmatter} />
 				) : selectedFile ? (
 					<FilePreviewPane file={selectedFile} skillName={skillName} mode="view" />
 				) : (
@@ -965,6 +1007,7 @@ function SkillFilesSidebar({
 	selectedPath?: string;
 	onSelectPath?: (path: string) => void;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const [searchQuery, setSearchQuery] = useState("");
 
 	return (
@@ -974,7 +1017,7 @@ function SkillFilesSidebar({
 				<div className="relative grow">
 					<Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
 					<Input
-						placeholder="Search files..."
+						placeholder={t("playground:skills.searchFilesPlaceholder")}
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						data-testid="sidebar-search"

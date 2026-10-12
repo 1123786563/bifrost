@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { validateSkillForm, validateVersionBump } from "@/lib/validators/skills";
 import { AlertTriangle, Check, Copy, Eye, Info, Loader2, Plus, Save, Search, Settings2, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FileManagerSection } from "../components/fileManagerView";
 import { FilePreviewPane } from "../components/filePreview";
 import { composeFrontmatter, type SkillFormReturn } from "../components/helpers";
@@ -46,6 +47,7 @@ export function SkillEditView({
 	isSaving: boolean;
 	mode?: "edit" | "create";
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const isMobile = useIsMobile();
 	const isCreate = mode === "create";
 	const [bodyTab, setBodyTab] = useState<"edit" | "preview">("edit");
@@ -131,8 +133,8 @@ export function SkillEditView({
 		setVersionPopover(null);
 	};
 	const { copy: copyPreviewContent, copied: copiedPreviewContent } = useCopyToClipboard({
-		successMessage: "Copied raw SKILL.md",
-		errorMessage: "Failed to copy raw SKILL.md",
+		successMessage: t("playground:skills.editor.copiedRawToast"),
+		errorMessage: t("playground:skills.editor.copyRawFailedToast"),
 	});
 
 	const previewContent =
@@ -171,7 +173,7 @@ export function SkillEditView({
 								onClick={onNavigateToList ?? onBack}
 								className="hover:text-foreground cursor-pointer transition-colors"
 							>
-								Skills
+								{t("playground:skills.editor.breadcrumbSkills")}
 							</button>
 						</li>
 						<li aria-hidden="true" className="text-muted-foreground/60">
@@ -179,7 +181,7 @@ export function SkillEditView({
 						</li>
 						{isCreate ? (
 							<li aria-current="page" className="text-foreground min-w-0 truncate font-medium">
-								{form.name || "<new-skill>"}
+								{form.name || t("playground:skills.editor.newSkillPlaceholder")}
 							</li>
 						) : (
 							<>
@@ -197,7 +199,7 @@ export function SkillEditView({
 									/
 								</li>
 								<li aria-current="page" className="text-foreground font-medium">
-									new
+									{t("playground:skills.editor.newBreadcrumb")}
 								</li>
 							</>
 						)}
@@ -206,10 +208,7 @@ export function SkillEditView({
 
 				<Alert variant="info">
 					<AlertTriangle aria-hidden="true" />
-					<AlertDescription>
-						Files added to a skill can be downloaded from marketplace URLs without logging in. Anyone who can reach this Bifrost server can
-						request them directly, so do not upload secrets, credentials, private code, or other sensitive files.
-					</AlertDescription>
+					<AlertDescription>{t("playground:skills.editor.securityAlert")}</AlertDescription>
 				</Alert>
 
 				{/* Edit sections */}
@@ -217,18 +216,18 @@ export function SkillEditView({
 					<div className="flex flex-col gap-8 pt-4">
 						<section className="flex flex-col gap-2">
 							<div className="flex items-center gap-1.5">
-								<h2 className="text-foreground text-base leading-[normal] font-semibold">Name</h2>
+								<h2 className="text-foreground text-base leading-[normal] font-semibold">{t("playground:skills.editor.nameLabel")}</h2>
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<button
 											type="button"
 											className="text-muted-foreground hover:text-foreground inline-flex h-4 w-4 items-center justify-center"
-											aria-label="Skill names cannot be changed after creation"
+											aria-label={t("playground:skills.editor.nameLockedAriaLabel")}
 										>
 											<Info className="h-3.5 w-3.5" aria-hidden="true" />
 										</button>
 									</TooltipTrigger>
-									<TooltipContent className="max-w-xs text-xs">Name cannot be changed after creation.</TooltipContent>
+									<TooltipContent className="max-w-xs text-xs">{t("playground:skills.editor.nameLockedTooltip")}</TooltipContent>
 								</Tooltip>
 							</div>
 							<div className="flex flex-col gap-1">
@@ -260,7 +259,9 @@ export function SkillEditView({
 				<ResizablePanelGroup direction={isMobile ? "vertical" : "horizontal"} className="h-full min-h-0">
 					{/* Left: files panel */}
 					<ResizablePanel defaultSize="28%" minSize="18%" maxSize="50%" className="bg-card flex min-h-0 flex-col gap-2">
-						<p className="text-muted-foreground/70 px-1 text-[10px] font-semibold tracking-wider uppercase">Details</p>
+						<p className="text-muted-foreground/70 px-1 text-[10px] font-semibold tracking-wider uppercase">
+							{t("playground:skills.editor.detailsPane")}
+						</p>
 						<button
 							type="button"
 							data-testid="skill-details-pane-btn"
@@ -276,15 +277,17 @@ export function SkillEditView({
 							)}
 						>
 							<Settings2 className="h-3.5 w-3.5 shrink-0" />
-							Skill Metadata
+							{t("playground:skills.editor.skillMetadata")}
 						</button>
-						<p className="text-muted-foreground/70 mt-2 px-1 text-[10px] font-semibold tracking-wider uppercase">Files</p>
+						<p className="text-muted-foreground/70 mt-2 px-1 text-[10px] font-semibold tracking-wider uppercase">
+							{t("playground:skills.editor.filesPane")}
+						</p>
 						<div className="bg-card flex min-h-0 flex-1 flex-col rounded-md border">
 							<div className="flex h-9 items-center border-b">
 								<div className="relative grow">
 									<Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
 									<Input
-										placeholder="Search files..."
+										placeholder={t("playground:skills.searchFilesPlaceholder")}
 										value={fileSearchQuery}
 										onChange={(e) => setFileSearchQuery(e.target.value)}
 										data-testid="sidebar-search"
@@ -372,7 +375,7 @@ export function SkillEditView({
 										role="tab"
 										aria-selected={bodyTab === "edit"}
 									>
-										Edit
+										{t("playground:skills.editor.bodyTabEdit")}
 									</button>
 									<button
 										type="button"
@@ -385,10 +388,11 @@ export function SkillEditView({
 										role="tab"
 										aria-selected={bodyTab === "preview"}
 									>
-										Preview
+										{t("playground:skills.editor.bodyTabPreview")}
 									</button>
 									<span className="text-muted-foreground ml-auto hidden pr-1 text-xs md:inline">
-										Use <code className="font-mono">@</code> to reference files
+										{t("playground:skills.editor.atHintPrefix")} <code className="font-mono">@</code>{" "}
+										{t("playground:skills.editor.atHintSuffix")}
 									</span>
 								</div>
 								<div className="min-h-0 grow overflow-y-auto">
@@ -457,9 +461,9 @@ export function SkillEditView({
 					data-testid="skill-cancel-btn"
 					onClick={onCancel}
 					className="text-muted-foreground hover:bg-transparent hover:text-red-600 dark:hover:text-red-400"
-					aria-label="Cancel"
+					aria-label={t("common:actions.cancel")}
 				>
-					<span className="hidden md:inline">Cancel</span>
+					<span className="hidden md:inline">{t("common:actions.cancel")}</span>
 					<X className="h-3.5 w-3.5 md:hidden" />
 				</Button>
 				<Button
@@ -467,10 +471,10 @@ export function SkillEditView({
 					size="sm"
 					data-testid="skill-preview-btn"
 					onClick={() => setShowPreviewDialog(true)}
-					aria-label="Preview raw SKILL.md"
+					aria-label={t("playground:skills.editor.previewRawAriaLabel")}
 				>
 					<Eye className="h-3.5 w-3.5" />
-					<span className="hidden md:inline">Preview Raw SKILL.md</span>
+					<span className="hidden md:inline">{t("playground:skills.editor.previewRaw")}</span>
 				</Button>
 				{isCreate ? (
 					<Popover open={versionPopover != null} onOpenChange={(open) => !open && closeVersionPopover()}>
@@ -480,10 +484,12 @@ export function SkillEditView({
 								data-testid="skill-create-save-btn"
 								onClick={() => openVersionPopover(true)}
 								disabled={isSaving}
-								aria-label="Create skill"
+								aria-label={t("playground:skills.editor.createSkillAriaLabel")}
 							>
 								{isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-								<span className="hidden md:inline">{isSaving ? "Creating..." : "Create Skill"}</span>
+								<span className="hidden md:inline">
+									{isSaving ? t("playground:skills.editor.creating") : t("playground:skills.editor.createSkill")}
+								</span>
 							</Button>
 						</PopoverAnchor>
 						<PopoverContent align="end" className="w-max">
@@ -511,10 +517,10 @@ export function SkillEditView({
 									data-testid="skill-save-btn"
 									onClick={() => openVersionPopover(false)}
 									disabled={isSaving}
-									aria-label="Save"
+									aria-label={t("common:actions.save")}
 								>
 									{isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-									<span className="hidden md:inline">{isSaving ? "Saving..." : "Save"}</span>
+									<span className="hidden md:inline">{isSaving ? t("playground:skills.editor.saving") : t("common:actions.save")}</span>
 								</Button>
 							</PopoverAnchor>
 							<PopoverContent align="end" className="w-max">
@@ -539,10 +545,12 @@ export function SkillEditView({
 									data-testid="skill-save-serve-btn"
 									onClick={() => openVersionPopover(true)}
 									disabled={isSaving}
-									aria-label="Save and serve"
+									aria-label={t("playground:skills.editor.saveAndServeAriaLabel")}
 								>
 									{isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-									<span className="hidden md:inline">{isSaving ? "Saving..." : "Save & Serve"}</span>
+									<span className="hidden md:inline">
+										{isSaving ? t("playground:skills.editor.saving") : t("playground:skills.editor.saveAndServe")}
+									</span>
 								</Button>
 							</PopoverAnchor>
 							<PopoverContent align="end" className="w-max">
@@ -571,7 +579,7 @@ export function SkillEditView({
 					className="h-[90vh] w-full border-0 p-0 sm:w-[85vw] sm:max-w-[85vw] md:w-[75vw] md:max-w-[75vw]"
 				>
 					<DialogHeader className="sr-only">
-						<DialogTitle>SKILL.md Preview</DialogTitle>
+						<DialogTitle>{t("playground:skills.editor.previewDialogTitle")}</DialogTitle>
 					</DialogHeader>
 					<div className="bg-muted relative overflow-hidden rounded-sm border shadow-lg">
 						<div className="absolute top-3 right-3 z-10 flex items-center gap-1">
@@ -581,13 +589,15 @@ export function SkillEditView({
 								data-testid="skill-preview-copy-btn"
 								className="bg-background/70 text-muted-foreground hover:bg-background/90 hover:text-foreground h-8 w-8 rounded-sm"
 								onClick={() => copyPreviewContent(previewContent)}
-								aria-label={copiedPreviewContent ? "Raw SKILL.md copied" : "Copy raw SKILL.md"}
+								aria-label={
+									copiedPreviewContent ? t("playground:skills.editor.copiedRawAriaLabel") : t("playground:skills.editor.copyRawAriaLabel")
+								}
 							>
 								{copiedPreviewContent ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
 							</Button>
 							<DialogClose className="text-muted-foreground hover:bg-background/80 hover:text-foreground cursor-pointer rounded-sm p-1.5 transition-colors">
 								<X className="h-4 w-4" />
-								<span className="sr-only">Close</span>
+								<span className="sr-only">{t("common:actions.close")}</span>
 							</DialogClose>
 						</div>
 						<ScrollArea className="h-dvh" viewportClassName="bg-muted">
@@ -648,11 +658,12 @@ function DetailsEditorPane({
 	descriptionLength: number;
 	descriptionLimitColor: string;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-hidden">
 			<ScrollArea className="min-h-0 flex-1 rounded-sm border">
 				<div className="flex flex-col gap-8 p-4">
-					<FormSection title="Description">
+					<FormSection title={t("common:fields.description")}>
 						<div className="flex flex-col gap-2">
 							<Textarea
 								data-testid="skill-description-input"
@@ -661,7 +672,7 @@ function DetailsEditorPane({
 									form.setDescription(e.target.value);
 									form.validateField("description", e.target.value);
 								}}
-								placeholder="What does this skill do?"
+								placeholder={t("playground:skills.editor.descriptionPlaceholder")}
 								rows={3}
 								className={form.errors.description ? "border-destructive" : undefined}
 							/>
@@ -670,39 +681,41 @@ function DetailsEditorPane({
 									{form.errors.description}
 								</p>
 							) : null}
-							<p className={cn("text-right text-xs", descriptionLimitColor)}>{descriptionLength}/1024</p>
+							<p className={cn("text-right text-xs", descriptionLimitColor)}>
+								{t("playground:skills.editor.descriptionCount", { count: descriptionLength })}
+							</p>
 						</div>
 					</FormSection>
 
-					<FormSection title="Spec Fields">
+					<FormSection title={t("playground:skills.editor.specFields")}>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 							<div className="flex flex-col gap-1">
-								<Label className="text-muted-foreground text-xs">License</Label>
+								<Label className="text-muted-foreground text-xs">{t("playground:skills.editor.license")}</Label>
 								<Input
 									data-testid="skill-license-input"
 									value={form.license}
 									onChange={(e) => form.setLicense(e.target.value)}
-									placeholder="MIT (optional)"
+									placeholder={t("playground:skills.editor.licensePlaceholder")}
 									className="h-8 text-sm"
 								/>
 							</div>
 							<div className="flex flex-col gap-1">
-								<Label className="text-muted-foreground text-xs">Compatibility</Label>
+								<Label className="text-muted-foreground text-xs">{t("playground:skills.editor.compatibility")}</Label>
 								<Input
 									data-testid="skill-compatibility-input"
 									value={form.compatibility}
 									onChange={(e) => form.setCompatibility(e.target.value)}
-									placeholder="Claude Code, Codex (optional)"
+									placeholder={t("playground:skills.editor.compatibilityPlaceholder")}
 									className="h-8 text-sm"
 								/>
 							</div>
 							<div className="flex flex-col gap-1">
-								<Label className="text-muted-foreground text-xs">Allowed Tools</Label>
+								<Label className="text-muted-foreground text-xs">{t("playground:skills.editor.allowedTools")}</Label>
 								<Input
 									data-testid="skill-allowed-tools-input"
 									value={form.allowedTools}
 									onChange={(e) => form.setAllowedTools(e.target.value)}
-									placeholder="Bash Read Grep (optional)"
+									placeholder={t("playground:skills.editor.allowedToolsPlaceholder")}
 									className="h-8 text-sm"
 								/>
 							</div>
@@ -710,10 +723,11 @@ function DetailsEditorPane({
 					</FormSection>
 
 					<FormSection
-						title="Metadata"
+						title={t("playground:skills.shared.metadata")}
 						helperText={
 							<>
-								Flat key-value pairs nested under <code className="font-mono">metadata:</code> in SKILL.md
+								{t("playground:skills.editor.metadataHelperPrefix")} <code className="font-mono">metadata:</code>{" "}
+								{t("playground:skills.editor.metadataHelperSuffix")}
 							</>
 						}
 					>
@@ -727,7 +741,10 @@ function DetailsEditorPane({
 						/>
 					</FormSection>
 
-					<FormSection title="Extra Frontmatter" helperText="Valid JSON merged into the SKILL.md YAML frontmatter">
+					<FormSection
+						title={t("playground:skills.editor.extraFrontmatter")}
+						helperText={t("playground:skills.editor.extraFrontmatterHelper")}
+					>
 						<div className="flex flex-col gap-2">
 							<div className="h-64 overflow-hidden rounded-sm border">
 								<CodeEditor
@@ -780,6 +797,7 @@ function VersionPopoverBody({
 	onClose: () => void;
 	onSave: (serve: boolean) => void;
 }) {
+	const { t } = useTranslation(["common", "playground"]);
 	const bumpError = !isCreate && previousVersion ? validateVersionBump(form.version, previousVersion) : null;
 	const versionError = form.errors.version || bumpError;
 	const canSave = !!form.version.trim() && !versionError && !isSaving;
@@ -792,13 +810,15 @@ function VersionPopoverBody({
 	return (
 		<>
 			<div className="mb-3 flex flex-col gap-0.5">
-				<p className="text-sm font-medium">{isCreate ? "Create skill" : "Save new version"}</p>
+				<p className="text-sm font-medium">
+					{isCreate ? t("playground:skills.editor.createVersionTitle") : t("playground:skills.editor.saveVersionTitle")}
+				</p>
 				<p className="text-muted-foreground text-xs">
-					{isCreate ? "Set the initial version for this skill." : "Choose a new version number for these changes."}
+					{isCreate ? t("playground:skills.editor.createVersionHint") : t("playground:skills.editor.saveVersionHint")}
 				</p>
 			</div>
 			<div className="flex flex-col gap-1.5">
-				<Label className="text-muted-foreground text-xs">Version</Label>
+				<Label className="text-muted-foreground text-xs">{t("playground:skills.editor.versionLabel")}</Label>
 				<div className="flex items-center gap-2">
 					{!isCreate && previousVersion && (
 						<>
@@ -829,15 +849,15 @@ function VersionPopoverBody({
 						{versionError}
 					</p>
 				) : (
-					!isCreate && <p className="text-muted-foreground text-xs">Bump major (2.x.x), minor (1.1.x), or patch (1.0.1).</p>
+					!isCreate && <p className="text-muted-foreground text-xs">{t("playground:skills.editor.bumpHint")}</p>
 				)}
 			</div>
 			<div className="mt-4 flex justify-end gap-2">
 				<Button variant="ghost" size="sm" onClick={onClose}>
-					Cancel
+					{t("common:actions.cancel")}
 				</Button>
 				<Button size="sm" data-testid="skill-version-confirm-btn" disabled={!canSave} onClick={submit}>
-					{isCreate ? "Create" : serve ? "Save & Serve" : "Save"}
+					{isCreate ? t("common:actions.create") : serve ? t("playground:skills.editor.saveAndServe") : t("common:actions.save")}
 				</Button>
 			</div>
 		</>

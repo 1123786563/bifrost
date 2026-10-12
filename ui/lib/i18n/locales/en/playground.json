@@ -1,0 +1,344 @@
+{
+	"docs": {
+		"header": {
+			"badge": "Documentation",
+			"title": "Power Up Your Bifrost Stack",
+			"subtitle": "Everything you need to know about building production AI applications with Bifrost",
+			"viewFullDocumentation": "View Full Documentation",
+			"quickStartGuide": "Quick Start Guide"
+		},
+		"readMore": "Read More",
+		"sections": {
+			"quickStart": {
+				"title": "Quick Start",
+				"description": "Get Bifrost running in under 30 seconds",
+				"badge": "Popular",
+				"items": {
+					"httpTransportSetup": "HTTP Transport Setup",
+					"goPackageUsage": "Go Package Usage",
+					"dockerGuide": "Docker Guide"
+				}
+			},
+			"architecture": {
+				"title": "Architecture",
+				"description": "Deep dive into Bifrost's design and performance",
+				"items": {
+					"systemOverview": "System Overview",
+					"requestFlow": "Request Flow",
+					"concurrencyModel": "Concurrency Model",
+					"designDecisions": "Design Decisions"
+				}
+			},
+			"usageGuides": {
+				"title": "Usage Guides",
+				"description": "Complete API reference and configuration guides",
+				"badge": "Comprehensive",
+				"items": {
+					"providersSetup": "Providers Setup",
+					"keyManagement": "Key Management",
+					"errorHandling": "Error Handling",
+					"memoryNetworking": "Memory & Networking"
+				}
+			},
+			"contributing": {
+				"title": "Contributing",
+				"description": "Help improve Bifrost for everyone",
+				"items": {
+					"contributingGuide": "Contributing Guide",
+					"addingProviders": "Adding Providers",
+					"pluginDevelopment": "Plugin Development",
+					"codeConventions": "Code Conventions"
+				}
+			},
+			"integrations": {
+				"title": "Integration Examples",
+				"description": "Practical examples and testing code",
+				"items": {
+					"openai": "OpenAI Integration",
+					"anthropic": "Anthropic Integration",
+					"genai": "GenAI Integration",
+					"migrationGuides": "Migration Guides"
+				}
+			},
+			"benchmarks": {
+				"title": "Benchmarks",
+				"description": "Performance metrics and guides",
+				"items": {
+					"rpsTestResults": "5K RPS Test Results",
+					"performanceMetrics": "Performance Metrics",
+					"configurationTuning": "Configuration Tuning",
+					"hardwareComparisons": "Hardware Comparisons"
+				}
+			}
+		},
+		"featured": {
+			"mcp": {
+				"title": "MCP Documentation",
+				"description": "Comprehensive guide to Model Context Protocol integration",
+				"content": "Learn how to build sophisticated AI agents with MCP support, tool calling, and external integrations.",
+				"buttonText": "View MCP Guide"
+			},
+			"governance": {
+				"title": "Governance Plugin",
+				"description": "Complete access control, budgets, and rate limiting guide",
+				"content": "Master Virtual Keys, hierarchical budgets, rate limiting, and usage tracking for secure AI infrastructure.",
+				"buttonText": "View Governance Guide"
+			}
+		}
+	},
+	"skills": {
+		"actionsForAriaLabel": "Actions for {{name}}",
+		"downloadZip": "Download ZIP",
+		"downloadZipAriaLabel": "Download ZIP",
+		"searchFilesPlaceholder": "Search files...",
+		"delete": {
+			"title": "Delete {{name}}?",
+			"description": "This action cannot be undone. The skill, its files, and version history will be permanently deleted.",
+			"deleting": "Deleting...",
+			"confirm": "Delete skill"
+		},
+		"list": {
+			"title": "Skills Repository",
+			"subtitle": "Manage Agent Skills for distribution to AI coding assistants",
+			"searchPlaceholder": "Search skills...",
+			"searchAriaLabel": "Search skills by name",
+			"emptyTitle": "Create, version, and share Agent Skills from Bifrost",
+			"emptyDescription": "Manage SKILL.md instructions and supporting files in one place, publish immutable versions, and expose them as installable plugins for Claude Code, Codex, and other skill-aware clients.",
+			"readMore": "Read more",
+			"readMoreAriaLabel": "Read more about skills (opens in new tab)",
+			"addSkill": "Add Skill",
+			"addSkillAriaLabel": "Add skill",
+			"columns": {
+				"version": "Version",
+				"files": "Files",
+				"updated": "Updated"
+			},
+			"fileCountSuffix_one": " file",
+			"fileCountSuffix_other": " files",
+			"noMatch": "No skills match your search",
+			"noSkillsYet": "No skills created yet",
+			"createFirst": "Create your first skill",
+			"paginationEntries": "{{from}}-{{to}} of {{total}} entries",
+			"paginationPage": "Page {{page}} of {{pages}}",
+			"previousPageAriaLabel": "Previous page",
+			"nextPageAriaLabel": "Next page",
+			"sortByAriaLabel": "Sort by {{label}}",
+			"downloadAll": "Download All Skills",
+			"downloadAllAriaLabel": "Download all skills",
+			"downloading": "Downloading...",
+			"loadFailed": "Failed to load skills",
+			"marketplace": {
+				"register": "Register as Marketplace",
+				"copyHint": "Copy a marketplace URL or CLI command",
+				"copyAriaLabel": {
+					"claudeDesktop": "Copy Claude Desktop and Cowork marketplace Git URL",
+					"claude": "Copy Claude Code command",
+					"codex": "Copy Codex command"
+				},
+				"gitUnavailable": "Git is not available on the server. Install git and restart Bifrost to enable marketplace registration for Claude Code and Codex.",
+				"allSkillsVersion": "all-skills version",
+				"allSkillsVersionHint": "When registered as a marketplace, an \"all-skills\" plugin is available that installs every skill in this repository at once. Its version bumps automatically on changes; use the dropdown to bump manually if needed.",
+				"bump": "Bump {{type}}"
+			},
+			"toasts": {
+				"skillDeleted": "Skill deleted",
+				"deleteFailed": "Failed to delete skill",
+				"versionBumped": "All-skills version bumped to {{version}}",
+				"bumpFailed": "Failed to bump all-skills version",
+				"downloadFailed": "Failed to download skills",
+				"copyFailed": "Failed to copy to clipboard",
+				"downloadSkillFailed": "Failed to download skill"
+			}
+		},
+		"creator": {
+			"createdToast": "Skill created successfully",
+			"createFailed": "Failed to create skill",
+			"noPermission": "You do not have permission to create skills."
+		},
+		"details": {
+			"notFound": "Skill not found",
+			"backToList": "Back to list",
+			"invalidVersion": "Invalid version",
+			"savedServingToast": "Skill saved and now serving this version",
+			"savedToast": "Version saved successfully",
+			"updateFailed": "Failed to update skill"
+		},
+		"editor": {
+			"breadcrumbSkills": "Skills",
+			"newSkillPlaceholder": "<new-skill>",
+			"newBreadcrumb": "new",
+			"securityAlert": "Files added to a skill can be downloaded from marketplace URLs without logging in. Anyone who can reach this Bifrost server can request them directly, so do not upload secrets, credentials, private code, or other sensitive files.",
+			"nameLabel": "Name",
+			"nameLockedAriaLabel": "Skill names cannot be changed after creation",
+			"nameLockedTooltip": "Name cannot be changed after creation.",
+			"detailsPane": "Details",
+			"skillMetadata": "Skill Metadata",
+			"filesPane": "Files",
+			"bodyTabEdit": "Edit",
+			"bodyTabPreview": "Preview",
+			"atHintPrefix": "Use",
+			"atHintSuffix": "to reference files",
+			"previewRaw": "Preview Raw SKILL.md",
+			"previewRawAriaLabel": "Preview raw SKILL.md",
+			"creating": "Creating...",
+			"createSkill": "Create Skill",
+			"createSkillAriaLabel": "Create skill",
+			"saving": "Saving...",
+			"saveAndServeAriaLabel": "Save and serve",
+			"saveAndServe": "Save & Serve",
+			"previewDialogTitle": "SKILL.md Preview",
+			"copiedRawAriaLabel": "Raw SKILL.md copied",
+			"copyRawAriaLabel": "Copy raw SKILL.md",
+			"copiedRawToast": "Copied raw SKILL.md",
+			"copyRawFailedToast": "Failed to copy raw SKILL.md",
+			"descriptionPlaceholder": "What does this skill do?",
+			"descriptionCount": "{{count}}/1024",
+			"specFields": "Spec Fields",
+			"license": "License",
+			"licensePlaceholder": "MIT (optional)",
+			"compatibility": "Compatibility",
+			"compatibilityPlaceholder": "Claude Code, Codex (optional)",
+			"allowedTools": "Allowed Tools",
+			"allowedToolsPlaceholder": "Bash Read Grep (optional)",
+			"metadataHelperPrefix": "Flat key-value pairs nested under",
+			"metadataHelperSuffix": "in SKILL.md",
+			"extraFrontmatter": "Extra Frontmatter",
+			"extraFrontmatterHelper": "Valid JSON merged into the SKILL.md YAML frontmatter",
+			"versionLabel": "Version",
+			"createVersionTitle": "Create skill",
+			"saveVersionTitle": "Save new version",
+			"createVersionHint": "Set the initial version for this skill.",
+			"saveVersionHint": "Choose a new version number for these changes.",
+			"bumpHint": "Bump major (2.x.x), minor (1.1.x), or patch (1.0.1)."
+		},
+		"header": {
+			"viewRaw": "View raw SKILL.md",
+			"rawDialogTitle": "Raw SKILL.md",
+			"license": "License",
+			"noLicense": "No license defined",
+			"compatibility": "Compatibility",
+			"noCompatibility": "No compatibility defined",
+			"allowedTools": "Allowed tools",
+			"noAllowedTools": "No allowed tools defined",
+			"showMore": "Show more",
+			"showLess": "Show less",
+			"copiedRawAriaLabel": "Raw SKILL.md copied",
+			"copyRawAriaLabel": "Copy raw SKILL.md",
+			"copiedRawToast": "Copied raw SKILL.md",
+			"copyRawFailedToast": "Failed to copy raw SKILL.md"
+		},
+		"shared": {
+			"optional": "optional",
+			"aboutAriaLabel": "About {{title}}",
+			"metadata": "Metadata",
+			"key": "Key",
+			"value": "Value",
+			"externalLinkTitle": "Open external link?",
+			"externalLinkDescription": "This link opens outside Bifrost in a new browser tab.",
+			"openLink": "Open link",
+			"skillMdBody": "SKILL.md Body",
+			"preview": "Preview",
+			"raw": "Raw",
+			"emptyBody": "(empty)",
+			"collapseAriaLabel": "Collapse {{name}}",
+			"expandAriaLabel": "Expand {{name}}",
+			"itemCount_one": "{{count}} item",
+			"itemCount_other": "{{count}} items",
+			"fileActionsAriaLabel": "File actions",
+			"expandAll": "Expand all",
+			"collapseAll": "Collapse all",
+			"files": "Files",
+			"extraFrontmatter": "Extra Frontmatter"
+		},
+		"files": {
+			"source": {
+				"viaText": "Via text",
+				"text": "Text",
+				"viaUrl": "Via URL",
+				"url": "URL",
+				"viaDataUrl": "Via data URL",
+				"dataUrl": "Data URL",
+				"viaUpload": "Via upload",
+				"upload": "Upload"
+			},
+			"root": "root",
+			"location": "Location: {{location}}",
+			"filenameLabel": "Filename",
+			"filenameAriaLabel": "Filename",
+			"sourceUrlLabel": "Source URL",
+			"sourceUrlAriaLabel": "Source URL",
+			"dataUrlLabel": "Data URL",
+			"dataUrlAriaLabel": "Data URL",
+			"fileContentPlaceholder": "File content...",
+			"fileContentAriaLabel": "File content",
+			"chooseFileAriaLabel": "Choose file to upload",
+			"searchFilesAriaLabel": "Search files",
+			"selectFileError": "Select a file to upload",
+			"liveReferenceHint": "This source is saved as a live reference. Bifrost will read from this URL when the skill file is retrieved.",
+			"liveReferenceHintShort": "This source is saved as a live reference. Bifrost reads from this URL when the skill file is retrieved.",
+			"uploadAndAdd": "Upload & add",
+			"add": "Add",
+			"uploading": "Uploading...",
+			"pathExistsToast": "A file already exists at that path",
+			"folderExistsError": "A folder with this name already exists here",
+			"emptyFolder": "Empty folder",
+			"emptyFolderHint": "Not saved until it contains a file.",
+			"renameAriaLabel": "Rename file",
+			"rename": "Rename",
+			"moveTo": "Move to…",
+			"addFile": "Add file",
+			"fromText": "From text",
+			"fromUrl": "From URL",
+			"fromDataUrl": "From data URL",
+			"addFolder": "Add folder",
+			"uploadFolder": "Upload folder",
+			"deleteFolder": "Delete folder",
+			"uploadingFolderFiles": "Uploading folder files {{completed}}/{{total}}",
+			"intoFolder": " into {{folder}}/",
+			"intoRoot": " into root",
+			"deleteFolderTitle": "Delete folder?",
+			"removeFolderFilesPrefix": "This will remove the folder ",
+			"removeFolderFilesSuffix": ", its nested folders, and all files inside it from this skill draft.",
+			"removeFolderNestedPrefix": "This will remove the folder ",
+			"removeFolderNestedSuffix": " and its nested folders from this skill draft. There are no files in the hierarchy of this folder.",
+			"removeFolderEmptyPrefix": "This will remove the empty folder ",
+			"removeFolderEmptySuffix": " from this skill draft.",
+			"filesLabel": "Files",
+			"removeFileTitle": "Remove file?",
+			"removeLocalPrefix": "This will remove ",
+			"removeLocalSuffix": " from this skill draft.",
+			"removeTrackedSuffix": " from this skill draft. The file stops being tracked only after you save these changes. If you need it back before saving, reload the page to discard this draft state; any other unsaved changes will be lost too.",
+			"restoreWarning": "After saving, restoring this file requires re-adding or re-uploading it again.",
+			"removeFile": "Remove file",
+			"previewAfterSaving": "Preview available after saving.",
+			"unsavedChangesAriaLabel": "Unsaved changes",
+			"saveFile": "Save file",
+			"downloadAriaLabel": "Download {{name}}",
+			"loadFailed": "Could not load file contents.",
+			"uploadedFile": "uploaded file",
+			"unknownType": "unknown type",
+			"uploadedNoEdit": "Uploaded files cannot be edited here. The preview is available on the view page; to change this file, delete it and upload a replacement.",
+			"binaryNoEdit": "Binary data URLs can't be edited as text. Download to inspect, or delete and re-upload to replace this file.",
+			"metadataKeyPlaceholder": "Metadata key",
+			"metadataValuePlaceholder": "Metadata value"
+		},
+		"versions": {
+			"trigger": "Versions",
+			"searchPlaceholder": "Search versions...",
+			"noMatch": "No versions match your search",
+			"noneYet": "No versions yet",
+			"serving": "Serving",
+			"loadFailed": "Failed to load versions",
+			"detailTitle": "Version {{version}}",
+			"shiftedToast": "Shifted to version {{version}}",
+			"shiftFailed": "Failed to shift version",
+			"shifting": "Shifting...",
+			"shiftToVersion": "Shift to this version",
+			"loadVersionFailed": "Failed to load version",
+			"versionDataNotFound": "Version data not found",
+			"versionsForAriaLabel": "Versions for {{name}}",
+			"addNewVersion": "Add New Version",
+			"addNewVersionAriaLabel": "Add new version"
+		}
+	}
+}
