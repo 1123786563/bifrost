@@ -19,15 +19,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { AlertCircle } from "lucide-react";
 import { parseAsBoolean, parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { normalizeDeliveriesPagination } from "./deliveries.page.utils";
-import { createColumns, WEBHOOK_DELIVERY_COLUMN_LABELS } from "./views/columns";
+import { createColumns, webhookDeliveryColumnLabels } from "./views/columns";
 import { DeliveriesTable, type DeliveriesPagination } from "./views/deliveriesTable";
 import { DeliveriesHeaderView } from "./views/deliveriesHeaderView";
 
 const COLUMN_IDS = ["expand", "time", "webhook", "delivery_id", "request_id", "event", "status", "responses", "actions"];
 
 export default function WebhookDeliveriesPage() {
+	const { t } = useTranslation(["common", "governance"]);
 	const navigate = useNavigate();
 	const canManage = useRbac(RbacResource.Governance, RbacOperation.Update);
 	const { copy } = useCopyToClipboard();
@@ -134,7 +136,7 @@ export default function WebhookDeliveriesPage() {
 			setRedeliveringIds((prev) => new Set(prev).add(deliveryId));
 			try {
 				await redeliverWebhookDelivery(deliveryId).unwrap();
-				toast.success("Delivery re-queued");
+				toast.success(t("governance:webhooks.deliveries.page.toastRequeued"));
 			} catch (err) {
 				toast.error(getErrorMessage(err));
 			} finally {
@@ -151,7 +153,7 @@ export default function WebhookDeliveriesPage() {
 	const handleCopy = useCallback(
 		(value: string) => {
 			copy(value);
-			toast.success("Copied to clipboard");
+			toast.success(t("governance:webhooks.deliveries.page.toastCopied"));
 		},
 		[copy],
 	);
@@ -239,7 +241,12 @@ export default function WebhookDeliveriesPage() {
 		<div className="no-padding-parent no-border-parent bg-background flex h-[calc(var(--app-content-viewport)_-_var(--app-bottom-padding))] w-full gap-3">
 			{/* The trail replaces the old in-page back button: navigating up is the
 			    topbar's job, and it frees the header row for the filters. */}
-			<PageTitle breadcrumbs={[{ label: "Webhooks", to: "/workspace/webhooks" }, { label: "Deliveries" }]} />
+			<PageTitle
+				breadcrumbs={[
+					{ label: t("governance:webhooks.deliveries.page.breadcrumbsWebhooks"), to: "/workspace/webhooks" },
+					{ label: t("governance:webhooks.deliveries.page.breadcrumbsDeliveries") },
+				]}
+			/>
 			<WebhookDeliveriesFilterSidebar filters={filters} onFiltersChange={setFilters} />
 
 			<div className="bg-card flex min-w-0 flex-1 flex-col gap-2 overflow-hidden rounded-md border">
@@ -254,7 +261,7 @@ export default function WebhookDeliveriesPage() {
 						onRefresh={refetch}
 						loading={isFetching}
 						columnEntries={columnEntries}
-						columnLabels={WEBHOOK_DELIVERY_COLUMN_LABELS}
+						columnLabels={webhookDeliveryColumnLabels(t)}
 						onToggleColumnVisibility={toggleVisibility}
 						onResetColumns={resetColumns}
 					/>

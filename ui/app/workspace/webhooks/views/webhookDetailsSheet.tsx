@@ -10,6 +10,7 @@ import { WEBHOOK_TUNING_DEFAULTS, WebhookEndpoint, WebhookEvent } from "@/lib/ty
 import { useNavigate } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import { ArrowRight, ChevronDown, ChevronRight, Info, Loader2, RefreshCcw, Send } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { attemptSequence, groupDeliveries, outcomeBadge } from "./deliveries.utils";
@@ -25,16 +26,10 @@ const DetailEntry = ({ label, value }: { label: string; value: React.ReactNode }
 	</div>
 );
 
-const relativeTime = (timestamp?: string) => (timestamp ? formatDistanceToNow(new Date(timestamp), { addSuffix: true }) : "never");
+const relativeTime = (timestamp?: string) => (timestamp ? formatDistanceToNow(new Date(timestamp), { addSuffix: true }) : null);
 
 // Why the redeliver control is (or is not) available. Ordered by precedence:
 // an in-flight replay first, then the reasons the button is disabled.
-const redeliverHint = (outcome: string, endpointDisabled?: boolean, redelivering?: boolean) => {
-	if (redelivering) return "Redelivering...";
-	if (endpointDisabled) return "Enable this webhook to redeliver";
-	if (outcome === "retryable_failure") return "Still retrying automatically - redelivery is available once it settles";
-	return "Redeliver";
-};
 
 interface WebhookDetailsSheetProps {
 	endpoint: WebhookEndpoint | null;
@@ -49,6 +44,13 @@ interface WebhookDetailsSheetProps {
 }
 
 export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, onClose }: WebhookDetailsSheetProps) {
+	const { t } = useTranslation(["common", "governance"]);
+	const redeliverHint = (outcome: string, endpointDisabled?: boolean, redelivering?: boolean) => {
+		if (redelivering) return t("governance:webhooks.details.redelivering");
+		if (endpointDisabled) return t("governance:webhooks.details.enableToRedeliver");
+		if (outcome === "retryable_failure") return t("governance:webhooks.details.stillRetrying");
+		return t("governance:webhooks.details.redeliver");
+	};
 	const open = !!endpoint;
 	const [redeliverWebhookDelivery] = useRedeliverWebhookDeliveryMutation();
 	const [redeliveringIds, setRedeliveringIds] = useState<Set<string>>(new Set());
@@ -80,7 +82,7 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 		setRedeliveringIds((prev) => new Set(prev).add(deliveryId));
 		try {
 			await redeliverWebhookDelivery(deliveryId).unwrap();
-			toast.success("Redelivery queued under the original webhook id");
+			toast.success(t("governance:webhooks.details.toastRedeliverQueued"));
 		} catch (err) {
 			toast.error(getErrorMessage(err));
 		} finally {
@@ -106,11 +108,11 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 						<p className="text-md max-w-full truncate">{endpoint?.name}</p>
 						{endpoint?.disabled ? (
 							<Badge variant="outline" className="bg-gray-100 text-gray-800">
-								disabled
+								{t("governance:webhooks.details.badgeDisabled")}
 							</Badge>
 						) : (
 							<Badge variant="outline" className="bg-green-100 text-green-800">
-								enabled
+								{t("governance:webhooks.details.badgeEnabled")}
 							</Badge>
 						)}
 					</SheetTitle>
@@ -120,7 +122,7 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 				<div className="space-y-4 rounded-sm border p-4">
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 						<DetailEntry
-							label="Events"
+							label={t("governance:webhooks.details.eventsLabel")}
 							value={
 								<div className="flex flex-wrap gap-1">
 									{endpoint?.events.map((event) => (
@@ -131,17 +133,29 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 								</div>
 							}
 						/>
-						<DetailEntry label="Include response" value={endpoint?.include_response ? "yes" : "no"} />
-						<DetailEntry label="Private network" value={endpoint?.allow_private_network ? "allowed" : "blocked"} />
-						<DetailEntry label="Last success" value={relativeTime(endpoint?.last_success_at)} />
-						<DetailEntry label="Last failure" value={relativeTime(endpoint?.last_failure_at)} />
-						<DetailEntry label="Consecutive failures" value={endpoint?.consecutive_failures ?? 0} />
-						<DetailEntry label="Max retries" value={tuning("max_retries")} />
 						<DetailEntry
-							label="Retry backoff"
+							label={t("governance:webhooks.details.includeResponse")}
+							value={endpoint?.include_response ? t("governance:webhooks.details.yes") : t("governance:webhooks.details.no")}
+						/>
+						<DetailEntry
+							label={t("governance:webhooks.details.privateNetwork")}
+							value={endpoint?.allow_private_network ? t("governance:webhooks.details.allowed") : t("governance:webhooks.details.blocked")}
+						/>
+						<DetailEntry
+							label={t("governance:webhooks.details.lastSuccess")}
+							value={relativeTime(endpoint?.last_success_at) ?? t("governance:webhooks.details.never")}
+						/>
+						<DetailEntry
+							label={t("governance:webhooks.details.lastFailure")}
+							value={relativeTime(endpoint?.last_failure_at) ?? t("governance:webhooks.details.never")}
+						/>
+						<DetailEntry label={t("governance:webhooks.details.consecutiveFailures")} value={endpoint?.consecutive_failures ?? 0} />
+						<DetailEntry label={t("governance:webhooks.details.maxRetries")} value={tuning("max_retries")} />
+						<DetailEntry
+							label={t("governance:webhooks.details.retryBackoff")}
 							value={`${tuning("retry_backoff_initial_seconds", "s")} → ${tuning("retry_backoff_max_seconds", "s")}`}
 						/>
-						<DetailEntry label="Attempt timeout" value={tuning("attempt_timeout_seconds", "s")} />
+						<DetailEntry label={t("governance:webhooks.details.attemptTimeout")} value={tuning("attempt_timeout_seconds", "s")} />
 					</div>
 				</div>
 
@@ -158,7 +172,9 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 							}}
 							data-testid="webhook-view-delivery-history-btn"
 						>
-							{totalCount > PREVIEW_SIZE ? `View all ${totalCount.toLocaleString()}` : "View delivery history"}
+							{totalCount > PREVIEW_SIZE
+								? t("governance:webhooks.details.viewAll", { count: totalCount.toLocaleString() })
+								: t("governance:webhooks.details.viewDeliveryHistory")}
 							<ArrowRight className="size-3" />
 						</Button>
 					</div>
@@ -173,7 +189,7 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 									data-testid="webhook-test-fire-btn"
 								>
 									{isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-									<span className="flex-1 text-center">Send Test Event</span>
+									<span className="flex-1 text-center">{t("governance:webhooks.details.sendTestEvent")}</span>
 									<ChevronDown className="h-3 w-3" />
 								</Button>
 							</DropdownMenuTrigger>
@@ -198,32 +214,34 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 						<TableHeader className="bg-muted sticky top-0 z-10">
 							<TableRow>
 								<TableHead className="w-8 px-2"></TableHead>
-								<TableHead>Time</TableHead>
-								<TableHead>Request ID</TableHead>
-								<TableHead>Event</TableHead>
+								<TableHead>{t("governance:webhooks.details.headers.time")}</TableHead>
+								<TableHead>{t("governance:webhooks.details.headers.requestId")}</TableHead>
+								<TableHead>{t("governance:webhooks.details.headers.event")}</TableHead>
 								<TableHead>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<span className="inline-flex cursor-help items-center gap-1.5">
-												Status
+												{t("governance:webhooks.details.headers.status")}
 												<Info className="text-muted-foreground size-3" />
 											</span>
 										</TooltipTrigger>
 										<TooltipContent className="max-w-xs">
 											<div className="space-y-1">
 												<p>
-													<span className="font-medium">delivered</span>: receiver returned a 2xx.
+													<span className="font-medium">{t("governance:webhooks.details.statusTooltipDelivered")}</span>
+													{t("governance:webhooks.details.statusTooltipDeliveredDesc")}
 												</p>
 												<p>
-													<span className="font-medium">retrying</span>: transient failure (network error, timeout, 429, or 5xx); another
-													attempt is scheduled.
+													<span className="font-medium">{t("governance:webhooks.details.statusTooltipRetrying")}</span>
+													{t("governance:webhooks.details.statusTooltipRetryingDesc")}
 												</p>
 												<p>
-													<span className="font-medium">failed</span>: permanent error (a non-retryable 4xx such as 401/404); not retried
-													automatically.
+													<span className="font-medium">{t("governance:webhooks.details.statusTooltipFailed")}</span>
+													{t("governance:webhooks.details.statusTooltipFailedDesc")}
 												</p>
 												<p>
-													<span className="font-medium">retries exhausted</span>: kept failing until the retry budget ran out.
+													<span className="font-medium">{t("governance:webhooks.details.statusTooltipExhausted")}</span>
+													{t("governance:webhooks.details.statusTooltipExhaustedDesc")}
 												</p>
 											</div>
 										</TooltipContent>
@@ -233,17 +251,14 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<span className="inline-flex cursor-help items-center gap-1.5">
-												Responses
+												{t("governance:webhooks.details.headers.responses")}
 												<Info className="text-muted-foreground size-3" />
 											</span>
 										</TooltipTrigger>
-										<TooltipContent className="max-w-xs">
-											One chip per delivery attempt, oldest to newest: the receiver's response code, or a dash when no response arrived.
-											Hover a failed code for its error.
-										</TooltipContent>
+										<TooltipContent className="max-w-xs">{t("governance:webhooks.details.responsesTooltip")}</TooltipContent>
 									</Tooltip>
 								</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
+								<TableHead className="text-right">{t("governance:webhooks.details.headers.actions")}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -256,7 +271,7 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 							) : isError ? (
 								<TableRow>
 									<TableCell colSpan={7} className="text-destructive h-24 text-center" data-testid="webhook-delivery-history-error">
-										Failed to load delivery history. Retrying…
+										{t("governance:webhooks.details.loadFailed")}
 									</TableCell>
 								</TableRow>
 							) : deliveries.length === 0 ? (
@@ -286,21 +301,25 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 															className="size-8"
 															onClick={() => toggleExpanded(webhookId)}
 															aria-expanded={expanded}
-															aria-label={expanded ? "Collapse redeliveries" : "Expand redeliveries"}
+															aria-label={
+																expanded
+																	? t("governance:webhooks.details.collapseRedeliveries")
+																	: t("governance:webhooks.details.expandRedeliveries")
+															}
 															data-testid={`webhook-delivery-expand-${webhookId}`}
 														>
 															{expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
 														</Button>
 													)}
 												</TableCell>
-												<TableCell className="whitespace-nowrap">{relativeTime(latest.created_at)}</TableCell>
+												<TableCell className="whitespace-nowrap">{relativeTime(latest.created_at) ?? "-"}</TableCell>
 												<TableCell>
 													{latest.request_id ? (
 														<Tooltip>
 															<TooltipTrigger asChild>
 																<button
 																	type="button"
-																	aria-label={`Copy request ID ${latest.request_id}`}
+																	aria-label={t("governance:webhooks.details.copyRequestId", { id: latest.request_id ?? "" })}
 																	className="cursor-pointer font-mono text-xs"
 																	onClick={() => copy(latest.request_id ?? "")}
 																	data-testid={`webhook-delivery-request-id-${webhookId}`}
@@ -324,7 +343,7 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 														{outcomeBadge(headline)}
 														{hasResends && (
 															<Badge variant="outline" className="text-muted-foreground text-xs">
-																{sends.length} sends
+																{t("governance:webhooks.details.sendsCount", { count: sends.length })}
 															</Badge>
 														)}
 													</div>
@@ -345,7 +364,7 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 																			redeliveringIds.has(latest.id) || latest.outcome === "retryable_failure" || endpoint?.disabled
 																		}
 																		data-testid={`webhook-redeliver-btn-${webhookId}`}
-																		aria-label="Redeliver"
+																		aria-label={t("governance:webhooks.details.redeliver")}
 																	>
 																		{redeliveringIds.has(latest.id) ? (
 																			<Loader2 className="h-4 w-4 animate-spin" />

@@ -32,6 +32,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, History, MoreHorizontal, PencilIcon, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { WebhookSecretDialog, WebhookSecretReveal } from "../dialogs/webhookSecretDialog";
 import { WebhookDetailsSheet } from "./webhookDetailsSheet";
@@ -86,8 +87,8 @@ function WebhookActionsMenu({
 	onDelete: (endpoint: WebhookEndpoint) => void;
 	onViewDeliveries: (endpoint: WebhookEndpoint) => void;
 }) {
+	const { t } = useTranslation(["common", "governance"]);
 	const [isOpen, setIsOpen] = useState(false);
-
 	return (
 		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
 			<DropdownMenuTrigger asChild>
@@ -95,7 +96,7 @@ function WebhookActionsMenu({
 					variant="ghost"
 					size="icon"
 					className="h-8 w-8"
-					aria-label="Webhook actions"
+					aria-label={t("governance:webhooks.view.actionsAria")}
 					data-testid={`webhook-actions-btn-${endpoint.name}`}
 				>
 					<MoreHorizontal className="h-4 w-4" />
@@ -118,7 +119,7 @@ function WebhookActionsMenu({
 						onViewDeliveries(endpoint);
 					}}
 				>
-					<History className="h-4 w-4" /> View deliveries
+					<History className="h-4 w-4" /> {t("governance:webhooks.view.viewDeliveries")}
 				</DropdownMenuItem>
 				{hasUpdateAccess && (
 					<DropdownMenuItem
@@ -130,7 +131,7 @@ function WebhookActionsMenu({
 							onEdit(endpoint);
 						}}
 					>
-						<PencilIcon className="h-4 w-4" /> Edit
+						<PencilIcon className="h-4 w-4" /> {t("common:actions.edit")}
 					</DropdownMenuItem>
 				)}
 				{hasUpdateAccess && (
@@ -143,7 +144,7 @@ function WebhookActionsMenu({
 							onRotate(endpoint);
 						}}
 					>
-						<RotateCcw className="h-4 w-4" /> Rotate secret
+						<RotateCcw className="h-4 w-4" /> {t("governance:webhooks.view.rotateSecret")}
 					</DropdownMenuItem>
 				)}
 				{hasDeleteAccess && (
@@ -157,7 +158,7 @@ function WebhookActionsMenu({
 							onDelete(endpoint);
 						}}
 					>
-						<Trash2 className="h-4 w-4" /> Delete
+						<Trash2 className="h-4 w-4" /> {t("common:actions.delete")}
 					</DropdownMenuItem>
 				)}
 			</DropdownMenuContent>
@@ -166,6 +167,7 @@ function WebhookActionsMenu({
 }
 
 export default function WebhooksView() {
+	const { t } = useTranslation(["common", "governance"]);
 	const hasCreateAccess = useRbac(RbacResource.Governance, RbacOperation.Create);
 	const hasUpdateAccess = useRbac(RbacResource.Governance, RbacOperation.Update);
 	const hasDeleteAccess = useRbac(RbacResource.Governance, RbacOperation.Delete);
@@ -262,7 +264,11 @@ export default function WebhooksView() {
 		setTogglingIds((prev) => new Set(prev).add(endpoint.id));
 		try {
 			await updateWebhookEndpoint({ id: endpoint.id, data: toRequest(endpoint, { disabled: !enabled }) }).unwrap();
-			toast.success(`Endpoint ${enabled ? "enabled" : "disabled"} successfully`);
+			toast.success(
+				t("governance:webhooks.view.toastToggled", {
+					state: enabled ? t("governance:webhooks.view.toastEnabled") : t("governance:webhooks.view.toastDisabled"),
+				}),
+			);
 		} catch (err) {
 			toast.error(getErrorMessage(err));
 		} finally {
@@ -279,11 +285,11 @@ export default function WebhooksView() {
 		try {
 			const result = await testWebhookEndpoint({ id: endpoint.id, event }).unwrap();
 			if (result.delivered) {
-				toast.success(`Test delivered, receiver answered ${result.receiver_status_code}`);
+				toast.success(t("governance:webhooks.view.toastTestDelivered", { code: result.receiver_status_code }));
 			} else if (result.error) {
-				toast.error(`Test failed: ${result.error}`);
+				toast.error(t("governance:webhooks.view.toastTestFailed", { error: result.error }));
 			} else {
-				toast.error(`Test rejected, receiver answered ${result.receiver_status_code}`);
+				toast.error(t("governance:webhooks.view.toastTestRejected", { code: result.receiver_status_code }));
 			}
 		} catch (err) {
 			toast.error(getErrorMessage(err));
@@ -300,7 +306,7 @@ export default function WebhooksView() {
 		if (!deleteTarget) return;
 		try {
 			await deleteWebhookEndpoint(deleteTarget.id).unwrap();
-			toast.success("Webhook endpoint deleted successfully");
+			toast.success(t("governance:webhooks.view.toastDeleted"));
 			if (detailsEndpoint?.id === deleteTarget.id) setDetailsEndpoint(null);
 		} catch (err) {
 			toast.error(getErrorMessage(err));
@@ -313,7 +319,7 @@ export default function WebhooksView() {
 		if (!rotateTarget) return;
 		try {
 			const response = await rotateWebhookEndpointSecret(rotateTarget.id).unwrap();
-			toast.success("Signing secret rotated successfully");
+			toast.success(t("governance:webhooks.view.toastRotated"));
 			setSecretReveal({ endpointName: response.endpoint.name, secret: response.secret });
 		} catch (err) {
 			toast.error(getErrorMessage(err));
@@ -348,9 +354,9 @@ export default function WebhooksView() {
 				<WebhooksEmptyState onAddClick={handleAdd} canCreate={hasCreateAccess} />
 			) : (
 				<>
-					<PageTitle title="Webhooks">
-						Register endpoints to receive signed notifications when async inference jobs complete or fail. Pass the endpoint's name in the{" "}
-						<code>x-bf-async-webhook</code> header when submitting a job.
+					<PageTitle title={t("governance:webhooks.view.title")}>
+						{t("governance:webhooks.view.pageTitleLead")} <code>x-bf-async-webhook</code>
+						{t("governance:webhooks.view.pageTitleTail")}
 					</PageTitle>
 
 					<WebhooksFilterBar
@@ -368,15 +374,15 @@ export default function WebhooksView() {
 									<Button
 										onClick={handleAdd}
 										disabled={!hasCreateAccess}
-										aria-label="Add Endpoint"
+										aria-label={t("governance:webhooks.view.addEndpoint")}
 										data-testid="create-webhook-btn"
 										className="size-9 px-0 @5xl/webhooks-toolbar:w-auto @5xl/webhooks-toolbar:px-4"
 									>
 										<Plus className="h-4 w-4" />
-										<span className="hidden @5xl/webhooks-toolbar:inline">Add Endpoint</span>
+										<span className="hidden @5xl/webhooks-toolbar:inline">{t("governance:webhooks.view.addEndpoint")}</span>
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>Add Endpoint</TooltipContent>
+								<TooltipContent>{t("governance:webhooks.view.addEndpoint")}</TooltipContent>
 							</Tooltip>
 						}
 					/>
@@ -385,10 +391,10 @@ export default function WebhooksView() {
 						<Table data-testid="webhooks-table">
 							<TableHeader className="bg-muted sticky top-0 z-10">
 								<TableRow>
-									<TableHead>Name</TableHead>
-									<TableHead>URL</TableHead>
-									<TableHead>Events</TableHead>
-									<TableHead>Enabled</TableHead>
+									<TableHead>{t("governance:webhooks.view.headers.name")}</TableHead>
+									<TableHead>{t("governance:webhooks.view.headers.url")}</TableHead>
+									<TableHead>{t("governance:webhooks.view.headers.events")}</TableHead>
+									<TableHead>{t("governance:webhooks.view.headers.enabled")}</TableHead>
 									<TableHead className={`bg-muted/50 sticky right-0 z-10 w-14 text-right ${PIN_SHADOW_RIGHT}`}></TableHead>
 								</TableRow>
 							</TableHeader>
@@ -396,7 +402,7 @@ export default function WebhooksView() {
 								{endpoints.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={5} className="text-muted-foreground h-24 text-center">
-											No matching webhook endpoints found.
+											{t("governance:webhooks.view.noMatch")}
 										</TableCell>
 									</TableRow>
 								) : (
@@ -452,8 +458,10 @@ export default function WebhooksView() {
 					{totalCount > 0 && (
 						<div className="flex shrink-0 items-center justify-between text-xs" data-testid="pagination">
 							<div className="text-muted-foreground flex items-center gap-2">
-								{(offset + 1).toLocaleString()}-{Math.min(offset + PAGE_SIZE, totalCount).toLocaleString()} of {totalCount.toLocaleString()}{" "}
-								entries
+								{t("governance:webhooks.view.entries", {
+									from: `${(offset + 1).toLocaleString()}-${Math.min(offset + PAGE_SIZE, totalCount).toLocaleString()}`,
+									total: totalCount.toLocaleString(),
+								})}
 							</div>
 							<div className="flex items-center gap-2">
 								<Button
@@ -462,14 +470,14 @@ export default function WebhooksView() {
 									onClick={() => setUrlState({ offset: Math.max(0, offset - PAGE_SIZE) || null })}
 									disabled={offset === 0}
 									data-testid="webhooks-pagination-prev-btn"
-									aria-label="Previous page"
+									aria-label={t("governance:webhooks.view.previousPageAria")}
 								>
 									<ChevronLeft className="size-3" />
 								</Button>
 								<div className="flex items-center gap-1">
-									<span>Page</span>
+									<span>{t("governance:webhooks.view.page")}</span>
 									<span>{Math.floor(offset / PAGE_SIZE) + 1}</span>
-									<span>of {Math.ceil(totalCount / PAGE_SIZE)}</span>
+									<span>{t("governance:webhooks.view.pageOf", { count: Math.ceil(totalCount / PAGE_SIZE) })}</span>
 								</div>
 								<Button
 									variant="ghost"
@@ -477,7 +485,7 @@ export default function WebhooksView() {
 									onClick={() => setUrlState({ offset: offset + PAGE_SIZE })}
 									disabled={offset + PAGE_SIZE >= totalCount}
 									data-testid="webhooks-pagination-next-btn"
-									aria-label="Next page"
+									aria-label={t("governance:webhooks.view.nextPageAria")}
 								>
 									<ChevronRight className="size-3" />
 								</Button>
@@ -510,21 +518,20 @@ export default function WebhooksView() {
 			<AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete webhook endpoint</AlertDialogTitle>
+						<AlertDialogTitle>{t("governance:webhooks.view.deleteTitle")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete <b>{deleteTarget?.name}</b>? Pending deliveries to it will be dropped and jobs referencing it
-							will be rejected. This action cannot be undone.
+							{t("governance:webhooks.view.deleteDescription", { name: deleteTarget?.name ?? "" })}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel data-testid="webhook-delete-cancel-btn">Cancel</AlertDialogCancel>
+						<AlertDialogCancel data-testid="webhook-delete-cancel-btn">{t("common:actions.cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							className="bg-destructive hover:bg-destructive/90"
 							onClick={() => void handleDelete()}
 							disabled={isDeleting}
 							data-testid="webhook-delete-confirm-btn"
 						>
-							Delete
+							{t("common:actions.delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -533,16 +540,15 @@ export default function WebhooksView() {
 			<AlertDialog open={!!rotateTarget} onOpenChange={(open) => !open && setRotateTarget(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Rotate signing secret</AlertDialogTitle>
+						<AlertDialogTitle>{t("governance:webhooks.view.rotateTitle")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							The current secret for <b>{rotateTarget?.name}</b> stops working immediately and deliveries are signed with the new one from
-							now on. Update your receiver right after rotating.
+							{t("governance:webhooks.view.rotateDescription", { name: rotateTarget?.name ?? "" })}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel data-testid="webhook-rotate-cancel-btn">Cancel</AlertDialogCancel>
+						<AlertDialogCancel data-testid="webhook-rotate-cancel-btn">{t("common:actions.cancel")}</AlertDialogCancel>
 						<AlertDialogAction onClick={() => void handleRotate()} disabled={isRotating} data-testid="webhook-rotate-confirm-btn">
-							Rotate
+							{t("governance:webhooks.view.rotateButton")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

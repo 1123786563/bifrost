@@ -19,6 +19,7 @@ import { Background, BackgroundVariant, Controls, Panel, ReactFlow, useEdgesStat
 import "@xyflow/react/dist/style.css";
 import { AlertCircle, ArrowLeft, GitBranch, Info, Link2, Loader2, RotateCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useCookies } from "react-cookie";
 import { FIT_VIEW_PADDING, SCOPE_CONFIG, SCOPE_ORDER } from "./constants";
 import { buildGraph } from "./graphBuilder";
@@ -41,6 +42,7 @@ const edgeTypes = { rfChain: RfChainEdge };
 // ─── Main component ────────────────────────────────────────────────────────
 
 export function RoutingTreeView() {
+	const { t } = useTranslation(["common", "governance"]);
 	const isMobile = useIsMobile();
 	const navigate = useNavigate();
 	const { data, isLoading, isError } = useGetRoutingRulesQuery();
@@ -454,7 +456,7 @@ export function RoutingTreeView() {
 							<Input
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
-								placeholder="Search conditions or rules…"
+								placeholder={t("governance:routingRules.tree.searchPlaceholder")}
 								className="h-8 w-56 pl-8 text-sm"
 							/>
 						</div>
@@ -464,7 +466,7 @@ export function RoutingTreeView() {
 							size="sm"
 							className="text-muted-foreground hover:text-foreground gap-1.5"
 							onClick={handleResetLayout}
-							title="Reset to default layout"
+							title={t("governance:routingRules.tree.resetLayout")}
 							data-testid="routing-tree-reset-layout-btn"
 						>
 							<RotateCcw className="h-3.5 w-3.5" />

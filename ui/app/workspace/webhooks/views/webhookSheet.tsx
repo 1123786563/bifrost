@@ -10,6 +10,7 @@ import { SecretVar } from "@/lib/types/schemas";
 import { WEBHOOK_EVENTS, WEBHOOK_TUNING_DEFAULTS, WebhookEndpoint, WebhookEndpointRequest, WebhookEvent } from "@/lib/types/webhooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -47,29 +48,13 @@ const webhookFormSchema = z
 
 type WebhookFormData = z.infer<typeof webhookFormSchema>;
 
-const TUNING_FIELDS: {
-	key: keyof typeof WEBHOOK_TUNING_DEFAULTS;
-	label: string;
-	description: string;
-}[] = [
-	{ key: "max_retries", label: "Max retries", description: "Retries after the first delivery attempt." },
-	{
-		key: "retry_backoff_initial_seconds",
-		label: "Initial retry backoff (seconds)",
-		description: "Delay before the first retry; doubles per retry.",
-	},
-	{ key: "retry_backoff_max_seconds", label: "Max retry backoff (seconds)", description: "Cap on the per-retry delay." },
-	{ key: "attempt_timeout_seconds", label: "Attempt timeout (seconds)", description: "End-to-end bound for one delivery attempt." },
-	{
-		key: "max_response_payload_kbs",
-		label: "Max response payload (KB)",
-		description: "Responses above this size are omitted from the payload.",
-	},
-	{
-		key: "max_concurrent_deliveries",
-		label: "Max concurrent deliveries",
-		description: "Concurrent in-flight deliveries to this endpoint per node.",
-	},
+const TUNING_FIELD_KEYS: (keyof typeof WEBHOOK_TUNING_DEFAULTS)[] = [
+	"max_retries",
+	"retry_backoff_initial_seconds",
+	"retry_backoff_max_seconds",
+	"attempt_timeout_seconds",
+	"max_response_payload_kbs",
+	"max_concurrent_deliveries",
 ];
 
 const formDefaults = (endpoint: WebhookEndpoint | null): WebhookFormData => ({
@@ -96,6 +81,7 @@ interface WebhookSheetProps {
 }
 
 export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheetProps) {
+	const { t } = useTranslation(["common", "governance"]);
 	const isEditing = !!endpoint;
 	const [createWebhookEndpoint, { isLoading: isCreating }] = useCreateWebhookEndpointMutation();
 	const [updateWebhookEndpoint, { isLoading: isUpdating }] = useUpdateWebhookEndpointMutation();
@@ -178,11 +164,11 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 		try {
 			if (isEditing) {
 				await updateWebhookEndpoint({ id: endpoint.id, data: request }).unwrap();
-				toast.success("Webhook endpoint updated successfully");
+				toast.success(t("governance:webhooks.sheet.toastUpdated"));
 				onClose();
 			} else {
 				const response = await createWebhookEndpoint(request).unwrap();
-				toast.success("Webhook endpoint created successfully");
+				toast.success(t("governance:webhooks.sheet.toastCreated"));
 				onClose();
 				onSecret({ endpointName: response.endpoint.name, secret: response.secret });
 			}
@@ -195,21 +181,19 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 		<Sheet open={open} onOpenChange={(sheetOpen) => !sheetOpen && onClose()}>
 			<SheetContent className="flex w-full flex-col overflow-x-hidden px-0" data-testid="webhook-sheet-content">
 				<SheetHeader className="flex flex-col items-start pt-8" headerClassName="px-4 md:px-6">
-					<SheetTitle>{isEditing ? endpoint.name : "Add Webhook Endpoint"}</SheetTitle>
+					<SheetTitle>{isEditing ? endpoint.name : t("governance:webhooks.sheet.createTitle")}</SheetTitle>
 					<SheetDescription>
-						{isEditing
-							? "Update the endpoint's URL, subscriptions, and delivery behavior."
-							: "Register an HTTPS endpoint to receive signed notifications when async jobs finish."}
+						{isEditing ? t("governance:webhooks.sheet.editDescription") : t("governance:webhooks.sheet.createDescription")}
 					</SheetDescription>
 				</SheetHeader>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
 					<div className="flex-1 space-y-4 overflow-y-auto px-4 md:px-8">
 						<div className="space-y-2">
-							<Label htmlFor="webhook-name">Name</Label>
+							<Label htmlFor="webhook-name">{t("governance:webhooks.sheet.nameLabel")}</Label>
 							<Input
 								id="webhook-name"
-								placeholder="e.g., billing-service"
+								placeholder={t("governance:webhooks.sheet.namePlaceholder")}
 								data-testid="webhook-name-input"
 								{...register("name")}
 								className={errors.name ? "border-destructive" : ""}
@@ -218,10 +202,10 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="webhook-url">URL</Label>
+							<Label htmlFor="webhook-url">{t("governance:webhooks.sheet.urlLabel")}</Label>
 							<Input
 								id="webhook-url"
-								placeholder="https://example.com/hooks/bifrost"
+								placeholder={t("governance:webhooks.sheet.urlPlaceholder")}
 								data-testid="webhook-url-input"
 								{...register("url")}
 								className={errors.url ? "border-destructive" : ""}
@@ -230,7 +214,7 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 						</div>
 
 						<div className="space-y-2">
-							<Label>Events</Label>
+							<Label>{t("governance:webhooks.sheet.eventsLabel")}</Label>
 							<div className="space-y-2 rounded-sm border p-4">
 								{WEBHOOK_EVENTS.map((event) => (
 									<div key={event.value}>
@@ -253,11 +237,9 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 						<div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2">
 							<div className="space-y-0.5">
 								<Label htmlFor="webhook-include-response" className="text-sm font-normal">
-									Include response payload
+									{t("governance:webhooks.sheet.includeResponse")}
 								</Label>
-								<p className="text-muted-foreground text-xs">
-									Inline the job's result in the notification. Oversized or already-expired results are delivered as a thin payload instead.
-								</p>
+								<p className="text-muted-foreground text-xs">{t("governance:webhooks.sheet.includeResponseHelp")}</p>
 							</div>
 							<Switch
 								id="webhook-include-response"
@@ -270,11 +252,9 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 						<div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2">
 							<div className="space-y-0.5">
 								<Label htmlFor="webhook-private-network" className="text-sm font-normal">
-									Allow private network
+									{t("governance:webhooks.sheet.allowPrivateNetwork")}
 								</Label>
-								<p className="text-muted-foreground text-xs">
-									Permit deliveries to private IP ranges. Only enable this for receivers inside your own network.
-								</p>
+								<p className="text-muted-foreground text-xs">{t("governance:webhooks.sheet.allowPrivateNetworkHelp")}</p>
 							</div>
 							<Switch
 								id="webhook-private-network"
@@ -289,46 +269,44 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 								value={headers}
 								onChange={handleHeadersChange}
 								useSecretVarInput
-								label="Custom Headers"
-								keyPlaceholder="e.g., Authorization"
-								valuePlaceholder="Value or env.VARIABLE"
+								label={t("governance:webhooks.sheet.customHeaders")}
+								keyPlaceholder={t("governance:webhooks.sheet.headersKeyPlaceholder")}
+								valuePlaceholder={t("governance:webhooks.sheet.headersValuePlaceholder")}
 							/>
 							{headersError && (
 								<p className="text-destructive text-xs" data-testid="webhook-headers-error">
 									{headersError}
 								</p>
 							)}
-							<p className="text-muted-foreground text-xs">
-								Sent with every delivery. Signing and content headers are reserved and cannot be overridden.
-							</p>
+							<p className="text-muted-foreground text-xs">{t("governance:webhooks.sheet.headersHelp")}</p>
 						</div>
 
 						<div className="space-y-4">
 							<h3 className="text-sm leading-none font-medium" data-testid="webhook-tuning-heading">
-								Delivery Tuning
+								{t("governance:webhooks.sheet.deliveryTuning")}
 							</h3>
-							{TUNING_FIELDS.map((field) => {
-								const fieldValue = watch(field.key);
+							{TUNING_FIELD_KEYS.map((fieldKey) => {
+								const fieldValue = watch(fieldKey);
 								const isUsingDefault = fieldValue === undefined || fieldValue === 0;
 								return (
-									<div key={field.key} className="flex items-center justify-between gap-4 rounded-lg border px-4 py-2">
+									<div key={fieldKey} className="flex items-center justify-between gap-4 rounded-lg border px-4 py-2">
 										<div className="flex flex-col items-start gap-0.5">
-											<Label htmlFor={`webhook-${field.key}`} className="text-sm font-normal">
-												{field.label}
+											<Label htmlFor={`webhook-${fieldKey}`} className="text-sm font-normal">
+												{t(`governance:webhooks.sheet.tuning.${fieldKey}.label`)}
 											</Label>
-											<p className="text-muted-foreground text-xs">{field.description}</p>
-											{isUsingDefault && <p className="text-muted-foreground text-xs">Using delivery worker default</p>}
+											<p className="text-muted-foreground text-xs">{t(`governance:webhooks.sheet.tuning.${fieldKey}.description`)}</p>
+											{isUsingDefault && <p className="text-muted-foreground text-xs">{t("governance:webhooks.sheet.usingDefault")}</p>}
 										</div>
 										<Input
-											id={`webhook-${field.key}`}
+											id={`webhook-${fieldKey}`}
 											type="number"
 											min="0"
 											className={`w-24 ${isUsingDefault ? "text-muted-foreground" : ""}`}
-											placeholder={String(WEBHOOK_TUNING_DEFAULTS[field.key])}
-											data-testid={`webhook-${field.key}-input`}
+											placeholder={String(WEBHOOK_TUNING_DEFAULTS[fieldKey])}
+											data-testid={`webhook-${fieldKey}-input`}
 											value={fieldValue ?? ""}
 											onChange={(e) =>
-												setValue(field.key, e.target.value === "" ? undefined : Number(e.target.value), {
+												setValue(fieldKey, e.target.value === "" ? undefined : Number(e.target.value), {
 													shouldValidate: true,
 													shouldDirty: true,
 												})
@@ -337,9 +315,7 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 									</div>
 								);
 							})}
-							<p className="text-muted-foreground pb-2 text-xs">
-								If retries extend past the job's result TTL, later deliveries carry a thin payload marked <code>result_expired</code>.
-							</p>
+							<p className="text-muted-foreground pb-2 text-xs">{t("governance:webhooks.sheet.tuningTtlNote")}</p>
 						</div>
 					</div>
 
@@ -349,7 +325,11 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 								Cancel
 							</Button>
 							<Button type="submit" disabled={isSaving || !hasChanges} data-testid="webhook-save-btn">
-								{isSaving ? "Saving..." : isEditing ? "Update Endpoint" : "Create Endpoint"}
+								{isSaving
+									? t("governance:webhooks.sheet.saveButton")
+									: isEditing
+										? t("governance:webhooks.sheet.updateButton")
+										: t("governance:webhooks.sheet.createButton")}
 							</Button>
 						</div>
 					</div>

@@ -27,6 +27,7 @@ import { Validator } from "@/lib/utils/validation";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import isEqual from "lodash.isequal";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 interface CustomerSheetProps {
@@ -65,6 +66,7 @@ const createInitialState = (customer?: Customer | null): Omit<CustomerFormData, 
 };
 
 export default function CustomerSheet({ open, onOpenChange, customer, onSuccess }: CustomerSheetProps) {
+	const { t } = useTranslation(["common", "governance"]);
 	// Enterprise governs a customer's keys with an access profile, so a customer's own budgets and
 	// rate limits are the legacy system: not offered to a customer that has none, since the way to
 	// fund a new one is a profile. A customer that already has them keeps them editable here - the
@@ -175,28 +177,28 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 	const validator = useMemo(
 		() =>
 			new Validator([
-				Validator.required(formData.name.trim(), "Customer name is required"),
-				Validator.custom(formData.isDirty, "No changes to save"),
+				Validator.required(formData.name.trim(), t("governance:org.sheet.customerNameRequired")),
+				Validator.custom(formData.isDirty, t("governance:org.sheet.noChanges")),
 				// Limits are only editable here when this build owns them. In enterprise they are the
 				// access profile's, the fields are hidden, and the form still carries whatever the
 				// customer already has - validating that would block an unrelated rename behind a
 				// legacy value the operator cannot reach.
 				...(editsLimits
 					? [
-							Validator.custom(!hasDuplicateDuration, "Each budget must have a unique reset period"),
+							Validator.custom(!hasDuplicateDuration, t("governance:org.sheet.uniqueResetPeriod")),
 							...(formData.budgets.some((b) => b.max_limit !== undefined && b.max_limit !== null && b.max_limit < 0.01)
-								? [Validator.custom(false, "Budget max limit must be greater than $0.01")]
+								? [Validator.custom(false, t("governance:org.sheet.budgetMinLimit"))]
 								: []),
 							...(formData.tokenMaxLimit !== undefined && formData.tokenMaxLimit !== null
 								? [
-										Validator.minValue(tokenMaxLimitNum ?? 0, 1, "Token max limit must be at least 1"),
-										Validator.required(formData.tokenResetDuration, "Token reset duration is required"),
+										Validator.minValue(tokenMaxLimitNum ?? 0, 1, t("governance:org.sheet.tokenMinLimit")),
+										Validator.required(formData.tokenResetDuration, t("governance:org.sheet.tokenDurationRequired")),
 									]
 								: []),
 							...(formData.requestMaxLimit !== undefined && formData.requestMaxLimit !== null
 								? [
-										Validator.minValue(requestMaxLimitNum ?? 0, 1, "Request max limit must be at least 1"),
-										Validator.required(formData.requestResetDuration, "Request reset duration is required"),
+										Validator.minValue(requestMaxLimitNum ?? 0, 1, t("governance:org.sheet.requestMinLimit")),
+										Validator.required(formData.requestResetDuration, t("governance:org.sheet.requestDurationRequired")),
 									]
 								: []),
 						]
@@ -248,7 +250,7 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 		try {
 			if (isEditing && customer && !editsLimits) {
 				await updateCustomer({ customerId: customer.id, data: { name: formData.name } }).unwrap();
-				toast.success("Customer updated successfully");
+				toast.success(t("governance:org.customers.toastUpdated"));
 			} else if (isEditing && customer) {
 				const updateData: UpdateCustomerRequest = {
 					name: formData.name,
@@ -275,7 +277,7 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 				}
 
 				await updateCustomer({ customerId: customer.id, data: updateData }).unwrap();
-				toast.success("Customer updated successfully");
+				toast.success(t("governance:org.customers.toastUpdated"));
 			} else {
 				const createData: CreateCustomerRequest = editsLimits
 					? { name: formData.name, calendar_aligned: formData.calendarAligned, budgets: budgetRequests }
@@ -296,7 +298,7 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 				}
 
 				await createCustomer(createData).unwrap();
-				toast.success("Customer created successfully");
+				toast.success(t("governance:org.customers.toastCreated"));
 			}
 
 			onOpenChange(false);
@@ -313,9 +315,9 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 	const isSubmitDisabled = loading || !validator.isValid() || !hasPermission;
 
 	const getTooltipMessage = () => {
-		if (!hasPermission) return "You don't have permission to perform this action";
-		if (loading) return "Saving...";
-		return validator.getFirstError() || "Please fix validation errors";
+		if (!hasPermission) return t("governance:org.sheet.permissionDenied");
+		if (loading) return t("governance:org.sheet.saving");
+		return validator.getFirstError() || t("governance:org.sheet.fixValidation");
 	};
 
 	const showCalendarAlignToggle = canCalendarAlign;
@@ -325,13 +327,11 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 			<SheetContent className="max-w-[900px] p-0 pt-4 sm:max-w-2xl" data-testid="customer-dialog-content">
 				<SheetHeader className="flex flex-col items-start px-0 py-4" headerClassName="mb-0 sticky -top-4 bg-card z-10 px-4 md:px-8">
 					<SheetTitle className="flex items-center gap-2">
-						{isEditing ? "Edit Customer" : "Create Customer"}
-						{customer?.id && <CopyableId id={customer.id} entityLabel="Customer" />}
+						{isEditing ? t("governance:org.customers.sheetEditTitle") : t("governance:org.customers.sheetCreateTitle")}
+						{customer?.id && <CopyableId id={customer.id} entityLabel={t("governance:org.sheet.customerEntityLabel")} />}
 					</SheetTitle>
 					<SheetDescription>
-						{isEditing
-							? "Update the customer information and settings."
-							: "Create a new customer account to organize teams and manage resources."}
+						{isEditing ? t("governance:org.customers.sheetEditDescription") : t("governance:org.customers.sheetCreateDescription")}
 					</SheetDescription>
 				</SheetHeader>
 
@@ -340,17 +340,17 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 						<div className="space-y-6">
 							<div className="space-y-4">
 								<div className="space-y-2">
-									<Label htmlFor="name">Customer Name *</Label>
+									<Label htmlFor="name">{t("governance:org.customers.nameLabel")}</Label>
 									<Input
 										id="name"
 										data-testid="customer-name-input"
-										placeholder="e.g., Acme Corporation"
+										placeholder={t("governance:org.customers.namePlaceholder")}
 										value={formData.name}
 										maxLength={50}
 										onChange={(e) => updateField("name", e.target.value)}
 									/>
 									{nameError && <p className="text-destructive text-sm">{nameError}</p>}
-									<p className="text-muted-foreground text-sm">This name will be used to identify the customer account.</p>
+									<p className="text-muted-foreground text-sm">{t("governance:org.customers.nameHint")}</p>
 								</div>
 							</div>
 
@@ -358,7 +358,7 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 								<>
 									<MultiBudgetLines
 										data-testid="customer-budgets"
-										label="Budget Limits"
+										label={t("governance:org.sheet.budgetLinesLabel")}
 										lines={formData.budgets}
 										onChange={(lines) => updateField("budgets", lines)}
 									/>
@@ -366,7 +366,7 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 									<NumberAndSelect
 										id="tokenMaxLimit"
 										dataTestId="customer-token-max-limit-input"
-										label="Maximum Tokens"
+										label={t("governance:org.sheet.maxTokensLabel")}
 										value={formData.tokenMaxLimit}
 										selectValue={formData.tokenResetDuration}
 										onChangeNumber={(value) => updateField("tokenMaxLimit", value)}
@@ -377,7 +377,7 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 									<NumberAndSelect
 										id="requestMaxLimit"
 										dataTestId="customer-request-max-limit-input"
-										label="Maximum Requests"
+										label={t("governance:org.sheet.maxRequestsLabel")}
 										value={formData.requestMaxLimit}
 										selectValue={formData.requestResetDuration}
 										onChangeNumber={(value) => updateField("requestMaxLimit", value)}
@@ -385,41 +385,39 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 										options={resetDurationOptions}
 									/>
 
-							{showCalendarAlignToggle && (
-								<div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2">
-									<div className="space-y-0.5">
-										<Label htmlFor="customer-calendar-aligned-toggle" className="text-sm font-normal">
-											Align to calendar cycle
-										</Label>
-										<p className="text-muted-foreground text-xs">
-											Reset budgets and rate limits at the start of each period (e.g. 1st of month) instead of rolling from creation date.
-											Quarterly budgets always align to fiscal quarter starts. Applies to durations of a day or longer.
-										</p>
-									</div>
-									<Switch
-										id="customer-calendar-aligned-toggle"
-										checked={formData.calendarAligned}
-										onCheckedChange={handleCalendarAlignedChange}
-										data-testid="customer-calendar-aligned-toggle"
-									/>
-								</div>
-							)}
+									{showCalendarAlignToggle && (
+										<div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2">
+											<div className="space-y-0.5">
+												<Label htmlFor="customer-calendar-aligned-toggle" className="text-sm font-normal">
+													{t("governance:org.sheet.alignLabel")}
+												</Label>
+												<p className="text-muted-foreground text-xs">{t("governance:org.sheet.alignDescription")}</p>
+											</div>
+											<Switch
+												id="customer-calendar-aligned-toggle"
+												checked={formData.calendarAligned}
+												onCheckedChange={handleCalendarAlignedChange}
+												data-testid="customer-calendar-aligned-toggle"
+											/>
+										</div>
+									)}
 								</>
 							)}
 
 							<AlertDialog open={showCalendarAlignWarning} onOpenChange={setShowCalendarAlignWarning}>
 								<AlertDialogContent>
 									<AlertDialogHeader>
-										<AlertDialogTitle>Reset budget and rate-limit usage?</AlertDialogTitle>
+										<AlertDialogTitle>{t("governance:org.sheet.alignDialogTitle")}</AlertDialogTitle>
 										<AlertDialogDescription>
-											Enabling calendar alignment will reset budget usage to <span className="font-semibold">$0.00</span> and token/request
-											rate-limit counters to <span className="font-semibold">0</span> for this customer, then snap each reset date to the
-											start of its current period (e.g. start of day, week, month, or year). The usage reset cannot be undone, but calendar
-											alignment can be turned off later. This will take effect when you save.
+											{t("governance:org.sheet.alignDialogLead")}{" "}
+											<span className="font-semibold">{t("governance:org.sheet.alignDialogZeroMoney")}</span>{" "}
+											{t("governance:org.sheet.alignDialogAnd")}{" "}
+											<span className="font-semibold">{t("governance:org.sheet.alignDialogZero")}</span>
+											{t("governance:org.sheet.alignDialogTail", { entity: t("governance:org.sheet.customerEntity") })}
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<AlertDialogFooter>
-										<AlertDialogCancel data-testid="customer-calendar-align-cancel-btn">Cancel</AlertDialogCancel>
+										<AlertDialogCancel data-testid="customer-calendar-align-cancel-btn">{t("common:actions.cancel")}</AlertDialogCancel>
 										<AlertDialogAction
 											data-testid="customer-calendar-align-enable-btn"
 											onClick={() => {
@@ -427,14 +425,14 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 												setShowCalendarAlignWarning(false);
 											}}
 										>
-											Enable Calendar Alignment
+											{t("governance:org.sheet.enableAlign")}
 										</AlertDialogAction>
 									</AlertDialogFooter>
 								</AlertDialogContent>
 							</AlertDialog>
 							<BudgetUsageResetDialog
 								data-testid="customer-budget-reset-dialog"
-								ownerLabel="customer"
+								ownerLabel={t("governance:org.sheet.customerEntity")}
 								open={resetPrompt.isOpen}
 								onOpenChange={resetPrompt.setOpen}
 								onChoice={(resetUsage) => resetPrompt.resolve(() => saveCustomer(resetUsage))}
@@ -444,14 +442,18 @@ export default function CustomerSheet({ open, onOpenChange, customer, onSuccess 
 
 					<SheetFooter className="bg-card sticky bottom-0 flex-row justify-end gap-2 border-t px-4 py-4 md:px-6">
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-							Cancel
+							{t("common:actions.cancel")}
 						</Button>
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<span>
 										<Button type="submit" disabled={isSubmitDisabled}>
-											{loading ? "Saving..." : isEditing ? "Update Customer" : "Create Customer"}
+											{loading
+												? t("governance:org.sheet.saving")
+												: isEditing
+													? t("governance:org.sheet.updateCustomer")
+													: t("governance:org.sheet.createCustomer")}
 										</Button>
 									</span>
 								</TooltipTrigger>

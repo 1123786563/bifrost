@@ -30,6 +30,7 @@ import { getPriorityBadgeClass, truncateCELExpression } from "@/lib/utils/routin
 import { ChevronLeft, ChevronRight, Edit, MoreHorizontal, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 function RoutingRuleActionsMenu({
 	rule,
@@ -126,6 +127,7 @@ export function RoutingRulesTable({
 	onOffsetChange,
 	actions,
 }: RoutingRulesTableProps) {
+	const { t } = useTranslation(["common", "governance"]);
 	const [deleteRuleId, setDeleteRuleId] = useState<string | null>(null);
 	const [deleteRoutingRule, { isLoading: isDeleting }] = useDeleteRoutingRuleMutation();
 	const [updateRoutingRule] = useUpdateRoutingRuleMutation();
@@ -135,7 +137,7 @@ export function RoutingRulesTable({
 
 		try {
 			await deleteRoutingRule(deleteRuleId).unwrap();
-			toast.success("Routing rule deleted successfully");
+			toast.success(t("governance:routingRules.table.toastDeleted"));
 			setDeleteRuleId(null);
 		} catch (error: unknown) {
 			toast.error(getErrorMessage(error));
@@ -148,12 +150,12 @@ export function RoutingRulesTable({
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Name</TableHead>
-							<TableHead>Targets</TableHead>
-							<TableHead>Scope</TableHead>
+							<TableHead>{t("governance:routingRules.table.headers.name")}</TableHead>
+							<TableHead>{t("governance:routingRules.table.headers.targets")}</TableHead>
+							<TableHead>{t("governance:routingRules.table.headers.scope")}</TableHead>
 							<TableHead className="text-right">Priority</TableHead>
-							<TableHead>Expression</TableHead>
-							<TableHead>Enabled</TableHead>
+							<TableHead>{t("governance:routingRules.table.headers.expression")}</TableHead>
+							<TableHead>{t("governance:routingRules.table.headers.enabled")}</TableHead>
 							<TableHead className="text-right">Actions</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -181,8 +183,8 @@ export function RoutingRulesTable({
 				<div className="relative max-w-sm flex-1">
 					<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 					<Input
-						aria-label="Search routing rules by name"
-						placeholder="Search by name..."
+						aria-label={t("governance:routingRules.table.searchAria")}
+						placeholder={t("governance:routingRules.table.searchPlaceholder")}
 						value={search}
 						onChange={(e) => onSearchChange(e.target.value)}
 						className="pl-9"
@@ -258,10 +260,14 @@ export function RoutingRulesTable({
 												})
 													.unwrap()
 													.then(() => {
-														toast.success(`Rule ${checked ? "enabled" : "disabled"} successfully`);
+														toast.success(
+															checked
+																? t("governance:routingRules.table.toastRuleEnabled")
+																: t("governance:routingRules.table.toastRuleDisabled"),
+														);
 													})
 													.catch((err) => {
-														toast.error("Failed to update rule", {
+														toast.error(t("governance:routingRules.table.toastUpdateFailed"), {
 															description: getErrorMessage(err),
 														});
 													});
@@ -303,7 +309,7 @@ export function RoutingRulesTable({
 							onClick={() => onOffsetChange(Math.max(0, offset - limit))}
 							disabled={offset === 0}
 							data-testid="routing-rules-pagination-prev-btn"
-							aria-label="Previous page"
+							aria-label={t("governance:routingRules.table.previousPageAria")}
 						>
 							<ChevronLeft className="size-3" />
 						</Button>
@@ -320,7 +326,7 @@ export function RoutingRulesTable({
 							onClick={() => onOffsetChange(offset + limit)}
 							disabled={offset + limit >= totalCount}
 							data-testid="routing-rules-pagination-next-btn"
-							aria-label="Next page"
+							aria-label={t("governance:routingRules.table.nextPageAria")}
 						>
 							<ChevronRight className="size-3" />
 						</Button>
@@ -331,15 +337,15 @@ export function RoutingRulesTable({
 			<AlertDialog open={!!deleteRuleId} onOpenChange={(open) => !open && setDeleteRuleId(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete Routing Rule</AlertDialogTitle>
+						<AlertDialogTitle>{t("governance:routingRules.table.deleteTitle")}</AlertDialogTitle>
 						<AlertDialogDescription>
 							Are you sure you want to delete &quot;{ruleToDelete?.name}&quot;? This action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={isDeleting}>{t("common:actions.cancel")}</AlertDialogCancel>
 						<AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
-							{isDeleting ? "Deleting..." : "Delete"}
+							{isDeleting ? t("governance:org.table.deleting") : t("common:actions.delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -349,12 +355,16 @@ export function RoutingRulesTable({
 }
 
 function TargetsSummary({ targets }: { targets: RoutingTarget[] }) {
+	const { t } = useTranslation(["common", "governance"]);
 	if (!targets || targets.length === 0) {
 		return <span className="text-muted-foreground text-sm">-</span>;
 	}
 
 	const first = targets[0];
-	const label = [first.provider ? getProviderLabel(first.provider) : "Any", first.model || "Any model"].join(" / ");
+	const label = [
+		first.provider ? getProviderLabel(first.provider) : t("governance:routingRules.table.anyProvider"),
+		first.model || t("governance:routingRules.table.anyModel"),
+	].join(" / ");
 
 	return (
 		<div className="flex flex-col gap-1">

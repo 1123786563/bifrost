@@ -1,11 +1,12 @@
 import { badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SEMANTIC_STATUS_LABELS, SemanticStatusInfo } from "@/lib/types/complexityRouter";
+import { SemanticStatusInfo } from "@/lib/types/complexityRouter";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import type { VariantProps } from "class-variance-authority";
 import { ArrowRight, CircleAlert, CircleCheck, CircleDashed, LoaderCircle, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import { semanticWarmupFailureMessage, semanticWarmupImpactMessage } from "./classifierStatusBadge.utils";
 
@@ -15,15 +16,15 @@ type ClassifierState = SemanticStatusInfo["state"] | "not-configured" | "not-sav
 
 // The badge names the subject as well as the state: on its own in the header,
 // a bare "Ready" would not say what is ready.
-const LABELS: Record<ClassifierState, string> = {
-	ready: `Classifier ${SEMANTIC_STATUS_LABELS.ready.toLowerCase()}`,
-	warming: `Classifier ${SEMANTIC_STATUS_LABELS.warming.toLowerCase()}`,
-	failed: `Classifier ${SEMANTIC_STATUS_LABELS.failed.toLowerCase()}`,
-	disabled: "Classifier off",
-	"not-configured": "Classifier not configured",
-	"not-saved": "Classifier not saved",
-	loading: "Checking classifier…",
-	unavailable: "Classifier status unavailable",
+const BADGE_KEYS: Record<ClassifierState, string> = {
+	ready: "ready",
+	warming: "warming",
+	failed: "failed",
+	disabled: "disabled",
+	"not-configured": "notConfigured",
+	"not-saved": "notSaved",
+	loading: "loading",
+	unavailable: "unavailable",
 };
 
 // Every tone comes from the shared Badge variants rather than a hand-picked
@@ -92,6 +93,7 @@ export function ClassifierStatusBadge({
 	onRetryStatus: () => void;
 	onRetryWarmup: () => void;
 }) {
+	const { t } = useTranslation(["common", "governance"]);
 	const state: ClassifierState = isNotConfigured
 		? "not-configured"
 		: isNotSaved
@@ -106,15 +108,17 @@ export function ClassifierStatusBadge({
 
 	const summary: ReactNode = {
 		"not-configured": hasEmbeddingProviders
-			? "No embedding provider is selected, so requests carry no complexity tier and rules targeting one never match."
-			: "No embedding-capable provider is configured, so requests carry no complexity tier and rules targeting one never match.",
-		"not-saved": "Save this configuration to embed the reference phrases and activate classification.",
-		loading: "Reading the classifier's warmup state…",
-		warming: "Embedding the reference phrases. Classification starts once every phrase is loaded.",
-		ready: status ? `${status.total} reference phrase${status.total === 1 ? "" : "s"} embedded and serving.` : "Serving.",
-		failed: "Warmup failed.",
-		disabled: "Classification is off.",
-		unavailable: "Bifrost could not report whether the saved classifier is ready. Routing may still be working.",
+			? t("governance:complexityRouter.statusBadge.summary.notConfiguredSelected")
+			: t("governance:complexityRouter.statusBadge.summary.notConfiguredNoProviders"),
+		"not-saved": t("governance:complexityRouter.statusBadge.summary.notSaved"),
+		loading: t("governance:complexityRouter.statusBadge.summary.loading"),
+		warming: t("governance:complexityRouter.statusBadge.summary.warming"),
+		ready: status
+			? t("governance:complexityRouter.statusBadge.summary.ready", { count: status.total })
+			: t("governance:complexityRouter.statusBadge.summary.readyServing"),
+		failed: t("governance:complexityRouter.statusBadge.summary.failed"),
+		disabled: t("governance:complexityRouter.statusBadge.summary.disabled"),
+		unavailable: t("governance:complexityRouter.statusBadge.summary.unavailable"),
 	}[state];
 
 	return (
@@ -129,7 +133,7 @@ export function ClassifierStatusBadge({
 					className={cn(badgeVariants({ variant: TONES[state] }), "h-8 cursor-pointer gap-1.5 px-2.5 transition-opacity hover:opacity-80")}
 				>
 					<StateIcon state={state} />
-					<span>{LABELS[state]}</span>
+					<span>{t(`governance:complexityRouter.statusBadge.${BADGE_KEYS[state]}`)}</span>
 				</button>
 			</PopoverTrigger>
 
@@ -141,19 +145,15 @@ export function ClassifierStatusBadge({
 				<p className="text-muted-foreground">{summary}</p>
 
 				{status?.serving_previous && state === "warming" && (
-					<p className="text-amber-700 dark:text-amber-400">
-						The previous reference phrases are still serving requests while this generation prepares. Routing is unaffected.
-					</p>
+					<p className="text-amber-700 dark:text-amber-400">{t("governance:complexityRouter.statusBadge.servingPrevious")}</p>
 				)}
 
 				{hasUnsavedChanges && state !== "not-configured" && state !== "not-saved" && (
-					<p className="text-amber-700 dark:text-amber-400">
-						The saved classifier is still serving. Save to prepare and activate these phrase or model changes.
-					</p>
+					<p className="text-amber-700 dark:text-amber-400">{t("governance:complexityRouter.statusBadge.unsaved")}</p>
 				)}
 
 				{statusRefreshFailed && status && (
-					<p className="text-amber-700 dark:text-amber-400">The latest status check failed. Showing the last known classifier state.</p>
+					<p className="text-amber-700 dark:text-amber-400">{t("governance:complexityRouter.statusBadge.refreshFailed")}</p>
 				)}
 
 				{state === "failed" && status && (
@@ -171,14 +171,14 @@ export function ClassifierStatusBadge({
 				{state === "failed" && canRetryWarmup && !hasUnsavedChanges && (
 					<Button type="button" variant="outline" size="sm" className="w-full" onClick={onRetryWarmup} disabled={isRetryingWarmup}>
 						<RefreshCw className={cn("size-3.5", isRetryingWarmup && "animate-spin")} />
-						Retry warmup
+						{t("governance:complexityRouter.statusBadge.retryWarmup")}
 					</Button>
 				)}
 
 				{state === "unavailable" && (
 					<Button type="button" variant="outline" size="sm" className="w-full" onClick={onRetryStatus} disabled={isRetryingStatus}>
 						<RefreshCw className={cn("size-3.5", isRetryingStatus && "animate-spin")} />
-						Retry status
+						{t("governance:complexityRouter.statusBadge.retryStatus")}
 					</Button>
 				)}
 
@@ -195,12 +195,12 @@ export function ClassifierStatusBadge({
 							onClick={onConfigure}
 							data-testid="complexity-router-status-configure-button"
 						>
-							Configure embedding
+							{t("governance:complexityRouter.header.configureEmbedding")}
 						</Button>
 					) : (
 						<Button asChild variant="outline" size="sm" className="w-full" data-testid="complexity-router-status-add-provider-link">
 							<Link to="/workspace/providers">
-								Add an embedding provider
+								{t("governance:complexityRouter.statusBadge.addEmbeddingProvider")}
 								<ArrowRight className="size-3.5" />
 							</Link>
 						</Button>

@@ -17,6 +17,7 @@ import type { ColumnOrderState, ColumnPinningState, VisibilityState } from "@tan
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { shouldShowEmptyState } from "../deliveries.page.utils";
 
 export interface DeliveriesPagination {
@@ -65,6 +66,7 @@ export function DeliveriesTable({
 	onTogglePin,
 	onReorderColumns,
 }: DeliveriesTableProps) {
+	const { t } = useTranslation(["common", "governance"]);
 	// The expand chevron and the actions button are structural, not user-configurable.
 	const fixedColumnIds = useMemo(() => new Set<string>(["expand", "actions"]), []);
 
@@ -242,7 +244,7 @@ export function DeliveriesTable({
 							) : !shouldShowEmptyState({ rowCount: table.getRowModel().rows.length, loading, error }) ? null : (
 								<TableRow>
 									<TableCell colSpan={visibleColumnCount} className="h-24 text-center">
-										No deliveries found. Try adjusting your filters and/or time range.
+										{t("governance:webhooks.deliveries.table.noDeliveries")}
 									</TableCell>
 								</TableRow>
 							)}
@@ -252,12 +254,15 @@ export function DeliveriesTable({
 
 				<div className="flex items-center justify-between text-xs" data-testid="pagination">
 					<div className="text-muted-foreground flex items-center gap-2">
-						{startItemDisplay.toLocaleString()}-{endItemDisplay.toLocaleString()} of {totalItems.toLocaleString()} deliveries
+						{t("governance:webhooks.deliveries.table.entries", {
+							from: `${startItemDisplay.toLocaleString()}-${endItemDisplay.toLocaleString()}`,
+							total: totalItems.toLocaleString(),
+						})}
 					</div>
 
 					<div className="flex items-center gap-2">
 						<div className="flex items-center gap-1.5">
-							<span className="text-muted-foreground">Rows per page</span>
+							<span className="text-muted-foreground">{t("governance:webhooks.deliveries.table.rowsPerPage")}</span>
 							<ComboboxSelect
 								options={pageSizeOptions}
 								value={String(pageSizePref)}
@@ -265,7 +270,7 @@ export function DeliveriesTable({
 								disableSearch
 								hideClear
 								className="h-7 w-fit gap-1 text-xs"
-								aria-label="Rows per page"
+								aria-label={t("governance:webhooks.deliveries.table.rowsPerPage")}
 								data-testid="page-size-select"
 							/>
 						</div>
@@ -275,15 +280,15 @@ export function DeliveriesTable({
 							onClick={() => goToPage(currentPage - 1)}
 							disabled={currentPage <= 1}
 							data-testid="prev-page"
-							aria-label="Previous page"
+							aria-label={t("governance:webhooks.deliveries.table.previousPageAria")}
 						>
 							<ChevronLeft className="size-3" />
 						</Button>
 
 						<div className="flex items-center gap-1">
-							<span>Page</span>
+							<span>{t("governance:webhooks.deliveries.table.page")}</span>
 							<span>{currentPage}</span>
-							<span>of {totalPages}</span>
+							<span>{t("governance:webhooks.deliveries.table.pageOf", { count: totalPages })}</span>
 						</div>
 
 						<Button
@@ -292,7 +297,7 @@ export function DeliveriesTable({
 							onClick={() => goToPage(currentPage + 1)}
 							disabled={totalPages === 0 || currentPage >= totalPages}
 							data-testid="next-page"
-							aria-label="Next page"
+							aria-label={t("governance:webhooks.deliveries.table.nextPageAria")}
 						>
 							<ChevronRight className="size-3" />
 						</Button>

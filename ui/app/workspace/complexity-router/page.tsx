@@ -31,6 +31,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, ExternalLink, LoaderCircle, RotateCcw, Save, Settings2, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
 	AnalyzerFormValues,
@@ -97,6 +98,7 @@ const supportsChat = (provider: ModelProvider): boolean => {
 };
 
 export default function ComplexityRouterPage() {
+	const { t } = useTranslation(["common", "governance"]);
 	const canUpdate = useRbac(RbacResource.RoutingRules, RbacOperation.Update);
 	const { data, isLoading, isFetching, error, refetch } = useGetComplexityAnalyzerConfigQuery(undefined, {
 		refetchOnMountOrArgChange: true,
@@ -368,10 +370,10 @@ export default function ComplexityRouterPage() {
 			.then((defaults) => {
 				promptEdited.current = false;
 				reset(toFormValues(defaults, decisionDefaults));
-				toast.success("Reset to defaults", { position: "top-right" });
+				toast.success(t("governance:complexityRouter.toasts.resetToDefaults"), { position: "top-right" });
 			})
 			.catch((err) => {
-				setSubmitError(`Couldn’t restore the default phrases. ${getErrorMessage(err)}`);
+				setSubmitError(t("governance:complexityRouter.errors.restoreFailed", { error: getErrorMessage(err) }));
 			});
 	};
 
@@ -380,11 +382,11 @@ export default function ComplexityRouterPage() {
 		retrySemanticWarmup()
 			.unwrap()
 			.then(() => {
-				toast.success("Semantic warmup restarted", { position: "top-right" });
+				toast.success(t("governance:complexityRouter.toasts.warmupRestarted"), { position: "top-right" });
 				void refetchStatus();
 			})
 			.catch((err) => {
-				toast.error(`Couldn’t retry semantic warmup. ${getErrorMessage(err)}`, { position: "top-right" });
+				toast.error(t("governance:complexityRouter.errors.retryWarmupFailed", { error: getErrorMessage(err) }), { position: "top-right" });
 			});
 	};
 
@@ -413,10 +415,10 @@ export default function ComplexityRouterPage() {
 				reset(toFormValues(res, decisionDefaults));
 				setEmbeddingSheetOpen(false);
 				setDecisionSheetOpen(false);
-				toast.success("Configuration saved", { position: "top-right" });
+				toast.success(t("governance:complexityRouter.toasts.configurationSaved"), { position: "top-right" });
 			})
 			.catch((err) => {
-				setSubmitError(`Couldn’t save the Complexity Router configuration. ${getErrorMessage(err)}`);
+				setSubmitError(t("governance:complexityRouter.errors.saveFailed", { error: getErrorMessage(err) }));
 			});
 	};
 
@@ -444,10 +446,10 @@ export default function ComplexityRouterPage() {
 	if (error && !data) {
 		return (
 			<div className="mx-auto w-full max-w-7xl space-y-4 px-4 pt-6 sm:px-6 sm:pt-8 lg:px-14">
-				<p className="text-sm font-medium">Couldn’t load the Complexity Router configuration.</p>
+				<p className="text-sm font-medium">{t("governance:complexityRouter.errors.loadFailed")}</p>
 				<p className="text-muted-foreground text-sm">{getErrorMessage(error)}</p>
 				<Button data-testid="complexity-router-fetch-retry-button" type="button" variant="outline" size="sm" onClick={() => refetch()}>
-					Retry
+					{t("common:actions.retry")}
 				</Button>
 			</div>
 		);
@@ -456,9 +458,9 @@ export default function ComplexityRouterPage() {
 	if (!data) {
 		return (
 			<div className="mx-auto w-full max-w-7xl space-y-4 px-4 pt-6 sm:px-6 sm:pt-8 lg:px-14">
-				<p className="text-muted-foreground font-mono text-sm">No complexity router configuration is available.</p>
+				<p className="text-muted-foreground font-mono text-sm">{t("governance:complexityRouter.errors.noConfig")}</p>
 				<Button data-testid="complexity-router-fetch-retry-button" type="button" variant="outline" size="sm" onClick={() => refetch()}>
-					Retry
+					{t("common:actions.retry")}
 				</Button>
 			</div>
 		);
@@ -482,10 +484,7 @@ export default function ComplexityRouterPage() {
 		isSemantic && willReembedAll ? (
 			<Alert variant="warning" data-testid="complexity-router-reembed-warning">
 				<TriangleAlert className="h-4 w-4" />
-				<AlertDescription>
-					Saving will embed all {totalPhrases} reference phrases through the selected provider. Changing the provider or model invalidates
-					every stored vector, so the whole list is embedded again. This uses embedding tokens and may take a short time.
-				</AlertDescription>
+				<AlertDescription>{t("governance:complexityRouter.warnings.reembedAll", { count: totalPhrases })}</AlertDescription>
 			</Alert>
 		) : null;
 
@@ -496,9 +495,10 @@ export default function ComplexityRouterPage() {
 			<Alert variant="warning" data-testid="complexity-router-new-phrase-warning">
 				<TriangleAlert className="h-4 w-4" />
 				<AlertDescription>
-					Saving will embed {newPhraseCount} new reference phrase
-					{newPhraseCount === 1 ? "" : "s"} through the selected provider. The other {reusedPhraseCount} reuse the embeddings this gateway
-					already holds.
+					{t("governance:complexityRouter.warnings.newPhrase", {
+						count: newPhraseCount,
+						reused: reusedPhraseCount,
+					})}
 				</AlertDescription>
 			</Alert>
 		) : null;
@@ -553,8 +553,8 @@ export default function ComplexityRouterPage() {
 	};
 
 	const steps = [
-		{ key: "classifier", title: "Classifier", enabled: canUpdate },
-		{ key: "setup", title: "Configuration", enabled: hasClassifier },
+		{ key: "classifier", title: t("governance:complexityRouter.steps.classifier"), enabled: canUpdate },
+		{ key: "setup", title: t("governance:complexityRouter.steps.configuration"), enabled: hasClassifier },
 	];
 	const stepIndex = step === "classifier" ? 0 : 1;
 
@@ -566,16 +566,15 @@ export default function ComplexityRouterPage() {
 			<form className="no-padding-parent flex h-full min-h-0 w-full flex-col p-4" onSubmit={submit} noValidate>
 				{/* PageTitle renders nothing inline; its badge and description are
 				    portalled into the topbar. */}
-				<PageTitle title="Complexity Router" beta>
+				<PageTitle title={t("governance:complexityRouter.title")} beta>
 					{liveClassifier === "decision"
-						? "The decision model classifies each new human request, filling the"
-						: "Each request takes the tier of its nearest semantic reference phrase, filling the"}{" "}
-					<code className="bg-muted rounded-sm px-1 py-0.5 font-mono text-xs">complexity_tier</code> field that routing rules target.
-					{isLLMFallbackEnabled ? " Requests matching no phrase confidently fall back to the LLM classifier." : ""}
-					{isSemantic && liveSemantic?.fallback === "decision"
-						? " Requests matching no phrase confidently fall back to the decision model."
-						: ""}
-					{liveSession.enabled ? " Session-aware routing keeps the highest tier reached during the active session." : ""}
+						? t("governance:complexityRouter.pageTitle.decisionLead")
+						: t("governance:complexityRouter.pageTitle.semanticLead")}{" "}
+					<code className="bg-muted rounded-sm px-1 py-0.5 font-mono text-xs">complexity_tier</code>
+					{t("governance:complexityRouter.pageTitle.tail")}
+					{isLLMFallbackEnabled ? ` ${t("governance:complexityRouter.pageTitle.llmFallback")}` : ""}
+					{isSemantic && liveSemantic?.fallback === "decision" ? ` ${t("governance:complexityRouter.pageTitle.decisionFallback")}` : ""}
+					{liveSession.enabled ? ` ${t("governance:complexityRouter.pageTitle.sessionSuffix")}` : ""}
 				</PageTitle>
 
 				{/* Same shape as the Edge inventory page: a slim step nav on the
@@ -602,10 +601,10 @@ export default function ComplexityRouterPage() {
 										<h2 className="text-lg font-semibold">{steps[stepIndex].title}</h2>
 										<p className="text-muted-foreground text-sm">
 											{step === "classifier"
-												? "Choose how each request is assigned a complexity tier. Switching later keeps the other classifier's settings, including your reference phrases."
+												? t("governance:complexityRouter.stepIntro.classifier")
 												: isSemantic
-													? "Each request takes the tier of its nearest reference phrase."
-													: "A decision model scores each new request into a tier."}
+													? t("governance:complexityRouter.stepIntro.semantic")
+													: t("governance:complexityRouter.stepIntro.decision")}
 										</p>
 									</div>
 									<div className="flex shrink-0 flex-wrap items-center gap-2 md:flex-nowrap">
@@ -635,12 +634,14 @@ export default function ComplexityRouterPage() {
 													data-testid="complexity-router-embedding-config-button"
 												>
 													<Settings2 className="size-3.5" />
-													{isClassifierConfigured ? "Edit embedding configuration" : "Configure embedding"}
+													{isClassifierConfigured
+														? t("governance:complexityRouter.header.editEmbeddingConfig")
+														: t("governance:complexityRouter.header.configureEmbedding")}
 													{hasUnsavedEmbeddingConfigChanges && (
 														<span
 															className="size-1.5 rounded-full bg-amber-500"
 															role="status"
-															aria-label="Unsaved embedding configuration changes"
+															aria-label={t("governance:complexityRouter.header.unsavedEmbeddingAria")}
 														/>
 													)}
 												</Button>
@@ -655,12 +656,12 @@ export default function ComplexityRouterPage() {
 												data-testid="complexity-router-decision-settings-button"
 											>
 												<Settings2 className="size-3.5" />
-												Edit model configuration
+												{t("governance:complexityRouter.header.editModelConfig")}
 												{hasUnsavedDecisionSettingsChanges && (
 													<span
 														className="size-1.5 rounded-full bg-amber-500"
 														role="status"
-														aria-label="Unsaved model configuration changes"
+														aria-label={t("governance:complexityRouter.header.unsavedModelAria")}
 													/>
 												)}
 											</Button>
@@ -668,7 +669,7 @@ export default function ComplexityRouterPage() {
 										<Button asChild variant="outline" size="sm" data-testid="complexity-router-docs-link">
 											<a href={"https://docs.getbifrost.ai/features/complexity-router"} target="_blank" rel="noopener noreferrer">
 												<ExternalLink className="size-3.5" />
-												Docs
+												{t("governance:complexityRouter.header.docs")}
 											</a>
 										</Button>
 									</div>
@@ -690,13 +691,18 @@ export default function ComplexityRouterPage() {
 								{step === "setup" && isSemantic && (
 									<div className="space-y-3">
 										<SectionHeading
-											title="Phrase to Tier Mapping"
+											title={t("governance:complexityRouter.phrases.heading")}
 											aside={
 												<span
 													className="text-muted-foreground font-mono text-[11px] tabular-nums"
 													data-testid="complexity-router-phrase-total"
 												>
-													{isClassifierConfigured ? `${totalPhrases} / ${MAX_SEMANTIC_PHRASES} phrases` : `${totalPhrases} phrases`}
+													{isClassifierConfigured
+														? t("governance:complexityRouter.phrases.totalWithMax", {
+																count: totalPhrases,
+																max: MAX_SEMANTIC_PHRASES,
+															})
+														: t("governance:complexityRouter.phrases.total", { count: totalPhrases })}
 												</span>
 											}
 										/>
@@ -764,7 +770,7 @@ export default function ComplexityRouterPage() {
 									disabled={!canContinue}
 									data-testid="complexity-router-next-button"
 								>
-									Next
+									{t("common:actions.next")}
 									<ArrowRight className="h-3.5 w-3.5" />
 								</Button>
 							) : (
@@ -778,7 +784,7 @@ export default function ComplexityRouterPage() {
 											data-testid="complexity-router-back-button"
 										>
 											<ArrowLeft className="h-3.5 w-3.5" />
-											Back
+											{t("common:actions.back")}
 										</Button>
 									)}
 									{/* The provider warning is already on screen when the decision model is primary; as
@@ -791,9 +797,13 @@ export default function ComplexityRouterPage() {
 										data-testid="complexity-router-footer-note"
 									>
 										{blockedOnDecisionProvider && isSemantic
-											? "The decision model is the fallback, and it needs a working provider before this can be saved."
+											? t("governance:complexityRouter.warnings.footerDecisionBlocked")
 											: !blockedOnDecisionProvider && liveClassifier !== toFormValues(data).classifier
-												? `Classifier changed to ${isSemantic ? "Semantic" : "Decision model"}. Not saved yet.`
+												? t("governance:complexityRouter.warnings.classifierChanged", {
+														classifier: isSemantic
+															? t("governance:complexityRouter.warnings.classifierSemantic")
+															: t("governance:complexityRouter.warnings.classifierDecisionModel"),
+													})
 												: ""}
 									</p>
 									{/* Each classifier restores only its own defaults: the semantic
@@ -808,7 +818,7 @@ export default function ComplexityRouterPage() {
 											disabled={!canUpdate || isSaving || isDecisionGuidanceAtDefaults}
 										>
 											<RotateCcw className="h-3.5 w-3.5" />
-											Restore defaults
+											{t("governance:shared.actions.restoreDefaults")}
 										</Button>
 									)}
 									{isSemantic && (
@@ -821,7 +831,7 @@ export default function ComplexityRouterPage() {
 											disabled={!canUpdate || isSaving || isResetting}
 										>
 											{isResetting ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
-											Restore defaults
+											{t("governance:shared.actions.restoreDefaults")}
 										</Button>
 									)}
 									<Button
@@ -832,11 +842,11 @@ export default function ComplexityRouterPage() {
 										onClick={handleDiscard}
 										disabled={!isDirty || isSaving || isResetting || isFetching}
 									>
-										Discard changes
+										{t("governance:shared.actions.discardChanges")}
 									</Button>
 									<Button data-testid="complexity-router-save-changes-button" type="submit" size="sm" disabled={!canSave || isSaving}>
 										{isSaving ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-										{isSaving ? "Saving…" : "Save changes"}
+										{isSaving ? t("governance:shared.state.saving") : t("governance:shared.actions.saveChanges")}
 									</Button>
 								</>
 							)}
@@ -883,12 +893,8 @@ export default function ComplexityRouterPage() {
 			<AlertDialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Restore defaults</AlertDialogTitle>
-						<AlertDialogDescription>
-							This will replace the phrase to tier mapping with the default reference phrases. Your current phrases will be lost and this
-							action cannot be undone. Your embedding configuration is kept, so classification keeps running and the restored phrases are
-							embedded through the configured provider straight away.
-						</AlertDialogDescription>
+						<AlertDialogTitle>{t("governance:complexityRouter.restoreDialog.title")}</AlertDialogTitle>
+						<AlertDialogDescription>{t("governance:complexityRouter.restoreDialog.description")}</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel
@@ -896,7 +902,7 @@ export default function ComplexityRouterPage() {
 							onClick={() => setRestoreDialogOpen(false)}
 							disabled={isResetting}
 						>
-							Cancel
+							{t("common:actions.cancel")}
 						</AlertDialogCancel>
 						<AlertDialogAction
 							data-testid="complexity-router-restore-confirm-button"
@@ -906,7 +912,7 @@ export default function ComplexityRouterPage() {
 							}}
 							disabled={!canUpdate || isResetting}
 						>
-							Restore defaults
+							{t("governance:shared.actions.restoreDefaults")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

@@ -5,10 +5,12 @@ import { RoutingRule } from "@/lib/types/routingRules";
 import { Position } from "@xyflow/react";
 import { Link2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { RULE_W, SCOPE_CONFIG, type ScopeKey } from "../constants";
 import { RFEdgeHandle } from "./rfEdgeHandle";
 
 export function RFRuleNode({ data }: { data: any }) {
+	const { t } = useTranslation(["common", "governance"]);
 	const rule = data.rule as RoutingRule;
 	const scopeColor = data.scopeColor as string;
 	const cfg = SCOPE_CONFIG[rule.scope as ScopeKey];
@@ -72,9 +74,9 @@ export function RFRuleNode({ data }: { data: any }) {
 					<div className="flex items-center gap-1">
 						{rule.targets
 							.slice(0, 4)
-							.map((t, i) =>
-								t.provider ? (
-									<RenderProviderIcon key={i} provider={t.provider as ProviderIconType} size={12} />
+							.map((target, i) =>
+								target.provider ? (
+									<RenderProviderIcon key={i} provider={target.provider as ProviderIconType} size={12} />
 								) : (
 									<span key={i} className="bg-muted-foreground/30 h-2 w-2 rounded-full" />
 								),
@@ -111,27 +113,33 @@ export function RFRuleNode({ data }: { data: any }) {
 							</div>
 						)}
 						<p className="mb-1 px-3 text-[10px] font-semibold tracking-wide uppercase" style={{ color: scopeColor }}>
-							{rule.chain_rule ? "Resolved target (new input)" : "Targets"}
+							{rule.chain_rule ? t("governance:routingRules.tree.resolvedTarget") : t("governance:routingRules.tree.targets")}
 						</p>
-						{rule.targets.map((t, i) => {
-							const isPassthrough = !t.provider && !t.model;
+						{rule.targets.map((target, i) => {
+							const isPassthrough = !target.provider && !target.model;
 							return (
 								<div key={i} className="hover:bg-muted flex items-center gap-2 px-3 py-1.5">
-									{t.provider ? (
-										<RenderProviderIcon provider={t.provider as ProviderIconType} size={13} />
+									{target.provider ? (
+										<RenderProviderIcon provider={target.provider as ProviderIconType} size={13} />
 									) : (
 										<span className="bg-muted-foreground/30 h-3 w-3 flex-shrink-0 rounded-full" />
 									)}
 									<div className="min-w-0 flex-1">
 										<p className="text-foreground truncate text-xs font-medium">
-											{isPassthrough ? "Passthrough" : t.provider ? getProviderLabel(t.provider) : t.model}
+											{isPassthrough
+												? t("governance:routingRules.tree.passthrough")
+												: target.provider
+													? getProviderLabel(target.provider)
+													: target.model}
 										</p>
-										{t.model && t.provider && <p className="text-muted-foreground truncate font-mono text-[10px]">{t.model}</p>}
+										{target.model && target.provider && (
+											<p className="text-muted-foreground truncate font-mono text-[10px]">{target.model}</p>
+										)}
 										{isPassthrough && <p className="text-muted-foreground/60 text-[10px] italic">original provider &amp; model</p>}
 									</div>
 									{multi && (
 										<span className="ml-1 shrink-0 text-[11px] font-semibold" style={{ color: scopeColor }}>
-											{Math.round(t.weight * 100)}%
+											{Math.round(target.weight * 100)}%
 										</span>
 									)}
 								</div>
