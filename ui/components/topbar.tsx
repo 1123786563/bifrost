@@ -11,6 +11,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdownMenu";
+import { LanguageSwitcher } from "@/components/ui/languageSwitcher";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { IS_ENTERPRISE } from "@/lib/constants/config";
 import { useDescriptionSlotRef, useMobileFilterSlotRef, useTopbarTitle } from "@/lib/contexts/topbarContext";
@@ -189,6 +190,7 @@ export default function Topbar() {
 			    it's a display preference, not an account action. */}
 			<span ref={setMobileFilterSlot} className="flex shrink-0 items-center md:hidden" />
 			<NotificationCenter />
+			<LanguageSwitcher />
 			<ThemeToggle />
 			<WarpLauncher />
 
