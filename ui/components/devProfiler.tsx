@@ -163,6 +163,7 @@ function GoroutineHealthSection({
 	onSkipGoroutine,
 	onClearSkipped,
 }: GoroutineHealthProps): React.ReactNode {
+	const { t } = useTranslation(["common", "settings"]);
 	if (!goroutineData) return null;
 
 	const { summary, total_goroutines } = goroutineData;
@@ -335,6 +336,7 @@ function GoroutineHealthSection({
 }
 
 export function DevProfiler(): React.ReactNode {
+	const { t } = useTranslation(["common", "settings"]);
 	const [isVisible, setIsVisible] = useState<boolean>(() => loadBooleanFromStorage(PROFILER_VISIBLE_KEY, true));
 	const [isExpanded, setIsExpanded] = useState<boolean>(() => loadBooleanFromStorage(PROFILER_EXPANDED_KEY, true));
 	const [isDismissed, setIsDismissed] = useState(false);
@@ -733,4 +735,3 @@ export function DevProfiler(): React.ReactNode {
 		</div>
 	);
 }
-const { t } = useTranslation(["common", "settings"]);
