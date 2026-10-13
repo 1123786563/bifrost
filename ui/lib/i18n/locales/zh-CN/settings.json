@@ -605,7 +605,8 @@
 		"disableAutoInjectDescPre": "启用后，MCP 工具不会自动包含在每个请求中。只有通过请求头（",
 		"disableAutoInjectDescPost": "）显式指定时才会注入工具，且仍须 Virtual Key 的 MCP 配置允许。",
 		"maxInstrTotalDescPre": "调用方可见的所有服务器的总上限。在",
-		"maxInstrTotalDescPost": "中它会附加到每个携带 MCP 的请求上，调高它会增加每请求的 token 数。设为 0 使用默认值 16384。"
+		"maxInstrTotalDescPost": "中它会附加到每个携带 MCP 的请求上，调高它会增加每请求的 token 数。设为 0 使用默认值 16384。",
+		"blockedHostsPlaceholder": "添加主机、IP 或 CIDR(回车或逗号分隔)"
 	},
 	"security": {
 		"title": "安全设置",

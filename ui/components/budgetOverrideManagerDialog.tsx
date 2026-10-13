@@ -49,7 +49,7 @@ export function BudgetOverrideManagerDialog({
 	onSave,
 	onRemove,
 	disabled,
-	triggerLabel = "Add override",
+	triggerLabel,
 }: BudgetOverrideManagerDialogProps) {
 	const { t } = useTranslation(["common", "workspaces"]);
 	const [open, setOpen] = useState(false);
@@ -84,7 +84,7 @@ export function BudgetOverrideManagerDialog({
 			...(mode === "cycles" ? { cycles: parsedCycles } : {}),
 		});
 		if (!parsed.success) {
-			setError(parsed.error.issues[0]?.message ?? "Invalid input");
+			setError(parsed.error.issues[0]?.message ?? t("workspaces:budgetOverride.invalidInput"));
 			return;
 		}
 		setBusyKey(row.key);
@@ -133,8 +133,11 @@ export function BudgetOverrideManagerDialog({
 						<p className="truncate text-sm font-medium">{row.label}</p>
 						<p className="text-muted-foreground text-xs">
 							{active
-								? `+${formatCurrency(b.override_amount ?? 0)} override · effective ${formatCurrency(getEffectiveBudgetLimit(b))}`
-								: `Base ${formatCurrency(b.max_limit)}`}
+								? t("workspaces:budgetOverride.activeLine", {
+										amount: formatCurrency(b.override_amount ?? 0),
+										effective: formatCurrency(getEffectiveBudgetLimit(b)),
+									})
+								: t("workspaces:budgetOverride.baseLine", { amount: formatCurrency(b.max_limit) })}
 						</p>
 					</div>
 					<div className="flex shrink-0 items-center gap-1">
@@ -150,7 +153,7 @@ export function BudgetOverrideManagerDialog({
 									data-testid={`budget-override-edit-${b.id}`}
 								>
 									<Pencil className="h-3 w-3" />
-									Edit
+									{t("common:actions.edit")}
 								</Button>
 								<Button
 									type="button"
@@ -162,7 +165,7 @@ export function BudgetOverrideManagerDialog({
 									onClick={() => remove(row)}
 									data-testid={`budget-override-remove-${b.id}`}
 								>
-									Remove
+									{t("common:actions.remove")}
 								</Button>
 							</>
 						) : (
@@ -176,7 +179,7 @@ export function BudgetOverrideManagerDialog({
 								data-testid={`budget-override-add-${b.id}`}
 							>
 								<Plus className="h-3 w-3" />
-								Add override
+								{t("workspaces:budgetOverride.addOverride")}
 							</Button>
 						)}
 					</div>
@@ -187,7 +190,7 @@ export function BudgetOverrideManagerDialog({
 						<div className="grid grid-cols-2 gap-3">
 							<div className="space-y-1.5">
 								<Label className="text-xs" htmlFor={`override-amount-${b.id}`}>
-									Additional budget
+									{t("workspaces:budgetOverride.additionalBudget")}
 								</Label>
 								<div className="relative">
 									<span
@@ -227,7 +230,7 @@ export function BudgetOverrideManagerDialog({
 						{mode === "cycles" ? (
 							<div className="space-y-1.5">
 								<Label className="text-xs" htmlFor={`override-cycles-${b.id}`}>
-									Reset cycles
+									{t("workspaces:budgetOverride.resetCycles")}
 								</Label>
 								<Input
 									id={`override-cycles-${b.id}`}
@@ -242,7 +245,7 @@ export function BudgetOverrideManagerDialog({
 								/>
 								{validUntil ? (
 									<p className="text-muted-foreground text-xs">
-										Valid until <span className="text-foreground font-medium">{validUntil.toLocaleString()}</span>
+										{t("workspaces:budgetOverride.validUntil")} <span className="text-foreground font-medium">{validUntil.toLocaleString()}</span>
 									</p>
 								) : null}
 							</div>
@@ -264,7 +267,7 @@ export function BudgetOverrideManagerDialog({
 								disabled={busy}
 								data-testid={`budget-override-cancel-${b.id}`}
 							>
-								Cancel
+								{t("common:actions.cancel")}
 							</Button>
 							<Button
 								type="button"
@@ -274,7 +277,7 @@ export function BudgetOverrideManagerDialog({
 								isLoading={busy}
 								data-testid="budget-override-save"
 							>
-								{active ? "Update" : "Add"}
+								{active ? t("common:actions.update") : t("common:actions.add")}
 							</Button>
 						</div>
 					</div>
@@ -304,7 +307,7 @@ export function BudgetOverrideManagerDialog({
 					data-testid="budget-override-open"
 				>
 					<Plus className="h-3 w-3" />
-					{triggerLabel}
+					{triggerLabel ?? t("workspaces:budgetOverride.addOverride")}
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="rounded-sm sm:max-w-lg" data-testid="budget-override-manager-dialog">

@@ -221,7 +221,7 @@ export function ValueEditor({
 				values={options}
 				value={value || ""}
 				onChange={(newValue: string) => handleOnChange(newValue)}
-				placeholder={fieldData.placeholder || "Select..."}
+				placeholder={fieldData.placeholder || t("workspaces:celBuilder.select")}
 				className="w-[360px]"
 				noPortal
 			/>
@@ -230,7 +230,7 @@ export function ValueEditor({
 				value={value || null}
 				onValueChange={(newValue) => handleOnChange(newValue ?? "")}
 				options={options}
-				placeholder={fieldData.placeholder || "Select..."}
+				placeholder={fieldData.placeholder || t("workspaces:celBuilder.select")}
 				className="h-9 w-[360px]"
 				noPortal
 			/>
@@ -253,10 +253,10 @@ export function ValueEditor({
 	}
 
 	const placeholder = isArrayOperator
-		? "Enter comma-separated values or JSON array"
+		? t("workspaces:celBuilder.phArray")
 		: isRegexOperator
-			? "e.g., .* (any), openai|anthropic (multiple), ^gpt.* (prefix)"
-			: fieldData?.placeholder || "Enter value...";
+			? t("workspaces:celBuilder.phRegex")
+			: fieldData?.placeholder || t("workspaces:celBuilder.phValue");
 
 	// Use textarea for array inputs
 	if (isArrayOperator) {

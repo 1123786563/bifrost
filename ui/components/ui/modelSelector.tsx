@@ -18,7 +18,7 @@ import { isSentinelValue } from "@/lib/utils/strings";
 import { ChevronDownIcon, Loader2Icon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 /** One row in the dropdown, after the consumer has had a say in it. */
 export interface ModelSelectorOption {
@@ -142,8 +142,8 @@ export function ModelSelector(props: ModelSelectorProps) {
 		decisions = false,
 		serverSearch = true,
 		pageSize = DEFAULT_PAGE_SIZE,
-		placeholder = "Select model",
-		searchPlaceholder = "Search models...",
+		placeholder = t("workspaces:modelSelector.selectModel"),
+		searchPlaceholder = t("workspaces:modelSelector.searchModels"),
 		disabled = false,
 		className,
 		contentClassName,
@@ -230,7 +230,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 			};
 			if (disableDeprecated && model.is_deprecated) {
 				base.disabled = true;
-				base.disabledReason = "Deprecated";
+				base.disabledReason = t("workspaces:modelSelector.deprecated");
 			}
 			const override = getOptionState?.(base);
 			return override ? { ...base, ...override } : base;
@@ -239,7 +239,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 		// disabled by the consumer, and the two have to end up in one order. A row nobody
 		// can pick never sits above one they can.
 		return mapped.sort((a, b) => Number(Boolean(a.disabled)) - Number(Boolean(b.disabled)));
-	}, [rows, disableDeprecated, getOptionState]);
+	}, [rows, disableDeprecated, getOptionState, t]);
 
 	const extraValues = useMemo(() => new Set((extraOptions ?? []).map((o) => o.value)), [extraOptions]);
 
@@ -393,7 +393,9 @@ export function ModelSelector(props: ModelSelectorProps) {
 			}}
 			className={cn(option.disabled && "cursor-not-allowed")}
 		>
-			<span className={cn("min-w-0 grow truncate", option.disabled && "text-muted-foreground")}>{option.label}</span>
+			<span className={cn("min-w-0 grow truncate", option.disabled && "text-muted-foreground")}>
+				{option.value === "*" ? t("workspaces:selectors.allModels") : option.label}
+			</span>
 			{!provider && option.provider && <span className="text-muted-foreground shrink-0 text-xs">{getProviderLabel(option.provider)}</span>}
 			{option.disabled && option.disabledReason && (
 				<Badge variant="outline" className="shrink-0 text-[10px] font-medium tracking-wide uppercase">
@@ -405,7 +407,8 @@ export function ModelSelector(props: ModelSelectorProps) {
 
 	// An extra row carries a label the value does not, "*" reading as "All Models", and the
 	// trigger has to say the same thing the list did.
-	const labelFor = (value: string) => extraOptions?.find((o) => o.value === value)?.label ?? value;
+	const labelFor = (value: string) =>
+		value === "*" ? t("workspaces:selectors.allModels") : (extraOptions?.find((o) => o.value === value)?.label ?? value);
 
 	return (
 		<Combobox
@@ -451,7 +454,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 									<span
 										role="button"
 										tabIndex={-1}
-										aria-label={`Remove ${labelFor(value)}`}
+										aria-label={t("workspaces:modelSelector.removeAria", { name: labelFor(value) })}
 										className="text-muted-foreground hover:text-foreground flex shrink-0 cursor-pointer items-center"
 										onClick={(e) => {
 											e.preventDefault();
@@ -524,7 +527,12 @@ export function ModelSelector(props: ModelSelectorProps) {
 						<ComboboxItem value={`${CUSTOM_VALUE_PREFIX}${trimmedSearch}`} onSelect={() => toggle(trimmedSearch)}>
 							<PlusIcon className="size-3.5 shrink-0 opacity-60" />
 							<span className="min-w-0 grow truncate">
-								Use <span className="font-medium">{trimmedSearch}</span>
+								<Trans
+									t={t}
+									i18nKey="workspaces:modelSelector.useCustom"
+									values={{ name: trimmedSearch }}
+									components={{ b: <span className="font-medium" /> }}
+								/>
 							</span>
 						</ComboboxItem>
 					)}
@@ -532,7 +540,9 @@ export function ModelSelector(props: ModelSelectorProps) {
 					{/* cmdk decides when this shows, which also covers client-side filtering to zero. */}
 					{!isSearching && (
 						<ComboboxEmpty className="text-muted-foreground">
-							{isError ? "Couldn't load models." : (emptyMessage ?? (search ? "No matching models." : "No models available."))}
+							{isError
+								? t("workspaces:modelSelector.loadFailed")
+								: (emptyMessage ?? (search ? t("workspaces:modelSelector.noMatching") : t("workspaces:modelSelector.noneAvailable")))}
 						</ComboboxEmpty>
 					)}
 

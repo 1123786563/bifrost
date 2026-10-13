@@ -172,6 +172,7 @@ function CombinatorPill({ combinator }: { combinator: string }) {
 }
 
 function ConditionGroup({ group, depth = 0 }: { group: RuleGroupType; depth?: number }) {
+	const { t } = useTranslation(["common", "governance"]);
 	const rules = group.rules ?? [];
 	if (rules.length === 0) return null;
 
@@ -186,7 +187,9 @@ function ConditionGroup({ group, depth = 0 }: { group: RuleGroupType; depth?: nu
 
 	return (
 		<div className="border-foreground/25 relative mx-3 my-1 rounded border border-dashed py-1">
-			<span className="bg-background text-muted-foreground absolute -top-2 right-2 rounded px-1 text-[10px] font-medium">Group</span>
+			<span className="bg-background text-muted-foreground absolute -top-2 right-2 rounded px-1 text-[10px] font-medium">
+				{t("governance:routingRules.info.group")}
+			</span>
 			{content}
 		</div>
 	);
@@ -254,7 +257,10 @@ function FallbackChain({ fallbacks }: { fallbacks: RoutingFallbackWire[] }) {
 							{provider && <RenderProviderIcon provider={provider as ProviderIconType} size="sm" className="h-3.5 w-3.5 shrink-0" />}
 							<span className="font-mono text-xs">{model ? `${providerLabel}/${model}` : providerLabel}</span>
 							{key_id && (
-								<span className="text-muted-foreground flex items-center gap-1 border-l pl-1.5" title={`Pinned key: ${key_id}`}>
+								<span
+									className="text-muted-foreground flex items-center gap-1 border-l pl-1.5"
+									title={`${t("governance:routingRules.info.pinnedKey")} ${key_id}`}
+								>
 									<Key className="h-3 w-3 shrink-0" />
 									<span className="max-w-24 truncate font-mono text-xs">{key_id}</span>
 								</span>
@@ -303,11 +309,11 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 											<TooltipTrigger asChild>
 												<Badge variant="outline" className="cursor-default gap-1">
 													<GitMerge className="h-3 w-3" />
-													t("governance:routingRules.chainRule")
+													{t("governance:routingRules.chainRule")}
 												</Badge>
 											</TooltipTrigger>
 											<TooltipContent className="max-w-64">
-												After this rule matches, routing rules are re-evaluated using the resolved provider/model as the new context.
+												{t("governance:routingRules.info.chainRuleTooltip")}
 											</TooltipContent>
 										</Tooltip>
 									)}
@@ -330,7 +336,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 								<h3 className="text-sm font-semibold">{t("governance:routingRules.overview")}</h3>
 								<div className="grid gap-3">
 									<div className="grid grid-cols-1 items-center gap-4 md:grid-cols-3">
-										<span className="text-muted-foreground text-sm">Scope</span>
+										<span className="text-muted-foreground text-sm">{t("governance:routingRules.table.headers.scope")}</span>
 										<div className="col-span-2 flex items-center gap-1.5">
 											<Badge variant="secondary">{getScopeLabel(rule.scope)}</Badge>
 											{scopeName && <span className="text-sm">{scopeName}</span>}
@@ -363,7 +369,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 								{/* CEL expression */}
 								<div className="space-y-1.5">
 									<div className="flex items-center justify-between">
-										<span className="text-sm font-semibold">CEL Expression</span>
+										<span className="text-sm font-semibold">{t("governance:routingRules.info.celExpression")}</span>
 										<CopyButton
 											value={rule.cel_expression}
 											label={t("governance:routingRules.info.expressionLabel")}
@@ -380,7 +386,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 
 							{/* Targets */}
 							<div className="space-y-3">
-								<h3 className="text-sm font-semibold">Targets ({targets.length})</h3>
+								<h3 className="text-sm font-semibold">{t("governance:routingRules.info.targetsCount", { count: targets.length })}</h3>
 								{targets.length > 0 ? (
 									<div className="space-y-2">
 										{targets.map((target, i) => (

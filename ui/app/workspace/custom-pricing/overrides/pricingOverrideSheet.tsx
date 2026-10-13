@@ -182,7 +182,7 @@ export function renderFields(
 		<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 			{fields.map((field) => (
 				<div key={field.key} className="space-y-2 pb-1">
-					<Label>{field.label}</Label>
+					<Label>{fieldLabelByKey[field.key] ?? field.label}</Label>
 					<Input
 						data-testid={`pricing-override-field-input-${field.key}`}
 						type="text"

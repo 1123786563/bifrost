@@ -1,5 +1,6 @@
 import { Database } from "lucide-react";
 import ContactUsView from "../../views/contactUsView";
+import { useTranslation } from "react-i18next";
 
 interface EnableToggleProps {
 	enabled: boolean;
@@ -14,6 +15,7 @@ interface BigQueryConnectorViewProps {
 }
 
 export default function BigQueryConnectorView(_props: BigQueryConnectorViewProps) {
+	const { t } = useTranslation(["errors"]);
 	return (
 		<div className="space-y-6">
 			{/* Content - OSS: paywall only; no delete/save buttons */}
@@ -23,8 +25,8 @@ export default function BigQueryConnectorView(_props: BigQueryConnectorViewProps
 						align="middle"
 						className="mx-auto w-full max-w-lg"
 						icon={<Database className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />}
-						title="Unlock native BigQuery data ingestion for analytics"
-						description="This feature is a part of the Bifrost enterprise license. We would love to know more about your use case and how we can help you."
+						title={t("errors:upsell.bigquery.title")}
+						description={t("errors:upsell.bigquery.description")}
 						readmeLink="https://docs.getbifrost.ai/enterprise/bigquery-connector"
 					/>
 				</div>

@@ -187,10 +187,10 @@ export function ProviderConfigCard({
 	const headerSummary =
 		[
 			budgetLinesLabel(value.budgets, ""),
-			modelBudgetCount > 0 ? `${modelBudgetCount} model budget${modelBudgetCount === 1 ? "" : "s"}` : "",
+			modelBudgetCount > 0 ? t("workspaces:providerConfigs.modelBudgetCount", { count: modelBudgetCount }) : "",
 		]
 			.filter(Boolean)
-			.join(" · ") || "No budget";
+			.join(" · ") || t("workspaces:providerConfigs.noBudget");
 	const ws = globalProviderCap;
 
 	// Key scope handed to ModelSelector so model suggestions match the keys
@@ -202,13 +202,13 @@ export function ProviderConfigCard({
 
 	// Collapsed access summary.
 	const keysSummary = value.keyIds.includes("*")
-		? "All keys"
+		? t("workspaces:providerConfigs.allKeys")
 		: value.keyIds.length > 0
-			? `${value.keyIds.length} key${value.keyIds.length > 1 ? "s" : ""}`
-			: "No keys";
+			? t("workspaces:providerConfigs.keyCount", { count: value.keyIds.length })
+			: t("workspaces:providerConfigs.noKeys");
 	const modelsSummary = summarizeGrantModelAccess(value.allowedModels, value.blacklistedModels);
 	const hasRl = value.rateLimit?.token_max_limit != null || value.rateLimit?.request_max_limit != null;
-	const rlSummary = hasRl ? "Rate limits set" : "No rate limits";
+	const rlSummary = hasRl ? t("workspaces:providerConfigs.rateLimitsSet") : t("workspaces:providerConfigs.noRateLimits");
 
 	return (
 		<div className="bg-card overflow-hidden rounded-md border">
@@ -237,7 +237,7 @@ export function ProviderConfigCard({
 						e.stopPropagation();
 						onRemove();
 					}}
-					aria-label={`Remove provider ${providerLabel}`}
+					aria-label={t("workspaces:providerConfigs.removeProviderAria", { name: providerLabel })}
 					data-testid={`${tid}-delete-provider-${index}`}
 					className="text-muted-foreground shrink-0 cursor-pointer rounded-sm p-1 hover:text-red-400"
 				>
@@ -267,11 +267,11 @@ export function ProviderConfigCard({
 						)}
 					>
 						<span className="text-muted-foreground/50 text-sm">└</span>
-						<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">Provider budget</span>
+						<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">{t("workspaces:providerConfigs.providerBudget")}</span>
 						<span className="text-muted-foreground min-w-0 flex-1 truncate text-sm">{capLabel}</span>
 						{ws != null && (
 							<span className="text-muted-foreground/70 shrink-0 text-sm whitespace-nowrap">
-								Global provider cap {money(ws.max_limit)}
+								{t("workspaces:providerConfigs.globalProviderCap", { amount: money(ws.max_limit) })}
 								{ws.reset_duration ? `/${shortPeriod(ws.reset_duration)}` : ""}
 							</span>
 						)}
@@ -283,7 +283,7 @@ export function ProviderConfigCard({
 						<div className="bg-muted/30 border-t py-3 pr-3.5 pl-16">
 							<MultiBudgetLines
 								data-testid={`${tid}-provider-budget-${index}`}
-								label="Provider Budget"
+								label={t("workspaces:providerConfigs.providerBudget")}
 								lines={(value.budgets || []).map((b) => ({
 									id: b.id,
 									max_limit: b.max_limit,
@@ -320,11 +320,11 @@ export function ProviderConfigCard({
 								className="hover:bg-accent/30 flex cursor-pointer items-center gap-2.5 border-t py-2.5 pr-3.5 pl-10"
 							>
 								<span className="text-muted-foreground/50 text-sm">└</span>
-								<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">Model budgets</span>
+								<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">{t("workspaces:providerConfigs.modelBudgets")}</span>
 								<span className="text-muted-foreground/60 min-w-0 flex-1 truncate text-sm">
 									{modelsOpen
-										? "If you skip this, models share the provider budget freely"
-										: `${modelBudgets.length} model budget${modelBudgets.length === 1 ? "" : "s"}`}
+										? t("workspaces:providerConfigs.modelsShareProviderBudget")
+										: t("workspaces:providerConfigs.modelBudgetCount", { count: modelBudgets.length })}
 								</span>
 								<ChevronDown
 									className={cn(
@@ -357,10 +357,10 @@ export function ProviderConfigCard({
 												<span className="text-muted-foreground/50 shrink-0 text-sm">└</span>
 												<span className={cn("h-[7px] w-[7px] shrink-0 rounded-[2px]", swatchClass(mbIndex))} />
 												<span className="text-foreground/90 min-w-0 flex-1 truncate text-sm font-medium">
-													{mb.model_name || "Select a model…"}
+													{mb.model_name || t("workspaces:providerConfigs.selectModel")}
 												</span>
 												<span className="text-muted-foreground shrink-0 text-sm whitespace-nowrap">
-													{budgetLinesLabel(mb.budgets, "No cap")}
+													{budgetLinesLabel(mb.budgets, t("workspaces:providerConfigs.noCap"))}
 												</span>
 												<button
 													type="button"
@@ -369,7 +369,7 @@ export function ProviderConfigCard({
 														update({ modelBudgets: modelBudgets.filter((_, i) => i !== mbIndex) });
 														setOpenModelEditor((prev) => (prev === mb.model_name ? null : prev));
 													}}
-													aria-label={`Remove model budget ${mb.model_name || ""}`}
+													aria-label={t("workspaces:providerConfigs.removeModelBudget", { name: mb.model_name || "" })}
 													className="text-muted-foreground shrink-0 cursor-pointer rounded-sm p-1 hover:text-red-400"
 												>
 													<Trash2 className="h-3 w-3" />
@@ -385,7 +385,7 @@ export function ProviderConfigCard({
 												<div className="bg-muted/30 space-y-4 border-t py-3 pr-3.5 pl-16">
 													<MultiBudgetLines
 														data-testid={`${tid}-model-budget-lines-${index}-${mbIndex}`}
-														label="Model Budget"
+														label={t("workspaces:providerConfigs.modelBudgets")}
 														lines={(mb.budgets || []).map((b) => ({
 															id: b.id,
 															max_limit: b.max_limit,
@@ -414,7 +414,7 @@ export function ProviderConfigCard({
 														id={`${tid}-modelTokenLimit-${index}-${mbIndex}`}
 														dataTestId={`${tid}-modelTokenLimit-${index}-${mbIndex}`}
 														labelClassName="font-medium"
-														label="Maximum tokens"
+														label={t("workspaces:providerConfigs.maximumTokens")}
 														placeholder={t("workspaces:inputs.noLimit")}
 														value={mb.rate_limit?.token_max_limit}
 														selectValue={mb.rate_limit?.token_reset_duration || "1h"}
@@ -447,7 +447,7 @@ export function ProviderConfigCard({
 														id={`${tid}-modelRequestLimit-${index}-${mbIndex}`}
 														dataTestId={`${tid}-modelRequestLimit-${index}-${mbIndex}`}
 														labelClassName="font-medium"
-														label="Maximum requests"
+														label={t("workspaces:providerConfigs.maximumRequests")}
 														placeholder={t("workspaces:inputs.noLimit")}
 														value={mb.rate_limit?.request_max_limit}
 														selectValue={mb.rate_limit?.request_reset_duration || "1h"}
@@ -521,7 +521,7 @@ export function ProviderConfigCard({
 						className="hover:bg-accent/30 flex cursor-pointer items-center gap-2.5 border-t py-2.5 pr-3.5 pl-10"
 					>
 						<span className="text-muted-foreground/50 text-sm">└</span>
-						<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">Access & rate limits</span>
+						<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">{t("workspaces:providerConfigs.accessAndRateLimits")}</span>
 						<span className="text-muted-foreground/60 min-w-0 flex-1 truncate text-sm" data-testid={`${tid}-access-summary-${index}`}>
 							{keysSummary} · {modelsSummary} · {rlSummary}
 						</span>
@@ -550,8 +550,8 @@ export function ProviderConfigCard({
 											value: key.key_id,
 											description:
 												key.models == null || key.models.includes("*")
-													? "All models"
-													: key.models.filter((m) => m !== "*").join(", ") || "No models (deny all)",
+													? t("workspaces:providerConfigs.allModels")
+													: key.models.filter((m) => m !== "*").join(", ") || t("workspaces:providerConfigs.noModelsDenyAll"),
 										})),
 									];
 									const selectedProviderKeys = hasWildcard
@@ -563,8 +563,8 @@ export function ProviderConfigCard({
 													value: key.key_id,
 													description:
 														key.models == null || key.models.includes("*")
-															? "All models"
-															: key.models.filter((m) => m !== "*").join(", ") || "No models (deny all)",
+															? t("workspaces:providerConfigs.allModels")
+															: key.models.filter((m) => m !== "*").join(", ") || t("workspaces:providerConfigs.noModelsDenyAll"),
 												}));
 									return (
 										<div className="w-[260px] shrink-0 space-y-1.5">
@@ -596,7 +596,7 @@ export function ProviderConfigCard({
 															{multiValueProps.data.label}
 															<button
 																type="button"
-																aria-label={`Remove ${multiValueProps.data.label}`}
+																aria-label={t("workspaces:providerConfigs.removeKeyAria", { name: multiValueProps.data.label })}
 																className="hover:text-foreground text-muted-foreground flex cursor-pointer items-center"
 																onClick={(e) => {
 																	e.stopPropagation();
@@ -627,7 +627,13 @@ export function ProviderConfigCard({
 														);
 													},
 												}}
-												placeholder={hasWildcard ? "All keys allowed" : configKeyIds.length === 0 ? "No keys selected" : "Select keys..."}
+												placeholder={
+													hasWildcard
+														? t("workspaces:providerConfigs.allKeysAllowed")
+														: configKeyIds.length === 0
+															? t("workspaces:providerConfigs.noKeysSelected")
+															: t("workspaces:providerConfigs.selectKeys")
+												}
 												className="hover:bg-accent w-full"
 												menuClassName="z-[60] max-h-[300px] overflow-y-auto w-full cursor-pointer custom-scrollbar"
 											/>
@@ -678,7 +684,7 @@ export function ProviderConfigCard({
 								id={`${tid}-providerTokenLimit-${index}`}
 								dataTestId={`${tid}-providerTokenLimit-${index}`}
 								labelClassName="font-medium"
-								label="Maximum tokens"
+								label={t("workspaces:providerConfigs.maximumTokens")}
 								placeholder={t("workspaces:inputs.noLimit")}
 								value={value.rateLimit?.token_max_limit}
 								selectValue={value.rateLimit?.token_reset_duration || "1h"}
@@ -696,7 +702,7 @@ export function ProviderConfigCard({
 								id={`${tid}-providerRequestLimit-${index}`}
 								dataTestId={`${tid}-providerRequestLimit-${index}`}
 								labelClassName="font-medium"
-								label="Maximum requests"
+								label={t("workspaces:providerConfigs.maximumRequests")}
 								placeholder={t("workspaces:inputs.noLimit")}
 								value={value.rateLimit?.request_max_limit}
 								selectValue={value.rateLimit?.request_reset_duration || "1h"}

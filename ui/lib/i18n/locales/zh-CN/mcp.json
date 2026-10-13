@@ -246,6 +246,16 @@
 		}
 	},
 	"addVirtualKey": "添加 Virtual Key",
+	"editors": {
+		"configsLabel": "MCP 服务器配置",
+		"configsTooltip": "配置此 Virtual Key 可使用的 MCP 服务器及其允许的工具。此部分留空将禁用所有 MCP 工具。添加 MCP 服务器后，必须选择特定工具或选择<em>{{allowAll}}</em>才能授予工具访问权限。",
+		"defaultsNote": "以下 MCP 服务器默认允许（启用所有工具），适用于未显式配置它们的任何 Virtual Key：<em>{{servers}}</em>。在下方为其添加显式配置将覆盖该“所有工具”默认值。",
+		"serverCol": "MCP 服务器",
+		"allowAllToolsDesc": "允许所有当前及未来的工具",
+		"removeAria": "移除 {{name}}",
+		"vmcpLabel": "Virtual MCP 服务器配置",
+		"vmcpFallbackName": "Virtual MCP #{{id}}"
+	},
 	"agents": {
 		"title": "Agent 目录",
 		"subtitle": "管理通过 gateway 服务的上游 A2A agent。",
@@ -450,7 +460,11 @@
 			"fetchToContinue": "请获取代理卡片以继续。",
 			"create": "创建",
 			"fetchFirstOrManual": "请先获取代理卡片,或手动配置身份验证。",
-			"removeUriAria": "移除扩展 URI"
+			"removeUriAria": "移除扩展 URI",
+			"notSet": "未设置",
+			"tenantSummary": "租户 {{tenant}}",
+			"extensionCount_one": "{{count}} 个扩展",
+			"extensionCount_other": "{{count}} 个扩展"
 		},
 		"card": {
 			"copySkillId": "点击复制技能 ID",

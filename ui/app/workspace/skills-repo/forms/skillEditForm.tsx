@@ -164,7 +164,7 @@ export function SkillEditView({
 		<div className="flex h-full min-h-0 flex-col overflow-hidden">
 			<div className="shrink-0 overflow-y-auto px-4">
 				{/* Breadcrumb */}
-				<nav aria-label="Breadcrumb" className="py-4">
+				<nav aria-label={t("playground:skills.editor.breadcrumbAriaLabel")} className="py-4">
 					<ol className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-sm">
 						<li>
 							<button
@@ -363,7 +363,7 @@ export function SkillEditView({
 							/>
 						) : (
 							<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-sm border">
-								<div className="flex h-9 shrink-0 items-center gap-1 border-b px-2" role="tablist" aria-label="Body editor tabs">
+								<div className="flex h-9 shrink-0 items-center gap-1 border-b px-2" role="tablist" aria-label={t("playground:skills.bodyEditorTabs")}>
 									<button
 										type="button"
 										className={cn(

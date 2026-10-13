@@ -615,7 +615,7 @@ describe("semantic complexity phrase limit", () => {
 		const result = analyzerConfigSchema.safeParse(formValues(749, true));
 		expect(result.success).toBe(false);
 		if (result.success) return;
-		expect(result.error.issues.some((issue) => issue.message.includes("751 phrases (Simple=749, Medium=1, Complex=1)"))).toBe(true);
+		expect(result.error.issues.some((issue) => issue.message.includes("751 phrases (749 simple, 1 medium, 1 complex)"))).toBe(true);
 	});
 
 	test("does not count blanks and same-tier duplicates twice", () => {

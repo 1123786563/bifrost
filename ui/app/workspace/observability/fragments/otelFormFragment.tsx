@@ -289,7 +289,7 @@ export function OtelFormFragment({
 							}}
 							disabled={!hasOtelAccess || isLoading || !form.formState.isDirty}
 						>
-							Reset
+							{t("common:actions.reset")}
 						</Button>
 						<TooltipProvider>
 							<Tooltip>
@@ -302,10 +302,10 @@ export function OtelFormFragment({
 									<TooltipContent>
 										<p>
 											{!form.formState.isDirty && !form.formState.isValid
-												? "No changes made and validation errors present"
+												? t("logs:observability.noChangesWithErrors")
 												: !form.formState.isDirty
-													? "No changes made"
-													: "Please fix validation errors"}
+													? t("logs:observability.noChanges")
+													: t("logs:observability.fixErrors")}
 										</p>
 									</TooltipContent>
 								)}
@@ -507,9 +507,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 								render={({ field }) => (
 									<FormItem className="w-full">
 										<FormLabel>{t("logs:otel.tlsCaPath")}</FormLabel>
-										<FormDescription>
-											File path to the CA certificate on the Bifrost server. Leave empty to use system root CAs.
-										</FormDescription>
+										<FormDescription>{t("logs:otel.tlsCaPathDesc")}</FormDescription>
 										<FormControl>
 											<Input placeholder="/path/to/ca.crt" disabled={!hasOtelAccess} {...field} />
 										</FormControl>
@@ -658,10 +656,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 															onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
 														/>
 													</FormControl>
-													<FormDescription>
-														Maximum time for a single trace export (1-60 seconds). Traces are dropped rather than retried past this limit,
-														so an unreachable collector cannot slow down request handling.
-													</FormDescription>
+													<FormDescription>{t("logs:otel.exportTimeoutDesc")}</FormDescription>
 													<FormMessage />
 												</FormItem>
 											)}
@@ -673,14 +668,10 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 										render={({ field }) => (
 											<FormItem className="w-full">
 												<FormLabel>
-													{t("settings:observability.requestHeaders")} <span className="text-muted-foreground font-normal">(Optional)</span>
+													{t("settings:observability.requestHeaders")}{" "}
+													<span className="text-muted-foreground font-normal">{t("common:fields.optional")}</span>
 												</FormLabel>
-												<FormDescription>
-													Comma-separated list of request headers to capture and emit as span attributes. Supports exact names and wildcard
-													patterns (e.g. <code className="text-xs">x-custom-*</code> captures all headers with that prefix,{" "}
-													<code className="text-xs">*</code> captures all headers; note that <code className="text-xs">*</code> will capture
-													sensitive headers like Authorization).
-												</FormDescription>
+												<FormDescription>{t("logs:otel.requestHeadersDesc")}</FormDescription>
 												<FormControl>
 													<RequestHeadersTextarea
 														className="h-24"
@@ -702,10 +693,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 											<FormItem className="flex flex-row items-center justify-between">
 												<div className="space-y-0.5">
 													<FormLabel className="text-base">{t("logs:otel.disableContentLogging")}</FormLabel>
-													<FormDescription>
-														When enabled, message content (input/output messages, tool definitions, and tool call arguments/results) is
-														dropped from exported spans. Only metadata such as model, tokens, and latency is sent to the collector.
-													</FormDescription>
+													<FormDescription>{t("logs:otel.disableContentLoggingDesc")}</FormDescription>
 												</div>
 												<FormControl>
 													<Switch
@@ -725,10 +713,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 											<FormItem className="flex flex-row items-center justify-between">
 												<div className="space-y-0.5">
 													<FormLabel className="text-base">{t("logs:otel.exportRawPayloads")}</FormLabel>
-													<FormDescription>
-														Attach the raw provider request and response bodies to exported spans. Requires raw request/response storage to
-														be enabled on the provider.
-													</FormDescription>
+													<FormDescription>{t("logs:otel.exportRawPayloadsDesc")}</FormDescription>
 												</div>
 												<FormControl>
 													<Switch
@@ -748,11 +733,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 											<FormItem className="flex flex-row items-center justify-between">
 												<div className="space-y-0.5">
 													<FormLabel className="text-base">{t("logs:otel.groupTracesBySession")}</FormLabel>
-													<FormDescription>
-														When enabled, requests sharing the same x-bf-session-id header are grouped into a single trace, each request
-														appearing as a top-level sibling span. A request carrying an inbound W3C traceparent stays on its own
-														distributed trace and is unaffected.
-													</FormDescription>
+													<FormDescription>{t("logs:otel.groupTracesBySessionDesc")}</FormDescription>
 												</div>
 												<FormControl>
 													<Switch
@@ -772,10 +753,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 											<FormItem className="flex flex-row items-center justify-between">
 												<div className="space-y-0.5">
 													<FormLabel className="text-base">{t("logs:otel.disableRootSpanContent")}</FormLabel>
-													<FormDescription>
-														When enabled, input/output message content is dropped from the root span only; the underlying generation
-														(llm.call) span keeps the full content.
-													</FormDescription>
+													<FormDescription>{t("logs:otel.disableRootSpanContentDesc")}</FormDescription>
 												</div>
 												<FormControl>
 													<Switch
@@ -804,9 +782,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 												<h3 className="flex flex-row items-center gap-2 text-sm font-medium">
 													{t("logs:otel.enableMetricsExport")} <Badge variant="secondary">BETA</Badge>
 												</h3>
-												<p className="text-muted-foreground text-xs">
-													Push metrics to an OTEL Collector for proper aggregation in cluster deployments
-												</p>
+												<p className="text-muted-foreground text-xs">{t("logs:otel.enableMetricsExportDesc")}</p>
 											</div>
 											<div className="ml-auto">
 												<Switch
@@ -887,9 +863,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 														useSecretVarInput
 													/>
 												</FormControl>
-												<FormDescription>
-													Sent only to the metrics endpoint, in addition to the common headers (e.g. a Databricks table name).
-												</FormDescription>
+												<FormDescription>{t("logs:otel.metricsHeadersDesc")}</FormDescription>
 												<FormMessage />
 											</FormItem>
 										)}

@@ -112,7 +112,7 @@ export function CELRuleBuilder({
 		hideCELExpression: false,
 	},
 }: CELRuleBuilderProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation(["common", "workspaces", "governance"]);
 	const normalizedInitial = normalizeRoutingRuleGroupQuery(initialQuery ?? defaultQuery);
 	const [query, setQuery] = useState<RuleGroupType>(normalizedInitial);
 	const [celExpression, setCelExpression] = useState("");
@@ -195,7 +195,7 @@ export function CELRuleBuilder({
 		return (
 			<div className="flex items-center justify-center space-x-2 rounded-md border p-8">
 				<Loader2 className="h-5 w-5 animate-spin" />
-				<span className="text-muted-foreground text-sm">Loading CEL builder...</span>
+				<span className="text-muted-foreground text-sm">{t("governance:routingRules.loadingCelBuilder")}</span>
 			</div>
 		);
 	}
@@ -221,7 +221,7 @@ export function CELRuleBuilder({
 							)}
 							data-testid="cel-builder-mode-builder"
 						>
-							Builder
+							{t("governance:routingRules.cel.builder")}
 						</button>
 						<button
 							type="button"
@@ -275,17 +275,19 @@ export function CELRuleBuilder({
 			{(mode === "cel" || !options.hideCELExpression) && (
 				<div className="space-y-2">
 					<div className="flex items-center justify-between">
-						<Label>{mode === "cel" ? "CEL Expression" : "CEL Expression Preview"}</Label>
+						<Label>
+							{mode === "cel" ? t("governance:routingRules.cel.expression") : t("governance:routingRules.cel.expressionPreview")}
+						</Label>
 						<Button variant="outline" size="sm" onClick={() => copy(copyValue)} disabled={!copyValue} className="gap-2" type="button">
 							{copied ? (
 								<>
 									<Check className="h-4 w-4" />
-									Copied
+									{t("common:actions.copied")}
 								</>
 							) : (
 								<>
 									<Copy className="h-4 w-4" />
-									Copy
+									{t("common:actions.copy")}
 								</>
 							)}
 						</Button>
@@ -297,7 +299,7 @@ export function CELRuleBuilder({
 								onChange={(e) => handleCelTextChange(e.target.value)}
 								className={cn("font-mono text-sm", celError && "border-destructive focus-visible:ring-destructive")}
 								rows={4}
-								placeholder='e.g. model == "claude-sonnet-4-6"'
+								placeholder={t("governance:routingRules.cel.placeholder")}
 								aria-invalid={!!celError}
 								data-testid="cel-builder-cel-textarea"
 							/>
@@ -306,11 +308,16 @@ export function CELRuleBuilder({
 									{celError}
 								</p>
 							) : (
-								<p className="text-muted-foreground text-xs">Leave empty to match all requests.</p>
+								<p className="text-muted-foreground text-xs">{t("governance:routingRules.cel.leaveEmpty")}</p>
 							)}
 						</>
 					) : (
-						<Textarea value={celExpression || "No rules defined yet"} readOnly className="font-mono text-sm" rows={4} />
+						<Textarea
+							value={celExpression || t("governance:routingRules.cel.noRules")}
+							readOnly
+							className="font-mono text-sm"
+							rows={4}
+						/>
 					)}
 				</div>
 			)}

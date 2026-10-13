@@ -1,10 +1,12 @@
 import AlertingPlaceholderView from "./alertingPlaceholderView";
+import { useTranslation } from "react-i18next";
 
 export default function AlertRulesView() {
+	const { t } = useTranslation(["errors"]);
 	return (
 		<AlertingPlaceholderView
-			title="Unlock alerting rules for proactive monitoring"
-			description="This feature is a part of the Bifrost enterprise license. Define alerting rules to catch budget, latency, and degradation issues before they become incidents."
+			title={t("errors:upsell.alertingRules.title")}
+			description={t("errors:upsell.alertingRules.description")}
 			readmeLink="https://docs.getbifrost.ai/enterprise/alerting/alert-rules"
 			testIdPrefix="alert-rules"
 		/>

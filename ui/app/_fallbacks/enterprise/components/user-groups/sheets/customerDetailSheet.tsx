@@ -5,6 +5,7 @@ import { fiscalQuarterNote, resetDurationLabels } from "@/lib/constants/governan
 import { Customer } from "@/lib/types/governance";
 import { cn } from "@/lib/utils";
 import { formatCompactNumber } from "@/lib/utils/numbers";
+import { useTranslation } from "react-i18next";
 
 interface Props {
 	customer: Customer | null;
@@ -103,6 +104,7 @@ function RateLimitBar({ label, current, max, resetDuration }: { label: string; c
 // the Teams / Business Units sections, which depend on enterprise-only APIs.
 
 export function CustomerDetailSheet({ customer, open, onOpenChange }: Props) {
+	const { t } = useTranslation(["common", "governance"]);
 	const budgets = customer?.budgets ?? [];
 	const rateLimit = customer?.rate_limit;
 	const hasRateLimit = rateLimit?.token_max_limit != null || rateLimit?.request_max_limit != null;
@@ -112,26 +114,26 @@ export function CustomerDetailSheet({ customer, open, onOpenChange }: Props) {
 			<SheetContent className="max-w-[700px] overflow-y-auto p-0 pt-4">
 				<SheetHeader className="flex flex-col items-start px-0 py-4" headerClassName="mb-0 px-4 md:px-8 sticky -top-4 bg-card z-10">
 					<div className="flex min-w-0 items-center gap-1">
-						<SheetTitle className="truncate text-lg">{customer?.name || "Customer Details"}</SheetTitle>
-						{customer?.id && <CopyableId id={customer.id} entityLabel="Customer" />}
+						<SheetTitle className="truncate text-lg">{customer?.name || t("governance:org.customers.detailSheetTitle")}</SheetTitle>
+						{customer?.id && <CopyableId id={customer.id} entityLabel={t("governance:org.sheet.customerEntityLabel")} />}
 					</div>
-					<SheetDescription>Usage details for this customer.</SheetDescription>
+					<SheetDescription>{t("governance:org.customers.detailSheetDescription")}</SheetDescription>
 				</SheetHeader>
 
 				{customer && (
 					<div className="space-y-6 px-4 py-4 md:px-8">
 						{/* ── Info ─────────────────────────────────────────── */}
-						<DetailCard title="Info">
+						<DetailCard title={t("governance:org.customers.detailInfo")}>
 							<div className="grid grid-cols-2 gap-x-8 gap-y-4">
 								<div>
-									<Label className="text-muted-foreground text-xs">Name</Label>
+									<Label className="text-muted-foreground text-xs">{t("common:fields.name")}</Label>
 									<p className="mt-0.5 text-sm">{customer.name ?? "—"}</p>
 								</div>
 							</div>
 						</DetailCard>
 
 						{/* ── Budgets ──────────────────────────────────────── */}
-						<DetailCard title="Budgets">
+						<DetailCard title={t("governance:org.sheet.budgetsLabel")}>
 							{budgets.length > 0 ? (
 								<div className="space-y-3">
 									{[...budgets]
@@ -147,17 +149,17 @@ export function CustomerDetailSheet({ customer, open, onOpenChange }: Props) {
 										))}
 								</div>
 							) : (
-								<p className="text-muted-foreground py-1 text-center text-sm">No budgets configured</p>
+								<p className="text-muted-foreground py-1 text-center text-sm">{t("governance:org.customers.noBudgetsConfigured")}</p>
 							)}
 						</DetailCard>
 
 						{/* ── Rate Limits ──────────────────────────────────── */}
-						<DetailCard title="Rate Limits">
+						<DetailCard title={t("governance:virtualKeys.rateLimits")}>
 							{rateLimit && hasRateLimit ? (
 								<div className="space-y-3">
 									{rateLimit.token_max_limit != null && (
 										<RateLimitBar
-											label="Tokens"
+											label={t("governance:org.sheet.tokensLabel")}
 											current={rateLimit.token_current_usage ?? 0}
 											max={rateLimit.token_max_limit}
 											resetDuration={rateLimit.token_reset_duration}
@@ -165,7 +167,7 @@ export function CustomerDetailSheet({ customer, open, onOpenChange }: Props) {
 									)}
 									{rateLimit.request_max_limit != null && (
 										<RateLimitBar
-											label="Requests"
+											label={t("governance:org.sheet.requestsLabel")}
 											current={rateLimit.request_current_usage ?? 0}
 											max={rateLimit.request_max_limit}
 											resetDuration={rateLimit.request_reset_duration}
@@ -173,7 +175,7 @@ export function CustomerDetailSheet({ customer, open, onOpenChange }: Props) {
 									)}
 								</div>
 							) : (
-								<p className="text-muted-foreground py-1 text-center text-sm">No rate limits configured</p>
+								<p className="text-muted-foreground py-1 text-center text-sm">{t("governance:virtualKeys.details.noRateLimits")}</p>
 							)}
 						</DetailCard>
 					</div>

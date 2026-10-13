@@ -182,17 +182,18 @@ function overheadCategoryKey(b: OverheadBucket): string {
 // Plugin display names where a plain title-case of the kebab id would read wrong
 // (acronyms, multi-word tokens). Everything else is title-cased from its id.
 const PLUGIN_LABEL_OVERRIDES: Record<string, string> = {
-	otel: "OpenTelemetry",
-	datadog: "Datadog",
-	compat: "Compatibility",
-	"adaptive-loadbalancer": "Adaptive Load Balancer",
-	"model-catalog-resolver": "Model Catalog Resolver",
+	otel: "workspaces:overhead.plugins.otel",
+	datadog: "workspaces:overhead.plugins.datadog",
+	compat: "workspaces:overhead.plugins.compat",
+	"adaptive-loadbalancer": "workspaces:overhead.plugins.adaptiveLoadBalancer",
+	"model-catalog-resolver": "workspaces:overhead.plugins.modelCatalogResolver",
 };
 
 // pluginDisplayName turns a plugin's kebab-case id ("enterprise-governance") into a
 // friendly label ("Enterprise Governance"), honouring PLUGIN_LABEL_OVERRIDES first.
-function pluginDisplayName(id: string): string {
-	if (PLUGIN_LABEL_OVERRIDES[id]) return PLUGIN_LABEL_OVERRIDES[id];
+function pluginDisplayName(id: string, t: TFunction): string {
+	const labelKey = PLUGIN_LABEL_OVERRIDES[id];
+	if (labelKey) return t(labelKey);
 	return id
 		.split("-")
 		.filter(Boolean)
@@ -203,7 +204,7 @@ function pluginDisplayName(id: string): string {
 function overheadMemberLabel(name: string, t: TFunction): string {
 	const friendly = OVERHEAD_LABEL_KEYS[name];
 	if (friendly) return t(friendly);
-	if (name.startsWith("plugin.")) return pluginDisplayName(name.slice("plugin.".length));
+	if (name.startsWith("plugin.")) return pluginDisplayName(name.slice("plugin.".length), t);
 	if (name.startsWith("middleware.")) return name.slice("middleware.".length);
 	return name;
 }
@@ -299,7 +300,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 					onClick={() => setShowDetails((v) => !v)}
 					className="text-muted-foreground hover:text-foreground flex items-center gap-1 font-mono text-[11px] transition"
 				>
-					View details
+					{t("common:actions.viewDetails")}
 					<ChevronDown className={cn("h-3 w-3 transition-transform", showDetails ? "rotate-180" : "rotate-0")} />
 				</button>
 			) : null}
@@ -331,8 +332,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 
 			{overCounted ? (
 				<div className="text-muted-foreground text-[11px]">
-					Measured spans ({formatMicros(sumUs)}) exceed the computed overhead ({formatMicros(overheadUs!)}); the upstream accumulator may be
-					over-counting.
+					{t("workspaces:overhead.overCounted", { measured: formatMicros(sumUs), computed: formatMicros(overheadUs!) })}
 				</div>
 			) : null}
 		</div>

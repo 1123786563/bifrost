@@ -473,13 +473,13 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 					`MultiSelect: Duplicate option values ${action}: ${duplicates.join(", ")}. ` +
 						`${
 							deduplicateOptions
-								? "Duplicates have been removed automatically."
+								? t("workspaces:multiSelect.duplicatesRemoved")
 								: "This may cause unexpected behavior. Consider setting 'deduplicateOptions={true}' or ensure all option values are unique."
 						}`,
 				);
 			}
 			return deduplicateOptions ? uniqueOptions : allOptions;
-		}, [options, deduplicateOptions, isGroupedOptions]);
+		}, [options, deduplicateOptions, isGroupedOptions, t]);
 
 		const getOptionByValue = React.useCallback(
 			(value: string): MultiSelectOption | undefined => {

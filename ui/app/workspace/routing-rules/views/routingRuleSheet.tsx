@@ -446,10 +446,7 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 						<div className="flex items-center justify-between rounded-lg border p-4">
 							<div className="space-y-0.5">
 								<Label htmlFor="chain_rule">{t("governance:routingRules.sheet.chainRule")}</Label>
-								<p className="text-muted-foreground text-sm">
-									After this rule matches, re-evaluate routing rules using the resolved provider/model as the new context. Useful for
-									composing rules, e.g. normalize a model alias first, then route based on the canonical name.
-								</p>
+								<p className="text-muted-foreground text-sm">{t("governance:routingRules.sheet.chainRuleHelp")}</p>
 							</div>
 							<Switch
 								id="chain_rule"
@@ -505,7 +502,7 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 										valueAsNumber: true,
 									})}
 								/>
-								<p className="text-muted-foreground text-xs">Lower numbers = higher priority (0 is highest)</p>
+								<p className="text-muted-foreground text-xs">{t("governance:routingRules.sheet.priorityHint")}</p>
 								{errors.priority && <p className="text-destructive text-sm">{errors.priority.message}</p>}
 							</div>
 						</div>
@@ -620,7 +617,9 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 								className={`flex items-center justify-end gap-2 text-xs font-medium ${Math.abs(totalWeight - 1) > 0.001 ? "text-destructive" : "text-muted-foreground"}`}
 							>
 								{t("governance:routingRules.sheet.totalWeight", { total: totalWeight.toFixed(4) })}
-								{Math.abs(totalWeight - 1) > 0.001 && <span className="text-destructive">(must equal 1)</span>}
+								{Math.abs(totalWeight - 1) > 0.001 && (
+									<span className="text-destructive">{t("governance:routingRules.sheet.mustEqualOne")}</span>
+								)}
 							</div>
 						</div>
 
@@ -678,12 +677,10 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 										setTtftEdited(true);
 									},
 									validate: (value) =>
-										parseTTFTTimeoutInput(value) !== null || `Enter a whole number from 1 to ${MAX_TTFT_TIMEOUT_MS}, or leave it empty`,
+										parseTTFTTimeoutInput(value) !== null || t("governance:routingRules.sheet.ttftValidation", { max: MAX_TTFT_TIMEOUT_MS }),
 								})}
 							/>
-							<p className="text-muted-foreground text-xs">
-								Streaming only. If no token arrives in time, Bifrost moves to the next fallback. The last fallback is never cut off.
-							</p>
+							<p className="text-muted-foreground text-xs">{t("governance:routingRules.sheet.ttftHelp")}</p>
 							{errors.ttft_timeout_ms && (
 								<p id="ttft_timeout_ms-error" className="text-destructive text-sm" data-testid="routing-rule-ttft-timeout-error">
 									{errors.ttft_timeout_ms.message}
@@ -821,7 +818,7 @@ function FallbackRow({ fallback, index, referencedProviderOptions, allKeys, onUp
 					size="sm"
 					onClick={() => onRemove(index)}
 					className="h-9 px-2"
-					aria-label={`Remove fallback ${index + 1}`}
+					aria-label={t("governance:routingRules.sheet.removeFallbackAria", { n: index + 1 })}
 					data-testid={`routing-fallback-${index}-remove-button`}
 				>
 					<Trash2 className="h-4 w-4" />
@@ -830,7 +827,7 @@ function FallbackRow({ fallback, index, referencedProviderOptions, allKeys, onUp
 
 			<ProviderKeySelect
 				idPrefix={`routing-fallback-${index}`}
-				clearLabel={`Clear API key for fallback ${index + 1}`}
+				clearLabel={t("governance:routingRules.sheet.clearApiKeyFallbackAria", { n: index + 1 })}
 				provider={provider}
 				keyId={fallback.key_id}
 				allKeys={allKeys}
@@ -855,11 +852,11 @@ function TargetRow({ target, index, referencedProviderOptions, allKeys, showRemo
 	return (
 		<div className="space-y-3 rounded-lg border p-3" data-testid={`routing-target-${index}`}>
 			<div className="flex items-center justify-between">
-				<span className="text-muted-foreground text-sm font-medium">Target {index + 1}</span>
+				<span className="text-muted-foreground text-sm font-medium">{t("governance:routingRules.sheet.targetN", { n: index + 1 })}</span>
 				<div className="flex items-center gap-2">
 					<div className="flex items-center gap-1.5">
 						<Label htmlFor={`routing-target-${index}-weight-input`} className="text-muted-foreground shrink-0 text-xs">
-							Weight
+							{t("governance:routingRules.weight")}
 						</Label>
 						<Input
 							id={`routing-target-${index}-weight-input`}
@@ -880,7 +877,7 @@ function TargetRow({ target, index, referencedProviderOptions, allKeys, showRemo
 							size="sm"
 							onClick={() => onRemove(index)}
 							className="h-8 w-8 p-0"
-							aria-label={`Remove target ${index + 1}`}
+							aria-label={t("governance:routingRules.sheet.removeTargetAria", { n: index + 1 })}
 							data-testid={`routing-target-${index}-remove-button`}
 						>
 							<Trash2 className="h-3.5 w-3.5" />
@@ -892,7 +889,7 @@ function TargetRow({ target, index, referencedProviderOptions, allKeys, showRemo
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 				<div className="space-y-1.5">
 					<Label id={`routing-target-${index}-provider-label`} className="text-xs">
-						Provider
+						{t("common:fields.provider")}
 					</Label>
 					<div className="flex gap-1.5">
 						<ProviderSelector
@@ -919,7 +916,7 @@ function TargetRow({ target, index, referencedProviderOptions, allKeys, showRemo
 									onUpdate(index, "key_id", "");
 								}}
 								className="h-9 w-9 p-0"
-								aria-label={`Clear provider for target ${index + 1}`}
+								aria-label={t("governance:routingRules.sheet.clearProviderTargetAria", { n: index + 1 })}
 								data-testid={`routing-target-${index}-provider-clear`}
 							>
 								<X className="h-3.5 w-3.5" />
@@ -930,7 +927,7 @@ function TargetRow({ target, index, referencedProviderOptions, allKeys, showRemo
 
 				<div className="space-y-1.5">
 					<Label id={`routing-target-${index}-model-label`} className="text-xs">
-						Model
+						{t("common:fields.model")}
 					</Label>
 					<div className="flex gap-1.5">
 						<div className="flex-1" data-testid={`routing-target-${index}-model-select`}>
@@ -952,7 +949,7 @@ function TargetRow({ target, index, referencedProviderOptions, allKeys, showRemo
 								size="sm"
 								onClick={() => onUpdate(index, "model", "")}
 								className="h-9 w-9 p-0"
-								aria-label={`Clear model for target ${index + 1}`}
+								aria-label={t("governance:routingRules.sheet.clearModelTargetAria", { n: index + 1 })}
 								data-testid={`routing-target-${index}-model-clear`}
 							>
 								<X className="h-3.5 w-3.5" />
@@ -964,7 +961,7 @@ function TargetRow({ target, index, referencedProviderOptions, allKeys, showRemo
 
 			<ProviderKeySelect
 				idPrefix={`routing-target-${index}`}
-				clearLabel={`Clear API key for target ${index + 1}`}
+				clearLabel={t("governance:routingRules.sheet.clearApiKeyTargetAria", { n: index + 1 })}
 				provider={target.provider}
 				keyId={target.key_id}
 				allKeys={allKeys}

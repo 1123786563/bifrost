@@ -165,6 +165,7 @@
 		},
 		"editor": {
 			"breadcrumbSkills": "技能",
+			"breadcrumbAriaLabel": "面包屑导航",
 			"newSkillPlaceholder": "<新技能>",
 			"newBreadcrumb": "新建",
 			"securityAlert": "添加到技能中的文件可以通过 marketplace URL 免登录下载。任何能访问此 Bifrost 服务器的人都可以直接请求这些文件，因此请勿上传密钥、凭据、私有代码或其他敏感文件。",
@@ -339,6 +340,12 @@
 			"versionsForAriaLabel": "{{name}} 的版本",
 			"addNewVersion": "添加新版本",
 			"addNewVersionAriaLabel": "添加新版本"
+		},
+		"bodyEditorTabs": "内容编辑器标签页",
+		"fileManager": {
+			"newFolder": "新建文件夹",
+			"newFile": "新建文件",
+			"emptyFolder": "空文件夹"
 		}
 	}
 }

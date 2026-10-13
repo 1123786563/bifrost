@@ -101,7 +101,7 @@ export default function AgentGatewayPage() {
 
 	useEffect(() => {
 		if (error) {
-			toast({ title: "Error", description: getErrorMessage(error), variant: "destructive" });
+			toast({ title: t("common:state.error"), description: getErrorMessage(error), variant: "destructive" });
 		}
 	}, [error, toast]);
 

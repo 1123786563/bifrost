@@ -45,6 +45,7 @@ function DefinitionFields({ fields }: { fields: Record<string, unknown> }) {
 }
 
 function SecurityFields({ fields }: { fields: Record<string, unknown> }) {
+	const { t } = useTranslation(["common", "mcp", "workspaces"]);
 	const labels: Record<string, string> = {
 		oauth2MetadataUrl: "OAuth metadata URL",
 		openIdConnectUrl: "OpenID Connect URL",
@@ -62,7 +63,7 @@ function SecurityFields({ fields }: { fields: Record<string, unknown> }) {
 				if (key === "flows" && record) {
 					return (
 						<div key={key} className="py-3 first:pt-0 last:pb-0">
-							<dt className="sr-only">OAuth flows</dt>
+							<dt className="sr-only">{t("workspaces:agentCard.oauthFlows")}</dt>
 							<dd className="space-y-4">
 								{Object.entries(record).map(([flow, definition]) => {
 									const flowFields =
@@ -73,14 +74,16 @@ function SecurityFields({ fields }: { fields: Record<string, unknown> }) {
 										<section key={flow} className="space-y-3">
 											<dl className="border-b pb-2.5">
 												<div className="grid gap-1 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
-													<dt className="text-muted-foreground">Flow</dt>
+													<dt className="text-muted-foreground">{t("workspaces:agentCard.flow")}</dt>
 													<dd>{labels[flow] ?? capabilityLabel(flow)}</dd>
 												</div>
 											</dl>
 											{flowFields ? (
 												<SecurityFields fields={flowFields} />
 											) : (
-												<p className="text-muted-foreground">{definition === "REDACTED" ? "Redacted" : String(definition)}</p>
+												<p className="text-muted-foreground">
+													{definition === "REDACTED" ? t("workspaces:agentCard.redacted") : String(definition)}
+												</p>
 											)}
 										</section>
 									);
@@ -108,7 +111,11 @@ function SecurityFields({ fields }: { fields: Record<string, unknown> }) {
 								)
 							) : (
 								<span className="font-mono break-all">
-									{Array.isArray(value) ? value.join(", ") : value === "REDACTED" ? "Redacted" : String(value)}
+									{Array.isArray(value)
+										? value.join(", ")
+										: value === "REDACTED"
+											? t("workspaces:agentCard.redacted")
+											: String(value)}
 								</span>
 							)}
 						</dd>
@@ -141,7 +148,7 @@ function SkillItem({ skill }: { skill: InspectedAgentSkill }) {
 	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const idRef = useRef<HTMLButtonElement>(null);
 	const [idTruncated, setIdTruncated] = useState(false);
-	const { copy } = useCopyToClipboard({ successMessage: "Copied" });
+	const { copy } = useCopyToClipboard({ successMessage: t("common:actions.copied") });
 
 	return (
 		<details className="group/skill">
@@ -163,7 +170,7 @@ function SkillItem({ skill }: { skill: InspectedAgentSkill }) {
 										type="button"
 										ref={idRef}
 										className="text-muted-foreground max-w-[45%] truncate font-mono text-[11px] hover:underline"
-										aria-label={`Copy skill ID ${skill.id}`}
+										aria-label={t("workspaces:agentCard.copySkillIdAria", { id: skill.id })}
 										onClick={(event) => {
 											event.preventDefault();
 											event.stopPropagation();
@@ -232,7 +239,7 @@ export function AgentCardPreview({
 	showFetched?: boolean;
 	gatewayCard?: boolean;
 }) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation(["common", "mcp", "workspaces"]);
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const [iconFailed, setIconFailed] = useState(false);
 	const capabilities = Object.entries(card.capabilities)
@@ -259,17 +266,17 @@ export function AgentCardPreview({
 				</div>
 				<div className="min-w-0 flex-1 space-y-0.5">
 					<div className="flex flex-wrap items-center gap-2">
-						<p className="truncate font-medium">{card.name || "Unnamed agent"}</p>
+						<p className="truncate font-medium">{card.name || t("workspaces:agentCard.unnamed")}</p>
 						{card.version && <Badge variant="outline">v{card.version}</Badge>}
 					</div>
 					<div className="text-muted-foreground flex flex-wrap items-center gap-x-3 text-xs">
 						{card.provider &&
 							(card.provider_url ? (
 								<a href={card.provider_url} target="_blank" rel="noreferrer" className="hover:text-foreground hover:underline">
-									by {card.provider}
+									{t("workspaces:agentCard.by", { provider: card.provider })}
 								</a>
 							) : (
-								<span>by {card.provider}</span>
+								<span>{t("workspaces:agentCard.by", { provider: card.provider })}</span>
 							))}
 						{card.documentation_url && (
 							<a
@@ -278,7 +285,7 @@ export function AgentCardPreview({
 								rel="noreferrer"
 								className="hover:text-foreground inline-flex items-center gap-1 hover:underline"
 							>
-								Docs <ExternalLink className="size-3" />
+								{t("workspaces:agentCard.docs")} <ExternalLink className="size-3" />
 							</a>
 						)}
 					</div>
@@ -294,10 +301,10 @@ export function AgentCardPreview({
 			{card.description && <p className="text-muted-foreground px-4 pb-4 text-xs leading-relaxed break-words">{card.description}</p>}
 
 			<div className="bg-muted/30 grid grid-cols-3 divide-x border-t">
-				<Stat label="Skills" value={skills.length} />
-				<Stat label="Interfaces" value={interfaces.length} />
+				<Stat label={t("workspaces:agentCard.skills")} value={skills.length} />
+				<Stat label={t("workspaces:agentCard.interfaces")} value={interfaces.length} />
 				<Stat
-					label="Signatures"
+					label={t("workspaces:agentCard.signatures")}
 					value={
 						gatewayCard ? (
 							<TooltipProvider>
@@ -305,10 +312,7 @@ export function AgentCardPreview({
 									<TooltipTrigger asChild>
 										<span className="cursor-help border-b border-dotted">{card.signature_count}</span>
 									</TooltipTrigger>
-									<TooltipContent className="max-w-80">
-										Upstream signatures are removed because the gateway rewrites the card’s endpoints and authentication requirements.
-										Original signatures remain in raw capture when recorded.
-									</TooltipContent>
+									<TooltipContent className="max-w-80">{t("workspaces:agentCard.signaturesRemoved")}</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
 						) : (
@@ -346,7 +350,7 @@ export function AgentCardPreview({
 					className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between px-4 py-2.5 text-xs font-medium"
 					data-testid="agent-card-details-toggle"
 				>
-					{detailsOpen ? "Hide card details" : "Show card details"}
+					{detailsOpen ? t("workspaces:agentCard.hideDetails") : t("workspaces:agentCard.showDetails")}
 					<ChevronDown className={`size-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`} />
 				</CollapsibleTrigger>
 				<CollapsibleContent className="divide-y border-t px-4 pb-2">
@@ -362,20 +366,24 @@ export function AgentCardPreview({
 										</div>
 										<div className="min-w-0 flex-1">
 											<TruncatedLabel className="block font-mono text-xs">{item.url}</TruncatedLabel>
-											{item.tenant && <p className="text-muted-foreground mt-1 text-xs">Tenant: {item.tenant}</p>}
+											{item.tenant && (
+												<p className="text-muted-foreground mt-1 text-xs">
+													{t("workspaces:agentCard.tenant", { tenant: item.tenant })}
+												</p>
+											)}
 										</div>
 									</div>
 								))}
 							</div>
 						</section>
 					)}
-					<DetailRow label="Input modes">
-						<p className="font-mono text-xs break-words">{inputModes || "Not declared"}</p>
+					<DetailRow label={t("workspaces:agentCard.inputModes")}>
+						<p className="font-mono text-xs break-words">{inputModes || t("workspaces:agentCard.notDeclared")}</p>
 					</DetailRow>
-					<DetailRow label="Output modes">
-						<p className="font-mono text-xs break-words">{outputModes || "Not declared"}</p>
+					<DetailRow label={t("workspaces:agentCard.outputModes")}>
+						<p className="font-mono text-xs break-words">{outputModes || t("workspaces:agentCard.notDeclared")}</p>
 					</DetailRow>
-					<DetailRow label="Authentication">
+					<DetailRow label={t("workspaces:agentCard.authentication")}>
 						<div className="flex flex-wrap gap-1">
 							{card.security_requirements.length === 0 ? (
 								<Badge variant="outline">{t("mcp:agents.card.none")}</Badge>
@@ -418,7 +426,7 @@ export function AgentCardPreview({
 						</section>
 					)}
 					{(card.signatures?.length ?? 0) > 0 && (
-						<DetailRow label="Signatures">
+						<DetailRow label={t("workspaces:agentCard.signatures")}>
 							<div className="divide-y">
 								{card.signatures?.map((signature, index) => (
 									<details key={index} className="group/signature py-2 first:pt-0 last:pb-0">
@@ -426,7 +434,7 @@ export function AgentCardPreview({
 											data-testid="agent-card-signature-toggle"
 											className="flex cursor-pointer list-none items-center justify-between text-xs [&::-webkit-details-marker]:hidden"
 										>
-											Signature {index + 1}
+											{t("workspaces:agentCard.signatureN", { n: index + 1 })}
 											<ChevronDown className="text-muted-foreground size-3.5 transition-transform group-open/signature:rotate-180" />
 										</summary>
 										<div className="pt-2">
@@ -443,7 +451,7 @@ export function AgentCardPreview({
 						</DetailRow>
 					)}
 					{extensions.length > 0 && (
-						<DetailRow label="Extensions">
+						<DetailRow label={t("workspaces:agentCard.extensions")}>
 							<div className="flex flex-wrap gap-1">
 								{extensions.map((extension) => (
 									<TooltipProvider key={extension.uri}>
@@ -452,7 +460,7 @@ export function AgentCardPreview({
 												<Badge variant="outline" className="max-w-full">
 													<span className="min-w-0 truncate">{extension.uri}</span>
 													{extension.required && (
-														<span className="text-destructive shrink-0" aria-label="Required">
+														<span className="text-destructive shrink-0" aria-label={t("mcp:agents.card.required")}>
 															*
 														</span>
 													)}

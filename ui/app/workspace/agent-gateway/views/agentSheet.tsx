@@ -282,9 +282,12 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 	const authLocked = isEditing && !inspection && !manualMode;
 	const extensionCount = extensionUris.filter((uri) => uri.trim()).length;
 	const advancedSummary =
-		[tenant.trim() && `Tenant ${tenant.trim()}`, extensionCount && `${extensionCount} extension${extensionCount === 1 ? "" : "s"}`]
+		[
+			tenant.trim() && t("mcp:agents.sheet.tenantSummary", { tenant: tenant.trim() }),
+			extensionCount && t("mcp:agents.sheet.extensionCount", { count: extensionCount }),
+		]
 			.filter(Boolean)
-			.join(" · ") || "Not set";
+			.join(" · ") || t("mcp:agents.sheet.notSet");
 
 	const handleSave = async () => {
 		const validation = validateAgentName(name);

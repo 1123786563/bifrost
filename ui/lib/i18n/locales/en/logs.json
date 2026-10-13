@@ -31,7 +31,8 @@
 		"latestFirst": "Latest first",
 		"loading": "Loading session...",
 		"current": "Current",
-		"noLogs": "No logs found for this session."
+		"noLogs": "No logs found for this session.",
+		"loadMore": "Load More"
 	},
 	"columns": {
 		"time": "Time",
@@ -287,7 +288,12 @@
 			"langchain": "LangChain SDK"
 		},
 		"codeLanguage": "Code language",
-		"copyCode": "Copy code"
+		"copyCode": "Copy code",
+		"samples": {
+			"hello": "Hello!",
+			"helloFromLangchain": "Hello from LangChain!",
+			"whatIsLangchain": "What is LangChain?"
+		}
 	},
 	"audio": {
 		"play": "Play",
@@ -537,7 +543,35 @@
 		"toolsExposed_other": "{{count}} tools exposed to the model",
 		"viaInputItems_one": "{{count}} via input items",
 		"viaInputItems_other": "{{count}} via input items",
-		"namespacesExpanded": "(namespaces expanded)"
+		"namespacesExpanded": "(namespaces expanded)",
+		"noRoutingLogsAtLevel": "No routing logs at or above {{level}}.",
+		"nextRequestLookupFailed": "Couldn't look up the next request in this session.",
+		"alias": "Alias",
+		"canonicalModel": "Canonical Model",
+		"modelFamily": "Model Family",
+		"servedByFallback": "Served By (fallback)",
+		"servedModel": "Served Model",
+		"numberOfRetries": "Number of Retries",
+		"fallbackIndex": "Fallback Index",
+		"complexityScore": "Complexity Score",
+		"audioFormat": "Audio Format",
+		"audioVoice": "Audio Voice",
+		"statusCode": "Status Code",
+		"settledCost": "Settled Cost",
+		"mcpCost": "MCP Cost",
+		"maxTokens": "Max Tokens",
+		"batchCost": "Batch Cost",
+		"billedSeconds": "Billed Seconds",
+		"resolution": "Resolution",
+		"clipsBilled": "Clips Billed",
+		"videoUnpricedNote": "Priced with no published rate, or from dimensions the provider never confirmed, so this cost may be short.",
+		"embeddingModel": "Embedding Model",
+		"threshold": "Threshold",
+		"durationBilled": "duration billed",
+		"moreDetailsSummary": "timings, request meta, tokens, caching, metadata",
+		"method": "Method",
+		"path": "Path",
+		"query": "Query"
 	},
 	"mcp": {
 		"searchPlaceholder": "Search MCP logs",
@@ -545,6 +579,10 @@
 		"copyToClipboard": "Copy to clipboard",
 		"emptyTitle": "Get Started with MCP Tool Execution",
 		"emptySubtitle": "Execute your first MCP tool call to see logs appear",
+		"samples": {
+			"listFiles": "List files in current directory",
+			"listPythonFiles": "List all Python files and summarize their purpose"
+		},
 		"tabManual": "Manual Tool Execution",
 		"tabAgent": "Agent Mode (Auto-Execute)",
 		"manualDesc": "Full control over tool approval. You explicitly execute each tool call via the API.",
@@ -589,7 +627,9 @@
 		"result": "Result",
 		"errorDetails": "Error Details",
 		"execution": "Execution",
-		"noPluginLogs": "No plugin logs for this request."
+		"noPluginLogs": "No plugin logs for this request.",
+		"loadingDetails": "Loading MCP log details",
+		"filterByLabel": "Filter by {{label}}"
 	},
 	"agent": {
 		"searchPlaceholder": "Search agent, operation, or any identifier",
@@ -777,7 +817,25 @@
 		"beforeYouSend": "Before you send a request",
 		"beforeStep1": "Register and enable the upstream agent in Agent Gateway.",
 		"beforeStep2": "Replace {{name}} with its registered name.",
-		"beforeStep3": "Use a virtual key that can access the agent, or remove the {{header}} header when authentication is disabled."
+		"beforeStep3": "Use a virtual key that can access the agent, or remove the {{header}} header when authentication is disabled.",
+		"eventView": "Event view",
+		"pushNotificationBadge": "push notification",
+		"moreDetailsSummary": "identifiers and correlation",
+		"moreDetailsSummaryTimings": "timings, identifiers and correlation",
+		"eventsIntro": "Events show the ordered updates returned by the agent during this operation. Expand an event to inspect its data.",
+		"taskLabel": "Task {{state}}",
+		"captureInvalid": "{{title}} could not be displayed because the stored capture is invalid.",
+		"downloadBytes": "Download {{title}} bytes",
+		"rawResponsePending": "Raw response is not available yet. The operation is still processing.",
+		"noErrorMessage": "No error message recorded.",
+		"finalBadge": "final",
+		"flagAppend": "append",
+		"flagLastChunk": "last chunk",
+		"partIndex": "Part {{index}}",
+		"copyRequest": "Copy request",
+		"samples": {
+			"helloFromBifrost": "Hello from Bifrost"
+		}
 	},
 	"otel": {
 		"addProfile": "Add Profile",
@@ -828,6 +886,7 @@
 		"metricsHeadersDesc": "Sent only to the metrics endpoint, in addition to the common headers (e.g. a Databricks table name).",
 		"pushInterval": "Push Interval (seconds)",
 		"pushIntervalDesc": "How often to push metrics (1-300 seconds)",
+		"updatedSuccess": "OTEL configuration updated successfully",
 		"updateFailed": "Failed to update OTEL configuration"
 	},
 	"prom": {

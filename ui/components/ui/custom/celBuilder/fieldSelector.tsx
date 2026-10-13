@@ -96,12 +96,12 @@ export function FieldSelector({ value, handleOnChange, options, rule, path, sche
 			</Select>
 			{isKeyValueField && (
 				<>
-					<span className="text-muted-foreground text-sm whitespace-nowrap">has key</span>
+					<span className="text-muted-foreground text-sm whitespace-nowrap">{t("workspaces:celBuilder.hasKey")}</span>
 					<Input
 						type="text"
 						value={headerKey}
 						onChange={(e) => handleKeyChange(e.target.value)}
-						placeholder={`${fieldData?.label || "Key"} name (e.g., x-api-key)`}
+						placeholder={t("workspaces:celBuilder.keyNamePh", { field: fieldData?.label || t("workspaces:celBuilder.key") })}
 						className="w-[180px]"
 						data-testid="cel-builder-field-selector-key-input"
 					/>

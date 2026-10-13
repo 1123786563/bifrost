@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import i18n from "@/lib/i18n";
 import { WebhookDelivery, WebhookDeliveryOutcome } from "@/lib/types/webhooks";
 import { Fragment } from "react";
 
@@ -10,11 +11,21 @@ export const OUTCOME_COLORS: Record<WebhookDeliveryOutcome, string> = {
 	exhausted: "bg-red-100 text-red-800",
 };
 
+// Labels resolve through i18n at access time; the shared badge copy lives with
+// the other webhook status tooltips in the governance namespace.
 export const OUTCOME_LABELS: Record<WebhookDeliveryOutcome, string> = {
-	delivered: "delivered",
-	retryable_failure: "retrying",
-	permanent_failure: "failed",
-	exhausted: "retries exhausted",
+	get delivered() {
+		return i18n.t("governance:webhooks.details.statusTooltipDelivered");
+	},
+	get retryable_failure() {
+		return i18n.t("governance:webhooks.details.statusTooltipRetrying");
+	},
+	get permanent_failure() {
+		return i18n.t("governance:webhooks.details.statusTooltipFailed");
+	},
+	get exhausted() {
+		return i18n.t("governance:webhooks.details.statusTooltipExhausted");
+	},
 };
 
 // Wraps a badge with the attempt's error text as a tooltip when present.
@@ -117,7 +128,10 @@ export const groupDeliveries = (rows: WebhookDelivery[]): DeliveryGroup[] => {
 		// The oldest send is the original; label the rest as redeliveries in order.
 		const sends = [...sendsNewestFirst].reverse().map((sendAttempts, index) => ({
 			key: `${webhookId}:${index}`,
-			label: index === 0 ? "Original" : `Redelivery ${index}`,
+			label:
+				index === 0
+					? i18n.t("governance:webhooks.deliveries.sends.original")
+					: i18n.t("governance:webhooks.deliveries.sends.redelivery", { n: index }),
 			attempts: sendAttempts,
 		}));
 		return { webhookId, latest: attempts[0], latestSend: sends[sends.length - 1], sends };

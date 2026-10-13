@@ -84,14 +84,14 @@ const defaultNoOptionsKeys: Record<EntityType, string> = {
 	apiKey: "workspaces:entitySelect.none.apiKey",
 };
 
-// Label text for each entity type
+// Label translation keys for each entity type; resolve with t() at the usage site
 export const entityTypeLabels: Record<EntityType, string> = {
-	virtualKey: "Virtual Keys",
-	team: "Teams",
-	customer: "Customers",
-	user: "Users",
-	provider: "Providers",
-	apiKey: "API Keys",
+	virtualKey: "workspaces:filters.sections.virtualKeys",
+	team: "workspaces:filters.sections.teams",
+	customer: "workspaces:filters.sections.customers",
+	user: "workspaces:filters.sections.user",
+	provider: "workspaces:filters.sections.providers",
+	apiKey: "workspaces:promptsRepo.apiKey.apiKeysGroup",
 };
 
 export function EntityAssociationSelect({
@@ -198,7 +198,7 @@ export function EntityAssociationSelect({
 				hideSelectedOptions={false}
 				isCreatable={isCreatable}
 				onCreateOption={handleCreateOption}
-				formatCreateLabel={formatCreateLabel || ((value) => `Add "${value}"`)}
+				formatCreateLabel={formatCreateLabel || ((value) => t("workspaces:entitySelect.addQuoted", { value }))}
 				noOptionsMessage={noOptionsMessage || (() => t(defaultNoOptionsKeys[entityType]))}
 				views={{
 					option: (props) => {
@@ -216,7 +216,7 @@ export function EntityAssociationSelect({
 							>
 								<div className="flex items-center justify-between">
 									<span className="text-content-primary font-medium">{data.label}</span>
-									{props.isSelected && <span className="text-primary text-xs">Selected</span>}
+									{props.isSelected && <span className="text-primary text-xs">{t("common:fields.selected")}</span>}
 								</div>
 								{data.meta?.description && <span className="text-content-tertiary line-clamp-1 text-xs">{data.meta.description}</span>}
 							</div>

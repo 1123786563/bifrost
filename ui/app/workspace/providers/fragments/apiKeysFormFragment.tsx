@@ -1240,10 +1240,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 					)}
 					{openaiAuthType === "oauth" && (
 						<>
-							<p className="text-muted-foreground text-sm">
-								Bifrost requests an access token from the token endpoint, sends it as the bearer, caches it per credential and refreshes it
-								before it expires. Use this for upstreams that issue short-lived tokens instead of a static key.
-							</p>
+							<p className="text-muted-foreground text-sm">{t("providers:oauthKeys.flowDescription")}</p>
 							<FormField
 								control={control}
 								name="key.oauth_key_config.grant_type"
@@ -1253,7 +1250,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										<Select value={field.value ?? "client_credentials"} onValueChange={field.onChange}>
 											<FormControl>
 												<SelectTrigger className="w-full" data-testid="key-select-oauth-grant-type">
-													<SelectValue placeholder="Client credentials" />
+													<SelectValue placeholder={t("providers:oauthKeys.grantTypePlaceholder")} />
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
@@ -1488,7 +1485,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										<FormControl>
 											<TagInput
 												data-testid="key-input-oauth-scopes"
-												placeholder="Add scope (Enter or comma)"
+												placeholder={t("providers:keysForm.azure.scopesPlaceholder")}
 												value={field.value ?? []}
 												onValueChange={field.onChange}
 											/>

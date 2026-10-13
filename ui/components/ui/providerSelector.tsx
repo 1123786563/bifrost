@@ -141,8 +141,8 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 		contentTestId,
 		allOption,
 		groupByCustom = false,
-		placeholder = "Select provider",
-		searchPlaceholder = "Search providers...",
+		placeholder = t("workspaces:providerSelector.selectProvider"),
+		searchPlaceholder = t("workspaces:filters.phProviders"),
 		emptyMessage,
 		disabled = false,
 		size = "default",
@@ -208,8 +208,8 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 	const visibleExtras = useMemo(() => (extraOptions ?? []).filter((o) => matches(o, term)), [extraOptions, term]);
 	const visibleFooters = useMemo(() => (footerOptions ?? []).filter((o) => matches(o, term)), [footerOptions, term]);
 	const allRow = useMemo<ProviderSelectorOption[]>(
-		() => (allOption ? [{ value: allOption.value, label: allOption.label ?? "All Providers" }] : []),
-		[allOption],
+		() => (allOption ? [{ value: allOption.value, label: allOption.label ?? t("workspaces:providerSelector.allProviders") }] : []),
+		[allOption, t],
 	);
 	const visibleAll = useMemo(() => allRow.filter((o) => matches(o, term)), [allRow, term]);
 	const visible = useMemo(() => options.filter((o) => matches(o, term)), [options, term]);
@@ -399,7 +399,7 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 										<span
 											role="button"
 											tabIndex={-1}
-											aria-label={`Remove ${optionFor(value).label}`}
+											aria-label={t("workspaces:providerSelector.removeAria", { name: optionFor(value).label })}
 											className="text-muted-foreground hover:text-foreground flex shrink-0 cursor-pointer items-center"
 											onClick={(e) => {
 												e.preventDefault();
@@ -473,7 +473,9 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 						</div>
 					) : (
 						<ComboboxEmpty className="text-muted-foreground">
-							{isError ? "Couldn't load providers." : (emptyMessage ?? (search ? "No matching providers." : "No providers available."))}
+							{isError
+								? t("workspaces:providerSelector.loadFailed")
+								: (emptyMessage ?? (search ? t("workspaces:providerSelector.noMatching") : t("workspaces:providerSelector.noneAvailable")))}
 						</ComboboxEmpty>
 					)}
 				</ComboboxList>

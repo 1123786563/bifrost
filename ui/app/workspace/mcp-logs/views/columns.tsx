@@ -57,7 +57,7 @@ export const createMCPColumns = (
 			const timestamp = row.original.timestamp;
 			const date = timestamp ? new Date(timestamp) : null;
 			if (!date || !isValid(date)) {
-				return <div className="truncate text-xs">N/A</div>;
+				return <div className="truncate text-xs">{t("logs:chat.na")}</div>;
 			}
 			return (
 				<div className="flex flex-col leading-tight">
@@ -135,7 +135,7 @@ export const createMCPColumns = (
 		accessorKey: "latency",
 		header: ({ column }) => (
 			<Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-				Latency
+				{t("logs:columns.latency")}
 				<ArrowUpDown className="ml-2 h-4 w-4" />
 			</Button>
 		),
@@ -164,7 +164,7 @@ export const createMCPColumns = (
 		cell: ({ row }) => {
 			const cost = row.original.cost;
 			const isValidNumber = typeof cost === "number" && Number.isFinite(cost);
-			return <div className="font-mono text-sm">{isValidNumber ? `${cost.toFixed(4)}` : "N/A"}</div>;
+			return <div className="font-mono text-sm">{isValidNumber ? `${cost.toFixed(4)}` : t("logs:chat.na")}</div>;
 		},
 	},
 	{
@@ -245,7 +245,13 @@ export const createMCPColumns = (
 							<div className="flex justify-center">
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
-										<Button variant="ghost" size="icon" data-testid="log-actions-btn" aria-label="Log actions" className="h-7 w-7">
+										<Button
+											variant="ghost"
+											size="icon"
+											data-testid="log-actions-btn"
+											aria-label={t("logs:columns.logActions")}
+											className="h-7 w-7"
+										>
 											<MoreHorizontal className="h-4 w-4" />
 										</Button>
 									</DropdownMenuTrigger>
@@ -260,7 +266,7 @@ export const createMCPColumns = (
 											}}
 										>
 											<Trash2 className="h-4 w-4" />
-											Delete
+											{t("common:actions.delete")}
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>

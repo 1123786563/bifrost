@@ -9,20 +9,28 @@ import { useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import i18n from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 
 const externalLinks = [
 	{
-		title: "Discord Server",
+		get title() {
+			return i18n.t("auth:login.discordServer", { defaultValue: "Discord Server" });
+		},
 		url: "https://discord.gg/exN5KAydbU",
 		icon: DiscordLogoIcon,
 	},
 	{
-		title: "GitHub Repository",
+		get title() {
+			return i18n.t("auth:login.githubRepository", { defaultValue: "GitHub Repository" });
+		},
 		url: "https://github.com/maximhq/bifrost",
 		icon: GithubLogoIcon,
 	},
 	{
-		title: "Full Documentation",
+		get title() {
+			return i18n.t("auth:login.fullDocumentation", { defaultValue: "Full Documentation" });
+		},
 		url: "https://docs.getbifrost.ai",
 		icon: BooksIcon,
 		strokeWidth: 1,
@@ -30,6 +38,7 @@ const externalLinks = [
 ];
 
 export default function LoginView() {
+	const { t } = useTranslation(["common", "auth"]);
 	const { resolvedTheme } = useTheme();
 	const [mounted, setMounted] = useState(false);
 	const [username, setUsername] = useState("");
@@ -71,8 +80,8 @@ export default function LoginView() {
 					</div>
 
 					<div className="space-y-2 text-center">
-						<h1 className="text-foreground text-lg font-semibold">Welcome back</h1>
-						<p className="text-muted-foreground text-sm">Sign in to your account to continue</p>
+						<h1 className="text-foreground text-lg font-semibold">{t("auth:login.welcomeBack")}</h1>
+						<p className="text-muted-foreground text-sm">{t("auth:login.signInSubtitle")}</p>
 					</div>
 
 					<form onSubmit={handleSubmit} className="space-y-5">
@@ -80,12 +89,12 @@ export default function LoginView() {
 
 						<div className="space-y-2">
 							<Label htmlFor="username" className="text-sm font-medium">
-								Username
+								{t("auth:login.username")}
 							</Label>
 							<Input
 								id="username"
 								type="text"
-								placeholder="Enter your username"
+								placeholder={t("auth:login.usernamePlaceholder")}
 								value={username}
 								onChange={(e) => setUsername(e.target.value)}
 								required
@@ -96,13 +105,13 @@ export default function LoginView() {
 
 						<div className="space-y-2">
 							<Label htmlFor="password" className="text-sm font-medium">
-								Password
+								{t("auth:login.password")}
 							</Label>
 							<div className="relative">
 								<Input
 									id="password"
 									type={showPassword ? "text" : "password"}
-									placeholder="Enter your password"
+									placeholder={t("auth:login.passwordPlaceholder")}
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									required
@@ -113,7 +122,7 @@ export default function LoginView() {
 									type="button"
 									onClick={() => setShowPassword(!showPassword)}
 									className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
-									aria-label={showPassword ? "Hide password" : "Show password"}
+									aria-label={showPassword ? t("auth:login.hidePassword") : t("auth:login.showPassword")}
 								>
 									{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 								</button>
@@ -121,7 +130,7 @@ export default function LoginView() {
 						</div>
 
 						<Button type="submit" className="h-9 w-full text-sm" isLoading={isLoading} disabled={isLoading}>
-							{isLoading || isLoggingIn ? "Signing in..." : "Sign in"}
+							{isLoading || isLoggingIn ? t("auth:login.signingIn") : t("auth:login.signIn")}
 						</Button>
 					</form>
 

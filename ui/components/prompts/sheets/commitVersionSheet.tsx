@@ -62,7 +62,11 @@ function MessagePreview({
 				<span className="text-xs font-medium uppercase">{role}</span>
 				<div className="text-muted-foreground mt-1 line-clamp-3 text-sm">
 					{hasToolCalls && !content ? (
-						<span className="italic">Tool call: {msg.toolCalls!.map((tc) => tc.function.name).join(", ")}</span>
+						<span className="italic">
+							{t("workspaces:prompts.toolCallPrefix", {
+								names: msg.toolCalls!.map((tc) => tc.function.name).join(", "),
+							})}
+						</span>
 					) : content ? (
 						<Markdown content={content} className="text-muted-foreground [&_*]:text-sm" />
 					) : (

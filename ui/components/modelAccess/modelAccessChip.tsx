@@ -28,7 +28,7 @@ export function ModelAccessChipLabel({ entry, className }: ModelAccessChipLabelP
 		);
 	}
 	if (isWildcardEntry(entry)) {
-		return <span className={className}>All Models</span>;
+		return <span className={className}>{t("workspaces:selectors.allModels")}</span>;
 	}
 	return <span className={cn("truncate", className)}>{entry}</span>;
 }

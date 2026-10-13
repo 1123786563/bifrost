@@ -148,7 +148,7 @@ export const createAgentColumns = (
 		accessorKey: "timestamp",
 		header: ({ column }) => (
 			<Button variant="ghost" className="-ml-3 h-8 px-2" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-				Time
+				{t("logs:columns.time")}
 				<ArrowUpDown className="ml-2 size-3.5" />
 			</Button>
 		),
@@ -157,7 +157,7 @@ export const createAgentColumns = (
 			const timestamp = row.original.timestamp;
 			const date = timestamp ? new Date(timestamp) : null;
 			if (!date || !isValid(date)) {
-				return <div className="truncate text-xs">N/A</div>;
+				return <div className="truncate text-xs">{t("logs:chat.na")}</div>;
 			}
 			return (
 				<div className="flex flex-col leading-tight">

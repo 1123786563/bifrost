@@ -2,6 +2,7 @@ import { vi } from "vitest";
 import common from "@/lib/i18n/locales/en/common.json";
 import logs from "@/lib/i18n/locales/en/logs.json";
 import mcp from "@/lib/i18n/locales/en/mcp.json";
+import workspaces from "@/lib/i18n/locales/en/workspaces.json";
 
 /**
  * Test-only i18n wiring: components under test call useTranslation()/i18n.t(),
@@ -14,7 +15,7 @@ import mcp from "@/lib/i18n/locales/en/mcp.json";
  * The mock must cover every namespace the component renders (common, logs, mcp).
  */
 
-const RESOURCES: Record<string, unknown> = { common, logs, mcp };
+const RESOURCES: Record<string, unknown> = { common, logs, mcp, workspaces };
 
 function lookup(ns: string, key: string): string {
 	const value = key.split(".").reduce<unknown>((node, part) => {

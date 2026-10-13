@@ -1,5 +1,6 @@
 import type { WarpTurn, WarpTurnToolCall } from "@/lib/contexts/warpContext";
 import type { WarpLogIndexStatus, WarpStoredMessage } from "@/lib/types/warp";
+import type { TFunction } from "i18next";
 /** SSE frame parsing for Warp, kept out of the hook so it is testable without a DOM or network. */
 
 export type WarpEventType = "start" | "delta" | "tool_call_start" | "tool_call_end" | "question" | "error" | "done";
@@ -118,17 +119,19 @@ export function isUsableWarpEvent(event: WarpEvent | null | undefined): event is
 	}
 }
 
-export function warpToolLabel(name: string, isRunning = false): string {
+// t is optional so the pure functions stay unit-testable without i18next; callers pass the
+// hook's t and get localized labels, tests omit it and keep the English fallback.
+export function warpToolLabel(name: string, isRunning = false, t?: TFunction): string {
 	const label = WARP_TOOL_LABELS[name];
 	// Unknown tools show their raw name, so a new server-side tool stays legible instead of mislabelled.
 	if (!label) return name;
-	return isRunning ? label.running : label.done;
+	return t?.(`workspaces:warp.tools.${name}.${isRunning ? "running" : "done"}`) ?? (isRunning ? label.running : label.done);
 }
 
 /** Screen-reader text for a tool row's status, which the icons convey only by shape and color. */
-export function warpToolStatusLabel(call: { durationMs?: number; failed?: boolean }): string {
-	if (call.durationMs === undefined) return "In progress";
-	return call.failed ? "Failed" : "Completed";
+export function warpToolStatusLabel(call: { durationMs?: number; failed?: boolean }, t?: TFunction): string {
+	if (call.durationMs === undefined) return t?.("workspaces:warp.toolStatus.inProgress") ?? "In progress";
+	return call.failed ? t?.("workspaces:warp.toolStatus.failed") ?? "Failed" : t?.("workspaces:warp.toolStatus.completed") ?? "Completed";
 }
 
 const WARP_TOOL_LABELS: Record<string, { running: string; done: string }> = {
@@ -237,28 +240,34 @@ export interface IndexStatusLabel {
 	detail?: string;
 }
 
-export function indexStatusLabel(status: WarpLogIndexStatus): IndexStatusLabel {
+export function indexStatusLabel(status: WarpLogIndexStatus, t?: TFunction): IndexStatusLabel {
 	// The idle response is a zeroed body; treating it as a job would render 0% progress.
 	const backfill = status.backfill?.status === "idle" ? undefined : status.backfill;
 	switch (status.state) {
 		case "unavailable":
-			return { label: "No vector store", tone: "error" };
+			return { label: t?.("workspaces:warp.index.noVectorStore") ?? "No vector store", tone: "error" };
 		case "not_configured":
-			return { label: "Search not set up", tone: "muted" };
+			return { label: t?.("workspaces:warp.index.notSetUp") ?? "Search not set up", tone: "muted" };
 		case "failed": {
 			const detail = backfill?.last_error;
-			return detail ? { label: "Indexing failed", tone: "error", detail } : { label: "Indexing failed", tone: "error" };
+			const label = t?.("workspaces:warp.index.indexingFailed") ?? "Indexing failed";
+			return detail ? { label, tone: "error", detail } : { label, tone: "error" };
 		}
 		case "indexing": {
 			const total = backfill?.total ?? 0;
 			const scanned = backfill?.scanned ?? 0;
 			if (total > 0) {
-				return { label: `Indexing ${Math.min(100, Math.floor((scanned / total) * 100))}%`, tone: "busy" };
+				const percent = Math.min(100, Math.floor((scanned / total) * 100));
+				return { label: (t?.("workspaces:warp.index.indexingPercent", { percent }) ?? `Indexing ${percent}%`), tone: "busy" };
 			}
-			return { label: "Indexing", tone: "busy" };
+			return { label: t?.("workspaces:warp.index.indexing") ?? "Indexing", tone: "busy" };
 		}
 		default:
-			return { label: "Index ready", shortLabel: "Ready", tone: "ok" };
+			return {
+				label: t?.("workspaces:warp.index.indexReady") ?? "Index ready",
+				shortLabel: t?.("workspaces:warp.index.ready") ?? "Ready",
+				tone: "ok",
+			};
 	}
 }
 
@@ -312,8 +321,8 @@ export function isPartialAnswer(finishReason: string | undefined): boolean {
 	return finishReason === WARP_FINISH_PARTIAL;
 }
 
-export function errorMessage(code: string | undefined, message: string | undefined): string {
-	return warpErrorDetail(code, message).summary;
+export function errorMessage(code: string | undefined, message: string | undefined, t?: TFunction): string {
+	return warpErrorDetail(code, message, t).summary;
 }
 
 export interface WarpErrorDetail {
@@ -323,112 +332,139 @@ export interface WarpErrorDetail {
 	raw?: string;
 }
 
-export function warpErrorDetail(code: string | undefined, message: string | undefined): WarpErrorDetail {
+export function warpErrorDetail(code: string | undefined, message: string | undefined, t?: TFunction): WarpErrorDetail {
 	const raw = message && message.trim() !== "" ? message : undefined;
+	// Localized field for a known error code; English fallback keeps the pure function testable without i18next.
+	const field = (code: string, suffix: string) => t?.(`workspaces:warp.errors.${code}.${suffix}`);
 
 	switch (code) {
 		case "not_configured":
 			return {
-				summary: "Warp is not configured yet.",
-				cause: "No provider and model are set, or Warp is switched off in settings.",
-				suggestions: ["Open Warp settings and choose a provider and model.", "Make sure Enable Warp is switched on."],
+				summary: field(code, "summary") ?? "Warp is not configured yet.",
+				cause: field(code, "cause") ?? "No provider and model are set, or Warp is switched off in settings.",
+				suggestions: [
+					field(code, "suggestions.0") ?? "Open Warp settings and choose a provider and model.",
+					field(code, "suggestions.1") ?? "Make sure Enable Warp is switched on.",
+				],
 				raw,
 			};
 		case "max_iterations":
 			return {
-				summary: "Warp could not settle on an answer.",
+				summary: field(code, "summary") ?? "Warp could not settle on an answer.",
 				cause:
+					field(code, "cause") ??
 					"Warp ran its full budget of research steps without reaching a conclusion. That usually means the question was broad enough that each query raised another, so it kept looking instead of answering.",
 				suggestions: [
-					"Ask for one thing at a time: a single metric, one time range, one scope.",
-					"Name the window explicitly, for example 'in the last 24 hours'.",
-					"Name whose traffic you mean - a team, a customer, or all of them.",
-					"Raise Max Iterations in Warp settings if the question genuinely needs more steps.",
+					field(code, "suggestions.0") ?? "Ask for one thing at a time: a single metric, one time range, one scope.",
+					field(code, "suggestions.1") ?? "Name the window explicitly, for example 'in the last 24 hours'.",
+					field(code, "suggestions.2") ?? "Name whose traffic you mean - a team, a customer, or all of them.",
+					field(code, "suggestions.3") ?? "Raise Max Iterations in Warp settings if the question genuinely needs more steps.",
 				],
 				raw,
 			};
 		case "timeout":
 			return {
-				summary: "That took too long.",
+				summary: field(code, "summary") ?? "That took too long.",
 				cause:
+					field(code, "cause") ??
 					"The whole request passed its time budget before Warp finished. Long time ranges and wide scopes make every query slower, and Warp runs several.",
 				suggestions: [
-					"Try a shorter time range.",
-					"Narrow to one team, customer or virtual key.",
-					"Raise Request Timeout in Warp settings if your model is simply slow.",
+					field(code, "suggestions.0") ?? "Try a shorter time range.",
+					field(code, "suggestions.1") ?? "Narrow to one team, customer or virtual key.",
+					field(code, "suggestions.2") ?? "Raise Request Timeout in Warp settings if your model is simply slow.",
 				],
 				raw,
 			};
 		case "upstream_error":
 			return {
-				summary: "Warp's model could not be reached.",
-				cause: "The provider rejected the request or was unreachable. This is about Warp's own model, not the traffic you asked about.",
+				summary: field(code, "summary") ?? "Warp's model could not be reached.",
+				cause:
+					field(code, "cause") ??
+					"The provider rejected the request or was unreachable. This is about Warp's own model, not the traffic you asked about.",
 				suggestions: [
-					"Check the provider, model and key in Warp settings.",
-					"Try the same model from the playground to see whether it answers at all.",
+					field(code, "suggestions.0") ?? "Check the provider, model and key in Warp settings.",
+					field(code, "suggestions.1") ?? "Try the same model from the playground to see whether it answers at all.",
 				],
 				raw,
 			};
 		case "access_denied":
 			return {
-				summary: "Your account doesn't have access to Warp's model.",
+				summary: field(code, "summary") ?? "Your account doesn't have access to Warp's model.",
 				cause:
+					field(code, "cause") ??
 					"This deployment's governance rules refused the request before it reached the provider. Warp's model calls count as yours, so they need the same access any of your requests would.",
 				suggestions: [
-					"Ask an administrator to give your account model access, such as an access profile that allows Warp's model.",
-					"If you do have access, the details below say which rule refused it.",
+					field(code, "suggestions.0") ??
+						"Ask an administrator to give your account model access, such as an access profile that allows Warp's model.",
+					field(code, "suggestions.1") ?? "If you do have access, the details below say which rule refused it.",
 				],
 				raw,
 			};
 		case "budget_exceeded":
 			return {
-				summary: "You've used up your budget.",
+				summary: field(code, "summary") ?? "You've used up your budget.",
 				cause:
+					field(code, "cause") ??
 					"A budget that covers your account is spent for this cycle, so governance refused Warp's model call. Warp's model calls count as yours, so they spend the same budget as any of your requests.",
 				suggestions: [
-					"Wait for the budget to reset at the start of the next cycle.",
-					"Ask an administrator to raise the limit if you need more this cycle.",
-					"The details below say which budget refused it.",
+					field(code, "suggestions.0") ?? "Wait for the budget to reset at the start of the next cycle.",
+					field(code, "suggestions.1") ?? "Ask an administrator to raise the limit if you need more this cycle.",
+					field(code, "suggestions.2") ?? "The details below say which budget refused it.",
 				],
 				raw,
 			};
 		case "rate_limited":
 			return {
-				summary: "You've hit a rate limit.",
+				summary: field(code, "summary") ?? "You've hit a rate limit.",
 				cause:
+					field(code, "cause") ??
 					"Your account sent more requests or tokens than a rate limit allows in its window, so governance refused Warp's model call. Warp's model calls count as yours, so they share the same limits.",
 				suggestions: [
-					"Wait a moment and ask again.",
-					"Ask an administrator to raise the limit if it keeps happening.",
-					"The details below say which limit refused it.",
+					field(code, "suggestions.0") ?? "Wait a moment and ask again.",
+					field(code, "suggestions.1") ?? "Ask an administrator to raise the limit if it keeps happening.",
+					field(code, "suggestions.2") ?? "The details below say which limit refused it.",
 				],
 				raw,
 			};
 		case "model_blocked":
 			return {
-				summary: "Warp's model isn't allowed for your account.",
+				summary: field(code, "summary") ?? "Warp's model isn't allowed for your account.",
 				cause:
+					field(code, "cause") ??
 					"This deployment's governance rules block the model or provider Warp is set to use for your account, so the request was refused before it reached the provider.",
 				suggestions: [
-					"Ask an administrator to allow Warp's model for your account.",
-					"Or set Warp to a model your account is allowed to use in Warp settings.",
+					field(code, "suggestions.0") ?? "Ask an administrator to allow Warp's model for your account.",
+					field(code, "suggestions.1") ?? "Or set Warp to a model your account is allowed to use in Warp settings.",
 				],
 				raw,
 			};
 		case "tool_error":
 			return {
-				summary: "A query failed.",
-				cause: "One of Warp's data queries returned an error, and it could not recover within its remaining steps.",
-				suggestions: ["Try a narrower time range.", "Check that the model, key or team you named actually exists."],
+				summary: field(code, "summary") ?? "A query failed.",
+				cause:
+					field(code, "cause") ??
+					"One of Warp's data queries returned an error, and it could not recover within its remaining steps.",
+				suggestions: [
+					field(code, "suggestions.0") ?? "Try a narrower time range.",
+					field(code, "suggestions.1") ?? "Check that the model, key or team you named actually exists.",
+				],
 				raw,
 			};
 		case "cancelled":
-			return { summary: "Stopped.", cause: "The request was cancelled before it finished.", suggestions: [], raw };
+			return {
+				summary: field(code, "summary") ?? "Stopped.",
+				cause: field(code, "cause") ?? "The request was cancelled before it finished.",
+				suggestions: [],
+				raw,
+			};
 		default:
 			return {
-				summary: raw ?? "Something went wrong.",
-				cause: "Warp returned an error without a recognised code.",
-				suggestions: ["Try the question again.", "If it keeps happening, report it with the details below."],
+				summary: raw ?? field("unknown", "summary") ?? "Something went wrong.",
+				cause: field("unknown", "cause") ?? "Warp returned an error without a recognised code.",
+				suggestions: [
+					field("unknown", "suggestions.0") ?? "Try the question again.",
+					field("unknown", "suggestions.1") ?? "If it keeps happening, report it with the details below.",
+				],
 				raw,
 			};
 	}

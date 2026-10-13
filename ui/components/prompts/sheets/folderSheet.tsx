@@ -69,7 +69,7 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 			onSaved();
 			onOpenChange(false);
 		} catch (err) {
-			toast.error(`Failed to ${isEditing ? "update" : "create"} folder`, {
+			toast.error(t(isEditing ? "workspaces:promptsRepo.folderSheet.updateFailed" : "workspaces:promptsRepo.folderSheet.createFailed"), {
 				description: getErrorMessage(err),
 			});
 		}
@@ -86,7 +86,7 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 			>
 				<form onSubmit={handleSubmit(onSubmit)}>
 					<SheetHeader className="flex flex-col items-start">
-						<SheetTitle>{isEditing ? "Edit Folder" : "Create Folder"}</SheetTitle>
+						<SheetTitle>{isEditing ? t("workspaces:prompts.editFolder") : t("workspaces:promptsRepo.folderSheet.createTitle")}</SheetTitle>
 						<SheetDescription>
 							{isEditing ? t("workspaces:promptsRepo.folderSheet.editDesc") : t("workspaces:promptsRepo.folderSheet.createDesc")}
 						</SheetDescription>
@@ -122,7 +122,7 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 
 					<SheetFooter className="mt-6 flex flex-row items-center justify-end gap-2 p-0">
 						<Button type="button" variant="outline" data-testid="folder-cancel" onClick={() => onOpenChange(false)}>
-							Cancel
+							{t("common:actions.cancel")}
 						</Button>
 						<Button
 							type="submit"
@@ -130,7 +130,7 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 							disabled={isLoading || !canSave}
 							title={canSave ? undefined : t("workspaces:promptsRepo.folderSheet.noPermission")}
 						>
-							{isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
+							{isLoading ? t("workspaces:formFooter.saving") : isEditing ? t("common:actions.update") : t("common:actions.create")}
 						</Button>
 					</SheetFooter>
 				</form>

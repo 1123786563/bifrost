@@ -1,6 +1,8 @@
 import { CheckCircle2, CircleAlert } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function AgentHandoverView() {
+	const { t } = useTranslation(["errors"]);
 	const status = new URLSearchParams(window.location.search).get("status");
 	const isComplete = !status || status === "complete";
 	const Icon = isComplete ? CheckCircle2 : CircleAlert;
@@ -11,9 +13,11 @@ export default function AgentHandoverView() {
 				<div className="bg-primary/10 mx-auto mb-5 flex size-12 items-center justify-center rounded-full">
 					<Icon className="text-primary size-6" />
 				</div>
-				<h1 className="text-xl font-semibold tracking-tight">{isComplete ? "Bifrost Agent sign-in complete" : "Bifrost Agent sign-in"}</h1>
+				<h1 className="text-xl font-semibold tracking-tight">
+					{isComplete ? t("errors:agentHandover.titleComplete") : t("errors:agentHandover.title")}
+				</h1>
 				<p className="text-muted-foreground mt-2 text-sm">
-					{isComplete ? "You can close this window and return to the Bifrost Agent." : `Sign-in status: ${status}`}
+					{isComplete ? t("errors:agentHandover.descComplete") : t("errors:agentHandover.descStatus", { status: status ?? "" })}
 				</p>
 			</section>
 		</main>

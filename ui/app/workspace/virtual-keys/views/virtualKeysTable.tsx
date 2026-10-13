@@ -276,12 +276,12 @@ function VKActionsMenu({
 						}}
 					>
 						<Edit className="h-4 w-4" />
-						Edit
+						{t("common:actions.edit")}
 					</DisabledReasonMenuItem>
 					<DropdownMenuItem asChild className="cursor-pointer" data-testid={`vk-view-logs-btn-${vk.name}`}>
 						<Link to="/workspace/logs" search={{ virtual_key_ids: [vk.id] }} onClick={() => setIsOpen(false)}>
 							<ScrollText className="h-4 w-4" />
-							View logs
+							{t("governance:virtualKeys.viewLogs")}
 						</Link>
 					</DropdownMenuItem>
 					<DisabledReasonMenuItem
@@ -301,7 +301,7 @@ function VKActionsMenu({
 						}}
 					>
 						<Trash2 className="h-4 w-4" />
-						Delete
+						{t("common:actions.delete")}
 					</DisabledReasonMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
@@ -785,12 +785,12 @@ export default function VirtualKeysTable({
 
 						{hasActiveFilters && (
 							<p className="text-muted-foreground text-xs">
-								Filters applied:{" "}
+								{t("governance:virtualKeys.table.filtersApplied")}{" "}
 								{[
-									debouncedSearch && `search "${debouncedSearch}"`,
-									customerFilter && "customer filter",
-									teamFilter && "team filter",
-									userFilter && "user filter",
+									debouncedSearch && t("governance:virtualKeys.table.filterSearch", { value: debouncedSearch }),
+									customerFilter && t("governance:virtualKeys.table.filterCustomer"),
+									teamFilter && t("governance:virtualKeys.table.filterTeam"),
+									userFilter && t("governance:virtualKeys.table.filterUser"),
 								]
 									.filter(Boolean)
 									.join(", ")}
@@ -804,7 +804,7 @@ export default function VirtualKeysTable({
 					</div>
 					<DialogFooter className="pt-0">
 						<Button variant="outline" onClick={() => setShowExportDialog(false)} disabled={isExporting}>
-							Cancel
+							{t("common:actions.cancel")}
 						</Button>
 						<Button onClick={handleExportCSV} disabled={isExporting} data-testid="vk-export-confirm-btn">
 							{isExporting ? (
@@ -815,7 +815,7 @@ export default function VirtualKeysTable({
 							) : (
 								<>
 									<Download className="h-4 w-4" />
-									Export CSV
+									{t("governance:virtualKeys.exportCsv")}
 								</>
 							)}
 						</Button>
@@ -828,9 +828,10 @@ export default function VirtualKeysTable({
 					<AlertDialogHeader>
 						<AlertDialogTitle>{t("governance:virtualKeys.table.rotateDialogTitle")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will replace the secret value for {selectedCount} selected virtual {selectedCount === 1 ? "key" : "keys"}. IDs, budgets,
-							rate limits, provider permissions, MCP access, and assignments stay the same. Previous key values stop working immediately
-							unless a rotation cooldown is configured, in which case they remain valid until the cooldown ends.
+							{t("governance:virtualKeys.table.rotateDialogDescription", {
+								count: selectedCount,
+								keyNoun: t("governance:virtualKeys.table.keyNoun", { count: selectedCount }),
+							})}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -880,7 +881,9 @@ export default function VirtualKeysTable({
 							data-testid="vk-customer-filter-clear-btn"
 						/>
 					</div>
-					{customerFilter && teamFilter && <span className="text-muted-foreground text-xs font-medium">or</span>}
+					{customerFilter && teamFilter && (
+						<span className="text-muted-foreground text-xs font-medium">{t("governance:virtualKeys.table.or")}</span>
+					)}
 					<div className={FILTER_WRAPPER_CLASS} data-testid="vk-team-filter">
 						<TeamSelector
 							value={teamFilter}
@@ -899,7 +902,7 @@ export default function VirtualKeysTable({
 						/>
 					</div>
 					{UserPicker && (customerFilter || teamFilter) && userFilter && (
-						<span className="text-muted-foreground text-xs font-medium">or</span>
+						<span className="text-muted-foreground text-xs font-medium">{t("governance:virtualKeys.table.or")}</span>
 					)}
 					{UserPicker && (
 						<div className={FILTER_WRAPPER_CLASS} data-testid="vk-user-filter">
@@ -999,16 +1002,16 @@ export default function VirtualKeysTable({
 									/>
 								</TableHead>
 								<TableHead className="w-[250px]">
-									<SortableHeader column="name" label="Name" />
+									<SortableHeader column="name" label={t("governance:virtualKeys.table.headers.name")} />
 								</TableHead>
-								<TableHead className="w-[160px]">Assigned To</TableHead>
-								<TableHead className="w-[440px]">Key</TableHead>
+								<TableHead className="w-[160px]">{t("governance:virtualKeys.table.headers.assignedTo")}</TableHead>
+								<TableHead className="w-[440px]">{t("governance:virtualKeys.table.headers.key")}</TableHead>
 								<TableHead className="w-[200px]">
-									<SortableHeader column="budget_spent" label="Budget" />
+									<SortableHeader column="budget_spent" label={t("governance:virtualKeys.table.headers.budget")} />
 								</TableHead>
 								<TableHead className="w-[200px]">{t("governance:virtualKeys.rateLimits")}</TableHead>
 								<TableHead className="w-[180px]">
-									<SortableHeader column="status" label="Status" />
+									<SortableHeader column="status" label={t("governance:virtualKeys.table.headers.status")} />
 								</TableHead>
 								<TableHead className={`bg-muted sticky right-0 z-30 w-[56px] text-right ${PIN_SHADOW_RIGHT}`}></TableHead>
 							</TableRow>
@@ -1037,7 +1040,7 @@ export default function VirtualKeysTable({
 												<Checkbox
 													checked={selectedIds.has(vk.id)}
 													onCheckedChange={(checked) => toggleSelectVirtualKey(vk.id, checked === true)}
-													aria-label={`Select virtual key ${vk.name}`}
+													aria-label={t("governance:virtualKeys.table.selectVkAria", { name: vk.name })}
 													data-testid={`vk-select-checkbox-${vk.name}`}
 												/>
 											</TableCell>

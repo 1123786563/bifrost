@@ -306,6 +306,7 @@
 	"sidebar": {
 		"searchPlaceholder": "搜索...",
 		"searchAria": "搜索侧边栏导航",
+		"mcpClientsIcon": "MCP 客户端图标",
 		"collapseAria": "收起侧边栏",
 		"expandAria": "展开侧边栏",
 		"promo": {
@@ -505,6 +506,7 @@
 			"provider": "添加 Provider 名称...",
 			"apiKey": "添加 API 密钥名称..."
 		},
+		"addQuoted": "添加 \"{{value}}\"",
 		"none": {
 			"virtualKey": "未找到 Virtual Key",
 			"team": "未找到团队",
@@ -526,7 +528,8 @@
 		"viewMore": "展开更多",
 		"viewLess": "收起",
 		"openedAnnounce": "下拉列表已打开。共 {{count}} 个选项。请使用方向键导航。",
-		"closedAnnounce": "下拉列表已关闭。"
+		"closedAnnounce": "下拉列表已关闭。",
+		"duplicatesRemoved": "已自动移除重复项。"
 	},
 	"headersForm": {
 		"previouslySubmitted": "此前已提交",
@@ -559,7 +562,33 @@
 	"providerConfigs": {
 		"noneLeft": "没有剩余可配置的 Provider。点击添加",
 		"allowAll": "允许所有 Provider",
-		"selectToAdd": "选择要添加的 Provider"
+		"selectToAdd": "选择要添加的 Provider",
+		"providerBudget": "提供商预算",
+		"modelBudgets": "模型预算",
+		"accessAndRateLimits": "访问与速率限制",
+		"maximumTokens": "最大 Token 数",
+		"maximumRequests": "最大请求数",
+		"globalProviderCap": "全局提供商上限 {{amount}}",
+		"modelsShareProviderBudget": "留空则模型自由共享提供商预算",
+		"modelBudgetCount_one": "{{count}} 个模型预算",
+		"modelBudgetCount_other": "{{count}} 个模型预算",
+		"noBudget": "无预算",
+		"removeModelBudget": "移除模型预算 {{name}}",
+		"allKeys": "全部密钥",
+		"noKeys": "无密钥",
+		"keyCount_one": "{{count}} 个密钥",
+		"keyCount_other": "{{count}} 个密钥",
+		"rateLimitsSet": "已设置速率限制",
+		"noRateLimits": "未设置速率限制",
+		"selectModel": "选择模型…",
+		"noCap": "无上限",
+		"allModels": "全部模型",
+		"noModelsDenyAll": "无模型（全部拒绝）",
+		"allKeysAllowed": "允许所有密钥",
+		"noKeysSelected": "未选择密钥",
+		"selectKeys": "选择密钥...",
+		"removeProviderAria": "移除 Provider {{name}}",
+		"removeKeyAria": "移除 {{name}}"
 	},
 	"mcpConfigs": {
 		"duplicate": "此 MCP 服务器已配置",
@@ -582,7 +611,15 @@
 		"networking": "网络",
 		"streaming": "客户端交付",
 		"miscellaneous": "杂项",
-		"other": "其他"
+		"other": "其他",
+		"overCounted": "测量到的 span（{{measured}}）超过了计算出的开销（{{computed}}）；上游累加器可能多计。",
+		"plugins": {
+			"otel": "OpenTelemetry",
+			"datadog": "Datadog",
+			"compat": "兼容性",
+			"adaptiveLoadBalancer": "自适应负载均衡器",
+			"modelCatalogResolver": "模型目录解析器"
+		}
 	},
 	"overheadMembers": {
 		"request_unmarshal": "请求解析",
@@ -641,7 +678,14 @@
 		"selectModels": "选择模型...",
 		"searchModel": "搜索模型...",
 		"selectProviders": "选择 Provider...",
-		"value": "值"
+		"value": "值",
+		"hasKey": "包含键",
+		"key": "键",
+		"keyNamePh": "{{field}}名称（例如 x-api-key）",
+		"select": "选择...",
+		"phArray": "输入逗号分隔的值或 JSON 数组",
+		"phRegex": "例如 .*（任意）、openai|anthropic（多个）、^gpt.*（前缀）",
+		"phValue": "输入值..."
 	},
 	"misc": {
 		"select": "选择",
@@ -675,7 +719,9 @@
 		"firstCycleNote": "当前重置周期计为第一个周期。",
 		"validUntil": "有效期至",
 		"currentEffectiveLimit": "当前生效限额：",
-		"invalidInput": "无效输入"
+		"invalidInput": "无效输入",
+		"activeLine": "覆盖 +{{amount}} · 生效 {{effective}}",
+		"baseLine": "基础 {{amount}}"
 	},
 	"notifications": {
 		"ariaWithCount": "通知，{{summary}}",
@@ -730,11 +776,225 @@
 		"chartUnavailable": "图表不可用。",
 		"partialAnswer": "部分回答",
 		"whatToTry": "建议尝试",
-		"thinking": "思考中"
+		"thinking": "思考中",
+		"settings": "Warp 设置",
+		"switchModel": "切换模型",
+		"default": "默认",
+		"stop": "停止",
+		"send": "发送",
+		"placeholder": "询问您的 Bifrost 数据…",
+		"placeholderQueued": "继续提问，将在当前回答结束后发送…",
+		"resize": "调整 Warp 面板大小",
+		"askWarp": "询问 Warp",
+		"sheetDescription": "向 Warp 询问此部署的日志、用量和支出。",
+		"newChat": "新对话",
+		"closeWarp": "关闭 Warp",
+		"chatHistory": "对话历史",
+		"backToChat": "返回对话",
+		"indexStatusTitle": "Warp 无法读取其索引状态，语义搜索可能可用也可能不可用。",
+		"configError": "无法加载 Warp 配置。请刷新页面重试。",
+		"turnedOff": "Warp 已关闭",
+		"notSetUp": "Warp 尚未设置",
+		"turnOnHint": "打开「启用 Warp」开关即可开始提问。",
+		"chooseModelHint": "为 Warp 选择一个运行模型。",
+		"openSettings": "打开 Warp 设置",
+		"configure": "配置 Warp",
+		"askAdminOn": "请联系管理员开启 Warp。",
+		"askAdminSetup": "请联系管理员设置 Warp。",
+		"sendsWhenFinish": "当前回答结束后发送",
+		"queued": "已排队",
+		"removeQueuedAria": "移除排队消息",
+		"jumpToLatest": "跳到最新",
+		"partialBody": "Warp 在完成核查前用尽了全部研究步骤。这是它目前找到的结果，并注明了无法确认的部分。缩小提问范围通常可以完整回答。",
+		"starter1": "过去 7 天我在每个 provider 上花了多少钱？",
+		"starter2": "昨天哪个模型的 p99 延迟最差？",
+		"starter3": "本周按成本排名前 5 的用户是谁？",
+		"starter4": "显示过去 24 小时内的失败请求",
+		"index": {
+			"noVectorStore": "无向量存储",
+			"notSetUp": "搜索未设置",
+			"indexingFailed": "索引失败",
+			"indexing": "索引中",
+			"indexingPercent": "索引中 {{percent}}%",
+			"indexReady": "索引就绪",
+			"ready": "就绪"
+		},
+		"toolStatus": {
+			"inProgress": "进行中",
+			"failed": "失败",
+			"completed": "已完成"
+		},
+		"tools": {
+			"semantic_search_logs": {
+				"running": "正在执行向量搜索",
+				"done": "已执行向量搜索"
+			},
+			"count_logs": {
+				"running": "正在检查日志量",
+				"done": "已检查日志量"
+			},
+			"query_logs": {
+				"running": "正在搜索请求日志",
+				"done": "已搜索请求日志"
+			},
+			"get_log_detail": {
+				"running": "正在打开一条请求",
+				"done": "已打开一条请求"
+			},
+			"get_request_trace": {
+				"running": "正在追踪请求过程",
+				"done": "已追踪请求过程"
+			},
+			"query_metrics": {
+				"running": "正在查询指标",
+				"done": "已查询指标"
+			},
+			"query_usage_by": {
+				"running": "正在对用量排序",
+				"done": "已对用量排序"
+			},
+			"query_model_performance": {
+				"running": "正在比较模型与 provider",
+				"done": "已比较模型与 provider"
+			},
+			"render_chart": {
+				"running": "正在绘制图表",
+				"done": "已绘制图表"
+			},
+			"describe_filter_space": {
+				"running": "正在检查可用取值",
+				"done": "已检查可用取值"
+			},
+			"describe_virtual_key": {
+				"running": "正在检查虚拟密钥限额",
+				"done": "已检查虚拟密钥限额"
+			},
+			"ask_user": {
+				"running": "正在提问",
+				"done": "已提问"
+			}
+		},
+		"errors": {
+			"not_configured": {
+				"summary": "Warp 尚未配置。",
+				"cause": "未设置 provider 和模型，或 Warp 已在设置中关闭。",
+				"suggestions": [
+					"打开 Warp 设置并选择 provider 和模型。",
+					"确认「启用 Warp」开关已打开。"
+				]
+			},
+			"max_iterations": {
+				"summary": "Warp 未能得出结论。",
+				"cause": "Warp 用完了全部研究步骤预算仍未得出结论。这通常说明问题较宽泛，每个查询又引出新问题，于是它一直在查而没有作答。",
+				"suggestions": [
+					"一次只问一件事：单个指标、一个时间范围、一个范围。",
+					"明确写出时间窗口，例如「过去 24 小时」。",
+					"指明您指的是谁的流量——某个团队、某个客户，或全部。",
+					"如果问题确实需要更多步骤，在 Warp 设置中调高最大迭代次数。"
+				]
+			},
+			"timeout": {
+				"summary": "耗时过长。",
+				"cause": "整个请求在 Warp 完成前超出了时间预算。较长的时间范围和过宽的范围会让每个查询变慢，而 Warp 会运行多个查询。",
+				"suggestions": [
+					"尝试更短的时间范围。",
+					"收窄到单个团队、客户或虚拟密钥。",
+					"如果模型本身就慢，在 Warp 设置中调高请求超时。"
+				]
+			},
+			"upstream_error": {
+				"summary": "无法连接 Warp 的模型。",
+				"cause": "provider 拒绝了请求或不可达。这针对的是 Warp 自身的模型，与您询问的流量无关。",
+				"suggestions": [
+					"在 Warp 设置中检查 provider、模型和密钥。",
+					"在 playground 中试用同一模型，看它是否能正常回答。"
+				]
+			},
+			"access_denied": {
+				"summary": "您的账户无权访问 Warp 的模型。",
+				"cause": "此部署的治理规则在请求到达 provider 前拒绝了它。Warp 的模型调用计入您的账户，因此需要与您的任何请求相同的访问权限。",
+				"suggestions": [
+					"请联系管理员为您的账户开通模型访问，例如允许 Warp 模型的访问配置。",
+					"如果您本应有权限，下方详情会说明是哪条规则拒绝了请求。"
+				]
+			},
+			"budget_exceeded": {
+				"summary": "您的预算已用尽。",
+				"cause": "覆盖您账户的预算在本周期内已耗尽，因此治理拒绝了 Warp 的模型调用。Warp 的模型调用计入您的账户，与您的任何请求消耗相同预算。",
+				"suggestions": [
+					"等待预算在下一周期开始时重置。",
+					"如本周期还需要更多，请联系管理员提高限额。",
+					"下方详情会说明是哪个预算拒绝了请求。"
+				]
+			},
+			"rate_limited": {
+				"summary": "已触发速率限制。",
+				"cause": "您的账户在窗口期内发送的请求数或 token 数超过了速率限制，因此治理拒绝了 Warp 的模型调用。Warp 的模型调用计入您的账户，共享相同限额。",
+				"suggestions": [
+					"稍等片刻后再次提问。",
+					"如果反复出现，请联系管理员提高限额。",
+					"下方详情会说明是哪条限额拒绝了请求。"
+				]
+			},
+			"model_blocked": {
+				"summary": "您的账户不允许使用 Warp 的模型。",
+				"cause": "此部署的治理规则阻止您的账户使用 Warp 所设置的模型或 provider，请求在到达 provider 前被拒绝。",
+				"suggestions": [
+					"请联系管理员为您的账户放行 Warp 的模型。",
+					"或在 Warp 设置中将 Warp 改为您的账户允许使用的模型。"
+				]
+			},
+			"tool_error": {
+				"summary": "查询失败。",
+				"cause": "Warp 的某个数据查询返回了错误，且它无法在剩余步骤内恢复。",
+				"suggestions": [
+					"尝试更窄的时间范围。",
+					"检查您提到的模型、密钥或团队是否确实存在。"
+				]
+			},
+			"cancelled": {
+				"summary": "已停止。",
+				"cause": "请求在完成前被取消。",
+				"suggestions": []
+			},
+			"unknown": {
+				"summary": "出现错误。",
+				"cause": "Warp 返回了无法识别代码的错误。",
+				"suggestions": [
+					"重新提问试试。",
+					"如果反复出现，请连同下方详情反馈。"
+				]
+			}
+		}
+	},
+	"agentCard": {
+		"unnamed": "未命名 agent",
+		"by": "由 {{provider}} 提供",
+		"docs": "文档",
+		"skills": "技能",
+		"interfaces": "接口",
+		"signatures": "签名",
+		"signaturesRemoved": "上游签名已被移除，因为网关会改写卡片的端点和认证要求。原始签名（如有记录）保留在原始抓取中。",
+		"hideDetails": "收起卡片详情",
+		"showDetails": "展开卡片详情",
+		"tenant": "租户：{{tenant}}",
+		"oauthFlows": "OAuth 流程",
+		"flow": "流程",
+		"inputModes": "输入模式",
+		"outputModes": "输出模式",
+		"authentication": "认证",
+		"notDeclared": "未声明",
+		"redacted": "已脱敏",
+		"signatureN": "签名 {{n}}",
+		"extensions": "扩展",
+		"copySkillIdAria": "复制技能 ID {{id}}"
 	},
 	"onboarding": {
 		"expandAria": "展开设置清单",
 		"minimizeAria": "最小化",
+		"stepsComplete": "已完成 {{done}}/{{total}} 步",
+		"skip": "跳过",
+		"skipped": "已跳过",
 		"closeAria": "暂时关闭",
 		"title": "设置清单",
 		"completed": "已完成",
@@ -758,7 +1018,11 @@
 			"namePh": "客服助手",
 			"nameRequired": "Prompt 名称必填",
 			"nameBlank": "Prompt 名称不能为空",
-			"noPermission": "您没有权限更改 prompt"
+			"noPermission": "您没有权限更改 prompt",
+			"renameTitle": "重命名 Prompt",
+			"createTitle": "创建 Prompt",
+			"updateFailed": "更新 Prompt 失败",
+			"createFailed": "创建 Prompt 失败"
 		},
 		"folderSheet": {
 			"updated": "文件夹已更新",
@@ -771,7 +1035,10 @@
 			"nameBlank": "文件夹名称不能为空",
 			"descLabel": "描述（可选）",
 			"descPh": "用于客服场景的 prompt...",
-			"noPermission": "您没有权限更改 prompt 文件夹"
+			"noPermission": "您没有权限更改 prompt 文件夹",
+			"createTitle": "创建文件夹",
+			"updateFailed": "更新文件夹失败",
+			"createFailed": "创建文件夹失败"
 		},
 		"commitSheet": {
 			"selectAtLeastOne": "请至少选择一条消息进行提交",
@@ -796,7 +1063,11 @@
 			"searchPrompts": "搜索 prompt...",
 			"addAria": "添加 prompt 或文件夹",
 			"folderActionsAria": "文件夹操作",
-			"promptActionsAria": "Prompt 操作"
+			"promptActionsAria": "Prompt 操作",
+			"toggleFolderAria": "展开/收起文件夹",
+			"noPromptsYet": "暂无 Prompt",
+			"noPrompts": "无 Prompt",
+			"dropHere": "拖放到此处"
 		},
 		"messages": {
 			"deleteAria": "删除消息",
@@ -823,7 +1094,9 @@
 			"vkApiLabel": "Virtual Key / API 密钥",
 			"selectVk": "选择 Virtual Key",
 			"selectApiKey": "选择 API 密钥",
-			"vkGroup": "Virtual Keys"
+			"vkGroup": "Virtual Keys",
+			"apiKeysGroup": "API 密钥",
+			"autoDefault": "自动（默认）"
 		},
 		"input": {
 			"typeMessage": "输入消息...",
@@ -845,7 +1118,11 @@
 			"noSessions": "未找到会话。",
 			"versions": "版本",
 			"sessionNamePh": "会话名称",
-			"renameAria": "重命名会话"
+			"renameAria": "重命名会话",
+			"noCommitMessage": "无提交信息",
+			"latest": "（最新）",
+			"playground": "Playground",
+			"clear": "清空"
 		},
 		"empty": {
 			"noPromptSelected": "从侧边栏选择一个 prompt",
@@ -941,7 +1218,22 @@
 		"toolResultPlaceholder": "输入工具结果…",
 		"systemPlaceholder": "输入系统消息…",
 		"variablesHint": "检测自消息中的",
-		"variablesHint2": "语法。值在运行时替换。"
+		"variablesHint2": "语法。值在运行时替换。",
+		"requiredHeadersHint": "这些请求头由服务端要求。填写每一项的值后即可从 playground 发送请求。",
+		"attachments": {
+			"image": "图片",
+			"audio": "音频",
+			"file": "文件",
+			"alt": "附件"
+		},
+		"toolCallPrefix": "工具调用：{{names}}",
+		"toolCallCount_one": "{{count}} 个工具调用",
+		"toolCallCount_other": "{{count}} 个工具调用",
+		"authRequiredFor": "{{name}} 需要认证",
+		"executing": "执行中",
+		"execute": "执行",
+		"allResultsReady": "全部 {{count}} 个结果已就绪",
+		"resultsCollected": "已收集 {{resolved}}/{{total}} 个结果"
 	},
 	"virtualMcps": {
 		"addButton": "添加虚拟 MCP",
@@ -956,5 +1248,85 @@
 		"resetPeriod": "重置周期",
 		"nextResetOn": "下次重置于"
 	},
-	"settingsUnaffected": "您的设置和数据不受影响。"
+	"settingsUnaffected": "您的设置和数据不受影响。",
+	"providerSelector": {
+		"selectProvider": "选择 Provider",
+		"allProviders": "全部 Provider",
+		"loadFailed": "无法加载 Provider。",
+		"noMatching": "没有匹配的 Provider。",
+		"noneAvailable": "没有可用的 Provider。",
+		"removeAria": "移除 {{name}}"
+	},
+	"modelSelector": {
+		"selectModel": "选择模型",
+		"searchModels": "搜索模型...",
+		"loadFailed": "无法加载模型。",
+		"noMatching": "没有匹配的模型。",
+		"noneAvailable": "没有可用的模型。",
+		"deprecated": "已弃用",
+		"removeAria": "移除 {{name}}",
+		"useCustom": "使用 <b>{{name}}</b>"
+	},
+	"configUnreachable": {
+		"title": "无法连接到控制台",
+		"description": "Bifrost 未返回其配置。这通常是短暂中断，尤其是在 Bifrost 升级期间。",
+		"tryingAgain": "正在重试…",
+		"tryAgain": "重试"
+	},
+	"pprof": {
+		"live": "存活内存",
+		"stable": "稳定",
+		"cumulative": "累计：",
+		"retained": "留存：",
+		"lastSeconds": "最近 {{seconds}} 秒：",
+		"noLeaks": "未发现明显泄漏特征；所有存活分配的留存率均正常。",
+		"waitMinutes": "等待 {{minutes}} 分钟",
+		"waitReason": "等待原因：",
+		"hideFileGoroutines": "隐藏来自此文件的 goroutine",
+		"cpuUsage": "CPU 使用率",
+		"systemMemory": "系统内存",
+		"gcPause": "GC 暂停",
+		"gcCount": "{{count}} 次 GC",
+		"cpuUsageGoroutines": "CPU 使用率与 Goroutine",
+		"last5Min": "（最近 5 分钟）",
+		"cpuPercent": "CPU %",
+		"alloc": "分配",
+		"suspiciousCount": "{{count}} 个可疑",
+		"severityHigh": "{{count}} 高",
+		"severityMedium": "{{count}} 中",
+		"severityLow": "{{count}} 低",
+		"leaksDesc": "存活字节占其历史累计分配很大比例（留存率）的调用栈，且存活字节近一分钟可能持续上升。增长与高留存同时出现是最强的泄漏信号。",
+		"sitesCount": "{{count}} 处",
+		"liveHeapDesc": "当前正在堆上持有内存的调用栈。展开一行可查看完整堆栈。",
+		"cumulativeDesc": "进程启动以来的累计分配字节总数（含已释放的内存）。展开一行可查看完整堆栈。",
+		"growing": "增长 +{{percent}}%",
+		"longWaiting": "长时间等待",
+		"clearHidden": "清除已隐藏的 {{count}} 项",
+		"allHidden": "所有 goroutine 均已隐藏。点击「清除已隐藏」即可显示。",
+		"noGoroutineData": "无 goroutine 数据",
+		"cpus": "CPU 核数：",
+		"gomaxprocs": "GOMAXPROCS:",
+		"gcRuns": "GC 次数：",
+		"heapObjects": "堆对象数：",
+		"totalAlloc": "累计分配："
+	},
+	"devProfiler": {
+		"growingTitle": "Goroutine 数量增长中",
+		"clearAllHidden": "清除所有已隐藏的 goroutine",
+		"hiddenCount": "已隐藏 {{count}}",
+		"moreFrames": "…还有 {{count}} 帧",
+		"longWaitingAndStuck": "{{waiting}} 个长等待、{{stuck}} 个卡住的 goroutine（已过滤后台 worker）",
+		"longWaitingOnly": "{{waiting}} 个长等待 goroutine（已过滤后台 worker）",
+		"stuckOnly": "{{stuck}} 个卡住的 goroutine（已过滤后台 worker）",
+		"show": "显示 Dev Profiler",
+		"minimize": "最小化",
+		"dismiss": "关闭",
+		"cpuUsageRecent": "CPU 使用率（最近 5 分钟）",
+		"allocCount": "{{count}} 次分配",
+		"gcLabel": "GC:",
+		"objectsLabel": "对象数：",
+		"cpuLabel": "CPU:",
+		"heapLabel": "堆：",
+		"goroutinesLabel": "Goroutines:"
+	}
 }

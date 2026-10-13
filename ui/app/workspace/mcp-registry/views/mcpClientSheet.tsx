@@ -1875,7 +1875,7 @@ export default function MCPClientSheet({
 														<TableHeader>
 															<TableRow>
 																<TableHead>{t("mcp:registry.sheet.colVirtualMcp")}</TableHead>
-																<TableHead>Endpoint</TableHead>
+																<TableHead>{t("mcp:virtualMcps.col.endpoint")}</TableHead>
 																<TableHead>{t("mcp:registry.sheet.colExposedTools")}</TableHead>
 															</TableRow>
 														</TableHeader>

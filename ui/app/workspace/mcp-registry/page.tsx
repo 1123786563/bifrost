@@ -4,6 +4,7 @@ import { useDebouncedValue } from "@/hooks/useDebounce";
 import { getErrorMessage, useGetMCPClientsQuery } from "@/lib/store";
 import { parseAsArrayOf, parseAsBoolean, parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { MCPClientsFilterSidebar, type MCPClientFilters } from "./views/mcpClientsFilterSidebar";
 import MCPClientsTable from "./views/mcpClientsTable";
 
@@ -114,6 +115,7 @@ export default function MCPServersPage() {
 		void setUrlState({ offset: totalCount === 0 ? 0 : Math.floor((totalCount - 1) / PAGE_SIZE) * PAGE_SIZE });
 	}, [totalCount, urlState.offset, mcpClientsData, setUrlState]);
 
+	const { t } = useTranslation(["common"]);
 	const { toast } = useToast();
 
 	useEffect(() => {
@@ -121,12 +123,12 @@ export default function MCPServersPage() {
 			const message = getErrorMessage(error);
 			if (message.toLowerCase().includes("mcp is not configured in this bifrost instance")) return;
 			toast({
-				title: "Error",
+				title: t("common:state.error"),
 				description: message,
 				variant: "destructive",
 			});
 		}
-	}, [error, toast]);
+	}, [error, t, toast]);
 
 	if (isLoading) {
 		return <FullPageLoader />;

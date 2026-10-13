@@ -169,7 +169,7 @@ export default function PromptsViewHeader() {
 		<div className="flex items-center justify-between border-b px-4 py-3">
 			<div className="flex min-w-0 items-center gap-2">
 				<h3 className="truncate font-semibold">
-					{selectedPrompt?.name || "Playground"}
+					{selectedPrompt?.name || t("workspaces:promptsRepo.header.playground")}
 					{hasChanges && <span className="text-destructive ml-1">*</span>}
 				</h3>
 				{displayVersion && <Badge variant={"secondary"}>v{displayVersion.version_number}</Badge>}
@@ -181,7 +181,7 @@ export default function PromptsViewHeader() {
 				{messages.length > 1 && (
 					<Button variant="ghost" size="sm" data-testid="header-clear" onClick={handleClearConversation} disabled={isStreaming}>
 						<Trash2 className="h-4 w-4" />
-						Clear
+						{t("workspaces:promptsRepo.header.clear")}
 					</Button>
 				)}
 				<SplitButton
@@ -226,7 +226,7 @@ export default function PromptsViewHeader() {
 					}}
 				>
 					<Save className="h-4 w-4" />
-					Save Session
+					{t("workspaces:prompts.saveSession")}
 				</SplitButton>
 				<SplitButton
 					onClick={handleCommitVersion}
@@ -249,9 +249,9 @@ export default function PromptsViewHeader() {
 											<div className="flex min-w-0 flex-col">
 												<span className="truncate text-sm">
 													v{version.version_number}
-													{version.is_latest && <span className="text-primary ml-1.5 text-xs">(latest)</span>}
+													{version.is_latest && <span className="text-primary ml-1.5 text-xs">{t("workspaces:promptsRepo.header.latest")}</span>}
 												</span>
-												<span className="text-muted-foreground truncate text-xs">{version.commit_message || "No commit message"}</span>
+												<span className="text-muted-foreground truncate text-xs">{version.commit_message || t("workspaces:promptsRepo.header.noCommitMessage")}</span>
 												<span className="text-muted-foreground text-xs">{formatSessionDate(version.created_at)}</span>
 											</div>
 											{selectedVersionId === version.id && <Check className="text-primary h-4 w-4 shrink-0" />}
@@ -272,7 +272,7 @@ export default function PromptsViewHeader() {
 					}}
 				>
 					<GitCommit className="h-4 w-4" />
-					Commit Version
+					{t("workspaces:prompts.commitVersion")}
 				</SplitButton>
 			</div>
 		</div>

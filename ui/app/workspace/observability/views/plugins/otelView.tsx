@@ -44,7 +44,7 @@ export default function OtelView({ onDelete, isDeleting }: OtelViewProps) {
 				.unwrap()
 				.then(() => {
 					resolve();
-					toast.success("OTEL configuration updated successfully");
+					toast.success(t("logs:otel.updatedSuccess"));
 				})
 				.catch((err) => {
 					toast.error(t("logs:otel.updateFailed"), {
@@ -68,7 +68,7 @@ export default function OtelView({ onDelete, isDeleting }: OtelViewProps) {
 							data-testid="otel-configure-tracing-button"
 						>
 							<Activity className="h-4 w-4" />
-							Configure Tracing
+							{t("logs:observability.configureTracing")}
 						</Button>
 					</div>
 				)}

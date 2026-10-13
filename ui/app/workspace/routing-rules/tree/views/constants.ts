@@ -1,10 +1,39 @@
+import i18n from "@/lib/i18n";
+
 // ─── Scope config ──────────────────────────────────────────────────────────
 
+// Labels are getters so they resolve through i18n at access time rather than at
+// module load — a language switch is picked up without remounting the tree, and
+// consumers that read `SCOPE_CONFIG[s].label` directly need no change.
 export const SCOPE_CONFIG = {
-	virtual_key: { label: "Virtual Key", color: "#7c3aed", headerClass: "bg-purple-100 dark:bg-purple-900/30" },
-	team: { label: "Team", color: "#2563eb", headerClass: "bg-blue-100 dark:bg-blue-900/30" },
-	customer: { label: "Customer", color: "#16a34a", headerClass: "bg-green-100 dark:bg-green-900/30" },
-	global: { label: "Global", color: "#6b7280", headerClass: "bg-gray-100 dark:bg-gray-800/30" },
+	virtual_key: {
+		get label() {
+			return i18n.t("governance:routingRules.sheet.scopeVirtualKey");
+		},
+		color: "#7c3aed",
+		headerClass: "bg-purple-100 dark:bg-purple-900/30",
+	},
+	team: {
+		get label() {
+			return i18n.t("governance:routingRules.sheet.scopeTeam");
+		},
+		color: "#2563eb",
+		headerClass: "bg-blue-100 dark:bg-blue-900/30",
+	},
+	customer: {
+		get label() {
+			return i18n.t("governance:routingRules.sheet.scopeCustomer");
+		},
+		color: "#16a34a",
+		headerClass: "bg-green-100 dark:bg-green-900/30",
+	},
+	global: {
+		get label() {
+			return i18n.t("governance:routingRules.sheet.scopeGlobal");
+		},
+		color: "#6b7280",
+		headerClass: "bg-gray-100 dark:bg-gray-800/30",
+	},
 } as const;
 
 export type ScopeKey = keyof typeof SCOPE_CONFIG;

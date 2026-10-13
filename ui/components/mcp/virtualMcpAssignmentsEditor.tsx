@@ -9,8 +9,6 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 
-const DEFAULT_LABEL = "Virtual MCP Server Configurations";
-
 const DEFAULT_TOOLTIP = (
 	<p>
 		{i18n.t("workspaces:virtualMcps.assignHint1")} <span className="font-medium">/mcp/&lt;slug&gt;</span>{" "}
@@ -20,15 +18,16 @@ const DEFAULT_TOOLTIP = (
 
 // One assigned Virtual MCP: resolves its name/slug by id, then renders a removable row.
 function AssignedVirtualMcpRow({ id, onRemove }: { id: number; onRemove: () => void }) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const { data } = useGetVirtualMCPQuery(id);
-	const name = data?.name || `Virtual MCP #${id}`;
+	const name = data?.name || t("mcp:editors.vmcpFallbackName", { id });
 	return (
 		<div className="flex items-center justify-between gap-2 px-3 py-2">
 			<div className="flex min-w-0 flex-col">
 				<span className="truncate text-sm font-medium">{name}</span>
 				{data?.endpoint_slug && <span className="text-muted-foreground truncate text-xs">/mcp/{data.endpoint_slug}</span>}
 			</div>
-			<Button type="button" variant="ghost" size="sm" aria-label={`Remove ${name}`} onClick={onRemove}>
+			<Button type="button" variant="ghost" size="sm" aria-label={t("mcp:editors.removeAria", { name })} onClick={onRemove}>
 				<Trash2 className="h-4 w-4" />
 			</Button>
 		</div>
@@ -44,13 +43,9 @@ interface VirtualMcpAssignmentsEditorProps {
 
 // Assign a virtual key to Virtual MCPs. The picker is server-backed; assignments commit as
 // attach/detach on Save (the parent owns that), mirroring the MCP-server config editor above it.
-export function VirtualMcpAssignmentsEditor({
-	value,
-	onChange,
-	label = DEFAULT_LABEL,
-	tooltip = DEFAULT_TOOLTIP,
-}: VirtualMcpAssignmentsEditorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+export function VirtualMcpAssignmentsEditor({ value, onChange, label, tooltip = DEFAULT_TOOLTIP }: VirtualMcpAssignmentsEditorProps) {
+	const { t } = useTranslation(["common", "mcp", "workspaces"]);
+	const resolvedLabel = label ?? t("mcp:editors.vmcpLabel");
 	const add = (option: EntitySelectorOption) => {
 		const id = Number(option.value);
 		if (value.includes(id)) return;
@@ -61,7 +56,7 @@ export function VirtualMcpAssignmentsEditor({
 	return (
 		<div className="mt-6 space-y-2">
 			<div className="flex items-center gap-2">
-				<Label className="text-sm font-medium">{label}</Label>
+				<Label className="text-sm font-medium">{resolvedLabel}</Label>
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger asChild>

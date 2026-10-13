@@ -730,6 +730,8 @@
 		"assertionLifetime": "断言有效期(秒)",
 		"assertionLifetimeDesc": "每个签名断言的有效时长。默认 300。",
 		"scopes": "作用域(可选)",
+		"flowDescription": "Bifrost 会向令牌端点请求访问令牌,将其作为 Bearer 发送,按凭据缓存,并在过期前自动刷新。适用于签发短时效令牌而非静态密钥的上游服务。",
+		"grantTypePlaceholder": "Client credentials",
 		"audienceOptional": "受众(可选)",
 		"audienceOptionalDesc": "作为 audience 表单参数发送,适用于按 API 划分令牌作用域的提供商。",
 		"accountId": "账户 ID(必填)",
@@ -769,6 +771,18 @@
 		"beforeYouContinue": "继续之前",
 		"noAccess": "迁移需要对提供商的创建和更新权限。",
 		"dirtyForm": "请先保存或放弃未保存的提供商更改。",
-		"fillMissing": "请填写上方缺失的值。"
+		"fillMissing": "请填写上方缺失的值。",
+		"letsMigrate": "开始迁移",
+		"fromAuthHeader": "来自 Authorization 请求头",
+		"apiToken": "API 令牌",
+		"apiTokenColon": "API 令牌: ",
+		"apiTokenPlaceholder": "API 令牌或 env.CLOUDFLARE_API_TOKEN",
+		"statValues": {
+			"none": "无",
+			"allowed": "允许",
+			"blocked": "阻止",
+			"on": "开启",
+			"off": "关闭"
+		}
 	}
 }

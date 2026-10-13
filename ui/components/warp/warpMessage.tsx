@@ -184,6 +184,7 @@ function WarpToolCallList({ calls, animate = false }: { calls: WarpTurnToolCall[
  * animate is for live turns only; a finished turn remounts these rows and must not replay them.
  */
 const WarpToolCallRow = memo(function WarpToolCallRow({ call, animate }: { call: WarpTurnToolCall; animate: boolean }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces"]);
 	const [expanded, setExpanded] = useState(false);
 	const canExpand = !!call.failed && !!call.error;
 	const isRunning = call.durationMs === undefined;
@@ -196,8 +197,8 @@ const WarpToolCallRow = memo(function WarpToolCallRow({ call, animate }: { call:
 			) : (
 				<WarpToolStatusIcon isRunning={isRunning} animate={animate} />
 			)}
-			<span className="sr-only">{warpToolStatusLabel(call)}</span>
-			<span className={cn("truncate", isRunning && "warp-shimmer")}>{warpToolLabel(call.name, isRunning)}</span>
+			<span className="sr-only">{warpToolStatusLabel(call, t)}</span>
+			<span className={cn("truncate", isRunning && "warp-shimmer")}>{warpToolLabel(call.name, isRunning, t)}</span>
 			{!isRunning && <span className={cn("shrink-0 tabular-nums opacity-60", animate && "warp-fade-in")}>{call.durationMs}ms</span>}
 		</>
 	);
@@ -370,10 +371,7 @@ function WarpPartialNote({ className }: { className?: string }) {
 			<Info className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
 			<div className="space-y-0.5">
 				<p className="font-medium">{t("workspaces:warp.partialAnswer")}</p>
-				<p className="text-muted-foreground">
-					Warp used all of its research steps before it finished checking. This is what it found so far, and it says what it could not
-					confirm. A narrower question usually completes.
-				</p>
+				<p className="text-muted-foreground">{t("workspaces:warp.partialBody")}</p>
 			</div>
 		</div>
 	);
@@ -384,7 +382,7 @@ function WarpTurnError({ error, className }: { error: string; className?: string
 	const [expanded, setExpanded] = useState(false);
 	// Not a bare split: a message with no colon is a message, not a code.
 	const { code, message } = decodeTurnError(error);
-	const detail = warpErrorDetail(code, message);
+	const detail = warpErrorDetail(code, message, t);
 
 	return (
 		<div className={cn("border-destructive/30 bg-destructive/5 rounded-md border p-2.5", className)} data-testid="warp-turn-error">
@@ -424,10 +422,11 @@ function WarpTurnError({ error, className }: { error: string; className?: string
 }
 
 function WarpThinking() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	return (
 		<p className="warp-thinking-in text-muted-foreground flex items-center gap-1.5 text-xs" data-testid="warp-thinking">
 			<Brain className="size-3.5 shrink-0" />
-			<span className="warp-shimmer">Thinking</span>
+			<span className="warp-shimmer">{t("workspaces:warp.thinking")}</span>
 		</p>
 	);
 }

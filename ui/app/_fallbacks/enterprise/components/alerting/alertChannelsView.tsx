@@ -1,10 +1,12 @@
 import AlertingPlaceholderView from "./alertingPlaceholderView";
+import { useTranslation } from "react-i18next";
 
 export default function AlertChannelsView() {
+	const { t } = useTranslation(["errors"]);
 	return (
 		<AlertingPlaceholderView
-			title="Unlock alerting channels for proactive monitoring"
-			description="This feature is a part of the Bifrost enterprise license. Configure Slack, PagerDuty, OpsGenie, and webhook alerts to stay ahead of budget and performance issues."
+			title={t("errors:upsell.alertingChannels.title")}
+			description={t("errors:upsell.alertingChannels.description")}
 			readmeLink="https://docs.getbifrost.ai/enterprise/alerting/alert-channels"
 			testIdPrefix="alert-channels"
 		/>

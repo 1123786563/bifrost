@@ -53,6 +53,9 @@
 			"totalWithMax": "{{count}} / {{max}} 个短语",
 			"total": "{{count}} 个短语",
 			"emptyListError": "{{tier}}短语不能为空",
+			"phraseTooLong": "{{tier}}短语超过了 {{max}} 个字符的限制。",
+			"phraseDuplicateTier": "“{{phrase}}”也在{{tier}}列表中。每个短语只能属于一个层级。",
+			"phrasesOverLimit": "语义路由共有 {{total}} 个短语（简单 {{simple}} 个、中等 {{medium}} 个、复杂 {{complex}} 个）；所有层级合计上限为 {{max}}。",
 			"count_one": "{{count}} 个短语",
 			"count_other": "{{count}} 个短语",
 			"placeholder": "输入参考短语后按 Enter",
@@ -268,6 +271,9 @@
 		"decisionSheet": {
 			"title": "模型配置",
 			"description": "由哪个决策模型分类请求、它能看到多少对话、以及允许的耗时。凭据来自其 provider。"
+		},
+		"form": {
+			"infoTipFallback": "此字段"
 		}
 	},
 	"org": {
@@ -294,7 +300,11 @@
 			"sheetCreateDescription": "创建新的客户账户，以组织团队并管理资源。",
 			"nameLabel": "客户名称 *",
 			"namePlaceholder": "例如：Acme Corporation",
-			"nameHint": "此名称将用于标识该客户账户。"
+			"nameHint": "此名称将用于标识该客户账户。",
+			"detailSheetTitle": "客户详情",
+			"detailSheetDescription": "该客户的用量详情。",
+			"detailInfo": "信息",
+			"noBudgetsConfigured": "未配置预算"
 		},
 		"teams": {
 			"title": "团队",
@@ -408,7 +418,8 @@
 				"status": "状态",
 				"assignedTo": "分配对象",
 				"budget": "预算",
-				"rateLimits": "速率限制"
+				"rateLimits": "速率限制",
+				"key": "密钥"
 			},
 			"searchHintWithUser": "名称、用户、团队或客户",
 			"searchHint": "名称、团队或客户",
@@ -470,7 +481,8 @@
 			"filterSearch": "搜索“{{value}}”",
 			"filterCustomer": "客户筛选",
 			"filterTeam": "团队筛选",
-			"filterUser": "用户筛选"
+			"filterUser": "用户筛选",
+			"selectVkAria": "选择 Virtual Key {{name}}"
 		},
 		"empty": {
 			"title": "Virtual Key 控制访问、预算和速率限制",
@@ -855,6 +867,10 @@
 				"toastCopied": "已复制到剪贴板",
 				"breadcrumbsWebhooks": "Webhooks",
 				"breadcrumbsDeliveries": "投递记录"
+			},
+			"sends": {
+				"original": "原始投递",
+				"redelivery": "重新投递 {{n}}"
 			}
 		}
 	},
@@ -870,8 +886,13 @@
 				"targets": "目标",
 				"scope": "作用域",
 				"expression": "表达式",
-				"enabled": "启用"
+				"enabled": "启用",
+				"status": "状态"
 			},
+			"actionsAria": "路由规则操作（{{name}}）",
+			"deleteDescription": "确定要删除“{{name}}”吗？此操作无法撤销。",
+			"moreTargets_one": "+{{count}} 个目标",
+			"moreTargets_other": "+{{count}} 个目标",
 			"searchAria": "按名称搜索路由规则",
 			"searchPlaceholder": "按名称搜索…",
 			"deleteTitle": "删除路由规则",
@@ -949,9 +970,25 @@
 			"selectProvider": "选择 provider…",
 			"incomingOptional": "入站（可选）",
 			"apiKeyLabel": "API 密钥",
-			"apiKeyOptionalNote": "（可选；留空则负载均衡选择）"
+			"apiKeyOptionalNote": "（可选；留空则负载均衡选择）",
+			"chainRuleHelp": "此规则匹配后，将以解析出的 provider/模型作为新上下文重新评估路由规则。适合组合规则，例如先归一化模型别名，再基于规范名称路由。",
+			"priorityHint": "数字越小优先级越高（0 最高）",
+			"mustEqualOne": "（必须等于 1）",
+			"ttftValidation": "请输入 1 到 {{max}} 之间的整数，或留空",
+			"ttftHelp": "仅流式请求生效。若超时未收到 token，Bifrost 会切换到下一个回退。最后一个回退永远不会被切断。",
+			"targetN": "目标 {{n}}",
+			"removeTargetAria": "移除目标 {{n}}",
+			"removeFallbackAria": "移除回退 {{n}}",
+			"clearApiKeyTargetAria": "清除目标 {{n}} 的 API 密钥",
+			"clearApiKeyFallbackAria": "清除回退 {{n}} 的 API 密钥",
+			"clearProviderTargetAria": "清除目标 {{n}} 的 provider",
+			"clearModelTargetAria": "清除目标 {{n}} 的模型"
 		},
 		"info": {
+			"group": "分组",
+			"chainRuleTooltip": "此规则匹配后，将以解析出的 provider/模型作为新上下文重新评估路由规则。",
+			"celExpression": "CEL 表达式",
+			"targetsCount": "目标（{{count}}）",
 			"toastCopyFailed": "复制到剪贴板失败",
 			"copied": "已复制！",
 			"copyValue": "复制{{label}}",
@@ -979,7 +1016,20 @@
 			"resetLayout": "重置为默认布局",
 			"targets": "目标",
 			"resolvedTarget": "已解析目标（新输入）",
-			"passthrough": "透传"
+			"passthrough": "透传",
+			"off": "关闭",
+			"targetCount_one": "{{count}} 个目标",
+			"targetCount_other": "{{count}} 个目标",
+			"chainRuleNote": "链式规则：解析出的 provider/模型作为新输入回填，整条作用域链重新评估。",
+			"originalProviderModel": "原始 provider 和模型"
+		},
+		"cel": {
+			"builder": "构建器",
+			"expression": "CEL 表达式",
+			"expressionPreview": "CEL 表达式预览",
+			"placeholder": "例如 model == \"claude-sonnet-4-6\"",
+			"leaveEmpty": "留空则匹配所有请求。",
+			"noRules": "尚未定义规则"
 		},
 		"delete_": "删除",
 		"priority": "优先级",

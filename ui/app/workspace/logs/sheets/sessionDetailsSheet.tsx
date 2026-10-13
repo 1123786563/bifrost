@@ -251,11 +251,11 @@ export function SessionDetailsSheet({
 						<TableHeader className="sticky top-0 z-10 bg-[#f9f9f9] dark:bg-[#27272a]">
 							<TableRow>
 								<TableHead className="w-2"></TableHead>
-								<TableHead>Time</TableHead>
-								<TableHead>Type</TableHead>
-								<TableHead>Message</TableHead>
-								<TableHead>Provider</TableHead>
-								<TableHead>Model</TableHead>
+								<TableHead>{t("logs:columns.time")}</TableHead>
+								<TableHead>{t("logs:columns.type")}</TableHead>
+								<TableHead>{t("logs:columns.message")}</TableHead>
+								<TableHead>{t("logs:columns.provider")}</TableHead>
+								<TableHead>{t("logs:columns.model")}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -306,7 +306,7 @@ export function SessionDetailsSheet({
 							) : (
 								<TableRow>
 									<TableCell colSpan={6} className="text-muted-foreground h-24 text-center">
-										No logs found for this session.
+										{t("logs:session.noLogs")}
 									</TableCell>
 								</TableRow>
 							)}
@@ -323,7 +323,7 @@ export function SessionDetailsSheet({
 							disabled={loadingSession}
 						>
 							{loadingSession ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-							Load More
+							{t("logs:session.loadMore")}
 						</Button>
 					</div>
 				) : null}

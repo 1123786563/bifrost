@@ -97,7 +97,7 @@ client = openai.OpenAI(
 # Step 2: Send chat request
 response = client.chat.completions.create(
     model="gpt-4o",
-    messages=[{"role": "user", "content": "List files in current directory"}]
+    messages=[{"role": "user", "content": ${t("logs:mcp.samples.listFiles")}}]
 )
 
 # Step 3: Check for tool calls
@@ -121,7 +121,7 @@ if message.tool_calls:
         final_response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "user", "content": "List files in current directory"},
+                {"role": "user", "content": ${t("logs:mcp.samples.listFiles")}},
                 message,
                 tool_result
             ]
@@ -138,7 +138,7 @@ const openai = new OpenAI({
 // Step 2: Send chat request
 const response = await openai.chat.completions.create({
   model: "gpt-4o",
-  messages: [{ role: "user", content: "List files in current directory" }],
+  messages: [{ role: "user", content: ${t("logs:mcp.samples.listFiles")} }],
 });
 
 const message = response.choices[0].message;
@@ -164,7 +164,7 @@ if (message.tool_calls) {
     const finalResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "user", content: "List files in current directory" },
+        { role: "user", content: ${t("logs:mcp.samples.listFiles")} },
         message,
         toolResult,
       ],
@@ -194,7 +194,7 @@ response = client.chat.completions.create(
     model="gpt-4o",
     messages=[{
         "role": "user", 
-        "content": "List all Python files and summarize their purpose"
+        "content": ${t("logs:mcp.samples.listPythonFiles")}
     }]
 )
 
@@ -226,7 +226,7 @@ const response = await openai.chat.completions.create({
   model: "gpt-4o",
   messages: [{
     role: "user",
-    content: "List all Python files and summarize their purpose"
+    content: ${t("logs:mcp.samples.listPythonFiles")}
   }],
 });
 
@@ -242,7 +242,7 @@ if (response.choices[0].message.tool_calls) {
 }`,
 			},
 		};
-	}, []);
+	}, [t]);
 
 	const isUnexpectedError = error && error.includes("An unexpected error occurred");
 
@@ -305,13 +305,15 @@ if (response.choices[0].message.tool_calls) {
 						<li className="flex items-start gap-2">
 							<span className="text-primary">2.</span>
 							<span>
-								Set <code className="bg-muted rounded px-1">tools_to_execute</code> to whitelist available tools
+								{t("logs:mcp.prereq2pre")} <code className="bg-muted rounded px-1">tools_to_execute</code>{" "}
+								{t("logs:mcp.prereq2post")}
 							</span>
 						</li>
 						<li className="flex items-start gap-2">
 							<span className="text-primary">3.</span>
 							<span>
-								For Agent Mode: Configure <code className="bg-muted rounded px-1">tools_to_auto_execute</code> for autonomous execution
+								{t("logs:mcp.prereq3pre")} <code className="bg-muted rounded px-1">tools_to_auto_execute</code>{" "}
+								{t("logs:mcp.prereq3post")}
 							</span>
 						</li>
 					</ul>

@@ -210,6 +210,7 @@ function RawCaptureUnavailableNotice({ detail }: { detail?: AgentLogDetail }) {
 
 // RawCaptureBlock decodes stored bytes for display and offers the unchanged payload for download.
 function RawCaptureBlock({ title, body }: { title: string; body: string }) {
+	const { t } = useTranslation(["common", "logs"]);
 	let code: string;
 	try {
 		const bytes = Uint8Array.from(atob(body), (char) => char.charCodeAt(0));
@@ -217,7 +218,7 @@ function RawCaptureBlock({ title, body }: { title: string; body: string }) {
 	} catch {
 		return (
 			<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">
-				{title} could not be displayed because the stored capture is invalid.
+				{t("logs:agent.captureInvalid", { title })}
 			</div>
 		);
 	}
@@ -228,7 +229,7 @@ function RawCaptureBlock({ title, body }: { title: string; body: string }) {
 				href={`data:application/octet-stream;base64,${body}`}
 				download={`${title.toLowerCase().replaceAll(" ", "-")}.bin`}
 			>
-				Download {title.toLowerCase()} bytes
+				{t("logs:agent.downloadBytes", { title: title.toLowerCase() })}
 			</a>
 			<PayloadBlock title={title} code={code} />
 		</div>
@@ -278,10 +279,12 @@ function eventLabel(row: AgentLogSummary): string {
 			.replaceAll("_", " ")
 			.toLowerCase();
 	if (row.event_type === "task" && row.task_state)
-		return `Task ${row.task_state
-			.replace(/^TASK_STATE_/, "")
-			.replaceAll("_", " ")
-			.toLowerCase()}`;
+		return i18n.t("logs:agent.taskLabel", {
+			state: row.task_state
+				.replace(/^TASK_STATE_/, "")
+				.replaceAll("_", " ")
+				.toLowerCase(),
+		});
 	if (row.event_type === "message") return i18n.t("logs:agent.messageReceived");
 	return (row.event_type || i18n.t("logs:agent.event")).replaceAll("_", " ");
 }
@@ -608,15 +611,15 @@ export function AgentLogDetailSheet({
 					],
 					[t("logs:agent.artifactId"), displayLog.artifact_id, displayLog.artifact_id ? { search: displayLog.artifact_id } : undefined],
 					[t("logs:agent.eventSequence"), displayLog.event_sequence, undefined],
-					["Event Type", displayLog.event_type, undefined],
-					["Task State", displayLog.task_state, displayLog.task_state ? { task_state: [displayLog.task_state] } : undefined],
+					[t("logs:agent.eventType"), displayLog.event_type, undefined],
+					[t("logs:agent.taskState"), displayLog.task_state, displayLog.task_state ? { task_state: [displayLog.task_state] } : undefined],
 				],
 			},
 			{
 				title: t("logs:agent.pushCorrelation"),
 				fields: [
 					[
-						"Push Config ID",
+						t("logs:agent.pushConfigId"),
 						displayLog.push_config_id,
 						displayLog.push_config_id ? { push_config_id: displayLog.push_config_id } : undefined,
 					],
@@ -667,7 +670,7 @@ export function AgentLogDetailSheet({
 					<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 						<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
 							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" className="size-8" type="button" aria-label="Log actions">
+								<Button variant="ghost" className="size-8" type="button" aria-label={t("logs:columns.logActions")}>
 									<MoreVertical className="h-3 w-3" />
 								</Button>
 							</DropdownMenuTrigger>
@@ -717,7 +720,7 @@ export function AgentLogDetailSheet({
 											setDeleteDialogOpen(false);
 											onOpenChange(false);
 										} catch (err) {
-											const errorMessage = err instanceof Error ? err.message : "Failed to delete log";
+											const errorMessage = err instanceof Error ? err.message : t("logs:mcp.deleteFailed");
 											toast.error(errorMessage);
 											// Keep dialog open on error so user can see the error and retry
 										}
@@ -737,7 +740,7 @@ export function AgentLogDetailSheet({
 									<StatusPill status={displayLog.status} />
 									{isPushRelated && (
 										<Badge variant="outline" className="text-muted-foreground rounded-sm px-2 py-0.5 font-normal">
-											push notification
+											{t("logs:agent.pushNotificationBadge")}
 										</Badge>
 									)}
 								</div>
@@ -759,7 +762,7 @@ export function AgentLogDetailSheet({
 										/>
 										{displayLog.push_config_id && (
 											<IdRow
-												label="Push Config"
+												label={t("logs:agent.pushConfig")}
 												value={displayLog.push_config_id}
 												filter={{ push_config_id: displayLog.push_config_id }}
 												onFilter={onFilter}
@@ -785,7 +788,7 @@ export function AgentLogDetailSheet({
 										{displayLog.task_id && (
 											<div className="mt-1 flex max-w-full items-center gap-2 first:mt-0">
 												<span className="text-muted-foreground w-24 shrink-0 text-[10.5px] font-semibold tracking-wider uppercase">
-													Task
+													{t("logs:agent.task")}
 												</span>
 												<InteractiveValue
 													value={displayLog.task_id}
@@ -821,7 +824,7 @@ export function AgentLogDetailSheet({
 							)}
 						>
 							<HeroStat
-								label="Latency"
+								label={t("logs:columns.latency")}
 								valueClass="text-primary"
 								value={hasValidLatency ? formatLatency(displayLog.latency!) : "—"}
 								sub={
@@ -832,19 +835,24 @@ export function AgentLogDetailSheet({
 								hasRightBorder
 							/>
 							<HeroStat
-								label="Downstream"
+								label={t("logs:agent.downstream")}
 								value={displayLog.downstream_transport || "—"}
 								valueClass="font-mono text-[15px]"
 								hasRightBorder
 							/>
-							<HeroStat label="Upstream" value={displayLog.upstream_transport || "—"} valueClass="font-mono text-[15px]" hasRightBorder />
+							<HeroStat
+								label={t("logs:agent.upstream")}
+								value={displayLog.upstream_transport || "—"}
+								valueClass="font-mono text-[15px]"
+								hasRightBorder
+							/>
 							<HeroStat
 								label={t("logs:agent.operation")}
 								value={displayLog.operation || "—"}
 								valueClass="whitespace-normal overflow-visible break-all font-mono text-[15px]"
 								hasRightBorder={correlatedRows.length > 0}
 							/>
-							{correlatedRows.length > 0 && <HeroStat label="Events" value={String(totalCorrelatedEvents)} />}
+							{correlatedRows.length > 0 && <HeroStat label={t("logs:agent.events")} value={String(totalCorrelatedEvents)} />}
 						</div>
 					</div>
 
@@ -857,7 +865,7 @@ export function AgentLogDetailSheet({
 							<span className="text-foreground font-medium">{t("logs:agent.moreDetails")}</span>
 							<span className="text-muted-foreground flex items-center gap-2 text-xs">
 								<span className="hidden md:inline">
-									{hasTimings ? "timings, identifiers and correlation" : "identifiers and correlation"}
+									{hasTimings ? t("logs:agent.moreDetailsSummaryTimings") : t("logs:agent.moreDetailsSummary")}
 								</span>
 								<ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
 							</span>
@@ -866,43 +874,43 @@ export function AgentLogDetailSheet({
 							{hasTimings && (
 								<>
 									<div className="space-y-4">
-										<BlockHeader title="Timings" />
+										<BlockHeader title={t("logs:details.timings")} />
 										<div className="grid w-full grid-cols-1 items-center justify-between gap-4 md:grid-cols-3">
 											{hasValidTimestamp && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="Start Timestamp"
+													label={t("logs:details.startTimestamp")}
 													value={format(timestampDate!, "yyyy-MM-dd hh:mm:ss aa")}
 												/>
 											)}
 											{endTimestamp && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="End Timestamp"
+													label={t("logs:details.endTimestamp")}
 													value={format(endTimestamp, "yyyy-MM-dd hh:mm:ss aa")}
 												/>
 											)}
 											{hasValidLatency && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="Latency"
-													tooltip="Total end-to-end request time: upstream plus Bifrost overhead."
+													label={t("logs:columns.latency")}
+													tooltip={t("logs:details.latencyTooltip")}
 													value={<div>{displayLog.latency!.toFixed(2)}ms</div>}
 												/>
 											)}
 											{displayLog.upstream_latency != null && !isNaN(displayLog.upstream_latency) && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="Upstream Latency"
-													tooltip="Time spent waiting on the upstream agent."
+													label={t("logs:details.upstreamLatency")}
+													tooltip={t("logs:agent.upstreamLatencyTooltip")}
 													value={<div>{displayLog.upstream_latency.toFixed(2)}ms</div>}
 												/>
 											)}
 											{displayLog.overhead_latency != null && !isNaN(displayLog.overhead_latency) && (
 												<LogEntryDetailsView
 													className="w-full"
-													label="Bifrost Overhead"
-													tooltip="Time added by Bifrost itself: routing, plugins, and processing."
+													label={t("logs:details.bifrostOverhead")}
+													tooltip={t("logs:details.bifrostOverheadTooltip")}
 													value={<div>{displayLog.overhead_latency.toFixed(2)}ms</div>}
 												/>
 											)}
@@ -915,7 +923,7 @@ export function AgentLogDetailSheet({
 								</>
 							)}
 							<div className="space-y-4">
-								<BlockHeader title="Request details" />
+								<BlockHeader title={t("logs:details.requestDetails")} />
 								<div className="grid w-full grid-cols-1 items-start gap-4 md:grid-cols-3">
 									<LogEntryDetailsView
 										className="w-full"
@@ -929,7 +937,7 @@ export function AgentLogDetailSheet({
 									/>
 									<LogEntryDetailsView className="w-full" label={t("common:fields.status")} value={displayLog.status} />
 									{displayLog.content_type && (
-										<LogEntryDetailsView className="w-full" label="Content type" value={displayLog.content_type} />
+										<LogEntryDetailsView className="w-full" label={t("logs:agent.contentType")} value={displayLog.content_type} />
 									)}
 									{displayLog.virtual_key_id && (
 										<LogEntryDetailsView
@@ -1023,7 +1031,7 @@ export function AgentLogDetailSheet({
 							)}
 							{correlatedRows.length > 0 && (
 								<TabsTrigger value="events" className="px-3">
-									Events
+									{t("logs:agent.events")}
 									{correlatedRows.length > 0 ? (
 										<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 											{totalCorrelatedEvents}
@@ -1041,7 +1049,7 @@ export function AgentLogDetailSheet({
 							)}
 							{logCorrelation && llmCount > 0 ? (
 								<TabsTrigger value="llm-logs" className="px-3">
-									LLM Logs{" "}
+									{t("logs:agent.llmLogs")}{" "}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{llmCount}
 									</span>
@@ -1049,7 +1057,7 @@ export function AgentLogDetailSheet({
 							) : null}
 							{logCorrelation && mcpCount > 0 ? (
 								<TabsTrigger value="mcp-logs" className="px-3">
-									MCP Logs{" "}
+									{t("logs:agent.mcpLogs")}{" "}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{mcpCount}
 									</span>
@@ -1082,9 +1090,7 @@ export function AgentLogDetailSheet({
 
 						{correlatedRows.length > 0 && (
 							<TabsContent value="events" className="space-y-3">
-								<div className="text-muted-foreground text-sm">
-									Events show the ordered updates returned by the agent during this operation. Expand an event to inspect its data.
-								</div>
+								<div className="text-muted-foreground text-sm">{t("logs:agent.eventsIntro")}</div>
 								<div className="space-y-2">
 									{correlatedRows.map((row) => {
 										const rowDate = row.timestamp ? new Date(row.timestamp) : null;
@@ -1125,7 +1131,7 @@ export function AgentLogDetailSheet({
 																onValueChange={(next) => (next === "raw") !== showRaw && toggleEventRaw(row.id)}
 																className="shrink-0"
 															>
-																<TabsList aria-label="Event view" className="h-6 rounded-sm p-0.5">
+																<TabsList aria-label={t("logs:agent.eventView")} className="h-6 rounded-sm p-0.5">
 																	<TabsTrigger value="formatted" className="rounded-[3px] px-2 text-[11px] leading-5">
 																		{t("logs:agent.formatted")}
 																	</TabsTrigger>
@@ -1190,9 +1196,7 @@ export function AgentLogDetailSheet({
 										<RawCaptureBlock title={t("logs:agent.rawResponse")} body={detail.raw_response} />
 									) : (
 										<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-sm">
-											{displayLog.status === "processing"
-												? "Raw response is not available yet. The operation is still processing."
-												: t("logs:agent.noRawResponse")}
+											{displayLog.status === "processing" ? t("logs:agent.rawResponsePending") : t("logs:agent.noRawResponse")}
 										</div>
 									)}
 								</>

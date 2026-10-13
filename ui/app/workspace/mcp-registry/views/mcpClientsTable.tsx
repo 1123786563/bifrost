@@ -1252,7 +1252,7 @@ export default function MCPClientsTable({
 																if (refetch) refetch();
 															})
 															.catch((err) => {
-																toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" });
+																toast({ title: t("common:state.error"), description: getErrorMessage(err), variant: "destructive" });
 															})
 															.finally(() => {
 																setTogglingClientIds((prev) => {

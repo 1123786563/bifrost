@@ -230,7 +230,9 @@ export function PromptSidebar() {
 				<ScrollArea className="grow overflow-y-auto" viewportClassName="no-table viewport-table-height-full">
 					<div className="flex flex-col p-2 px-3">
 						{filteredData.folders.length === 0 && filteredData.rootPrompts.length === 0 ? (
-							<div className="text-muted-foreground py-8 text-center text-sm">{searchQuery ? "No results found" : "No prompts yet"}</div>
+							<div className="text-muted-foreground py-8 text-center text-sm">
+								{searchQuery ? t("workspaces:misc.noResults") : t("workspaces:promptsRepo.sidebar.noPromptsYet")}
+							</div>
 						) : (
 							<>
 								{filteredData.folders.map((folder) => (
@@ -396,7 +398,7 @@ function DroppableFolder({
 				onClick={onToggle}
 				data-testid={`sidebar-folder-${folder.id}`}
 			>
-				<button className="flex shrink-0 items-center" aria-label="Toggle folder">
+				<button className="flex shrink-0 items-center" aria-label={t("workspaces:promptsRepo.sidebar.toggleFolderAria")}>
 					{isExpanded ? (
 						<ChevronDown className="text-muted-foreground h-4 w-4" />
 					) : (
@@ -433,7 +435,7 @@ function DroppableFolder({
 									}}
 								>
 									<Plus className="mr-2 h-4 w-4" />
-									Add Prompt
+									{t("workspaces:prompts.addPrompt")}
 								</DropdownMenuItem>
 							)}
 							{canCreate && (canUpdate || canDelete) && <DropdownMenuSeparator />}
@@ -470,7 +472,9 @@ function DroppableFolder({
 			{isExpanded && (
 				<div className="ml-4 border-l pl-2">
 					{prompts.length === 0 ? (
-						<div className="text-muted-foreground py-2 pl-4 text-xs">{isDragOver ? "Drop here" : "No prompts"}</div>
+						<div className="text-muted-foreground py-2 pl-4 text-xs">
+							{isDragOver ? t("workspaces:promptsRepo.sidebar.dropHere") : t("workspaces:promptsRepo.sidebar.noPrompts")}
+						</div>
 					) : (
 						prompts.map((prompt) => (
 							<DraggablePromptItem
@@ -574,7 +578,7 @@ function DraggablePromptItem({ prompt, isSelected, onSelect, onEdit, onDelete, c
 								}}
 							>
 								<Pencil className="h-4 w-4" />
-								Rename
+								{t("common:actions.rename")}
 							</DropdownMenuItem>
 						)}
 						{canDelete && (
@@ -588,7 +592,7 @@ function DraggablePromptItem({ prompt, isSelected, onSelect, onEdit, onDelete, c
 								}}
 							>
 								<Trash2 className="h-4 w-4" />
-								Delete
+								{t("common:actions.delete")}
 							</DropdownMenuItem>
 						)}
 					</DropdownMenuContent>

@@ -66,7 +66,7 @@ export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: P
 			}
 			onOpenChange(false);
 		} catch (err) {
-			toast.error(`Failed to ${isEditing ? "update" : "create"} prompt`, {
+			toast.error(t(isEditing ? "workspaces:promptsRepo.promptSheet.updateFailed" : "workspaces:promptsRepo.promptSheet.createFailed"), {
 				description: getErrorMessage(err),
 			});
 		}
@@ -83,7 +83,7 @@ export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: P
 			>
 				<form onSubmit={handleSubmit(onSubmit)} className="flex grow flex-col">
 					<SheetHeader className="flex flex-col items-start pt-8" headerClassName="px-4 md:px-8">
-						<SheetTitle>{isEditing ? "Rename Prompt" : "Create Prompt"}</SheetTitle>
+						<SheetTitle>{isEditing ? t("workspaces:promptsRepo.promptSheet.renameTitle") : t("workspaces:promptsRepo.promptSheet.createTitle")}</SheetTitle>
 						<SheetDescription>
 							{isEditing
 								? t("workspaces:promptsRepo.promptSheet.editDesc")
@@ -113,7 +113,7 @@ export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: P
 
 						<SheetFooter className="flex flex-row items-center justify-end gap-2 border-t px-4 py-4 md:px-8">
 							<Button type="button" variant="outline" data-testid="prompt-cancel" onClick={() => onOpenChange(false)}>
-								Cancel
+								{t("common:actions.cancel")}
 							</Button>
 							<Button
 								type="submit"
@@ -121,7 +121,7 @@ export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: P
 								disabled={isLoading || !canSave}
 								title={canSave ? undefined : t("workspaces:promptsRepo.promptSheet.noPermission")}
 							>
-								{isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
+								{isLoading ? t("workspaces:formFooter.saving") : isEditing ? t("common:actions.update") : t("common:actions.create")}
 							</Button>
 						</SheetFooter>
 					</div>

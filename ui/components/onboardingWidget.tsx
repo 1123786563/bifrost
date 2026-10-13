@@ -258,9 +258,9 @@ export default function OnboardingWidget() {
 							👋
 						</span>
 						<div className="min-w-0 flex-1">
-							<div className="text-sm font-semibold">Setup checklist</div>
+							<div className="text-sm font-semibold">{t("workspaces:onboarding.title")}</div>
 							<div className="text-muted-foreground text-xs">
-								{doneCount} of {steps.length} steps complete
+								{t("workspaces:onboarding.stepsComplete", { done: doneCount, total: steps.length })}
 							</div>
 						</div>
 					</div>
@@ -348,12 +348,12 @@ export default function OnboardingWidget() {
 												disabled={writingMetadata}
 												className="text-muted-foreground hover:text-foreground text-xs opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 disabled:opacity-50"
 											>
-												Skip
+												{t("workspaces:onboarding.skip")}
 											</button>
 											<ChevronRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-0.5" />
 										</>
 									)}
-									{skipped && !step.complete && <span className="text-muted-foreground text-xs">Skipped</span>}
+									{skipped && !step.complete && <span className="text-muted-foreground text-xs">{t("workspaces:onboarding.skipped")}</span>}
 								</div>
 							</div>
 						);

@@ -19,5 +19,137 @@
 		"paused": "自动重新加载已暂停",
 		"waiting": "正在等待升级完成",
 		"reloadNow": "立即重新加载"
+	},
+	"upsell": {
+		"accessProfiles": {
+			"title": "解锁访问配置文件，提升性能",
+			"description": "此功能属于 Bifrost 企业版许可。创建访问配置文件，控制对资源的访问。"
+		},
+		"adaptiveRouting": {
+			"title": "解锁自适应路由，提升性能",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"alertingChannels": {
+			"title": "解锁告警渠道，主动监控",
+			"description": "此功能属于 Bifrost 企业版许可。配置 Slack、PagerDuty、OpsGenie 和 Webhook 告警，提前应对预算与性能问题。"
+		},
+		"alertingHistory": {
+			"title": "解锁告警历史，主动监控",
+			"description": "此功能属于 Bifrost 企业版许可。在一处查看告警送达结果、失败与解决事件。"
+		},
+		"alertingRules": {
+			"title": "解锁告警规则，主动监控",
+			"description": "此功能属于 Bifrost 企业版许可。定义告警规则，在预算、延迟和性能退化演变为事故之前及时发现。"
+		},
+		"auditLogs": {
+			"title": "解锁审计日志，更好地满足合规要求",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"bigquery": {
+			"title": "解锁原生 BigQuery 数据接入，用于分析",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"branding": {
+			"title": "解锁自定义品牌",
+			"description": "在控制台和登录页中将 Bifrost 徽标替换为您自己的。此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"businessUnits": {
+			"title": "解锁业务单元与高级治理",
+			"description": "通过我们的企业级治理管理用户与业务单元。此功能属于 Bifrost 企业版许可。"
+		},
+		"circuitBreaker": {
+			"title": "解锁断路器，实现可靠回退",
+			"description": "此功能属于 Bifrost 企业版许可。当主端点出现故障迹象时，自动将流量重定向到回退提供商。"
+		},
+		"cluster": {
+			"title": "解锁集群模式，可靠扩展",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"datadog": {
+			"title": "解锁原生 Datadog 数据接入，提升可观测性",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"edgeControl": {
+			"unknownOs": "未知操作系统"
+		},
+		"guardrailsConfiguration": {
+			"title": "解锁护栏，提升安全性",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"guardrailsProvider": {
+			"title": "解锁护栏，提升安全性",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"home": {
+			"title": "解锁您的个人主页",
+			"description": "此功能属于 Bifrost 企业版许可。主页向每位用户展示自己的用量、密钥、预算和访问权限。"
+		},
+		"kafka": {
+			"title": "解锁原生 Kafka 日志流式传输，实现实时可观测性",
+			"description": "此功能属于 Bifrost 企业版许可。将已完成的请求追踪以 JSON 格式流式发送到 Kafka 主题，用于实时分析、告警和下游处理。"
+		},
+		"license": {
+			"title": "解锁许可证管理",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"mcpAuthConfig": {
+			"title": "解锁 MCP 身份验证配置",
+			"description": "此功能属于 Bifrost 企业版许可。为 MCP 服务器配置身份验证，保护您的 MCP 连接。"
+		},
+		"orgChart": {
+			"title": "解锁组织架构图",
+			"description": "在一棵树中跨业务单元、团队和用户查看预算、支出、模型与工具。此功能属于 Bifrost 企业版许可。"
+		},
+		"projects": {
+			"title": "解锁项目，实现访问与支出范围控制",
+			"description": "此功能属于 Bifrost 企业版许可。项目由请求主动选择加入：它在调用方已有权限的基础上授予访问，并决定支出记入谁的账本。"
+		},
+		"promptDeployments": {
+			"title": "解锁提示词部署，实现更好的提示词版本管理与 A/B 测试。",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。",
+			"sectionLabel": "部署"
+		},
+		"pubsub": {
+			"title": "解锁 Google Cloud Pub/Sub 追踪流式传输",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"rbac": {
+			"title": "解锁角色与权限，提升安全性",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"scim": {
+			"title": "解锁基于 SCIM 的访问管理，用于用户配置",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"splunk": {
+			"title": "解锁原生 Splunk 数据接入，提升可观测性",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"userRankings": {
+			"title": "解锁用户排行，提升可见性",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"users": {
+			"title": "解锁用户与用户治理",
+			"description": "管理用户，设置按用户的预算与速率限制，并通过企业级治理控制访问。此功能属于 Bifrost 企业版许可。"
+		},
+		"edgeControlConfig": {
+			"title": "解锁边缘控制，治理边缘设备",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"edgeControlInventory": {
+			"title": "解锁边缘控制，审批应用与 MCP 服务器",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		},
+		"edgeControlDevices": {
+			"title": "解锁边缘控制，管理您的设备",
+			"description": "此功能属于 Bifrost 企业版许可。我们希望进一步了解您的使用场景，以及我们如何为您提供帮助。"
+		}
+	},
+	"agentHandover": {
+		"title": "Bifrost Agent 登录",
+		"titleComplete": "Bifrost Agent 登录完成",
+		"descComplete": "你可以关闭此窗口并返回 Bifrost Agent。",
+		"descStatus": "登录状态：{{status}}"
 	}
 }

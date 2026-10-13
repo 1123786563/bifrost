@@ -438,7 +438,7 @@ export default function MCPView() {
 					<TagInput
 						id="mcp-oauth-private-allowlist"
 						data-testid="mcp-oauth-private-allowlist-input"
-						placeholder="Add host, IP, or CIDR (Enter or comma)"
+						placeholder={t("settings:mcp.blockedHostsPlaceholder")}
 						value={localConfig.mcp_oauth_private_allowlist ?? []}
 						onValueChange={handleOAuthPrivateAllowlistChange}
 						readOnly={!hasSettingsUpdateAccess}

@@ -605,7 +605,8 @@
 		"disableAutoInjectDescPre": "When enabled, MCP tools are not automatically included in every request. Tools are only injected when explicitly specified via request headers (",
 		"disableAutoInjectDescPost": ") and still must be allowed by the virtual key MCP configuration.",
 		"maxInstrTotalDescPre": "Ceiling across every server a caller can see. At",
-		"maxInstrTotalDescPost": "this rides on every MCP-bearing request, so raising it raises per-request tokens. Set to 0 to use the default of 16384."
+		"maxInstrTotalDescPost": "this rides on every MCP-bearing request, so raising it raises per-request tokens. Set to 0 to use the default of 16384.",
+		"blockedHostsPlaceholder": "Add host, IP, or CIDR (Enter or comma)"
 	},
 	"security": {
 		"title": "Security Settings",

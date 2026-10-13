@@ -602,7 +602,7 @@ export function FileManagerSection({
 				{
 					data: {
 						id: `draft-folder:${newFolderParent}`,
-						name: "New folder",
+						name: t("playground:skills.fileManager.newFolder"),
 						kind: "add-folder",
 						path: newFolderParent,
 					},
@@ -618,7 +618,7 @@ export function FileManagerSection({
 				{
 					data: {
 						id: `draft-file:${addingFile.folderPath}:${addingFile.sourceType}`,
-						name: "New file",
+						name: t("playground:skills.fileManager.newFile"),
 						kind: "add-file",
 						path: addingFile.folderPath,
 					},
@@ -635,7 +635,7 @@ export function FileManagerSection({
 					{
 						data: {
 							id: `empty:${node.data.path}`,
-							name: "Empty folder",
+							name: t("playground:skills.fileManager.emptyFolder"),
 							kind: "empty-folder",
 							path: node.data.path,
 						},

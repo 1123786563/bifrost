@@ -43,11 +43,14 @@ export function ApiKeySelectorView({
 	// arrive from the server pre-narrowed by the same query.
 	const apiKeyOptions = useMemo(() => {
 		if (requireVirtualKey) return [];
-		const opts = [{ label: "Auto (default)", value: "__auto__" }, ...providerKeys.map((k) => ({ label: k.name, value: k.key_id }))];
+		const opts = [
+			{ label: t("workspaces:promptsRepo.apiKey.autoDefault"), value: "__auto__" },
+			...providerKeys.map((k) => ({ label: k.name, value: k.key_id })),
+		];
 		if (!query) return opts;
 		const q = query.toLowerCase();
 		return opts.filter((o) => o.label.toLowerCase().includes(q));
-	}, [providerKeys, requireVirtualKey, query]);
+	}, [providerKeys, requireVirtualKey, query, t]);
 
 	const virtualKeyOptions = useMemo(() => virtualKeys.map((vk) => ({ label: vk.name, value: vk.value })), [virtualKeys]);
 
@@ -70,7 +73,7 @@ export function ApiKeySelectorView({
 	const getLabel = useCallback(
 		(val: string | null) => {
 			if (!val) return "";
-			if (val === "__auto__") return requireVirtualKey ? "" : "Auto (default)";
+			if (val === "__auto__") return requireVirtualKey ? "" : t("workspaces:promptsRepo.apiKey.autoDefault");
 			const providerKey = providerKeys.find((k) => k.key_id === val);
 			if (providerKey) return providerKey.name;
 			const virtualKey = virtualKeys.find((vk) => vk.value === val);
@@ -78,7 +81,7 @@ export function ApiKeySelectorView({
 			// Never fall back to `val` — for a virtual key that is the secret itself.
 			return labelCacheRef.current.get(val) ?? "";
 		},
-		[providerKeys, virtualKeys, requireVirtualKey],
+		[providerKeys, virtualKeys, requireVirtualKey, t],
 	);
 
 	const hasResults = apiKeyOptions.length > 0 || virtualKeyOptions.length > 0;
@@ -112,7 +115,7 @@ export function ApiKeySelectorView({
 					<ComboboxList>
 						{apiKeyOptions.length > 0 && (
 							<ComboboxGroup>
-								<ComboboxLabel>API Keys</ComboboxLabel>
+								<ComboboxLabel>{t("workspaces:promptsRepo.apiKey.apiKeysGroup")}</ComboboxLabel>
 								{apiKeyOptions.map((o) => (
 									<ComboboxItem key={o.value} value={o.value}>
 										{o.label}

@@ -89,7 +89,7 @@ export function EmptyState({ error }: EmptyStateProps) {
   -d '{
     "model": "openai/gpt-4o-mini",
     "messages": [
-      {"role": "user", "content": "Hello!"}
+      {"role": "user", "content": ${t("logs:empty.samples.hello")}}
     ]
   }'`,
 			sdk: {
@@ -103,7 +103,7 @@ client = openai.OpenAI(
 
 response = client.chat.completions.create(
     model="gpt-4o-mini", # or "provider/model" for other providers (anthropic/claude-3-sonnet)
-    messages=[{"role": "user", "content": "Hello!"}]
+    messages=[{"role": "user", "content": ${t("logs:empty.samples.hello")}}]
 )`,
 					typescript: `import OpenAI from "openai";
 
@@ -114,7 +114,7 @@ const openai = new OpenAI({
 
 const response = await openai.chat.completions.create({
   model: "gpt-4o-mini", // or "provider/model" for other providers (anthropic/claude-3-sonnet)
-  messages: [{ role: "user", content: "Hello!" }],
+  messages: [{ role: "user", content: ${t("logs:empty.samples.hello")} }],
 });`,
 				},
 				anthropic: {
@@ -128,7 +128,7 @@ client = anthropic.Anthropic(
 response = client.messages.create(
     model="claude-3-sonnet-20240229", # or "provider/model" for other providers (openai/gpt-4o-mini)
     max_tokens=1000,
-    messages=[{"role": "user", "content": "Hello!"}]
+    messages=[{"role": "user", "content": ${t("logs:empty.samples.hello")}}]
 )`,
 					typescript: `import Anthropic from "@anthropic-ai/sdk";
 
@@ -140,7 +140,7 @@ const anthropic = new Anthropic({
 const response = await anthropic.messages.create({
   model: "claude-3-sonnet-20240229", // or "provider/model" for other providers (openai/gpt-4o-mini)
   max_tokens: 1000,
-  messages: [{ role: "user", content: "Hello!" }],
+  messages: [{ role: "user", content: ${t("logs:empty.samples.hello")} }],
 });`,
 				},
 				genai: {
@@ -154,7 +154,7 @@ client = genai.Client(
 
 response = client.models.generate_content(
     model="gemini-2.5-pro", # or "provider/model" for other providers (openai/gpt-4o-mini)
-    contents="Hello!"
+    contents=${t("logs:empty.samples.hello")}
 )`,
 					typescript: `import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -163,7 +163,7 @@ const genAI = new GoogleGenerativeAI("dummy-api-key", { // Handled by Bifrost
 });
 
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" }); // or "provider/model" for other providers (openai/gpt-4o-mini)
-const response = await model.generateContent("Hello!");`,
+const response = await model.generateContent(${t("logs:empty.samples.hello")});`,
 				},
 				litellm: {
 					python: `import litellm
@@ -172,13 +172,13 @@ litellm.api_base = "${baseUrl}/litellm"
 
 response = litellm.completion(
     model="openai/gpt-4o-mini",
-    messages=[{"role": "user", "content": "Hello!"}]
+    messages=[{"role": "user", "content": ${t("logs:empty.samples.hello")}}]
 )`,
 					typescript: `import { completion } from "litellm";
 
 const response = await completion({
   model: "openai/gpt-4o-mini",
-  messages: [{ role: "user", content: "Hello!" }],
+  messages: [{ role: "user", content: ${t("logs:empty.samples.hello")} }],
   api_base: "${baseUrl}/litellm",
 });`,
 				},
@@ -197,7 +197,7 @@ llm = ChatOpenAI(
 )
 
 # Simple message
-messages = [HumanMessage(content="Hello from LangChain!")]
+messages = [HumanMessage(content=${t("logs:empty.samples.helloFromLangchain")})]
 response = llm.invoke(messages)
 
 # Chain with prompt template
@@ -207,7 +207,7 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 chain = prompt | llm | StrOutputParser()
-result = chain.invoke({"input": "What is LangChain?"})`,
+result = chain.invoke({"input": ${t("logs:empty.samples.whatIsLangchain")}})`,
 					typescript: `import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
@@ -224,7 +224,7 @@ const llm = new ChatOpenAI({
 });
 
 // Simple message
-const messages = [new HumanMessage("Hello from LangChain!")];
+const messages = [new HumanMessage(${t("logs:empty.samples.helloFromLangchain")})];
 const response = await llm.invoke(messages);
 
 // Chain with prompt template
@@ -234,11 +234,11 @@ const prompt = ChatPromptTemplate.fromMessages([
 ]);
 
 const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-const result = await chain.invoke({ input: "What is LangChain?" });`,
+const result = await chain.invoke({ input: ${t("logs:empty.samples.whatIsLangchain")} });`,
 				},
 			},
 		};
-	}, []);
+	}, [t]);
 
 	const isUnexpectedError = error && error.includes("An unexpected error occurred");
 

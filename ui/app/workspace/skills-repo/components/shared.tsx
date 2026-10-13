@@ -187,7 +187,7 @@ export function SkillHeader({
 			>
 				<div className="flex min-w-0 flex-row flex-wrap items-center gap-2 align-middle md:h-5 md:flex-nowrap">
 					{onBack ? (
-						<nav aria-label="Breadcrumb" className="min-w-0">
+						<nav aria-label={t("playground:skills.editor.breadcrumbAriaLabel")} className="min-w-0">
 							<ol className="text-muted-foreground flex items-center gap-1.5 text-sm">
 								<li>
 									<button

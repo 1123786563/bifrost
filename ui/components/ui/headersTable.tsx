@@ -216,11 +216,11 @@ export function HeadersTable<T extends HeaderValue>({
 				<Table className="table-fixed">
 					<TableHeader>
 						<TableRow>
-							<TableHead className="w-[40%] px-4 py-2">Name</TableHead>
-							<TableHead className="px-4 py-2">Value</TableHead>
+							<TableHead className="w-[40%] px-4 py-2">{t("common:fields.name")}</TableHead>
+							<TableHead className="px-4 py-2">{t("common:fields.value")}</TableHead>
 							{!isFixedKeys && (
 								<TableHead className="w-10 p-0">
-									<span className="sr-only">Actions</span>
+									<span className="sr-only">{t("common:fields.actions")}</span>
 								</TableHead>
 							)}
 						</TableRow>

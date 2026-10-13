@@ -524,7 +524,9 @@ function RoutingDecisionLogs({ logs }: { logs: string }) {
 			</div>
 			<div>
 				{visible.length === 0 ? (
-					<div className="text-muted-foreground px-4 py-3 text-center text-xs">No routing logs at or above {minLevel}.</div>
+					<div className="text-muted-foreground px-4 py-3 text-center text-xs">
+						{t("logs:details.noRoutingLogsAtLevel", { level: minLevel })}
+					</div>
 				) : (
 					visible.map((line, i) => (
 						<div key={i} className="flex items-start gap-3 border-b px-4 py-1.5 font-mono text-xs last:border-b-0">
@@ -581,7 +583,7 @@ function NextSessionRequestLink({ log, onOpenLog }: { log: LogEntry; onOpenLog: 
 	if (isError && !currentData) {
 		return (
 			<div className="text-muted-foreground mt-2 text-[12px]" data-testid="log-tool-call-next-request-error">
-				Couldn't look up the next request in this session.{" "}
+				{t("logs:details.nextRequestLookupFailed")}{" "}
 				<button
 					type="button"
 					className="text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
@@ -1232,7 +1234,9 @@ export function LogDetailView({
 							)}
 							{log.routing_rule && (
 								<div className="mt-1 flex items-center gap-2">
-									<div className="text-muted-foreground w-24 shrink-0 text-[10.5px] font-semibold tracking-wider uppercase">Rule</div>
+									<div className="text-muted-foreground w-24 shrink-0 text-[10.5px] font-semibold tracking-wider uppercase">
+										{t("logs:details.rule")}
+									</div>
 									<Link
 										to="/workspace/logs"
 										search={(prev) => ({ ...prev, offset: 0, selected_log: "", routing_rule_ids: [log.routing_rule!.id] })}
@@ -1245,7 +1249,9 @@ export function LogDetailView({
 							)}
 							{log.selected_key && (
 								<div className="mt-1 flex items-center gap-2">
-									<div className="text-muted-foreground w-24 shrink-0 text-[10.5px] font-semibold tracking-wider uppercase">Key</div>
+									<div className="text-muted-foreground w-24 shrink-0 text-[10.5px] font-semibold tracking-wider uppercase">
+										{t("logs:columns.key")}
+									</div>
 									<Link
 										to="/workspace/logs"
 										search={(prev) => ({ ...prev, offset: 0, selected_log: "", selected_key_ids: [log.selected_key_id] })}
@@ -1297,7 +1303,7 @@ export function LogDetailView({
 							}
 							sub={
 								audioSeconds != null
-									? "duration billed"
+									? t("logs:details.durationBilled")
 									: log.token_usage
 										? `total ${formatCompactNumber(log.token_usage.total_tokens ?? 0)}${
 												log.token_usage.completion_tokens_details?.reasoning_tokens
@@ -1365,7 +1371,7 @@ export function LogDetailView({
 					<summary className="hover:bg-muted/30 flex cursor-pointer items-center justify-between px-4 py-2.5 text-sm transition">
 						<span className="text-foreground font-medium">{t("logs:agent.moreDetails")}</span>
 						<span className="text-muted-foreground flex items-center gap-2 text-xs">
-							<span className="hidden md:inline">timings, request meta, tokens, caching, metadata</span>
+							<span className="hidden md:inline">{t("logs:details.moreDetailsSummary")}</span>
 							<ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
 						</span>
 					</summary>
@@ -1431,18 +1437,24 @@ export function LogDetailView({
 									}
 								/>
 								{!isContainer && <LogEntryDetailsView className="w-full" label={t("logs:columns.model")} value={log.model} />}
-								{!isContainer && log.alias && <LogEntryDetailsView className="w-full" label="Alias" value={log.alias} />}
+								{!isContainer && log.alias && (
+									<LogEntryDetailsView className="w-full" label={t("logs:details.alias")} value={log.alias} />
+								)}
 								{!isContainer && log.canonical_model_name && (
-									<LogEntryDetailsView className="w-full" label="Canonical Model" value={log.canonical_model_name} />
+									<LogEntryDetailsView className="w-full" label={t("logs:details.canonicalModel")} value={log.canonical_model_name} />
 								)}
 								{!isContainer && log.alias_model_family && (
-									<LogEntryDetailsView className="w-full" label="Model Family" value={log.alias_model_family} />
+									<LogEntryDetailsView className="w-full" label={t("logs:details.modelFamily")} value={log.alias_model_family} />
 								)}
 								{!isContainer && log.server_side_fallback_model && (
-									<LogEntryDetailsView className="w-full" label="Served By (fallback)" value={log.server_side_fallback_model} />
+									<LogEntryDetailsView
+										className="w-full"
+										label={t("logs:details.servedByFallback")}
+										value={log.server_side_fallback_model}
+									/>
 								)}
 								{!isContainer && log.served_model && (
-									<LogEntryDetailsView className="w-full" label="Served Model" value={log.served_model} />
+									<LogEntryDetailsView className="w-full" label={t("logs:details.servedModel")} value={log.served_model} />
 								)}
 								{detectedApp && (
 									<LogEntryDetailsView
@@ -1526,7 +1538,7 @@ export function LogDetailView({
 														</button>
 													</TooltipTrigger>
 													<TooltipContent sideOffset={6} className="max-w-md break-all">
-														{log.parent_request_id} · Filter this session
+														{log.parent_request_id} · {t("logs:session.filterThisSession")}
 													</TooltipContent>
 												</Tooltip>
 											) : (
@@ -1554,7 +1566,7 @@ export function LogDetailView({
 														</button>
 													</TooltipTrigger>
 													<TooltipContent sideOffset={6} className="max-w-md break-all">
-														{log.session_id} · Filter this session
+														{log.session_id} · {t("logs:session.filterThisSession")}
 													</TooltipContent>
 												</Tooltip>
 											) : (
@@ -1601,7 +1613,7 @@ export function LogDetailView({
 									/>
 								)}
 								{log.number_of_retries > 0 && (
-									<LogEntryDetailsView className="w-full" label="Number of Retries" value={log.number_of_retries} />
+									<LogEntryDetailsView className="w-full" label={t("logs:details.numberOfRetries")} value={log.number_of_retries} />
 								)}
 								{(log.team_ids?.length || log.team_id) && (
 									<LogEntryDetailsView
@@ -1715,7 +1727,9 @@ export function LogDetailView({
 										}
 									/>
 								)}
-								{log.fallback_index > 0 && <LogEntryDetailsView className="w-full" label="Fallback Index" value={log.fallback_index} />}
+								{log.fallback_index > 0 && (
+									<LogEntryDetailsView className="w-full" label={t("logs:details.fallbackIndex")} value={log.fallback_index} />
+								)}
 								{log.virtual_key && (
 									<LogEntryDetailsView
 										className="w-full"
@@ -1797,16 +1811,24 @@ export function LogDetailView({
 									/>
 								)}
 								{complexityRouting.score !== undefined && (
-									<LogEntryDetailsView className="w-full" label="Complexity Score" value={complexityRouting.score.toFixed(2)} />
+									<LogEntryDetailsView
+										className="w-full"
+										label={t("logs:details.complexityScore")}
+										value={complexityRouting.score.toFixed(2)}
+									/>
 								)}
 
 								{(log.params as any)?.audio && (
 									<>
 										{(log.params as any).audio.format && (
-											<LogEntryDetailsView className="w-full" label="Audio Format" value={(log.params as any).audio.format} />
+											<LogEntryDetailsView
+												className="w-full"
+												label={t("logs:details.audioFormat")}
+												value={(log.params as any).audio.format}
+											/>
 										)}
 										{(log.params as any).audio.voice && (
-											<LogEntryDetailsView className="w-full" label="Audio Voice" value={(log.params as any).audio.voice} />
+											<LogEntryDetailsView className="w-full" label={t("logs:details.audioVoice")} value={(log.params as any).audio.voice} />
 										)}
 									</>
 								)}
@@ -1872,13 +1894,17 @@ export function LogDetailView({
 
 								{passthroughParams && (
 									<>
-										{passthroughParams.method && <LogEntryDetailsView className="w-full" label="Method" value={passthroughParams.method} />}
-										{passthroughParams.path && <LogEntryDetailsView className="w-full" label="Path" value={passthroughParams.path} />}
+										{passthroughParams.method && (
+											<LogEntryDetailsView className="w-full" label={t("logs:details.method")} value={passthroughParams.method} />
+										)}
+										{passthroughParams.path && (
+											<LogEntryDetailsView className="w-full" label={t("logs:details.path")} value={passthroughParams.path} />
+										)}
 										{passthroughParams.raw_query && (
-											<LogEntryDetailsView className="w-full" label="Query" value={passthroughParams.raw_query} />
+											<LogEntryDetailsView className="w-full" label={t("logs:details.query")} value={passthroughParams.raw_query} />
 										)}
 										{(passthroughParams.status_code ?? 0) !== 0 && (
-											<LogEntryDetailsView className="w-full" label="Status Code" value={passthroughParams.status_code} />
+											<LogEntryDetailsView className="w-full" label={t("logs:details.statusCode")} value={passthroughParams.status_code} />
 										)}
 									</>
 								)}
@@ -1945,7 +1971,7 @@ export function LogDetailView({
 									    has no cost of its own. Without this the detail view of a video
 									    generation reads as free while the list beside it shows the spend. */}
 										{log.cost == null && (log.children_cost ?? 0) > 0 && (
-											<LogEntryDetailsView className="w-full" label="Settled Cost" value={formatCostPrecise(log.children_cost)} />
+											<LogEntryDetailsView className="w-full" label={t("logs:details.settledCost")} value={formatCostPrecise(log.children_cost)} />
 										)}
 										{/* Additional cost (guardrail / semantic cache / routing / MCP) on its own row below. */}
 										{(log.cost_breakdown?.additional_cost ?? 0) > 0 && (
@@ -1972,7 +1998,7 @@ export function LogDetailView({
 										{(log.cost_breakdown?.additional_cost_details?.mcp_cost ?? 0) > 0 && (
 											<LogEntryDetailsView
 												className="w-full"
-												label="MCP Cost"
+												label={t("logs:details.mcpCost")}
 												value={formatCostPrecise(log.cost_breakdown?.additional_cost_details?.mcp_cost)}
 											/>
 										)}
@@ -2123,7 +2149,7 @@ export function LogDetailView({
 														/>
 													)}
 													{reasoning.max_tokens != null && (
-														<LogEntryDetailsView className="w-full" label="Max Tokens" value={reasoning.max_tokens} />
+														<LogEntryDetailsView className="w-full" label={t("logs:details.maxTokens")} value={reasoning.max_tokens} />
 													)}
 												</div>
 											</div>
@@ -2162,7 +2188,11 @@ export function LogDetailView({
 														</>
 													)}
 													{batchDebug.accounting?.cost != null && (
-														<LogEntryDetailsView className="w-full" label="Batch Cost" value={formatCost(batchDebug.accounting.cost)} />
+														<LogEntryDetailsView
+															className="w-full"
+															label={t("logs:details.batchCost")}
+															value={formatCost(batchDebug.accounting.cost)}
+														/>
 													)}
 												</div>
 											)}
@@ -2190,19 +2220,19 @@ export function LogDetailView({
 											{videoAccounting && (
 												<div className="grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3">
 													{videoAccounting.seconds != null && (
-														<LogEntryDetailsView className="w-full" label="Billed Seconds" value={String(videoAccounting.seconds)} />
+														<LogEntryDetailsView className="w-full" label={t("logs:details.billedSeconds")} value={String(videoAccounting.seconds)} />
 													)}
 													{videoAccounting.size && (
-														<LogEntryDetailsView className="w-full" label="Resolution" value={videoAccounting.size} />
+														<LogEntryDetailsView className="w-full" label={t("logs:details.resolution")} value={videoAccounting.size} />
 													)}
 													{videoAccounting.output_count != null && (
-														<LogEntryDetailsView className="w-full" label="Clips Billed" value={String(videoAccounting.output_count)} />
+														<LogEntryDetailsView className="w-full" label={t("logs:details.clipsBilled")} value={String(videoAccounting.output_count)} />
 													)}
 												</div>
 											)}
 											{videoAccounting?.incomplete && (
 												<p className="text-muted-foreground text-xs">
-													Priced with no published rate, or from dimensions the provider never confirmed, so this cost may be short.
+													{t("logs:details.videoUnpricedNote")}
 												</p>
 											)}
 										</div>
@@ -2244,10 +2274,10 @@ export function LogDetailView({
 																	/>
 																)}
 																{log.cache_debug.model_used && (
-																	<LogEntryDetailsView className="w-full" label="Embedding Model" value={log.cache_debug.model_used} />
+																	<LogEntryDetailsView className="w-full" label={t("logs:details.embeddingModel")} value={log.cache_debug.model_used} />
 																)}
 																{log.cache_debug.threshold && (
-																	<LogEntryDetailsView className="w-full" label="Threshold" value={log.cache_debug.threshold || "-"} />
+																	<LogEntryDetailsView className="w-full" label={t("logs:details.threshold")} value={log.cache_debug.threshold || "-"} />
 																)}
 																{log.cache_debug.similarity && (
 																	<LogEntryDetailsView
@@ -2280,7 +2310,7 @@ export function LogDetailView({
 															/>
 														)}
 														{log.cache_debug.model_used && (
-															<LogEntryDetailsView className="w-full" label="Embedding Model" value={log.cache_debug.model_used} />
+															<LogEntryDetailsView className="w-full" label={t("logs:details.embeddingModel")} value={log.cache_debug.model_used} />
 														)}
 														{log.cache_debug.input_tokens && (
 															<LogEntryDetailsView
@@ -2361,7 +2391,7 @@ export function LogDetailView({
 													label={t("logs:details.completionTokens")}
 													value={call.completion_tokens ?? 0}
 												/>
-												<LogEntryDetailsView className="w-full" label="Total Tokens" value={call.total_tokens ?? 0} />
+												<LogEntryDetailsView className="w-full" label={t("logs:details.totalTokens")} value={call.total_tokens ?? 0} />
 												{call.reason && (
 													<LogEntryDetailsView className="w-full md:col-span-3" label={t("logs:details.reason")} value={call.reason} />
 												)}
@@ -2411,7 +2441,7 @@ export function LogDetailView({
 												)}
 												<LogEntryDetailsView className="w-full" label={t("logs:details.inputTokens")} value={call.input_tokens ?? 0} />
 												{call.output_tokens != null && (
-													<LogEntryDetailsView className="w-full" label="Output Tokens" value={call.output_tokens} />
+													<LogEntryDetailsView className="w-full" label={t("logs:details.outputTokens")} value={call.output_tokens} />
 												)}
 											</div>
 										))}
@@ -3308,7 +3338,7 @@ export function LogDetailView({
 							<RoutingDecisionLogs logs={log.routing_engine_logs} />
 						) : (
 							<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">
-								No routing logs for this request.
+								{t("logs:toolCalls.noRoutingLogs")}
 							</div>
 						)}
 					</TabsContent>

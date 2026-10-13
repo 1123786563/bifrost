@@ -53,6 +53,9 @@
 			"totalWithMax": "{{count}} / {{max}} phrases",
 			"total": "{{count}} phrases",
 			"emptyListError": "{{tier}} phrases cannot be empty",
+			"phraseTooLong": "A {{tier}} phrase exceeds the {{max}}-character limit.",
+			"phraseDuplicateTier": "\"{{phrase}}\" is also in the {{tier}} list. Each phrase must belong to exactly one tier.",
+			"phrasesOverLimit": "Semantic routing has {{total}} phrases ({{simple}} simple, {{medium}} medium, {{complex}} complex); the maximum is {{max}} across all tiers.",
 			"count_one": "{{count}} phrase",
 			"count_other": "{{count}} phrases",
 			"placeholder": "Type a reference phrase and press Enter",
@@ -268,6 +271,9 @@
 		"decisionSheet": {
 			"title": "Model configuration",
 			"description": "Which decision model classifies requests, how much conversation it sees, and how long it may take. Credentials come from its provider."
+		},
+		"form": {
+			"infoTipFallback": "this field"
 		}
 	},
 	"org": {
@@ -294,7 +300,11 @@
 			"sheetCreateDescription": "Create a new customer account to organize teams and manage resources.",
 			"nameLabel": "Customer Name *",
 			"namePlaceholder": "e.g., Acme Corporation",
-			"nameHint": "This name will be used to identify the customer account."
+			"nameHint": "This name will be used to identify the customer account.",
+			"detailSheetTitle": "Customer Details",
+			"detailSheetDescription": "Usage details for this customer.",
+			"detailInfo": "Info",
+			"noBudgetsConfigured": "No budgets configured"
 		},
 		"teams": {
 			"title": "Teams",
@@ -408,7 +418,8 @@
 				"status": "Status",
 				"assignedTo": "Assigned To",
 				"budget": "Budget",
-				"rateLimits": "Rate Limits"
+				"rateLimits": "Rate Limits",
+				"key": "Key"
 			},
 			"searchHintWithUser": "name, user, team, or customer",
 			"searchHint": "name, team, or customer",
@@ -470,7 +481,8 @@
 			"filterSearch": "search \"{{value}}\"",
 			"filterCustomer": "customer filter",
 			"filterTeam": "team filter",
-			"filterUser": "user filter"
+			"filterUser": "user filter",
+			"selectVkAria": "Select virtual key {{name}}"
 		},
 		"empty": {
 			"title": "Virtual keys control access, budgets, and rate limits",
@@ -855,6 +867,10 @@
 				"toastCopied": "Copied to clipboard",
 				"breadcrumbsWebhooks": "Webhooks",
 				"breadcrumbsDeliveries": "Deliveries"
+			},
+			"sends": {
+				"original": "Original",
+				"redelivery": "Redelivery {{n}}"
 			}
 		}
 	},
@@ -870,8 +886,13 @@
 				"targets": "Targets",
 				"scope": "Scope",
 				"expression": "Expression",
-				"enabled": "Enabled"
+				"enabled": "Enabled",
+				"status": "Status"
 			},
+			"actionsAria": "Actions for routing rule {{name}}",
+			"deleteDescription": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+			"moreTargets_one": "+{{count}} more target",
+			"moreTargets_other": "+{{count}} more targets",
 			"searchAria": "Search routing rules by name",
 			"searchPlaceholder": "Search by name...",
 			"deleteTitle": "Delete Routing Rule",
@@ -949,9 +970,25 @@
 			"selectProvider": "Select provider...",
 			"incomingOptional": "Incoming (optional)",
 			"apiKeyLabel": "API Key",
-			"apiKeyOptionalNote": "(optional; leave unset for load-balanced selection)"
+			"apiKeyOptionalNote": "(optional; leave unset for load-balanced selection)",
+			"chainRuleHelp": "After this rule matches, re-evaluate routing rules using the resolved provider/model as the new context. Useful for composing rules, e.g. normalize a model alias first, then route based on the canonical name.",
+			"priorityHint": "Lower numbers = higher priority (0 is highest)",
+			"mustEqualOne": "(must equal 1)",
+			"ttftValidation": "Enter a whole number from 1 to {{max}}, or leave it empty",
+			"ttftHelp": "Streaming only. If no token arrives in time, Bifrost moves to the next fallback. The last fallback is never cut off.",
+			"targetN": "Target {{n}}",
+			"removeTargetAria": "Remove target {{n}}",
+			"removeFallbackAria": "Remove fallback {{n}}",
+			"clearApiKeyTargetAria": "Clear API key for target {{n}}",
+			"clearApiKeyFallbackAria": "Clear API key for fallback {{n}}",
+			"clearProviderTargetAria": "Clear provider for target {{n}}",
+			"clearModelTargetAria": "Clear model for target {{n}}"
 		},
 		"info": {
+			"group": "Group",
+			"chainRuleTooltip": "After this rule matches, routing rules are re-evaluated using the resolved provider/model as the new context.",
+			"celExpression": "CEL Expression",
+			"targetsCount": "Targets ({{count}})",
 			"toastCopyFailed": "Failed to copy to clipboard",
 			"copied": "Copied!",
 			"copyValue": "Copy {{label}}",
@@ -979,7 +1016,20 @@
 			"resetLayout": "Reset to default layout",
 			"targets": "Targets",
 			"resolvedTarget": "Resolved target (new input)",
-			"passthrough": "Passthrough"
+			"passthrough": "Passthrough",
+			"off": "Off",
+			"targetCount_one": "{{count}} target",
+			"targetCount_other": "{{count}} targets",
+			"chainRuleNote": "Chain rule: resolved provider/model feeds back as the new input and the full scope chain re-evaluates.",
+			"originalProviderModel": "original provider & model"
+		},
+		"cel": {
+			"builder": "Builder",
+			"expression": "CEL Expression",
+			"expressionPreview": "CEL Expression Preview",
+			"placeholder": "e.g. model == \"claude-sonnet-4-6\"",
+			"leaveEmpty": "Leave empty to match all requests.",
+			"noRules": "No rules defined yet"
 		},
 		"delete_": "Delete",
 		"priority": "Priority",

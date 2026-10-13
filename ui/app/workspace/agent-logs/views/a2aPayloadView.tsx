@@ -431,6 +431,7 @@ function MessageRow({ message, last = false }: { message: Record<string, unknown
 const ARTIFACT_CLAIMED = ["artifactId", "name", "description", "parts"];
 
 function ArtifactView({ artifact }: { artifact: unknown }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const record = asRecord(artifact);
 	if (!record) return <JsonBlock code={prettyPrint(artifact)} maxHeight={200} />;
 
@@ -441,7 +442,9 @@ function ArtifactView({ artifact }: { artifact: unknown }) {
 	return (
 		<div className="rounded-sm border">
 			<div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-				<span className="text-foreground truncate text-[12.5px] font-medium">{name ?? artifactId ?? "Artifact"}</span>
+				<span className="text-foreground truncate text-[12.5px] font-medium">
+					{name ?? artifactId ?? t("logs:agent.artifact")}
+				</span>
 				{name && artifactId && <span className="text-muted-foreground shrink-0 font-mono text-[10.5px]">{artifactId}</span>}
 			</div>
 			<div className="space-y-2 p-3">
@@ -545,7 +548,9 @@ function ErrorView({ error }: { error: Record<string, unknown> }) {
 				)}
 			</div>
 			<div className="space-y-3 p-3">
-				<div className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">{message ?? "No error message recorded."}</div>
+				<div className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">
+				{message ?? t("logs:agent.noErrorMessage")}
+			</div>
 				<UnclaimedFields source={rest} claimed={[]} />
 			</div>
 		</div>
@@ -618,7 +623,7 @@ function StatusUpdateView({ update }: { update: Record<string, unknown> }) {
 				{state ? <TaskStateBadge state={state} /> : null}
 				{final && (
 					<Badge variant="outline" className="text-muted-foreground rounded-sm px-1.5 py-0 text-[11px] font-normal">
-						final
+						{t("logs:agent.finalBadge")}
 					</Badge>
 				)}
 				{timestamp && <span className="text-muted-foreground font-mono text-[11px] tabular-nums">{timestamp}</span>}
@@ -637,7 +642,11 @@ function StatusUpdateView({ update }: { update: Record<string, unknown> }) {
 }
 
 function ArtifactUpdateView({ update }: { update: Record<string, unknown> }) {
-	const flags = [update.append === true ? "append" : null, update.lastChunk === true ? "last chunk" : null].filter(Boolean) as string[];
+	const { t } = useTranslation(["common", "logs"]);
+	const flags = [
+		update.append === true ? t("logs:agent.flagAppend") : null,
+		update.lastChunk === true ? t("logs:agent.flagLastChunk") : null,
+	].filter(Boolean) as string[];
 	return (
 		<div className="space-y-3">
 			{flags.length > 0 && (
@@ -760,7 +769,9 @@ function ArtifactMetadata({ artifact, parts }: { artifact: Record<string, unknow
 				{fields && Object.keys(fields).length > 0 && <OperationParametersView params={fields} />}
 				{partFields.map(({ index, fields }) => (
 					<div key={index} className="overflow-hidden rounded-sm border">
-						<div className="bg-muted/30 text-muted-foreground border-b px-3 py-2 text-[11px] font-medium">Part {index + 1}</div>
+						<div className="bg-muted/30 text-muted-foreground border-b px-3 py-2 text-[11px] font-medium">
+							{t("logs:agent.partIndex", { index: index + 1 })}
+						</div>
 						<div className="py-2.5 [&>dl>div]:px-3">
 							<OperationParametersView params={fields} />
 						</div>

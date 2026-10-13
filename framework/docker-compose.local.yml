@@ -1,0 +1,9 @@
+# LOCAL ONLY — not committed. Host port override for the framework Postgres
+# service: this machine's 5432 is taken by an unrelated long-running container
+# (openbot-postgres-1), so bifrost's dev Postgres maps to 5433 instead.
+# !override replaces (rather than appends to) the base ports list.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d postgres
+services:
+  postgres:
+    ports: !override
+      - "5433:5432"

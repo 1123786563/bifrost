@@ -301,11 +301,9 @@ export function PrometheusFormFragment({
 						<div className="flex items-center justify-between gap-4">
 							<div className="flex flex-col gap-1">
 								<h3 className="flex flex-row items-center gap-2 text-sm font-medium">
-									Push-based (Push Gateway) <Badge variant="secondary">BETA</Badge>
+									{t("logs:prom.pushGateway")} <Badge variant="secondary">BETA</Badge>
 								</h3>
-								<p className="text-muted-foreground text-xs">
-									Push metrics to a Prometheus Push Gateway for proper aggregation in cluster deployments
-								</p>
+								<p className="text-muted-foreground text-xs">{t("logs:prom.pushGatewayDesc")}</p>
 							</div>
 							<FormField
 								control={form.control}

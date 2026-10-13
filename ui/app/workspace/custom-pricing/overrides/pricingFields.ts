@@ -1,3 +1,4 @@
+import i18n from "@/lib/i18n";
 import type { RequestType } from "@/lib/types/config";
 import type { PricingOverrideMatchType, PricingOverridePatch } from "@/lib/types/governance";
 
@@ -6,45 +7,65 @@ import type { PricingOverrideMatchType, PricingOverridePatch } from "@/lib/types
 // Extracted from pricingOverrideSheet.tsx so read-only consumers (e.g. the
 // model-catalog detail sheet) can reuse the labels without pulling that
 // component's form/mutation dependencies into their bundle.
+//
+// Labels resolve through i18n at access time (the models namespace the
+// custom-pricing pages already load) and fall back to the English literal,
+// so consumers that read `.label` / `fieldLabelByKey` directly need no change.
 
 export const REQUEST_TYPE_GROUPS = [
 	{
-		label: "Chat / Text / Responses",
+		get label() {
+			return i18n.t("models:pricing.groups.chat", { defaultValue: "Chat / Text / Responses" });
+		},
 		key: "chat",
 		types: ["chat_completion", "text_completion", "responses"],
 	},
 	{
-		label: "Embedding",
+		get label() {
+			return i18n.t("models:pricing.groups.embedding", { defaultValue: "Embedding" });
+		},
 		key: "embedding",
 		types: ["embedding"],
 	},
 	{
-		label: "Rerank",
+		get label() {
+			return i18n.t("models:pricing.groups.rerank", { defaultValue: "Rerank" });
+		},
 		key: "rerank",
 		types: ["rerank"],
 	},
 	{
-		label: "Decisions",
+		get label() {
+			return i18n.t("models:pricing.groups.decisions", { defaultValue: "Decisions" });
+		},
 		key: "decisions",
 		types: ["decisions"],
 	},
 	{
-		label: "Audio",
+		get label() {
+			return i18n.t("models:pricing.groups.audio", { defaultValue: "Audio" });
+		},
 		key: "audio",
 		types: ["speech", "transcription", "live"],
 	},
 	{
-		label: "Image",
+		get label() {
+			return i18n.t("models:pricing.groups.image", { defaultValue: "Image" });
+		},
 		key: "image",
 		types: ["image_generation", "image_variation", "image_edit"],
 	},
 	{
-		label: "Video",
+		get label() {
+			return i18n.t("models:pricing.groups.video", { defaultValue: "Video" });
+		},
 		key: "video",
 		types: ["video_generation", "video_remix"],
 	},
 	{
-		label: "OCR",
+		get label() {
+			return i18n.t("models:pricing.groups.ocr", { defaultValue: "OCR" });
+		},
 		key: "ocr",
 		types: ["ocr"],
 	},
@@ -802,10 +823,22 @@ export function pricingFieldUnit(key: string): PricingFieldUnit {
 
 export type PricingFieldKey = (typeof PRICING_FIELDS)[number]["key"];
 
-export const fieldLabelByKey = Object.fromEntries(PRICING_FIELDS.map((field) => [field.key, field.label])) as Record<
+// English label per key, kept separate from the translated view below.
+const englishLabelByKey = Object.fromEntries(PRICING_FIELDS.map((field) => [field.key, field.label])) as Record<
 	PricingFieldKey,
 	string
 >;
+
+/** Translated label for a pricing field, falling back to its English label. */
+export function pricingFieldLabel(key: PricingFieldKey | (string & {})): string {
+	return i18n.t(`models:pricing.pricingFields.${key}`, { defaultValue: englishLabelByKey[key as PricingFieldKey] ?? key });
+}
+
+// Translates lazily on each access so a language switch is reflected without a
+// remount; the Record signature stays what consumers already type against.
+export const fieldLabelByKey = new Proxy({} as Record<PricingFieldKey, string>, {
+	get: (_target, key: string | symbol) => (typeof key === "string" ? pricingFieldLabel(key) : undefined),
+});
 export const patchKeys = PRICING_FIELDS.map((field) => field.key) as PricingFieldKey[];
 
 /**

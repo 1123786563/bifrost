@@ -306,6 +306,7 @@
 	"sidebar": {
 		"searchPlaceholder": "Search...",
 		"searchAria": "Search sidebar navigation",
+		"mcpClientsIcon": "MCP clients icon",
 		"collapseAria": "Collapse sidebar",
 		"expandAria": "Expand sidebar",
 		"promo": {
@@ -505,6 +506,7 @@
 			"provider": "Add provider names...",
 			"apiKey": "Add API key names..."
 		},
+		"addQuoted": "Add \"{{value}}\"",
 		"none": {
 			"virtualKey": "No virtual keys found",
 			"team": "No teams found",
@@ -526,7 +528,8 @@
 		"viewMore": "View more",
 		"viewLess": "View less",
 		"openedAnnounce": "Dropdown opened. {{count}} options available. Use arrow keys to navigate.",
-		"closedAnnounce": "Dropdown closed."
+		"closedAnnounce": "Dropdown closed.",
+		"duplicatesRemoved": "Duplicates have been removed automatically."
 	},
 	"headersForm": {
 		"previouslySubmitted": "Previously submitted",
@@ -559,7 +562,33 @@
 	"providerConfigs": {
 		"noneLeft": "No providers left to configure. Click to add",
 		"allowAll": "Allow all providers",
-		"selectToAdd": "Select a provider to add"
+		"selectToAdd": "Select a provider to add",
+		"providerBudget": "Provider budget",
+		"modelBudgets": "Model budgets",
+		"accessAndRateLimits": "Access & rate limits",
+		"maximumTokens": "Maximum tokens",
+		"maximumRequests": "Maximum requests",
+		"globalProviderCap": "Global provider cap {{amount}}",
+		"modelsShareProviderBudget": "If you skip this, models share the provider budget freely",
+		"modelBudgetCount_one": "{{count}} model budget",
+		"modelBudgetCount_other": "{{count}} model budgets",
+		"noBudget": "No budget",
+		"removeModelBudget": "Remove model budget {{name}}",
+		"allKeys": "All keys",
+		"noKeys": "No keys",
+		"keyCount_one": "{{count}} key",
+		"keyCount_other": "{{count}} keys",
+		"rateLimitsSet": "Rate limits set",
+		"noRateLimits": "No rate limits",
+		"selectModel": "Select a model…",
+		"noCap": "No cap",
+		"allModels": "All models",
+		"noModelsDenyAll": "No models (deny all)",
+		"allKeysAllowed": "All keys allowed",
+		"noKeysSelected": "No keys selected",
+		"selectKeys": "Select keys...",
+		"removeProviderAria": "Remove provider {{name}}",
+		"removeKeyAria": "Remove {{name}}"
 	},
 	"mcpConfigs": {
 		"duplicate": "This MCP server is already configured",
@@ -582,7 +611,15 @@
 		"networking": "Networking",
 		"streaming": "Client delivery",
 		"miscellaneous": "Miscellaneous",
-		"other": "Other"
+		"other": "Other",
+		"overCounted": "Measured spans ({{measured}}) exceed the computed overhead ({{computed}}); the upstream accumulator may be over-counting.",
+		"plugins": {
+			"otel": "OpenTelemetry",
+			"datadog": "Datadog",
+			"compat": "Compatibility",
+			"adaptiveLoadBalancer": "Adaptive Load Balancer",
+			"modelCatalogResolver": "Model Catalog Resolver"
+		}
 	},
 	"overheadMembers": {
 		"request_unmarshal": "Request parse",
@@ -641,7 +678,14 @@
 		"selectModels": "Select models...",
 		"searchModel": "Search for a model...",
 		"selectProviders": "Select providers...",
-		"value": "Value"
+		"value": "Value",
+		"hasKey": "has key",
+		"key": "Key",
+		"keyNamePh": "{{field}} name (e.g., x-api-key)",
+		"select": "Select...",
+		"phArray": "Enter comma-separated values or JSON array",
+		"phRegex": "e.g., .* (any), openai|anthropic (multiple), ^gpt.* (prefix)",
+		"phValue": "Enter value..."
 	},
 	"misc": {
 		"select": "Select",
@@ -675,7 +719,9 @@
 		"firstCycleNote": "The current reset cycle counts as the first cycle.",
 		"validUntil": "Valid until",
 		"currentEffectiveLimit": "Current effective limit:",
-		"invalidInput": "Invalid input"
+		"invalidInput": "Invalid input",
+		"activeLine": "+{{amount}} override · effective {{effective}}",
+		"baseLine": "Base {{amount}}"
 	},
 	"notifications": {
 		"ariaWithCount": "Notifications, {{summary}}",
@@ -730,11 +776,225 @@
 		"chartUnavailable": "Chart unavailable.",
 		"partialAnswer": "Partial answer",
 		"whatToTry": "What to try",
-		"thinking": "Thinking"
+		"thinking": "Thinking",
+		"settings": "Warp settings",
+		"switchModel": "Switch model",
+		"default": "Default",
+		"stop": "Stop",
+		"send": "Send",
+		"placeholder": "Ask about your Bifrost data...",
+		"placeholderQueued": "Ask a follow-up, it is sent when this answer finishes...",
+		"resize": "Resize Warp panel",
+		"askWarp": "Ask Warp",
+		"sheetDescription": "Ask Warp questions about this deployment's logs, usage and spend.",
+		"newChat": "New chat",
+		"closeWarp": "Close Warp",
+		"chatHistory": "Chat history",
+		"backToChat": "Back to chat",
+		"indexStatusTitle": "Warp could not read its index status. Semantic search may or may not be available.",
+		"configError": "Could not load Warp's configuration. Reload the page to try again.",
+		"turnedOff": "Warp is turned off",
+		"notSetUp": "Warp isn't set up yet",
+		"turnOnHint": "Switch Enable Warp on to start asking questions.",
+		"chooseModelHint": "Choose a model for Warp to run on.",
+		"openSettings": "Open Warp settings",
+		"configure": "Configure Warp",
+		"askAdminOn": "Ask an administrator to turn Warp on.",
+		"askAdminSetup": "Ask an administrator to set Warp up.",
+		"sendsWhenFinish": "Sends when this answer finishes",
+		"queued": "Queued",
+		"removeQueuedAria": "Remove queued message",
+		"jumpToLatest": "Jump to latest",
+		"partialBody": "Warp used all of its research steps before it finished checking. This is what it found so far, and it says what it could not confirm. A narrower question usually completes.",
+		"starter1": "What did I spend on each provider in the last 7 days?",
+		"starter2": "Which model had the worst p99 latency yesterday?",
+		"starter3": "Who are my top 5 users by cost this week?",
+		"starter4": "Show me failed requests in the last 24 hours",
+		"index": {
+			"noVectorStore": "No vector store",
+			"notSetUp": "Search not set up",
+			"indexingFailed": "Indexing failed",
+			"indexing": "Indexing",
+			"indexingPercent": "Indexing {{percent}}%",
+			"indexReady": "Index ready",
+			"ready": "Ready"
+		},
+		"toolStatus": {
+			"inProgress": "In progress",
+			"failed": "Failed",
+			"completed": "Completed"
+		},
+		"tools": {
+			"semantic_search_logs": {
+				"running": "Performing vector search",
+				"done": "Performed vector search"
+			},
+			"count_logs": {
+				"running": "Checking log volume",
+				"done": "Checked log volume"
+			},
+			"query_logs": {
+				"running": "Searching request logs",
+				"done": "Searched request logs"
+			},
+			"get_log_detail": {
+				"running": "Opening a request",
+				"done": "Opened a request"
+			},
+			"get_request_trace": {
+				"running": "Tracing what happened",
+				"done": "Traced what happened"
+			},
+			"query_metrics": {
+				"running": "Querying metrics",
+				"done": "Queried metrics"
+			},
+			"query_usage_by": {
+				"running": "Ranking usage",
+				"done": "Ranked usage"
+			},
+			"query_model_performance": {
+				"running": "Comparing models and providers",
+				"done": "Compared models and providers"
+			},
+			"render_chart": {
+				"running": "Drawing a chart",
+				"done": "Drew a chart"
+			},
+			"describe_filter_space": {
+				"running": "Checking available values",
+				"done": "Checked available values"
+			},
+			"describe_virtual_key": {
+				"running": "Checking virtual key limits",
+				"done": "Checked virtual key limits"
+			},
+			"ask_user": {
+				"running": "Asking a question",
+				"done": "Asked a question"
+			}
+		},
+		"errors": {
+			"not_configured": {
+				"summary": "Warp is not configured yet.",
+				"cause": "No provider and model are set, or Warp is switched off in settings.",
+				"suggestions": [
+					"Open Warp settings and choose a provider and model.",
+					"Make sure Enable Warp is switched on."
+				]
+			},
+			"max_iterations": {
+				"summary": "Warp could not settle on an answer.",
+				"cause": "Warp ran its full budget of research steps without reaching a conclusion. That usually means the question was broad enough that each query raised another, so it kept looking instead of answering.",
+				"suggestions": [
+					"Ask for one thing at a time: a single metric, one time range, one scope.",
+					"Name the window explicitly, for example 'in the last 24 hours'.",
+					"Name whose traffic you mean - a team, a customer, or all of them.",
+					"Raise Max Iterations in Warp settings if the question genuinely needs more steps."
+				]
+			},
+			"timeout": {
+				"summary": "That took too long.",
+				"cause": "The whole request passed its time budget before Warp finished. Long time ranges and wide scopes make every query slower, and Warp runs several.",
+				"suggestions": [
+					"Try a shorter time range.",
+					"Narrow to one team, customer or virtual key.",
+					"Raise Request Timeout in Warp settings if your model is simply slow."
+				]
+			},
+			"upstream_error": {
+				"summary": "Warp's model could not be reached.",
+				"cause": "The provider rejected the request or was unreachable. This is about Warp's own model, not the traffic you asked about.",
+				"suggestions": [
+					"Check the provider, model and key in Warp settings.",
+					"Try the same model from the playground to see whether it answers at all."
+				]
+			},
+			"access_denied": {
+				"summary": "Your account doesn't have access to Warp's model.",
+				"cause": "This deployment's governance rules refused the request before it reached the provider. Warp's model calls count as yours, so they need the same access any of your requests would.",
+				"suggestions": [
+					"Ask an administrator to give your account model access, such as an access profile that allows Warp's model.",
+					"If you do have access, the details below say which rule refused it."
+				]
+			},
+			"budget_exceeded": {
+				"summary": "You've used up your budget.",
+				"cause": "A budget that covers your account is spent for this cycle, so governance refused Warp's model call. Warp's model calls count as yours, so they spend the same budget as any of your requests.",
+				"suggestions": [
+					"Wait for the budget to reset at the start of the next cycle.",
+					"Ask an administrator to raise the limit if you need more this cycle.",
+					"The details below say which budget refused it."
+				]
+			},
+			"rate_limited": {
+				"summary": "You've hit a rate limit.",
+				"cause": "Your account sent more requests or tokens than a rate limit allows in its window, so governance refused Warp's model call. Warp's model calls count as yours, so they share the same limits.",
+				"suggestions": [
+					"Wait a moment and ask again.",
+					"Ask an administrator to raise the limit if it keeps happening.",
+					"The details below say which limit refused it."
+				]
+			},
+			"model_blocked": {
+				"summary": "Warp's model isn't allowed for your account.",
+				"cause": "This deployment's governance rules block the model or provider Warp is set to use for your account, so the request was refused before it reached the provider.",
+				"suggestions": [
+					"Ask an administrator to allow Warp's model for your account.",
+					"Or set Warp to a model your account is allowed to use in Warp settings."
+				]
+			},
+			"tool_error": {
+				"summary": "A query failed.",
+				"cause": "One of Warp's data queries returned an error, and it could not recover within its remaining steps.",
+				"suggestions": [
+					"Try a narrower time range.",
+					"Check that the model, key or team you named actually exists."
+				]
+			},
+			"cancelled": {
+				"summary": "Stopped.",
+				"cause": "The request was cancelled before it finished.",
+				"suggestions": []
+			},
+			"unknown": {
+				"summary": "Something went wrong.",
+				"cause": "Warp returned an error without a recognised code.",
+				"suggestions": [
+					"Try the question again.",
+					"If it keeps happening, report it with the details below."
+				]
+			}
+		}
+	},
+	"agentCard": {
+		"unnamed": "Unnamed agent",
+		"by": "by {{provider}}",
+		"docs": "Docs",
+		"skills": "Skills",
+		"interfaces": "Interfaces",
+		"signatures": "Signatures",
+		"signaturesRemoved": "Upstream signatures are removed because the gateway rewrites the card's endpoints and authentication requirements. Original signatures remain in raw capture when recorded.",
+		"hideDetails": "Hide card details",
+		"showDetails": "Show card details",
+		"tenant": "Tenant: {{tenant}}",
+		"oauthFlows": "OAuth flows",
+		"flow": "Flow",
+		"inputModes": "Input modes",
+		"outputModes": "Output modes",
+		"authentication": "Authentication",
+		"notDeclared": "Not declared",
+		"redacted": "Redacted",
+		"signatureN": "Signature {{n}}",
+		"extensions": "Extensions",
+		"copySkillIdAria": "Copy skill ID {{id}}"
 	},
 	"onboarding": {
 		"expandAria": "Expand setup checklist",
 		"minimizeAria": "Minimize",
+		"stepsComplete": "{{done}} of {{total}} steps complete",
+		"skip": "Skip",
+		"skipped": "Skipped",
 		"closeAria": "Close for now",
 		"title": "Setup checklist",
 		"completed": "Completed",
@@ -758,7 +1018,11 @@
 			"namePh": "Customer Support Assistant",
 			"nameRequired": "Prompt name is required",
 			"nameBlank": "Prompt name cannot be blank",
-			"noPermission": "You do not have permission to change prompts"
+			"noPermission": "You do not have permission to change prompts",
+			"renameTitle": "Rename Prompt",
+			"createTitle": "Create Prompt",
+			"updateFailed": "Failed to update prompt",
+			"createFailed": "Failed to create prompt"
 		},
 		"folderSheet": {
 			"updated": "Folder updated",
@@ -771,7 +1035,10 @@
 			"nameBlank": "Folder name cannot be blank",
 			"descLabel": "Description (optional)",
 			"descPh": "Prompts for customer support use cases...",
-			"noPermission": "You do not have permission to change prompt folders"
+			"noPermission": "You do not have permission to change prompt folders",
+			"createTitle": "Create Folder",
+			"updateFailed": "Failed to update folder",
+			"createFailed": "Failed to create folder"
 		},
 		"commitSheet": {
 			"selectAtLeastOne": "Please select at least one message to commit",
@@ -796,7 +1063,11 @@
 			"searchPrompts": "Search prompts...",
 			"addAria": "Add prompt or folder",
 			"folderActionsAria": "Folder actions",
-			"promptActionsAria": "Prompt actions"
+			"promptActionsAria": "Prompt actions",
+			"toggleFolderAria": "Toggle folder",
+			"noPromptsYet": "No prompts yet",
+			"noPrompts": "No prompts",
+			"dropHere": "Drop here"
 		},
 		"messages": {
 			"deleteAria": "Delete message",
@@ -823,7 +1094,9 @@
 			"vkApiLabel": "Virtual key / API Key",
 			"selectVk": "Select virtual key",
 			"selectApiKey": "Select API key",
-			"vkGroup": "Virtual Keys"
+			"vkGroup": "Virtual Keys",
+			"apiKeysGroup": "API Keys",
+			"autoDefault": "Auto (default)"
 		},
 		"input": {
 			"typeMessage": "Type a message...",
@@ -845,7 +1118,11 @@
 			"noSessions": "No sessions found.",
 			"versions": "Versions",
 			"sessionNamePh": "Session name",
-			"renameAria": "Rename session"
+			"renameAria": "Rename session",
+			"noCommitMessage": "No commit message",
+			"latest": "(latest)",
+			"playground": "Playground",
+			"clear": "Clear"
 		},
 		"empty": {
 			"noPromptSelected": "Select a prompt from the sidebar",
@@ -941,7 +1218,22 @@
 		"toolResultPlaceholder": "Enter tool result...",
 		"systemPlaceholder": "Enter system message...",
 		"variablesHint": "Detected from",
-		"variablesHint2": "syntax in messages. Values are substituted at runtime."
+		"variablesHint2": "syntax in messages. Values are substituted at runtime.",
+		"requiredHeadersHint": "These headers are required by the server. Provide a value for each to send requests from the playground.",
+		"attachments": {
+			"image": "Image",
+			"audio": "Audio",
+			"file": "File",
+			"alt": "Attachment"
+		},
+		"toolCallPrefix": "Tool call: {{names}}",
+		"toolCallCount_one": "{{count}} tool call",
+		"toolCallCount_other": "{{count}} tool calls",
+		"authRequiredFor": "Authentication required for {{name}}",
+		"executing": "Executing",
+		"execute": "Execute",
+		"allResultsReady": "All {{count}} results ready",
+		"resultsCollected": "{{resolved}} of {{total}} results collected"
 	},
 	"virtualMcps": {
 		"addButton": "Add Virtual MCP",
@@ -956,5 +1248,85 @@
 		"resetPeriod": "Reset Period",
 		"nextResetOn": "Next reset on"
 	},
-	"settingsUnaffected": "Your settings and data are unaffected."
+	"settingsUnaffected": "Your settings and data are unaffected.",
+	"providerSelector": {
+		"selectProvider": "Select provider",
+		"allProviders": "All Providers",
+		"loadFailed": "Couldn't load providers.",
+		"noMatching": "No matching providers.",
+		"noneAvailable": "No providers available.",
+		"removeAria": "Remove {{name}}"
+	},
+	"modelSelector": {
+		"selectModel": "Select model",
+		"searchModels": "Search models...",
+		"loadFailed": "Couldn't load models.",
+		"noMatching": "No matching models.",
+		"noneAvailable": "No models available.",
+		"deprecated": "Deprecated",
+		"removeAria": "Remove {{name}}",
+		"useCustom": "Use <b>{{name}}</b>"
+	},
+	"configUnreachable": {
+		"title": "We can't reach the dashboard",
+		"description": "Bifrost didn't return its configuration. This is usually a brief interruption, especially while Bifrost is being upgraded.",
+		"tryingAgain": "Trying again…",
+		"tryAgain": "Try again"
+	},
+	"pprof": {
+		"live": "Live",
+		"stable": "stable",
+		"cumulative": "Cumulative:",
+		"retained": "Retained:",
+		"lastSeconds": "Last {{seconds}}s:",
+		"noLeaks": "No obvious leak signatures; all live allocations have normal retention ratios.",
+		"waitMinutes": "{{minutes}}m waiting",
+		"waitReason": "Wait reason:",
+		"hideFileGoroutines": "Hide goroutines from this file",
+		"cpuUsage": "CPU Usage",
+		"systemMemory": "System Memory",
+		"gcPause": "GC Pause",
+		"gcCount": "{{count}} GCs",
+		"cpuUsageGoroutines": "CPU Usage & Goroutines",
+		"last5Min": "(last 5 min)",
+		"cpuPercent": "CPU %",
+		"alloc": "Alloc",
+		"suspiciousCount": "{{count}} suspicious",
+		"severityHigh": "{{count}} high",
+		"severityMedium": "{{count}} medium",
+		"severityLow": "{{count}} low",
+		"leaksDesc": "Stacks whose live bytes remain a large fraction of what they ever allocated (retention), optionally with live bytes trending upward over the last minute. Growth + high retention together is the strongest leak signal.",
+		"sitesCount": "{{count}} sites",
+		"liveHeapDesc": "Call stacks currently holding memory on the heap right now. Expand a row to see the full stack.",
+		"cumulativeDesc": "Total bytes allocated since process start (includes memory already freed). Expand a row to see the full stack.",
+		"growing": "Growing +{{percent}}%",
+		"longWaiting": "Long Waiting",
+		"clearHidden": "Clear {{count}} hidden",
+		"allHidden": "All goroutines are hidden. Click \"Clear hidden\" to show them.",
+		"noGoroutineData": "No goroutine data available",
+		"cpus": "CPUs:",
+		"gomaxprocs": "GOMAXPROCS:",
+		"gcRuns": "GC Runs:",
+		"heapObjects": "Heap Objects:",
+		"totalAlloc": "Total Alloc:"
+	},
+	"devProfiler": {
+		"growingTitle": "Goroutine count growing",
+		"clearAllHidden": "Clear all hidden goroutines",
+		"hiddenCount": "{{count}} hidden",
+		"moreFrames": "... {{count}} more frames",
+		"longWaitingAndStuck": "{{waiting}} long-waiting and {{stuck}} stuck goroutines (background workers filtered)",
+		"longWaitingOnly": "{{waiting}} long-waiting goroutines (background workers filtered)",
+		"stuckOnly": "{{stuck}} stuck goroutines (background workers filtered)",
+		"show": "Show Dev Profiler",
+		"minimize": "Minimize",
+		"dismiss": "Dismiss",
+		"cpuUsageRecent": "CPU Usage (last 5 min)",
+		"allocCount": "{{count}} allocs",
+		"gcLabel": "GC:",
+		"objectsLabel": "Objects:",
+		"cpuLabel": "CPU:",
+		"heapLabel": "Heap:",
+		"goroutinesLabel": "Goroutines:"
+	}
 }

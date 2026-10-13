@@ -1,10 +1,12 @@
 import AlertingPlaceholderView from "./alertingPlaceholderView";
+import { useTranslation } from "react-i18next";
 
 export default function AlertHistoryView() {
+	const { t } = useTranslation(["errors"]);
 	return (
 		<AlertingPlaceholderView
-			title="Unlock alerting history for proactive monitoring"
-			description="This feature is a part of the Bifrost enterprise license. Review alert delivery outcomes, failures, and resolution events in one place."
+			title={t("errors:upsell.alertingHistory.title")}
+			description={t("errors:upsell.alertingHistory.description")}
 			readmeLink="https://docs.getbifrost.ai/enterprise/alerting/alert-history"
 			testIdPrefix="alert-history"
 		/>

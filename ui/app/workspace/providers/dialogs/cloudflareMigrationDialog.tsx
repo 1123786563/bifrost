@@ -168,9 +168,9 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 						<RenderProviderIcon provider={CLOUDFLARE_PROVIDER as ProviderIconType} size="sm" className="h-5 w-5 shrink-0" />
 						{stage === "finished" && result
 							? result.ok
-								? "Migration complete"
-								: "Migration failed"
-							: "Cloudflare is now a first-party provider"}
+								? t("providers:cloudflareMigration.completeTitle")
+								: t("providers:cloudflareMigration.failedTitle")
+							: t("providers:cloudflareMigration.title")}
 					</AlertDialogTitle>
 					<AlertDialogDescription asChild>
 						<div className="space-y-2">
@@ -218,7 +218,7 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 									data-testid="cloudflare-migration-start"
 								>
 									{stage === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-									Let&apos;s migrate
+									{t("providers:cloudflareMigration.letsMigrate")}
 								</Button>
 							</DisabledTooltip>
 						</>
@@ -329,26 +329,26 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 							<div className="flex flex-wrap items-center gap-2">
 								<span className="font-medium">{plan.headerToken.name}</span>
 								<Badge variant="outline" className="text-muted-foreground">
-									from Authorization header
+									{t("providers:cloudflareMigration.fromAuthHeader")}
 								</Badge>
 							</div>
 							{/* needsValue is fixed when the plan is built, so the input stays up while the token is typed. */}
 							{!plan.headerToken.needsValue ? (
 								<div className="text-xs">
-									<span className="text-muted-foreground">API token: </span>
+									<span className="text-muted-foreground">{t("providers:cloudflareMigration.apiTokenColon")}</span>
 									<code className="bg-muted rounded px-1 py-0.5 font-mono">{maskSecret(plan.headerToken.value)}</code>
 								</div>
 							) : (
 								<div className="space-y-1">
 									<Label htmlFor="cloudflare-migration-token">
-										API token <span className="text-destructive">*</span>
+										{t("providers:cloudflareMigration.apiToken")} <span className="text-destructive">*</span>
 									</Label>
 									<SecretVarInput
 										id="cloudflare-migration-token"
 										data-testid="cloudflare-migration-token"
 										value={plan.headerToken.value ?? { value: "", ref: "" }}
 										onChange={onHeaderTokenChange}
-										placeholder="API token or env.CLOUDFLARE_API_TOKEN"
+										placeholder={t("providers:cloudflareMigration.apiTokenPlaceholder")}
 									/>
 								</div>
 							)}
@@ -368,15 +368,29 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 					/>
 					<Stat label={t("providers:cloudflareMigration.statConcurrency")} value={String(perf.concurrency)} />
 					<Stat label={t("providers:cloudflareMigration.statBufferSize")} value={String(perf.buffer_size)} />
-					<Stat label={t("providers:cloudflareMigration.statProxy")} value={plan.providerSettings.proxy_config?.type ?? "none"} />
+					<Stat
+						label={t("providers:cloudflareMigration.statProxy")}
+						value={plan.providerSettings.proxy_config?.type ?? t("providers:cloudflareMigration.statValues.none")}
+					/>
 					<Stat
 						label={t("providers:cloudflareMigration.statExtraHeaders")}
-						value={otherHeaders.length > 0 ? otherHeaders.join(", ") : "none"}
+						value={otherHeaders.length > 0 ? otherHeaders.join(", ") : t("providers:cloudflareMigration.statValues.none")}
 					/>
-					<Stat label={t("providers:cloudflareMigration.statPrivateNetwork")} value={net.allow_private_network ? "allowed" : "blocked"} />
+					<Stat
+						label={t("providers:cloudflareMigration.statPrivateNetwork")}
+						value={
+							net.allow_private_network
+								? t("providers:cloudflareMigration.statValues.allowed")
+								: t("providers:cloudflareMigration.statValues.blocked")
+						}
+					/>
 					<Stat
 						label={t("providers:cloudflareMigration.statRaw")}
-						value={plan.providerSettings.send_back_raw_request || plan.providerSettings.send_back_raw_response ? "on" : "off"}
+						value={
+							plan.providerSettings.send_back_raw_request || plan.providerSettings.send_back_raw_response
+								? t("providers:cloudflareMigration.statValues.on")
+								: t("providers:cloudflareMigration.statValues.off")
+						}
 					/>
 				</dl>
 			</section>

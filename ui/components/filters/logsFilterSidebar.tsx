@@ -1639,7 +1639,7 @@ function MetadataFilters({ filters, onFiltersChange, defaultOpen }: FilterCompon
 						/>
 					</div>
 					{entries.length === 0 && !isFetching && (
-						<div className="text-muted-foreground flex h-9 items-center px-3 text-xs">No results</div>
+						<div className="text-muted-foreground flex h-9 items-center px-3 text-xs">{t("common:state.noResults")}</div>
 					)}
 					{entries.map(([metadataKey, values]) => (
 						<div key={metadataKey} data-testid={`metadata-${metadataKey}-filter-group`}>

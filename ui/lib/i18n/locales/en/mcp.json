@@ -246,6 +246,16 @@
 		}
 	},
 	"addVirtualKey": "Add Virtual Key",
+	"editors": {
+		"configsLabel": "MCP Server Configurations",
+		"configsTooltip": "Configure which MCP servers this virtual key can use and their allowed tools. Leaving this section empty blocks all MCP tools. After adding an MCP server, you must select specific tools or choose <em>{{allowAll}}</em> to grant tool access.",
+		"defaultsNote": "The following MCP servers are allowed by default, with all tools enabled, on any virtual key that doesn't configure them explicitly: <em>{{servers}}</em>. Adding an explicit config for one below overrides that all-tools default.",
+		"serverCol": "MCP Server",
+		"allowAllToolsDesc": "Allow all current and future tools",
+		"removeAria": "Remove {{name}}",
+		"vmcpLabel": "Virtual MCP Server Configurations",
+		"vmcpFallbackName": "Virtual MCP #{{id}}"
+	},
 	"agents": {
 		"title": "Agent Catalog",
 		"subtitle": "Manage upstream A2A agents served through the gateway.",
@@ -450,7 +460,11 @@
 			"fetchToContinue": "Fetch the agent card to continue.",
 			"create": "Create",
 			"fetchFirstOrManual": "Fetch the agent card first, or configure authentication manually.",
-			"removeUriAria": "Remove extension URI"
+			"removeUriAria": "Remove extension URI",
+			"notSet": "Not set",
+			"tenantSummary": "Tenant {{tenant}}",
+			"extensionCount_one": "{{count}} extension",
+			"extensionCount_other": "{{count}} extensions"
 		},
 		"card": {
 			"copySkillId": "Click to copy skill ID",

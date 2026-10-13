@@ -19,17 +19,17 @@ interface WebhookSecretDialogProps {
 // The signing secret is returned exactly once by create and rotate-secret;
 // the API never exposes it again, so this dialog is the only chance to copy it.
 export function WebhookSecretDialog({ reveal, onClose }: WebhookSecretDialogProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation(["common", "workspaces", "governance"]);
 	const { copy, copied } = useCopyToClipboard();
 
 	return (
 		<Dialog open={!!reveal} onOpenChange={(open) => !open && onClose()}>
 			<DialogContent data-testid="webhook-secret-dialog">
 				<DialogHeader>
-					<DialogTitle>Signing secret for {reveal?.endpointName}</DialogTitle>
+					<DialogTitle>{t("governance:webhooks.secretDialog.title", { name: reveal?.endpointName })}</DialogTitle>
 					<DialogDescription>
-						{t("workspaces:webhooks.secretIntro")} <code>webhook-signature</code> header on deliveries. It is shown only once - copy it now
-						and store it securely. If you lose it, rotate the endpoint to get a new one.
+						{t("governance:webhooks.secretDialog.descriptionLead")} <code>webhook-signature</code>{" "}
+						{t("governance:webhooks.secretDialog.descriptionTail")}
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex items-center gap-2 rounded-sm border p-3">
@@ -39,14 +39,14 @@ export function WebhookSecretDialog({ reveal, onClose }: WebhookSecretDialogProp
 					<Button
 						variant="ghost"
 						size="sm"
-						aria-label="Copy signing secret"
+						aria-label={t("governance:webhooks.secretDialog.copyAria")}
 						onClick={() => reveal && copy(reveal.secret)}
 						data-testid="webhook-secret-copy-btn"
 					>
 						{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
 					</Button>
 					<span className="sr-only" aria-live="polite">
-						{copied ? "Signing secret copied" : ""}
+						{copied ? t("governance:webhooks.secretDialog.copied") : ""}
 					</span>
 				</div>
 				<DialogFooter>
@@ -59,7 +59,7 @@ export function WebhookSecretDialog({ reveal, onClose }: WebhookSecretDialogProp
 						{t("common:actions.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
 					<Button onClick={onClose} data-testid="webhook-secret-done-btn">
-						I&apos;ve stored the secret
+						{t("governance:webhooks.secretDialog.done")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

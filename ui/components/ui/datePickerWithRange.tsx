@@ -317,7 +317,7 @@ export function DateTimePickerWithRange(props: DateTimePickerWithRangeProps) {
 					{props.showTimezone && (
 						<div className="flex flex-wrap items-center gap-2 border-t px-3 py-2">
 							<Globe className="text-muted-foreground size-4 shrink-0" />
-							<Label className="text-muted-foreground shrink-0 text-xs">Timezone</Label>
+							<Label className="text-muted-foreground shrink-0 text-xs">{t("common:fields.timezone")}</Label>
 							<div className="w-full sm:ml-auto sm:w-[260px]">
 								<ComboboxSelect
 									options={timezoneOptions}
@@ -488,7 +488,7 @@ export function DateTimePicker(props: DateTimePickerProps) {
 							}}
 						/>
 						<div className="mt-3 flex flex-col gap-1 px-2 pb-2">
-							<Label className="ml-0.5">Time</Label>
+							<Label className="ml-0.5">{t("common:fields.time")}</Label>
 							<TimePicker
 								aria-label={t("workspaces:misc2.timeAria")}
 								className=""

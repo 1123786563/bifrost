@@ -636,8 +636,11 @@ export function AgentContextDetailsSheet({
 						{totalCount > CONTEXT_PAGE_SIZE ? (
 							<div className="bg-card sticky bottom-0 z-10 flex items-center justify-between py-3 text-xs" data-testid="pagination">
 								<div className="text-muted-foreground flex items-center gap-2">
-									{(page * CONTEXT_PAGE_SIZE + 1).toLocaleString()}-{Math.min((page + 1) * CONTEXT_PAGE_SIZE, totalCount).toLocaleString()}{" "}
-									of {totalCount.toLocaleString()} entries
+									{t("logs:table.range", {
+										from: (page * CONTEXT_PAGE_SIZE + 1).toLocaleString(),
+										to: Math.min((page + 1) * CONTEXT_PAGE_SIZE, totalCount).toLocaleString(),
+										total: totalCount.toLocaleString(),
+									})}
 								</div>
 								<div className="flex items-center gap-2">
 									<Button
@@ -650,9 +653,7 @@ export function AgentContextDetailsSheet({
 										<ChevronLeft className="size-3" />
 									</Button>
 									<div className="flex items-center gap-1">
-										<span>Page</span>
-										<span>{page + 1}</span>
-										<span>of {totalPages}</span>
+										<span>{t("logs:table.pageOf", { current: page + 1, total: totalPages })}</span>
 									</div>
 									<Button
 										variant="ghost"

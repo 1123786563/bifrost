@@ -362,10 +362,12 @@ function contentLoggingValue(choice: ContentLoggingChoice): boolean | null {
 	return null;
 }
 
-const contentLoggingOptions: { value: ContentLoggingChoice; label: string }[] = [
-	{ value: "inherit", label: "Inherit gateway setting" },
-	{ value: "disabled", label: "Off for this key" },
-	{ value: "enabled", label: "On for this key" },
+// Labels are translated at the render site (virtualKeys.sheet.contentLogging*) so the pool of
+// choices stays a plain value list.
+const contentLoggingOptions: { value: ContentLoggingChoice }[] = [
+	{ value: "inherit" },
+	{ value: "disabled" },
+	{ value: "enabled" },
 ];
 
 // A key owned by a profile-holding team, customer or business unit is governed by that profile: the
@@ -530,7 +532,7 @@ export default function VirtualKeySheet({ virtualKey, defaultOwner, onSave, onCa
 	const persistedOverrideBudgets = [
 		...(virtualKey?.budgets ?? []).map((budget) => ({
 			budget,
-			label: "Virtual key",
+			label: t("governance:virtualKeys.sheet.virtualKeyScope"),
 		})),
 		...(virtualKey?.provider_configs ?? []).flatMap((config) =>
 			(config.budgets ?? []).map((budget) => ({

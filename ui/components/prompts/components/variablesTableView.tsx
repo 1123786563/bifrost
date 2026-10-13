@@ -32,8 +32,10 @@ export function VariablesTableView({
 				<table className="w-full table-fixed text-sm">
 					<thead>
 						<tr className="bg-muted/50 border-border border-b">
-							<th className="text-muted-foreground w-[40%] max-w-[40%] px-3 py-1.5 text-left text-xs font-medium">Variable</th>
-							<th className="text-muted-foreground px-3 py-1.5 text-left text-xs font-medium">Value</th>
+							<th className="text-muted-foreground w-[40%] max-w-[40%] px-3 py-1.5 text-left text-xs font-medium">
+								{t("workspaces:prompts.variable")}
+							</th>
+							<th className="text-muted-foreground px-3 py-1.5 text-left text-xs font-medium">{t("common:fields.value")}</th>
 						</tr>
 					</thead>
 					<tbody>

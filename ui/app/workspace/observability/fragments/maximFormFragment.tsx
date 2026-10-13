@@ -170,8 +170,8 @@ export function MaximFormFragment({ initialConfig, onSave, onDelete, isDeleting 
 								variant="outline"
 								onClick={onDelete}
 								disabled={isDeleting}
-								title="Delete connector"
-								aria-label="Delete connector"
+								title={t("logs:observability.deleteConnector")}
+								aria-label={t("logs:observability.deleteConnector")}
 							>
 								<Trash2 className="size-4" />
 							</Button>

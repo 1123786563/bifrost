@@ -24,11 +24,18 @@ interface CodeBlockProps {
 }
 
 function CodeBlock({ code }: CodeBlockProps) {
+	const { t } = useTranslation(["logs"]);
 	const { copy } = useCopyToClipboard();
 
 	return (
 		<div className="relative">
-			<Button variant="ghost" size="icon" className="absolute top-4 right-4 z-10" onClick={() => copy(code)} aria-label="Copy request">
+			<Button
+				variant="ghost"
+				size="icon"
+				className="absolute top-4 right-4 z-10"
+				onClick={() => copy(code)}
+				aria-label={t("logs:agent.copyRequest")}
+			>
 				<Copy className="size-4" />
 			</Button>
 			<CodeEditor className="w-full" code={code} lang="shell" readonly height={300} fontSize={14} options={EDITOR_OPTIONS} />
@@ -48,7 +55,7 @@ export function AgentEmptyState({ error }: AgentEmptyStateProps) {
   -H "x-bf-vk: <virtual-key>"`;
 		const message = `"message": {
       "role": "ROLE_USER",
-      "parts": [{"text": "Hello from Bifrost"}],
+      "parts": [{"text": "${t("logs:agent.samples.helloFromBifrost")}"}],
       "messageId": "msg-001"
     }`;
 
@@ -69,7 +76,7 @@ export function AgentEmptyState({ error }: AgentEmptyStateProps) {
     ${message}
   }'`,
 		};
-	}, []);
+	}, [t]);
 
 	const isUnexpectedError = error && error.includes("An unexpected error occurred");
 

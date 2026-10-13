@@ -196,7 +196,7 @@ export function MCPLogDetailSheet({
 			<Sheet open={open} onOpenChange={onOpenChange}>
 				<SheetContent className="border-secondary flex w-full flex-col gap-2 overflow-x-hidden border p-0 sm:max-w-[60%]">
 					<div className="flex h-full items-center justify-center p-4 md:p-8">
-						<SheetTitle className="sr-only">Loading MCP log details</SheetTitle>
+						<SheetTitle className="sr-only">{t("logs:mcp.loadingDetails")}</SheetTitle>
 						<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
 					</div>
 				</SheetContent>
@@ -337,7 +337,7 @@ export function MCPLogDetailSheet({
 									}}
 								>
 									<Download className="h-4 w-4" />
-									Export as JSON
+									{t("logs:details.exportAsJson")}
 								</DropdownMenuItem>
 								{handleDelete ? (
 									<>
@@ -351,7 +351,7 @@ export function MCPLogDetailSheet({
 											}}
 										>
 											<Trash2 className="h-4 w-4" />
-											Delete log
+											{t("logs:details.deleteLog")}
 										</DropdownMenuItem>
 									</>
 								) : null}
@@ -359,7 +359,7 @@ export function MCPLogDetailSheet({
 						</DropdownMenu>
 						<AlertDialogContent>
 							<AlertDialogHeader>
-								<AlertDialogTitle>Are you sure you want to delete this log?</AlertDialogTitle>
+								<AlertDialogTitle>{t("logs:details.deleteConfirmTitle")}</AlertDialogTitle>
 								<AlertDialogDescription>{t("logs:details.deleteConfirmDesc")}</AlertDialogDescription>
 							</AlertDialogHeader>
 							<AlertDialogFooter>
@@ -396,7 +396,7 @@ export function MCPLogDetailSheet({
 									<StatusPill label={presentation.label} tone={pillTone} />
 									{presentation.policy ? (
 										<Badge variant="outline" className="bg-card text-muted-foreground rounded-sm px-2 py-0.5 font-normal">
-											pre-execution check
+											{t("logs:mcp.preExecutionCheck")}
 										</Badge>
 									) : null}
 								</div>
@@ -616,7 +616,7 @@ export function MCPLogDetailSheet({
 																</Link>
 															</TooltipTrigger>
 															<TooltipContent sideOffset={6}>
-																{item.name !== item.id ? item.id : `Filter by ${label.toLowerCase()}`}
+																{item.name !== item.id ? item.id : t("logs:mcp.filterByLabel", { label: label.toLowerCase() })}
 															</TooltipContent>
 														</Tooltip>
 													))}

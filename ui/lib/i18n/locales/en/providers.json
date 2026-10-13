@@ -730,6 +730,8 @@
 		"assertionLifetime": "Assertion Lifetime (seconds)",
 		"assertionLifetimeDesc": "How long each signed assertion is valid for. Default 300.",
 		"scopes": "Scopes (Optional)",
+		"flowDescription": "Bifrost requests an access token from the token endpoint, sends it as the bearer, caches it per credential and refreshes it before it expires. Use this for upstreams that issue short-lived tokens instead of a static key.",
+		"grantTypePlaceholder": "Client credentials",
 		"audienceOptional": "Audience (Optional)",
 		"audienceOptionalDesc": "Sent as the audience form parameter, for providers that scope tokens by API.",
 		"accountId": "Account ID (Required)",
@@ -769,6 +771,18 @@
 		"beforeYouContinue": "Before you continue",
 		"noAccess": "Migrating requires create and update access to providers.",
 		"dirtyForm": "Save or discard your unsaved provider changes first.",
-		"fillMissing": "Fill in the missing values above."
+		"fillMissing": "Fill in the missing values above.",
+		"letsMigrate": "Let's migrate",
+		"fromAuthHeader": "from Authorization header",
+		"apiToken": "API token",
+		"apiTokenColon": "API token: ",
+		"apiTokenPlaceholder": "API token or env.CLOUDFLARE_API_TOKEN",
+		"statValues": {
+			"none": "none",
+			"allowed": "allowed",
+			"blocked": "blocked",
+			"on": "on",
+			"off": "off"
+		}
 	}
 }

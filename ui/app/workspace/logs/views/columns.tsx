@@ -253,12 +253,14 @@ export function LogMessageCell({
 						compact ? "max-h-[30px] overflow-hidden text-[11px] leading-[15px]" : "text-sm leading-5",
 					)}
 				>
-					{realtimeMessages.tool ? <div className="truncate">Tool Result: {realtimeMessages.tool}</div> : null}
-					{realtimeMessages.user ? <div className="truncate">User: {realtimeMessages.user}</div> : null}
+					{realtimeMessages.tool ? <div className="truncate">{t("logs:columns.toolResultPrefix")}: {realtimeMessages.tool}</div> : null}
+					{realtimeMessages.user ? <div className="truncate">{t("logs:columns.userPrefix")}: {realtimeMessages.user}</div> : null}
 					{realtimeMessages.assistantToolCall ? (
-						<div className="truncate">Assistant Tool Call: {realtimeMessages.assistantToolCall}</div>
+						<div className="truncate">{t("logs:columns.assistantToolCallPrefix")}: {realtimeMessages.assistantToolCall}</div>
 					) : null}
-					{realtimeMessages.assistant ? <div className="truncate">Assistant: {realtimeMessages.assistant}</div> : null}
+					{realtimeMessages.assistant ? (
+						<div className="truncate">{t("logs:columns.assistantPrefix")}: {realtimeMessages.assistant}</div>
+					) : null}
 				</div>
 			) : (
 				<div className={cn(contentClassName, "truncate font-mono text-[12px] font-normal")}>
@@ -480,8 +482,8 @@ export const createColumns = (
 								ariaLabel={isExpanded ? t("logs:columns.collapseLinked") : t("logs:columns.expandSummary", { summary })}
 								tooltip={
 									log.batch_debug || log.video_debug
-										? `${summary} row${childCount === 1 ? "" : "s"}: the settled cost (same parent_request_id)`
-										: `${summary} of this request (same parent_request_id)`
+										? t("logs:columns.chainSettledTooltip", { summary, count: childCount })
+										: t("logs:columns.chainTooltip", { summary })
 								}
 								isExpanded={isExpanded}
 								isLoading={meta.loadingChainIds.has(log.id)}
@@ -508,7 +510,7 @@ export const createColumns = (
 			accessorKey: "timestamp",
 			header: ({ column }) => (
 				<Button variant="ghost" data-testid="logs-time-sort-btn" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-					Time
+					{t("logs:columns.time")}
 					<ArrowUpDown className="ml-2 h-4 w-4" />
 				</Button>
 			),
@@ -605,7 +607,7 @@ export const createColumns = (
 			accessorKey: "latency",
 			header: ({ column }) => (
 				<Button variant="ghost" data-testid="logs-latency-sort-btn" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-					Latency
+					{t("logs:columns.latency")}
 					<ArrowUpDown className="ml-2 h-4 w-4" />
 				</Button>
 			),
@@ -631,7 +633,7 @@ export const createColumns = (
 			accessorKey: "tokens",
 			header: ({ column }) => (
 				<Button variant="ghost" data-testid="logs-tokens-sort-btn" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-					Tokens
+					{t("logs:columns.tokens")}
 					<ArrowUpDown className="ml-2 h-4 w-4" />
 				</Button>
 			),
@@ -692,7 +694,7 @@ export const createColumns = (
 			accessorKey: "cost",
 			header: ({ column }) => (
 				<Button variant="ghost" data-testid="logs-cost-sort-btn" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-					Cost
+					{t("logs:columns.cost")}
 					<ArrowUpDown className="ml-2 h-4 w-4" />
 				</Button>
 			),

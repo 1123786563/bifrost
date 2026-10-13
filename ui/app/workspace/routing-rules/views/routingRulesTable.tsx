@@ -55,7 +55,7 @@ function RoutingRuleActionsMenu({
 					variant="ghost"
 					size="icon"
 					className="h-8 w-8"
-					aria-label={`Actions for routing rule ${rule.name}`}
+					aria-label={t("governance:routingRules.table.actionsAria", { name: rule.name })}
 					data-testid={`routing-rule-actions-${rule.id}-btn`}
 				>
 					<MoreHorizontal className="h-4 w-4" />
@@ -73,7 +73,7 @@ function RoutingRuleActionsMenu({
 					}}
 				>
 					<Edit className="h-4 w-4" />
-					Edit
+					{t("common:actions.edit")}
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					variant="destructive"
@@ -199,14 +199,14 @@ export function RoutingRulesTable({
 				<Table containerClassName="h-full overflow-auto">
 					<TableHeader className="bg-muted sticky top-0 z-10">
 						<TableRow className="bg-muted/50">
-							<TableHead className="font-semibold">Name</TableHead>
+							<TableHead className="font-semibold">{t("governance:routingRules.table.headers.name")}</TableHead>
 							<TableHead className="font-semibold">{t("governance:routingRules.table.headers.targets")}</TableHead>
 							<TableHead className="font-semibold">{t("governance:routingRules.table.headers.scope")}</TableHead>
-							<TableHead className="text-right font-semibold">Priority</TableHead>
+							<TableHead className="text-right font-semibold">{t("governance:routingRules.priority")}</TableHead>
 							<TableHead className="font-semibold">{t("governance:routingRules.table.headers.expression")}</TableHead>
-							<TableHead className="font-semibold">Status</TableHead>
+							<TableHead className="font-semibold">{t("governance:routingRules.table.headers.status")}</TableHead>
 							<TableHead className={`bg-muted sticky right-0 z-30 w-[50px] text-right font-semibold ${PIN_SHADOW_RIGHT}`}>
-								Actions
+								{t("governance:routingRules.actions")}
 							</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -300,7 +300,10 @@ export function RoutingRulesTable({
 			{totalCount > 0 && (
 				<div className="flex shrink-0 items-center justify-between text-xs" data-testid="pagination">
 					<div className="text-muted-foreground flex items-center gap-2">
-						{(offset + 1).toLocaleString()}-{Math.min(offset + limit, totalCount).toLocaleString()} of {totalCount.toLocaleString()} entries
+						{t("governance:routingRules.table.entries", {
+							from: `${(offset + 1).toLocaleString()}-${Math.min(offset + limit, totalCount).toLocaleString()}`,
+							total: totalCount.toLocaleString(),
+						})}
 					</div>
 
 					<div className="flex items-center gap-2">
@@ -316,9 +319,9 @@ export function RoutingRulesTable({
 						</Button>
 
 						<div className="flex items-center gap-1">
-							<span>Page</span>
+							<span>{t("governance:routingRules.table.page")}</span>
 							<span>{Math.floor(offset / limit) + 1}</span>
-							<span>of {Math.ceil(totalCount / limit)}</span>
+							<span>{t("governance:routingRules.table.pageOf", { count: Math.ceil(totalCount / limit) })}</span>
 						</div>
 
 						<Button
@@ -340,7 +343,7 @@ export function RoutingRulesTable({
 					<AlertDialogHeader>
 						<AlertDialogTitle>{t("governance:routingRules.table.deleteTitle")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete &quot;{ruleToDelete?.name}&quot;? This action cannot be undone.
+							{t("governance:routingRules.table.deleteDescription", { name: ruleToDelete?.name })}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -375,7 +378,7 @@ function TargetsSummary({ targets }: { targets: RoutingTarget[] }) {
 			</div>
 			{targets.length > 1 && (
 				<span className="text-muted-foreground text-xs">
-					+{targets.length - 1} more target{targets.length > 2 ? "s" : ""}
+					{t("governance:routingRules.table.moreTargets", { count: targets.length - 1 })}
 				</span>
 			)}
 		</div>

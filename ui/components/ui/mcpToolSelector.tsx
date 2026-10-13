@@ -207,8 +207,8 @@ export function MCPToolSelector({ value, onChange, mcpClients, placeholder, disa
 						<TableHeader>
 							<TableRow>
 								<TableHead className="w-10"></TableHead>
-								<TableHead className="w-auto">Tool</TableHead>
-								<TableHead className="hidden w-32 md:table-cell">Server</TableHead>
+								<TableHead className="w-auto">{t("common:fields.tool")}</TableHead>
+								<TableHead className="hidden w-32 md:table-cell">{t("common:fields.server")}</TableHead>
 								<TableHead className="w-10"></TableHead>
 							</TableRow>
 						</TableHeader>

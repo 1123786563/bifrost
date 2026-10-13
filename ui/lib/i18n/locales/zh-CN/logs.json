@@ -31,7 +31,8 @@
 		"latestFirst": "最新优先",
 		"loading": "正在加载 session...",
 		"current": "当前",
-		"noLogs": "此 session 未找到日志。"
+		"noLogs": "此 session 未找到日志。",
+		"loadMore": "加载更多"
 	},
 	"columns": {
 		"time": "时间",
@@ -287,7 +288,12 @@
 			"langchain": "LangChain SDK"
 		},
 		"codeLanguage": "代码语言",
-		"copyCode": "复制代码"
+		"copyCode": "复制代码",
+		"samples": {
+			"hello": "你好！",
+			"helloFromLangchain": "来自 LangChain 的问候！",
+			"whatIsLangchain": "什么是 LangChain？"
+		}
 	},
 	"audio": {
 		"play": "播放",
@@ -537,7 +543,35 @@
 		"toolsExposed_other": "向模型暴露了 {{count}} 个工具",
 		"viaInputItems_one": "{{count}} 个来自输入项",
 		"viaInputItems_other": "{{count}} 个来自输入项",
-		"namespacesExpanded": "(命名空间已展开)"
+		"namespacesExpanded": "(命名空间已展开)",
+		"noRoutingLogsAtLevel": "没有 {{level}} 及以上级别的路由日志。",
+		"nextRequestLookupFailed": "无法查询此会话中的下一个请求。",
+		"alias": "别名",
+		"canonicalModel": "规范模型",
+		"modelFamily": "模型系列",
+		"servedByFallback": "服务方（降级）",
+		"servedModel": "实际服务模型",
+		"numberOfRetries": "重试次数",
+		"fallbackIndex": "降级序号",
+		"complexityScore": "复杂度评分",
+		"audioFormat": "音频格式",
+		"audioVoice": "音频音色",
+		"statusCode": "状态码",
+		"settledCost": "结算成本",
+		"mcpCost": "MCP 成本",
+		"maxTokens": "最大 Token 数",
+		"batchCost": "批处理成本",
+		"billedSeconds": "计费秒数",
+		"resolution": "分辨率",
+		"clipsBilled": "计费片段数",
+		"videoUnpricedNote": "按未公开的费率或 Provider 未确认的维度计价，此成本可能偏低。",
+		"embeddingModel": "嵌入模型",
+		"threshold": "阈值",
+		"durationBilled": "按时长计费",
+		"moreDetailsSummary": "耗时、请求元数据、令牌、缓存、元数据",
+		"method": "方法",
+		"path": "路径",
+		"query": "查询串"
 	},
 	"mcp": {
 		"searchPlaceholder": "搜索 MCP 日志",
@@ -545,6 +579,10 @@
 		"copyToClipboard": "复制到剪贴板",
 		"emptyTitle": "开始使用 MCP 工具执行",
 		"emptySubtitle": "执行你的第一个 MCP 工具调用，即可看到日志出现",
+		"samples": {
+			"listFiles": "列出当前目录中的文件",
+			"listPythonFiles": "列出所有 Python 文件并总结它们的用途"
+		},
 		"tabManual": "手动工具执行",
 		"tabAgent": "Agent 模式（自动执行）",
 		"manualDesc": "完全掌控工具审批。你通过 API 显式执行每次工具调用。",
@@ -589,7 +627,9 @@
 		"result": "结果",
 		"errorDetails": "错误详情",
 		"execution": "执行",
-		"noPluginLogs": "此请求暂无插件日志。"
+		"noPluginLogs": "此请求暂无插件日志。",
+		"loadingDetails": "正在加载 MCP 日志详情",
+		"filterByLabel": "按{{label}}筛选"
 	},
 	"agent": {
 		"searchPlaceholder": "搜索 agent、操作或任意标识符",
@@ -777,7 +817,25 @@
 		"beforeYouSend": "发送请求之前",
 		"beforeStep1": "在代理网关中注册并启用上游代理。",
 		"beforeStep2": "将 {{name}} 替换为其注册名称。",
-		"beforeStep3": "使用可访问该代理的虚拟密钥,或在禁用身份验证时移除 {{header}} 请求头。"
+		"beforeStep3": "使用可访问该代理的虚拟密钥,或在禁用身份验证时移除 {{header}} 请求头。",
+		"eventView": "事件视图",
+		"pushNotificationBadge": "推送通知",
+		"moreDetailsSummary": "标识符与关联",
+		"moreDetailsSummaryTimings": "耗时、标识符与关联",
+		"eventsIntro": "事件展示该操作期间 agent 返回的有序更新。展开事件可查看其数据。",
+		"taskLabel": "任务 {{state}}",
+		"captureInvalid": "{{title}}无法显示：存储的捕获内容无效。",
+		"downloadBytes": "下载{{title}}字节",
+		"rawResponsePending": "原始响应尚不可用，操作仍在处理中。",
+		"noErrorMessage": "未记录错误信息。",
+		"finalBadge": "最终",
+		"flagAppend": "追加",
+		"flagLastChunk": "最后分片",
+		"partIndex": "片段 {{index}}",
+		"copyRequest": "复制请求",
+		"samples": {
+			"helloFromBifrost": "来自 Bifrost 的问候！"
+		}
 	},
 	"otel": {
 		"addProfile": "添加 Profile",
@@ -828,6 +886,7 @@
 		"metricsHeadersDesc": "仅发送到指标端点，附加在公共请求头之上（例如 Databricks 表名）。",
 		"pushInterval": "推送间隔（秒）",
 		"pushIntervalDesc": "指标推送频率（1-300 秒）",
+		"updatedSuccess": "OTEL 配置更新成功",
 		"updateFailed": "更新 OTEL 配置失败"
 	},
 	"prom": {

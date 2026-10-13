@@ -28,6 +28,7 @@ import {
 	parseLLMTimeoutMs,
 	parseSemanticTimeoutMs,
 } from "@/lib/types/complexityRouter";
+import i18n from "@/lib/i18n";
 import { ModelProvider } from "@/lib/types/config";
 import { DBKey } from "@/lib/types/governance";
 import { clefModelFromProvider, namedSelfHostedGroup, type SelfHostedModelGroup } from "@/lib/utils/decisionModelProviders";
@@ -257,9 +258,9 @@ export const analyzerConfigSchema = z
 		// Mirrors validateComplexitySemanticPhrases so invalid input fails in the
 		// form instead of as an opaque 400.
 		const lists: Array<{ key: KeywordListKey; label: string }> = [
-			{ key: "simple_keywords", label: "Simple" },
-			{ key: "medium_keywords", label: "Medium" },
-			{ key: "complex_keywords", label: "Complex" },
+			{ key: "simple_keywords", label: i18n.t("governance:complexityRouter.phrases.tiers.simple.label", { defaultValue: "Simple" }) },
+			{ key: "medium_keywords", label: i18n.t("governance:complexityRouter.phrases.tiers.medium.label", { defaultValue: "Medium" }) },
+			{ key: "complex_keywords", label: i18n.t("governance:complexityRouter.phrases.tiers.complex.label", { defaultValue: "Complex" }) },
 		];
 
 		const seen = new Map<string, string>();
@@ -268,7 +269,11 @@ export const analyzerConfigSchema = z
 				if (phrase.length > MAX_SEMANTIC_PHRASE_CHARACTERS) {
 					ctx.addIssue({
 						code: "custom",
-						message: `A ${label} phrase exceeds the ${MAX_SEMANTIC_PHRASE_CHARACTERS}-character limit.`,
+						message: i18n.t("governance:complexityRouter.phrases.phraseTooLong", {
+							defaultValue: "A {{tier}} phrase exceeds the {{max}}-character limit.",
+							tier: label,
+							max: MAX_SEMANTIC_PHRASE_CHARACTERS,
+						}),
 						path: ["keywords", key],
 					});
 					break;
@@ -278,7 +283,11 @@ export const analyzerConfigSchema = z
 				if (firstTier && firstTier !== label) {
 					ctx.addIssue({
 						code: "custom",
-						message: `"${phrase}" is also in the ${firstTier} list. Each phrase must belong to exactly one tier.`,
+						message: i18n.t("governance:complexityRouter.phrases.phraseDuplicateTier", {
+							defaultValue: '"{{phrase}}" is also in the {{tier}} list. Each phrase must belong to exactly one tier.',
+							phrase,
+							tier: firstTier,
+						}),
 						path: ["keywords", key],
 					});
 				} else if (!firstTier) {
@@ -292,7 +301,14 @@ export const analyzerConfigSchema = z
 			if (counts.total > MAX_SEMANTIC_PHRASES) {
 				ctx.addIssue({
 					code: "custom",
-					message: `Semantic routing has ${counts.total} phrases (Simple=${counts.simple}, Medium=${counts.medium}, Complex=${counts.complex}); the maximum is ${MAX_SEMANTIC_PHRASES} across all tiers.`,
+					message: i18n.t("governance:complexityRouter.phrases.phrasesOverLimit", {
+						defaultValue: "Semantic routing has {{total}} phrases ({{simple}} simple, {{medium}} medium, {{complex}} complex); the maximum is {{max}} across all tiers.",
+						total: counts.total,
+						simple: counts.simple,
+						medium: counts.medium,
+						complex: counts.complex,
+						max: MAX_SEMANTIC_PHRASES,
+					}),
 					path: ["keywords"],
 				});
 			}

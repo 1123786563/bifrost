@@ -209,7 +209,7 @@ export function SettingsPanel() {
 						>
 							<div className="space-y-6">
 								<div className="flex flex-col gap-2" data-testid="settings-provider">
-									<Label className="text-muted-foreground text-xs font-medium uppercase">Provider</Label>
+									<Label className="text-muted-foreground text-xs font-medium uppercase">{t("common:fields.provider")}</Label>
 									<ProviderSelector
 										filter={isUsableProvider}
 										extraOptions={savedProviderOption}
@@ -222,7 +222,7 @@ export function SettingsPanel() {
 
 								<div className="flex flex-col gap-2" data-testid="settings-model">
 									<Label id="settings-model-label" className="text-muted-foreground text-xs font-medium uppercase">
-										Model
+										{t("common:fields.model")}
 									</Label>
 									<ModelSelector
 										ariaLabelledBy="settings-model-label"
@@ -270,9 +270,7 @@ export function SettingsPanel() {
 											<Label className="text-muted-foreground text-xs font-medium uppercase">
 												{t("workspaces:prompts.requiredHeaders")}
 											</Label>
-											<p className="text-muted-foreground text-xs">
-												These headers are required by the server. Provide a value for each to send requests from the playground.
-											</p>
+											<p className="text-muted-foreground text-xs">{t("workspaces:prompts.requiredHeadersHint")}</p>
 											<div className="flex flex-col gap-2">
 												{requiredHeaders.map((name) => (
 													<div key={name} className="flex items-center gap-2">

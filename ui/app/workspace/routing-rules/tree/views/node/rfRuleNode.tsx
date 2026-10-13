@@ -54,7 +54,7 @@ export function RFRuleNode({ data }: { data: any }) {
 						{rule.chain_rule && <Link2 className="h-3 w-3" style={{ color: scopeColor }} />}
 						{!rule.enabled && (
 							<Badge variant="secondary" className="px-1 py-0 text-[9px]">
-								Off
+								{t("governance:routingRules.tree.off")}
 							</Badge>
 						)}
 					</div>
@@ -63,7 +63,11 @@ export function RFRuleNode({ data }: { data: any }) {
 				{/* rule name */}
 				<div className="px-3 py-2">
 					<p className="text-foreground truncate text-xs font-semibold">{rule.name}</p>
-					{rule.priority > 0 && <p className="text-muted-foreground mt-0.5 text-[10px]">Priority {rule.priority}</p>}
+					{rule.priority > 0 && (
+						<p className="text-muted-foreground mt-0.5 text-[10px]">
+							{t("governance:routingRules.priority")} {rule.priority}
+						</p>
+					)}
 				</div>
 
 				{/* targets footer */}
@@ -84,7 +88,7 @@ export function RFRuleNode({ data }: { data: any }) {
 						{rule.targets.length > 4 && <span className="text-muted-foreground text-[9px]">+{rule.targets.length - 4}</span>}
 					</div>
 					<span className="text-muted-foreground ml-auto text-[10px]">
-						{rule.targets.length} target{rule.targets.length !== 1 ? "s" : ""}
+						{t("governance:routingRules.tree.targetCount", { count: rule.targets.length })}
 					</span>
 				</div>
 
@@ -108,7 +112,7 @@ export function RFRuleNode({ data }: { data: any }) {
 							<div className="mb-1 flex items-start gap-2 border-b px-3 pb-1.5">
 								<Link2 className="mt-0.5 h-3 w-3 shrink-0" style={{ color: scopeColor }} />
 								<p className="text-muted-foreground text-[10px] leading-snug">
-									Chain rule: resolved provider/model feeds back as the new input and the full scope chain re-evaluates.
+									{t("governance:routingRules.tree.chainRuleNote")}
 								</p>
 							</div>
 						)}
@@ -135,7 +139,11 @@ export function RFRuleNode({ data }: { data: any }) {
 										{target.model && target.provider && (
 											<p className="text-muted-foreground truncate font-mono text-[10px]">{target.model}</p>
 										)}
-										{isPassthrough && <p className="text-muted-foreground/60 text-[10px] italic">original provider &amp; model</p>}
+										{isPassthrough && (
+											<p className="text-muted-foreground/60 text-[10px] italic">
+												{t("governance:routingRules.tree.originalProviderModel")}
+											</p>
+										)}
 									</div>
 									{multi && (
 										<span className="ml-1 shrink-0 text-[11px] font-semibold" style={{ color: scopeColor }}>

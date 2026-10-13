@@ -1,5 +1,6 @@
 import { Dog } from "lucide-react";
 import ContactUsView from "../../views/contactUsView";
+import { useTranslation } from "react-i18next";
 
 interface EnableToggleProps {
 	enabled: boolean;
@@ -14,6 +15,7 @@ interface DatadogConnectorViewProps {
 }
 
 export default function DatadogConnectorView(_props: DatadogConnectorViewProps) {
+	const { t } = useTranslation(["errors"]);
 	return (
 		<div className="space-y-6">
 			{/* Content - OSS: paywall only; no delete/save buttons */}
@@ -23,8 +25,8 @@ export default function DatadogConnectorView(_props: DatadogConnectorViewProps) 
 						align="middle"
 						className="mx-auto w-full max-w-lg"
 						icon={<Dog className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />}
-						title="Unlock native Datadog data ingestion for better observability"
-						description="This feature is a part of the Bifrost enterprise license. We would love to know more about your use case and how we can help you."
+						title={t("errors:upsell.datadog.title")}
+						description={t("errors:upsell.datadog.description")}
 						readmeLink="https://docs.getbifrost.ai/enterprise/datadog-connector"
 					/>
 				</div>
