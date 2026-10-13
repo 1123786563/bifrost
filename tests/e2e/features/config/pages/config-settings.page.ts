@@ -29,6 +29,7 @@ export class ConfigSettingsPage extends BasePage {
   // Security Settings
   readonly rateLimitingSection: Locator
   readonly enforceAuthOnInferenceSwitch: Locator
+  readonly enforceVKObjectOwnershipSwitch: Locator
   readonly requiredHeadersTextarea: Locator
   readonly vkRotationCooldownInput: Locator
   readonly dashboardAuthSwitch: Locator
@@ -49,6 +50,9 @@ export class ConfigSettingsPage extends BasePage {
   readonly pricingDatasheetUrlInput: Locator
   readonly pricingForceSyncBtn: Locator
   readonly pricingSaveBtn: Locator
+
+  // Compatibility Settings
+  readonly compatConvertDecisionToResponsesSwitch: Locator
 
   constructor(page: Page) {
     super(page)
@@ -71,6 +75,7 @@ export class ConfigSettingsPage extends BasePage {
     // Security Settings locators
     this.rateLimitingSection = page.locator('text=Rate Limiting').locator('..')
     this.enforceAuthOnInferenceSwitch = page.getByTestId('enforce-auth-on-inference-switch')
+    this.enforceVKObjectOwnershipSwitch = page.getByTestId('security-enforce-vk-object-ownership-switch')
     this.requiredHeadersTextarea = page.getByTestId('required-headers-textarea')
     this.vkRotationCooldownInput = page.getByTestId('security-vk-rotation-cooldown-input')
     this.dashboardAuthSwitch = page.locator('#auth-enabled')
@@ -91,6 +96,9 @@ export class ConfigSettingsPage extends BasePage {
     this.pricingDatasheetUrlInput = page.getByTestId('pricing-datasheet-url-input')
     this.pricingForceSyncBtn = page.getByTestId('pricing-force-sync-btn')
     this.pricingSaveBtn = page.getByTestId('model-settings-save-btn')
+
+    // Compatibility locators
+    this.compatConvertDecisionToResponsesSwitch = page.getByTestId('compat-convert-decision-to-responses')
   }
 
   async goto(path: string): Promise<void> {

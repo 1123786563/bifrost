@@ -4,17 +4,20 @@ import { useTranslation } from "react-i18next";
 import { formatCost } from "@/app/workspace/dashboard/utils/chartUtils";
 import i18n from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { LiveDelegationLog, LiveSessionLog, LiveTranscriptLine, ResponsesMessage } from "@/lib/types/logs";
 import { cn } from "@/lib/utils";
 import { formatCompactNumber } from "@/lib/utils/numbers";
 import { applyRedactionMapping } from "@/lib/utils/redaction";
 
-import { ResponsesItemRow, extractReasoningParts } from "./responsesItemRow";
+import { shortId, toolNamesByCall, visibleDelegationItems, visibleTranscript } from "./liveSessionView.utils";
+import { ResponsesItemRow, extractReasoningParts, type MessageRole } from "./responsesItemRow";
 
 interface LiveSessionViewProps {
 	session: LiveSessionLog;
 	mapping?: Record<string, string>; // the reveal mapping the detail view holds for this row
+	visibleRoles?: Set<MessageRole>; // the sheet's Messages filter; absent shows everything
 }
 
 // formatClock renders a point on the session timeline as m:ss.
@@ -68,19 +71,28 @@ function TranscriptLine({ line, last, mapping }: { line: LiveTranscriptLine; las
 	);
 }
 
-function CopyChip({ text }: { text: string }) {
+// CopyChip is one backend response id, shortened to fit; hovering names it and shows it whole.
+function CopyChip({ id, title }: { id: string; title: string }) {
 	const { copy } = useCopyToClipboard({ successMessage: i18n.t("common:actions.copied") });
 	return (
-		<button
-			type="button"
-			onClick={() => copy(text)}
-			className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-mono text-[11px] transition"
-			aria-label={i18n.t("logs:live.copyResponseId")}
-			data-testid="logdetails-live-delegation-copy-response-id"
-		>
-			{text}
-			<Clipboard className="h-3 w-3" />
-		</button>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					onClick={() => copy(id)}
+					className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-mono text-[11px] transition"
+					aria-label={i18n.t("logs:live.copyTitle", { title })}
+					data-testid="logdetails-live-delegation-copy-response-id"
+				>
+					{shortId(id)}
+					<Clipboard className="h-3 w-3" />
+				</button>
+			</TooltipTrigger>
+			<TooltipContent sideOffset={6} className="font-mono text-[11px]">
+				<div className="font-sans font-medium">{title}</div>
+				{id}
+			</TooltipContent>
+		</Tooltip>
 	);
 }
 
@@ -92,8 +104,17 @@ function hasVisibleContent(item: ResponsesMessage): boolean {
 }
 
 // DelegationCard is one task the backend ran for the session: when, on which model, what it
-// cost, and its items on the same timeline the Responses view draws.
-function DelegationCard({ delegation, mapping }: { delegation: LiveDelegationLog; mapping?: Record<string, string> }) {
+// cost, and its items on the same timeline the Responses view draws. A function call spans two
+// backend responses, so the card lists every response id the delegation billed.
+function DelegationCard({
+	delegation,
+	mapping,
+	visibleRoles,
+}: {
+	delegation: LiveDelegationLog;
+	mapping?: Record<string, string>;
+	visibleRoles?: Set<MessageRole>;
+}) {
 	const { t } = useTranslation(["logs"]);
 	const usage = delegation.usage;
 	const tokens = usage
@@ -101,6 +122,9 @@ function DelegationCard({ delegation, mapping }: { delegation: LiveDelegationLog
 		: "";
 	const cost = delegation.cost !== undefined ? formatCost(delegation.cost) : "";
 	const items = (delegation.output ?? []).filter(hasVisibleContent);
+	const shown = visibleDelegationItems(items, visibleRoles);
+	const callNames = toolNamesByCall(items);
+	const responseIds = delegation.response_ids ?? [];
 	return (
 		<div className="space-y-3 px-6 py-4" data-testid="logdetails-live-delegation">
 			<div className="flex flex-wrap items-center gap-2">
@@ -117,19 +141,27 @@ function DelegationCard({ delegation, mapping }: { delegation: LiveDelegationLog
 					{delegation.error}
 				</div>
 			) : null}
-			{items.length > 0 ? (
+			{shown.length > 0 ? (
 				<div className="bg-card rounded-sm border p-5">
-					{items.map((item, index) => (
-						<ResponsesItemRow key={item.id ?? index} msg={item} mapping={mapping} last={index === items.length - 1} />
+					{shown.map((item, index) => (
+						<ResponsesItemRow
+							key={item.id ?? index}
+							msg={item}
+							mapping={mapping}
+							last={index === shown.length - 1}
+							callName={item.type === "function_call_output" && item.call_id ? callNames.get(item.call_id) : undefined}
+						/>
 					))}
 				</div>
+			) : items.length > 0 ? (
+				<div className="text-muted-foreground text-[12px] italic">{t("logs:live.hiddenByMessageFilter")}</div>
 			) : !delegation.error ? (
 				<div className="text-muted-foreground text-[12px] italic">{t("logs:live.noAnswer")}</div>
 			) : null}
-			{delegation.response_ids?.length ? (
-				<div className="flex flex-wrap gap-1">
-					{delegation.response_ids.map((id) => (
-						<CopyChip key={id} text={id} />
+			{responseIds.length ? (
+				<div className="flex flex-wrap items-center justify-end gap-1">
+					{responseIds.map((id, index) => (
+						<CopyChip key={id} id={id} title={t("logs:live.backendResponseOf", { index: index + 1, total: responseIds.length })} />
 					))}
 				</div>
 			) : null}
@@ -139,9 +171,9 @@ function DelegationCard({ delegation, mapping }: { delegation: LiveDelegationLog
 
 // LiveSessionView is the detail panel of a GPT Live session: how it ran, the conversation on
 // its timeline, and every call the backend made on its behalf.
-export default function LiveSessionView({ session, mapping }: LiveSessionViewProps) {
+export default function LiveSessionView({ session, mapping, visibleRoles }: LiveSessionViewProps) {
 	const { t } = useTranslation(["logs"]);
-	const transcript = session.transcript ?? [];
+	const transcript = visibleTranscript(session.transcript ?? [], visibleRoles);
 	const delegations = session.delegations ?? [];
 	const voiceCost = session.voice_cost ?? 0;
 	const backendCost = session.backend_cost ?? 0;
@@ -187,7 +219,7 @@ export default function LiveSessionView({ session, mapping }: LiveSessionViewPro
 					<div className="border-b px-6 py-2 text-sm font-medium">{t("logs:live.delegations")}</div>
 					<div className="divide-y">
 						{delegations.map((delegation) => (
-							<DelegationCard key={delegation.request_id} delegation={delegation} mapping={mapping} />
+							<DelegationCard key={delegation.request_id} delegation={delegation} mapping={mapping} visibleRoles={visibleRoles} />
 						))}
 					</div>
 				</div>

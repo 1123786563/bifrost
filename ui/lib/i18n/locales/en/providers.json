@@ -129,7 +129,10 @@
 		"description2": ". Bifrost now supports {{label}} natively. You can delete the custom provider and add the official {{label}} integration from",
 		"description3": ", or keep using your custom provider as is.",
 		"keepCustom": "Keep custom provider",
-		"takeMeThere": "Take me there"
+		"takeMeThere": "Take me there",
+		"nameReserved1": "Bifrost now supports {{label}} natively, and the name",
+		"nameReserved2": "belongs to the official provider. Your custom provider keeps serving requests, but its settings can no longer be saved and config.json entries for it are skipped. Recreate it as a custom provider under another name (for example",
+		"nameReserved3": "), then delete this one."
 	},
 	"configSheet": {
 		"title": "Provider configuration",
@@ -142,9 +145,9 @@
 			"betaHeaders": "Beta Headers",
 			"promptCache": "Prompt Caching",
 			"pricing": "Pricing",
-			"webSearch": "Web Search",
 			"debugging": "Debugging",
-			"openaiConfig": "OpenAI Config"
+			"openaiConfig": "OpenAI Config",
+			"tools": "Tools"
 		}
 	},
 	"allowedRequests": {
@@ -590,24 +593,30 @@
 		"updateFailed": "Failed to update OpenAI configuration"
 	},
 	"webSearch": {
-		"description": "Pick an MCP tool to serve as web search for every chat and responses request to this provider. Bifrost adds the tool to each request, replaces any native web search the client sends, runs the tool itself when the model calls it, and returns only the final answer.",
+		"description": "MCP tools added to every chat and responses request to this provider. Bifrost runs them itself when the model calls them and returns only the final answer. The model sees each tool under its name. A name that matches a tool the client sends replaces that tool, and the name web_search also replaces native web search.",
 		"mcpServer": "MCP server",
 		"tool": "Tool",
 		"loadingSaved": "Loading saved MCP server \"{{name}}\"...",
 		"savedMissing": "The saved MCP server \"{{name}}\" no longer exists. Pick another one.",
 		"savedError": "Could not load the saved MCP server \"{{name}}\".",
 		"toolsError": "Could not load this server's tools.",
-		"save": "Save Web Search Tool",
-		"updatedToast": "Web search tool updated",
-		"removedToast": "Web search tool removed",
-		"updateFailed": "Failed to update web search tool",
+		"save": "Save Tools",
+		"updatedToast": "Tools updated",
+		"removedToast": "Tools removed",
+		"updateFailed": "Failed to update tools",
 		"placeholders": {
 			"noServer": "Pick an MCP server first",
 			"loading": "Loading tools...",
 			"error": "Could not load tools",
 			"empty": "This MCP server exposes no tools",
 			"ready": "Pick a tool"
-		}
+		},
+		"replacesNativeWebSearch": "Replaces native web search",
+		"toolNameAria": "Tool name the model sees",
+		"removeToolAria": "Remove tool {{name}}",
+		"removeTool": "Remove tool",
+		"noToolsInjected": "No tools are injected for this provider.",
+		"addTool": "Add tool"
 	},
 	"addProvider": {
 		"customOption": "Custom provider...",

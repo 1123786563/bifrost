@@ -18,7 +18,6 @@ import {
 	MAX_DECISION_DEFINITION_CHARACTERS,
 	MAX_DECISION_PREVIOUS_MESSAGE_COUNT,
 	MAX_LLM_PROMPT_CHARACTERS,
-	OPENROUTER_DECISION_MODELS,
 	SELF_HOSTED_DECISION_MODELS,
 	TIER_PHRASE_LIST_DEFINITIONS,
 } from "@/lib/types/complexityRouter";
@@ -289,9 +288,9 @@ interface DecisionFieldsProps {
 // DecisionFields holds the decision model's settings: which model answers, and
 // how much conversation it sees and for how long. They apply wherever the
 // decision model runs, as the primary classifier or as the semantic fallback, so
-// both places render this. The model control follows the provider: Typesafe and
-// OpenRouter list Jev releases, OpenAI lists its decision models, a Cloudflare
-// provider's URL fixes its Clef model,
+// both places render this. The model control follows the provider: Typesafe lists
+// Jev releases, OpenAI and OpenRouter list the models the datasheet marks as decision
+// models, a Cloudflare provider's URL fixes its Clef model,
 // and a self-hosted provider offers the models it lists, or the known Laya and
 // Nimble checkpoints when it lists none.
 export function DecisionFields({ control, register, setValue, errors, canUpdate, providers, providerKeyIds }: DecisionFieldsProps) {
@@ -299,10 +298,16 @@ export function DecisionFields({ control, register, setValue, errors, canUpdate,
 	const providerName = useWatch({ control, name: "decision.provider" });
 	const model = useWatch({ control, name: "decision.model" });
 	const provider = providers.find((candidate) => candidate.name === providerName);
-	const servesJev = providerName === "typesafe" || providerName === "openrouter";
+	const servesJev = providerName === "typesafe";
+	const servesOpenRouter = providerName === "openrouter";
+	const servesCloudflare = providerName === "cloudflare";
+	const servesPerplexity = providerName === "perplexity";
+	const servesOllama = providerName === "ollama";
 	const servesOpenAI = provider ? isOpenAIDecisionProvider(provider) : providerName === "openai";
 	const servesClef = clefModelFromProvider(provider) !== undefined;
-	const selfHosted = provider !== undefined && !servesJev && !servesOpenAI && !servesClef;
+	// These providers' catalogs mix decision models with chat models, so only their decision models are listed.
+	const listsDecisionModels = servesOpenAI || servesOpenRouter || servesCloudflare || servesPerplexity || servesOllama;
+	const selfHosted = provider !== undefined && !servesJev && !listsDecisionModels && !servesClef;
 
 	const { data: listed } = useGetModelsQuery(
 		{ provider: providerName, keys: providerKeyIds.length > 0 ? providerKeyIds : undefined, limit: 50 },
@@ -360,39 +365,23 @@ export function DecisionFields({ control, register, setValue, errors, canUpdate,
 					control={control}
 					name="decision.model"
 					render={({ field }) => {
-						if (providerName === "openrouter") {
-							// OpenRouter lists chat models under Typesafe's namespace too, and its
-							// decisions endpoint rejects them, so only its Jev models are offered.
-							return (
-								<Select value={field.value || undefined} onValueChange={field.onChange} disabled={!canUpdate}>
-									<SelectTrigger className="w-full" id="decision-model" data-testid="complexity-router-decision-model-select">
-										<SelectValue placeholder={t("governance:complexityRouter.decisionFields.selectModel")} />
-									</SelectTrigger>
-									<SelectContent>
-										{OPENROUTER_DECISION_MODELS.map((name) => (
-											<SelectItem key={name} value={name}>
-												{name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							);
-						}
-						if (servesOpenAI) {
-							// An OpenAI catalog, OpenAI's or a custom OpenAI-based provider's, is mostly
-							// chat models, which the decisions endpoint rejects, so only the models the
-							// datasheet marks as decision models are listed.
+						if (listsDecisionModels) {
+							// OpenAI's, OpenRouter's, Cloudflare's, Perplexity's and Ollama's catalogs (and a
+							// custom OpenAI-based provider's) are mostly chat models, which the decisions
+							// endpoint rejects, so only their decision models are listed.
 							return (
 								<ModelSelector
 									inputId="decision-model"
 									data-testid="complexity-router-decision-model-select"
+									hideSearchIcon
+									openWithEmptySearch
 									provider={providerName}
 									keys={providerKeyIds}
 									decisions
 									value={field.value ?? ""}
 									onChange={(next) => field.onChange(next)}
-									placeholder="Search OpenAI decision models…"
-									emptyMessage={t("governance:complexityRouter.decisionFields.noOpenAIModels")}
+									placeholder={t("governance:complexityRouter.decisionFields.searchDecisionModels")}
+									emptyMessage={t("governance:complexityRouter.decisionFields.noDecisionModels")}
 									disabled={!canUpdate}
 								/>
 							);
@@ -402,6 +391,8 @@ export function DecisionFields({ control, register, setValue, errors, canUpdate,
 								<ModelSelector
 									inputId="decision-model"
 									data-testid="complexity-router-decision-model-select"
+									hideSearchIcon
+									openWithEmptySearch
 									provider={providerName || undefined}
 									keys={providerKeyIds}
 									value={field.value ?? ""}
@@ -437,6 +428,8 @@ export function DecisionFields({ control, register, setValue, errors, canUpdate,
 								<ModelSelector
 									inputId="decision-model"
 									data-testid="complexity-router-decision-model-select"
+									hideSearchIcon
+									openWithEmptySearch
 									provider={providerName || undefined}
 									keys={providerKeyIds}
 									value={field.value ?? ""}

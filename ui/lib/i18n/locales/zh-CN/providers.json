@@ -129,7 +129,10 @@
 		"description2": "的自定义 provider。Bifrost 现已原生支持 {{label}}。你可以删除该自定义 provider，并从",
 		"description3": "添加官方 {{label}} 集成，也可以继续按原样使用该自定义 provider。",
 		"keepCustom": "保留自定义 provider",
-		"takeMeThere": "带我去"
+		"takeMeThere": "带我去",
+		"nameReserved1": "Bifrost 现已原生支持 {{label}},而名称",
+		"nameReserved2": "属于官方提供商。您的自定义提供商将继续处理请求,但其设置无法再保存,config.json 中对应的条目也会被跳过。请以其他名称重新创建自定义提供商(例如",
+		"nameReserved3": "),然后删除此提供商。"
 	},
 	"configSheet": {
 		"title": "Provider 配置",
@@ -142,9 +145,9 @@
 			"betaHeaders": "Beta Headers",
 			"promptCache": "提示词缓存",
 			"pricing": "定价",
-			"webSearch": "网页搜索",
 			"debugging": "调试",
-			"openaiConfig": "OpenAI 配置"
+			"openaiConfig": "OpenAI 配置",
+			"tools": "工具"
 		}
 	},
 	"allowedRequests": {
@@ -590,24 +593,30 @@
 		"updateFailed": "更新 OpenAI 配置失败"
 	},
 	"webSearch": {
-		"description": "选择一个 MCP 工具，作为此 provider 所有 chat 和 responses 请求的网页搜索。Bifrost 会将该工具加入每个请求、替换客户端发送的原生网页搜索、在模型调用时自行运行工具，并只返回最终答案。",
+		"description": "为该提供商的每个聊天和响应请求注入的 MCP 工具。模型调用时由 Bifrost 自行运行,并仅返回最终答案。模型以其名称识别每个工具。与客户端所发工具同名的名称会替换该工具,名称 web_search 还会替换原生网页搜索。",
 		"mcpServer": "MCP 服务器",
 		"tool": "工具",
 		"loadingSaved": "正在加载已保存的 MCP 服务器“{{name}}”…",
 		"savedMissing": "已保存的 MCP 服务器“{{name}}”已不存在。请另选一个。",
 		"savedError": "无法加载已保存的 MCP 服务器“{{name}}”。",
 		"toolsError": "无法加载此服务器的工具。",
-		"save": "保存网页搜索工具",
-		"updatedToast": "网页搜索工具已更新",
-		"removedToast": "网页搜索工具已移除",
-		"updateFailed": "更新网页搜索工具失败",
+		"save": "保存工具",
+		"updatedToast": "工具已更新",
+		"removedToast": "工具已移除",
+		"updateFailed": "更新工具失败",
 		"placeholders": {
 			"noServer": "请先选择 MCP 服务器",
 			"loading": "正在加载工具…",
 			"error": "无法加载工具",
 			"empty": "此 MCP 服务器未公开任何工具",
 			"ready": "选择一个工具"
-		}
+		},
+		"replacesNativeWebSearch": "替换原生网页搜索",
+		"toolNameAria": "模型看到的工具名称",
+		"removeToolAria": "移除工具 {{name}}",
+		"removeTool": "移除工具",
+		"noToolsInjected": "未为此提供商注入任何工具。",
+		"addTool": "添加工具"
 	},
 	"addProvider": {
 		"customOption": "自定义 provider…",

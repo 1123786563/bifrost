@@ -150,7 +150,7 @@ export const mcpApi = baseApi.injectEndpoints({
 						dispatch(mcpApi.util.invalidateTags(["MCPClients"]));
 						break;
 					}
-				} catch { }
+				} catch {}
 			},
 		}),
 
@@ -199,7 +199,7 @@ export const mcpApi = baseApi.injectEndpoints({
 							}),
 						);
 					}
-				} catch { }
+				} catch {}
 			},
 		}),
 
@@ -227,7 +227,7 @@ export const mcpApi = baseApi.injectEndpoints({
 							}),
 						);
 					}
-				} catch { }
+				} catch {}
 			},
 		}),
 

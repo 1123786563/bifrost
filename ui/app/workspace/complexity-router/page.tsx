@@ -677,14 +677,7 @@ export default function ComplexityRouterPage() {
 
 								{/* ── Step 1: classifier ── */}
 								{step === "classifier" && (
-									<>
-										<ClassifierChoice value={hasClassifier ? liveClassifier : undefined} onChange={selectClassifier} />
-										{/* One warning, and only once the decision model is the pick: it is the only
-										    time a missing decision provider matters here. */}
-										{hasClassifier && !isSemantic && !isProviderListLoading && (
-											<DecisionProviderAlert state={decisionProviderState} provider={liveDecisionProvider} />
-										)}
-									</>
+									<ClassifierChoice value={hasClassifier ? liveClassifier : undefined} onChange={selectClassifier} />
 								)}
 
 								{/* ── Step 2: semantic ── */}
@@ -711,13 +704,9 @@ export default function ComplexityRouterPage() {
 								)}
 
 								{/* ── Step 2: decision model ── */}
-								{/* The page holds the tier guidance; set-once settings live in the
-								    model configuration sheet, as the embedding configuration does for semantic. The
-								    provider problem stays on the page because nothing runs until
-								    it is fixed. */}
-								{step === "setup" && !isSemantic && !isProviderListLoading && (
-									<DecisionProviderAlert state={decisionProviderState} provider={liveDecisionProvider} />
-								)}
+								{/* The page holds the tier guidance; set-once settings, and any problem
+								    with the decision provider, live in the model configuration sheet, as
+								    the embedding configuration does for semantic. */}
 								{step === "setup" && !isSemantic && decisionGuidance("primary")}
 
 								{step === "setup" && <SessionRoutingCard control={control} errors={errors.session} canUpdate={canUpdate} />}
@@ -787,18 +776,19 @@ export default function ComplexityRouterPage() {
 											{t("common:actions.back")}
 										</Button>
 									)}
-									{/* The provider warning is already on screen when the decision model is primary; as
-									    the fallback it sits inside the sheet, so the page says why
-									    Save is off. Otherwise an unsaved classifier switch is
-									    called out, since the page has no leave guard. */}
+									{/* The provider warning sits inside the model configuration sheet, so the
+									    page says why Save is off. Otherwise an unsaved classifier switch
+									    is called out, since the page has no leave guard. */}
 									<p
 										className="mr-auto text-xs text-amber-700 dark:text-amber-400"
 										role="status"
 										data-testid="complexity-router-footer-note"
 									>
-										{blockedOnDecisionProvider && isSemantic
-											? t("governance:complexityRouter.warnings.footerDecisionBlocked")
-											: !blockedOnDecisionProvider && liveClassifier !== toFormValues(data).classifier
+										{blockedOnDecisionProvider
+											? isSemantic
+												? t("governance:complexityRouter.warnings.footerDecisionBlocked")
+												: t("governance:complexityRouter.warnings.footerDecisionBlockedNeedsConfig")
+											: liveClassifier !== toFormValues(data).classifier
 												? t("governance:complexityRouter.warnings.classifierChanged", {
 														classifier: isSemantic
 															? t("governance:complexityRouter.warnings.classifierSemantic")

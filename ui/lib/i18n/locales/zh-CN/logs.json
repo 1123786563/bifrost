@@ -183,7 +183,10 @@
 		"voiceCost": "语音成本",
 		"backendCost": "后端成本",
 		"delegations": "委派任务",
-		"transcript": "对话记录"
+		"transcript": "对话记录",
+		"copyTitle": "复制 {{title}}",
+		"hiddenByMessageFilter": "已被消息过滤器隐藏",
+		"backendResponseOf": "后端响应 {{index}} / {{total}}"
 	},
 	"chat": {
 		"attachedFile": "附件",
@@ -238,7 +241,9 @@
 		"rowsPerPage": "每页行数",
 		"previousPage": "上一页",
 		"nextPage": "下一页",
-		"pageOf": "第 {{current}} / {{total}} 页"
+		"pageOf": "第 {{current}} / {{total}} 页",
+		"groups": "组",
+		"entries": "条"
 	},
 	"recalcDialog": {
 		"description": "将应用当前时间窗口与筛选条件。请选择要重算成本的日志。",
@@ -480,7 +485,8 @@
 		"decisionModelClassification": "决策模型分类",
 		"requestBody": "请求体",
 		"responseBody": "响应体",
-		"instructions": "指令"
+		"instructions": "指令",
+		"tabRawCapture": "原始捕获"
 	},
 	"mcp": {
 		"searchPlaceholder": "搜索 MCP 日志",
@@ -650,7 +656,39 @@
 		"updateReceived": "收到的来自 agent 的更新",
 		"delivered": "已投递",
 		"accepted": "已接受",
-		"pushConfig": "Push Config"
+		"pushConfig": "Push Config",
+		"operationTurn": "操作 {{turn}}",
+		"collapseContext": "收起此上下文",
+		"expandContext": "展开此上下文中的另外 {{count}} 个操作",
+		"opsCount": "{{count}} 个操作",
+		"sessionContextTooltip": "共享同一 context_id 的 {{total}} 个操作的上下文。展开可查看其余 {{count}} 个操作。",
+		"session": "会话",
+		"noContent": "无内容。",
+		"copyArtifactId": "复制制品 ID",
+		"copyMessageId": "复制消息 ID",
+		"configurationId": "配置 ID",
+		"noCallbackUrl": "未提供回调 URL",
+		"authentication": "身份验证",
+		"credentialsProvided": "已提供凭据",
+		"taskDetails": "任务详情",
+		"responseDetails": "响应详情",
+		"statusMessage": "状态消息",
+		"requestParameters": "请求参数",
+		"pushConfigDeleted": "推送配置已删除",
+		"noResponseBody": "操作已完成,但没有响应体。",
+		"noProtocolBody": "未记录协议体。",
+		"noTasksReturned": "未返回任务。",
+		"noMessagesOrArtifacts": "此响应中没有消息或制品。",
+		"moreTasksAvailable": "还有更多任务",
+		"pushConfigurations": "推送配置",
+		"noNotificationDestinations": "未配置通知目标。",
+		"payloadJson": "载荷 JSON",
+		"eventBodyNotRecorded": "未记录事件体。",
+		"rawCaptureDisabled": "gRPC 不支持原始捕获,因为它使用二进制 protobuf 消息;有大小限制的捕获可能截断消息,无法可靠解码或检查。",
+		"rawRequest": "原始请求",
+		"rawResponse": "原始响应",
+		"moreDetails": "更多详情",
+		"contextLoadFailed": "加载上下文失败"
 	},
 	"otel": {
 		"addProfile": "添加 Profile",

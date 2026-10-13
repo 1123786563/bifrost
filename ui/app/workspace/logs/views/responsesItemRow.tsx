@@ -309,11 +309,13 @@ export function ResponsesItemRow({
 	mapping,
 	last = false,
 	children,
+	callName,
 }: {
 	msg: ResponsesMessage;
 	mapping?: Record<string, string>;
 	last?: boolean;
 	children?: ReactNode;
+	callName?: string; // the tool a function_call_output answers, when the caller resolved it
 }) {
 	const { t } = useTranslation(["logs"]);
 	const role = getResponsesRole(msg);
@@ -370,8 +372,8 @@ export function ResponsesItemRow({
 			</>
 		) : msg.name ? (
 			<ToolNameLabel name={msg.name} />
-		) : msg.type === "function_call_output" && msg.call_id ? (
-			<ToolNameLabel name={msg.call_id} />
+		) : msg.type === "function_call_output" && (callName || msg.call_id) ? (
+			<ToolNameLabel name={callName ?? (msg.call_id as string)} />
 		) : Array.isArray(msg.tools) ? (
 			(() => {
 				const callable = flattenDeclaredTools(msg.tools).length;

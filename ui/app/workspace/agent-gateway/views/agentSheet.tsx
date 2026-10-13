@@ -1,14 +1,12 @@
+import { mapAgentCard } from "@/lib/utils/agentCard";
 import { getExternalBaseUrl } from "@/app/workspace/mcp-registry/views/mcpUsageGuide/utils";
 import { SectionHeader } from "@/app/workspace/mcp-registry/views/sectionHeader";
 import { VirtualKeySelector } from "@/components/entitySelectors/virtualKeySelector";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { HeadersTable } from "@/components/ui/headersTable";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SecretVarInput } from "@/components/ui/secretVarInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DottedSeparator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -18,65 +16,26 @@ import { VirtualKeyListItem } from "@/components/virtualKeyListItem";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage, useGetCoreConfigQuery, useGetVirtualKeysQuery } from "@/lib/store";
 import { useCreateAgentMutation, useInspectAgentCardMutation, useUpdateAgentMutation } from "@/lib/store/apis/agentsApi";
-import type {
-	AgentAuthType,
-	AgentOAuthConfig,
-	AgentRegistrationView,
-	AgentSecurityScheme,
-	AgentTLSConfig,
-	AgentUpstreamAuth,
-	InspectAgentCardResponse,
-} from "@/lib/types/agents";
-import type { SecretVar } from "@/lib/types/schemas";
+import type { AgentRegistrationView, AgentSecurityScheme, AgentUpstreamAuth, InspectAgentCardResponse } from "@/lib/types/agents";
 import AgentAccessProfiles from "@enterprise/components/agent-gateway/agentAccessProfiles";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
-import { AlertTriangle, ChevronDown, ChevronRight, Info, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, ChevronDown, FileSearch, Info, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AuthFields, TLSFields, authSummary, emptyAuth, emptySecret, hasTLS, normalizeAuth } from "./agentAuthFields";
+import { AgentCardPreview } from "@/components/agents/agentCardPreview";
 import { AgentEndpoints } from "./agentEndpoints";
 
 const AGENT_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const emptySecret = (): SecretVar => ({ value: "", ref: "" });
-const emptyAuth = (): AgentUpstreamAuth => ({ type: "none", headers: {} });
 
-function capabilityLabel(name: string) {
-	return name
-		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-		.replace(/[_-]+/g, " ")
-		.replace(/^./, (value) => value.toUpperCase());
-}
-
-type SheetT = (key: string, opts?: Record<string, unknown>) => string;
-
-function validateAgentName(name: string, t: SheetT): string | null {
-	if (name.length < 1 || name.length > 255) return t("mcp:agents.sheet.nameLen");
-	if (!AGENT_NAME_PATTERN.test(name)) return t("mcp:agents.sheet.namePattern");
+function validateAgentName(name: string): string | null {
+	if (name.length < 1 || name.length > 255) return "Name must be 1-255 characters.";
+	if (!AGENT_NAME_PATTERN.test(name)) return "Use lowercase letters, digits, and hyphens; no leading, trailing, or consecutive hyphens.";
 	return null;
 }
 
-function normalizeAuth(auth: AgentUpstreamAuth): AgentUpstreamAuth | undefined {
-	const tls = hasTLS(auth.tls) ? auth.tls : undefined;
-	if (auth.type === "none" && !tls) return undefined;
-	return {
-		type: auth.type,
-		headers: Object.keys(auth.headers ?? {}).length ? auth.headers : undefined,
-		oauth: auth.type === "oauth" ? auth.oauth : undefined,
-		security_schemes: auth.security_schemes?.length ? auth.security_schemes : undefined,
-		advanced: auth.advanced || undefined,
-		tls,
-	};
-}
-
-function hasTLS(tls?: AgentTLSConfig): boolean {
-	return !!(
-		tls?.insecure_skip_verify ||
-		tls?.ca_cert_pem?.value ||
-		tls?.ca_cert_pem?.ref ||
-		tls?.client_cert_pem?.value ||
-		tls?.client_cert_pem?.ref ||
-		tls?.client_key_pem?.value ||
-		tls?.client_key_pem?.ref
-	);
+function isHttpUrl(value: string) {
+	return /^https?:\/\//i.test(value.trim());
 }
 
 function headerName(scheme: AgentSecurityScheme): string | null {
@@ -124,218 +83,92 @@ function authForRequirement(result: InspectAgentCardResponse, index: number): Ag
 	};
 }
 
-function requirementGap(result: InspectAgentCardResponse, index: number, t: SheetT): string | null {
+function requirementGap(result: InspectAgentCardResponse, index: number): string | null {
 	const names = result.security_requirements[index] ?? [];
 	const schemes = names.map((name) => result.security_schemes.find((scheme) => scheme.name === name));
-	if (schemes.some((scheme) => !scheme)) return t("mcp:agents.sheet.gapMissing");
+	if (schemes.some((scheme) => !scheme)) return "The card references a missing security scheme.";
 	const oauthCount = schemes.filter((scheme) => scheme?.type === "oauth2" || scheme?.type === "openIdConnect").length;
 	const headerCount = schemes.filter((scheme) => scheme && headerName(scheme)).length;
-	if (oauthCount > 1) return t("mcp:agents.sheet.gapOauth");
-	if (oauthCount && headerCount) return t("mcp:agents.sheet.gapCombine");
+	if (oauthCount > 1) return "The gateway supports one OAuth client per upstream.";
+	if (oauthCount && headerCount) return "The gateway cannot combine OAuth with static header credentials.";
 	const headers = schemes.flatMap((scheme) => {
 		const header = scheme ? headerName(scheme) : null;
 		return header ? [header] : [];
 	});
-	if (new Set(headers).size !== headers.length) return t("mcp:agents.sheet.gapSameHeader");
-	return t("mcp:agents.sheet.gapUnsupported");
+	if (new Set(headers).size !== headers.length) return "The gateway cannot store separate credentials for the same HTTP header.";
+	return "The gateway does not support this query, cookie, or HTTP credential.";
 }
 
-function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange: (next: AgentTLSConfig) => void }) {
-	const { t } = useTranslation(["common", "mcp"]);
+function SettingRow({
+	label,
+	description,
+	checked,
+	onCheckedChange,
+	testId,
+	children,
+}: {
+	label: string;
+	description?: string;
+	checked: boolean;
+	onCheckedChange: (checked: boolean) => void;
+	testId?: string;
+	children?: React.ReactNode;
+}) {
 	return (
-		<>
-			<div className="flex items-center justify-between gap-4">
+		<div className="rounded-sm border">
+			<div className="flex items-center justify-between gap-4 p-3">
 				<div className="space-y-0.5">
-					<Label>{t("mcp:agents.sheet.tls.skip")}</Label>
-					<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.tls.skipHint")}</p>
+					<Label>{label}</Label>
+					{description && <p className="text-muted-foreground text-xs">{description}</p>}
 				</div>
-				<Switch
-					checked={value.insecure_skip_verify ?? false}
-					onCheckedChange={(insecure_skip_verify) => onChange({ ...value, insecure_skip_verify })}
-				/>
+				<Switch checked={checked} onCheckedChange={onCheckedChange} data-testid={testId} />
 			</div>
-			<div className="space-y-1">
-				<Label>{t("mcp:agents.sheet.tls.caCert")}</Label>
-				<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.tls.caCertHint")}</p>
-				<SecretVarInput
-					variant="textarea"
-					rows={4}
-					placeholder="-----BEGIN CERTIFICATE-----"
-					value={value.ca_cert_pem}
-					onChange={(ca_cert_pem) => onChange({ ...value, ca_cert_pem })}
-				/>
-			</div>
-			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-				<div className="space-y-1">
-					<Label>{t("mcp:agents.sheet.tls.clientCert")}</Label>
-					<SecretVarInput
-						variant="textarea"
-						rows={4}
-						placeholder="-----BEGIN CERTIFICATE-----"
-						value={value.client_cert_pem}
-						onChange={(client_cert_pem) => onChange({ ...value, client_cert_pem })}
-					/>
-				</div>
-				<div className="space-y-1">
-					<Label>{t("mcp:agents.sheet.tls.clientKey")}</Label>
-					<SecretVarInput
-						variant="textarea"
-						rows={4}
-						placeholder="-----BEGIN PRIVATE KEY-----"
-						value={value.client_key_pem}
-						onChange={(client_key_pem) => onChange({ ...value, client_key_pem })}
-					/>
-				</div>
-			</div>
-		</>
-	);
-}
-
-function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (next: AgentOAuthConfig) => void }) {
-	const { t } = useTranslation(["common", "mcp"]);
-	return (
-		<div className="space-y-4">
-			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-				<div className="space-y-1">
-					<Label>{t("mcp:agents.sheet.oauth.providerUrl")}</Label>
-					<Input
-						value={value.provider_url ?? ""}
-						placeholder="https://auth.example.com"
-						onChange={(event) => onChange({ ...value, provider_url: event.target.value })}
-					/>
-				</div>
-				<div className="space-y-1">
-					<Label>{t("mcp:agents.sheet.oauth.discoveryUrl")}</Label>
-					<Input
-						value={value.discovery_url ?? ""}
-						placeholder="https://auth.example.com/.well-known/openid-configuration"
-						onChange={(event) => onChange({ ...value, discovery_url: event.target.value })}
-					/>
-				</div>
-			</div>
-			<div className="space-y-1">
-				<Label>{t("mcp:agents.sheet.oauth.tokenUrl")}</Label>
-				<Input
-					value={value.token_url ?? ""}
-					placeholder="https://auth.example.com/oauth/token"
-					onChange={(event) => onChange({ ...value, token_url: event.target.value })}
-				/>
-			</div>
-			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-				<div className="space-y-1">
-					<Label>{t("mcp:agents.sheet.oauth.clientId")}</Label>
-					<SecretVarInput
-						value={value.client_id}
-						placeholder="your-client-id or env.OAUTH_CLIENT_ID"
-						onChange={(client_id) => onChange({ ...value, client_id })}
-					/>
-				</div>
-				<div className="space-y-1">
-					<Label>{t("mcp:agents.sheet.oauth.clientSecret")}</Label>
-					<SecretVarInput
-						value={value.client_secret}
-						placeholder="your-client-secret or env.OAUTH_CLIENT_SECRET"
-						onChange={(client_secret) => onChange({ ...value, client_secret })}
-					/>
-				</div>
-			</div>
-			<div className="space-y-1">
-				<Label>{t("mcp:agents.sheet.oauth.scopes")}</Label>
-				<Input
-					value={value.scopes?.join(" ") ?? ""}
-					placeholder="read write"
-					onChange={(event) => onChange({ ...value, scopes: event.target.value.split(/\s+/).filter(Boolean) })}
-				/>
-			</div>
-			<div className="space-y-1">
-				<Label>{t("mcp:agents.sheet.oauth.resource")}</Label>
-				<Input
-					value={value.resource ?? ""}
-					placeholder="https://agent.example.com"
-					onChange={(event) => onChange({ ...value, resource: event.target.value })}
-				/>
-			</div>
+			{children && <div className="bg-muted/30 flex flex-col gap-2 border-t p-3">{children}</div>}
 		</div>
 	);
 }
 
-function AuthFields({
-	value,
-	onChange,
-	readOnlyAuth = false,
-	disabled = false,
-	requiredHeaderKeys = [],
+// Collapsed by default; the trigger carries a one-line summary so the closed state still says what is configured.
+function OptionGroup({
+	title,
+	tooltip,
+	summary,
+	open,
+	onOpenChange,
+	testId,
+	children,
 }: {
-	value: AgentUpstreamAuth;
-	onChange: (next: AgentUpstreamAuth) => void;
-	readOnlyAuth?: boolean;
-	disabled?: boolean;
-	requiredHeaderKeys?: string[];
+	title: string;
+	tooltip?: string;
+	summary: string;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	testId?: string;
+	children: React.ReactNode;
 }) {
-	const { t } = useTranslation(["common", "mcp"]);
-	const changeKind = (type: AgentAuthType) =>
-		onChange({
-			...emptyAuth(),
-			type,
-			oauth: type === "oauth" ? (value.oauth ?? { client_id: emptySecret(), client_secret: emptySecret() }) : undefined,
-			tls: value.tls,
-			advanced: value.advanced,
-		});
-
 	return (
-		<fieldset disabled={disabled} className="space-y-4 disabled:opacity-70">
-			<div className="space-y-2">
-				<Label>{t("mcp:agents.sheet.authType")}</Label>
-				<Select value={value.type} onValueChange={changeKind} disabled={readOnlyAuth}>
-					<SelectTrigger className="w-full">
-						<SelectValue placeholder={t("mcp:agents.sheet.authTypePlaceholder")} />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="none">{t("common:state.none")}</SelectItem>
-						<SelectItem value="headers">{t("mcp:sessions.type.headers")}</SelectItem>
-						<SelectItem value="oauth">{t("mcp:agents.sheet.oauthCreds")}</SelectItem>
-					</SelectContent>
-				</Select>
-			</div>
-			{value.type === "headers" && (
-				<div className="space-y-4">
-					{requiredHeaderKeys.length > 0 && (
-						<HeadersTable
-							value={value.headers ?? {}}
-							onChange={(headers) => onChange({ ...value, headers })}
-							fixedKeys={requiredHeaderKeys}
-							useSecretVarInput
-							label={t("mcp:agents.sheet.advertisedHeaders")}
-						/>
+		<Collapsible open={open} onOpenChange={onOpenChange} className="rounded-sm border">
+			<CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left" data-testid={testId}>
+				<span className="flex items-center gap-2 text-sm font-medium">
+					{title}
+					{tooltip && (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Info className="text-muted-foreground h-4 w-4 cursor-help" onClick={(event) => event.stopPropagation()} />
+								</TooltipTrigger>
+								<TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
 					)}
-					<HeadersTable
-						value={Object.fromEntries(Object.entries(value.headers ?? {}).filter(([name]) => !requiredHeaderKeys.includes(name)))}
-						onChange={(headers) =>
-							onChange({
-								...value,
-								headers: {
-									...Object.fromEntries(Object.entries(value.headers ?? {}).filter(([name]) => requiredHeaderKeys.includes(name))),
-									...headers,
-								},
-							})
-						}
-						useSecretVarInput
-						label={t("mcp:agents.sheet.extraHeaders")}
-					/>
-				</div>
-			)}
-			{value.type === "oauth" && (
-				<div className="space-y-4">
-					<OAuthFields value={value.oauth ?? {}} onChange={(oauth) => onChange({ ...value, oauth })} />
-					<HeadersTable
-						value={value.headers ?? {}}
-						onChange={(headers) => onChange({ ...value, headers })}
-						useSecretVarInput
-						label={t("mcp:agents.sheet.extraHeaders")}
-					/>
-				</div>
-			)}
-		</fieldset>
+				</span>
+				<span className="text-muted-foreground flex min-w-0 items-center gap-2 text-xs">
+					<span className="truncate">{summary}</span>
+					<ChevronDown className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+				</span>
+			</CollapsibleTrigger>
+			<CollapsibleContent className="space-y-4 border-t p-3">{children}</CollapsibleContent>
+		</Collapsible>
 	);
 }
 
@@ -353,6 +186,9 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 	const [updateAgent, { isLoading: isUpdating }] = useUpdateAgentMutation();
 	const [inspectCard, { isLoading: isInspecting }] = useInspectAgentCardMutation();
 	const { toast } = useToast();
+	const connectionRef = useRef<HTMLDivElement>(null);
+	const authRef = useRef<HTMLDivElement>(null);
+	const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 	const [name, setName] = useState(agent?.name ?? "");
 	const [nameError, setNameError] = useState<string | null>(null);
 	const [agentCardUrl, setAgentCardUrl] = useState(agent?.agent_card_url ?? "");
@@ -363,9 +199,10 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 	const [inspectionError, setInspectionError] = useState<string | null>(null);
 	const [selectedRequirement, setSelectedRequirement] = useState(0);
 	const [manualMode, setManualMode] = useState(agent?.runtime_auth?.advanced ?? false);
-	const [cardTLSOpen, setCardTLSOpen] = useState(hasTLS(agent?.discovery_auth?.tls));
+	const [cardOptionsOpen, setCardOptionsOpen] = useState(
+		(agent?.discovery_auth?.type ?? "none") !== "none" || hasTLS(agent?.discovery_auth?.tls),
+	);
 	const [runtimeTLSOpen, setRuntimeTLSOpen] = useState(hasTLS(agent?.runtime_auth?.tls));
-	const [skillsOpen, setSkillsOpen] = useState(false);
 	const [allowByDefault, setAllowByDefault] = useState(agent?.allow_by_default ?? false);
 	const [forwardAcceptedCredential, setForwardAcceptedCredential] = useState(agent?.forward_accepted_credential ?? false);
 	const [forwardAcceptedCredentialOverridesAuth, setForwardAcceptedCredentialOverridesAuth] = useState(
@@ -374,15 +211,16 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 	const [virtualKeyIds, setVirtualKeyIds] = useState(agent?.virtual_key_ids ?? []);
 	const [tenant, setTenant] = useState(agent?.tenant ?? "");
 	const [extensionUris, setExtensionUris] = useState(agent?.extension_uris ?? []);
-	const [advancedOpen, setAdvancedOpen] = useState(
-		!!agent?.tenant || !!agent?.runtime_auth?.advanced || (agent?.extension_uris?.length ?? 0) > 0,
-	);
+	const [advancedOpen, setAdvancedOpen] = useState(!!agent?.tenant || (agent?.extension_uris?.length ?? 0) > 0);
 	const { data: vksData } = useGetVirtualKeysQuery({ limit: 1000 });
 	const vkById = new Map((vksData?.virtual_keys ?? []).map((virtualKey) => [virtualKey.id, virtualKey]));
 	const { data: coreConfig } = useGetCoreConfigQuery({ fromDB: true });
 	const baseUrl = getExternalBaseUrl(coreConfig?.client_config);
 	const grpc = coreConfig?.agent_gateway
-		? { baseDomain: coreConfig.agent_gateway.grpc_base_domain, port: coreConfig.agent_gateway.grpc_port }
+		? {
+				baseDomain: coreConfig.agent_gateway.grpc_base_domain,
+				port: coreConfig.agent_gateway.grpc_port,
+			}
 		: undefined;
 
 	const applyRequirement = (result: InspectAgentCardResponse, index: number) => {
@@ -408,13 +246,17 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 	};
 
 	const handleInspect = async () => {
-		if (!agentCardUrl.trim() || !/^https?:\/\//i.test(agentCardUrl.trim())) {
+		if (!isHttpUrl(agentCardUrl)) {
 			setAgentCardUrlError(t("mcp:agents.sheet.invalidUrl"));
+			scrollTo(connectionRef);
 			return;
 		}
 		setInspectionError(null);
 		try {
-			const result = await inspectCard({ agent_card_url: agentCardUrl.trim(), discovery_auth: normalizeAuth(cardAuth) }).unwrap();
+			const result = await inspectCard({
+				agent_card_url: agentCardUrl.trim(),
+				discovery_auth: normalizeAuth(cardAuth),
+			}).unwrap();
 			setInspection(result);
 			applyRequirement(result, 0);
 		} catch (error) {
@@ -429,7 +271,7 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 		.map((scheme) => (scheme ? headerName(scheme) : null))
 		.filter((name): name is string => !!name);
 	const unsupportedRequirement = !!inspection && !selectedAuth;
-	const unsupportedReason = inspection && unsupportedRequirement ? requirementGap(inspection, selectedRequirement, t) : null;
+	const unsupportedReason = inspection && unsupportedRequirement ? requirementGap(inspection, selectedRequirement) : null;
 	const expectedSchemes = selectedAuth?.security_schemes ?? [];
 	const authMismatch =
 		!!inspection &&
@@ -437,23 +279,32 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 		(expectedSchemes.length !== runtimeAuth.security_schemes?.length ||
 			expectedSchemes.some((name) => !runtimeAuth.security_schemes?.includes(name)));
 	const isBlocked = !manualMode && ((!isEditing && !inspection) || unsupportedRequirement);
+	const authLocked = isEditing && !inspection && !manualMode;
+	const extensionCount = extensionUris.filter((uri) => uri.trim()).length;
+	const advancedSummary =
+		[tenant.trim() && `Tenant ${tenant.trim()}`, extensionCount && `${extensionCount} extension${extensionCount === 1 ? "" : "s"}`]
+			.filter(Boolean)
+			.join(" · ") || "Not set";
 
 	const handleSave = async () => {
-		const validation = validateAgentName(name, t);
+		const validation = validateAgentName(name);
 		if (validation) {
 			setNameError(validation);
+			scrollTo(connectionRef);
 			return;
 		}
-		if (!agentCardUrl.trim() || !/^https?:\/\//i.test(agentCardUrl.trim())) {
-			setAgentCardUrlError(t("mcp:agents.sheet.invalidUrl"));
+		if (!isHttpUrl(agentCardUrl)) {
+			setAgentCardUrlError("Enter a valid http(s) URL.");
+			scrollTo(connectionRef);
 			return;
 		}
 		if (isBlocked) {
-			setInspectionError(
-				unsupportedRequirement
-					? (unsupportedReason ?? t("mcp:agents.sheet.requirementNotExecutable"))
-					: t("mcp:agents.sheet.fetchOrManual"),
-			);
+			if (unsupportedRequirement) {
+				scrollTo(authRef);
+			} else {
+				setInspectionError(t("mcp:agents.sheet.fetchFirstOrManual"));
+				scrollTo(connectionRef);
+			}
 			return;
 		}
 		const payload = {
@@ -468,7 +319,11 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 			extension_uris: extensionUris.map((uri) => uri.trim()).filter(Boolean),
 		};
 		try {
-			if (agent) await updateAgent({ name: agent.name, data: { ...payload, enabled: agent.enabled } }).unwrap();
+			if (agent)
+				await updateAgent({
+					name: agent.name,
+					data: { ...payload, enabled: agent.enabled },
+				}).unwrap();
 			else await createAgent({ name, enabled: true, ...payload }).unwrap();
 			toast({
 				title: t("common:state.success"),
@@ -476,36 +331,55 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 			});
 			onSaved();
 		} catch (error) {
-			toast({ title: t("mcp:agents.sheet.saveFailed"), description: getErrorMessage(error), variant: "destructive" });
+			toast({
+				title: t("mcp:agents.sheet.saveFailed"),
+				description: getErrorMessage(error),
+				variant: "destructive",
+			});
 		}
 	};
+
+	const fetchButton = (label: string) => (
+		<Button
+			type="button"
+			variant="outline"
+			className="h-9 shrink-0"
+			onClick={() => void handleInspect()}
+			isLoading={isInspecting}
+			disabled={!agentCardUrl.trim()}
+			data-testid="agent-card-fetch-button"
+		>
+			<RefreshCw className="h-4 w-4" />
+			{label}
+		</Button>
+	);
 
 	return (
 		<Sheet open onOpenChange={(open) => !open && onClose()}>
 			<SheetContent
-				className="flex w-full flex-col gap-4 overflow-x-hidden p-0 pt-4 sm:max-w-[40rem]"
+				className="flex w-full flex-col gap-0 overflow-x-hidden p-0 pt-4 sm:max-w-[40rem]"
 				onInteractOutside={(event) => event.preventDefault()}
 				onEscapeKeyDown={onClose}
 			>
-				<SheetHeader className="w-full flex-col items-start gap-1 p-0 py-4" headerClassName="mb-0 sticky -top-4 bg-card z-10 px-4 md:px-8">
-					<SheetTitle className="font-medium">{name.trim() || t("mcp:agents.empty.newAgent")}</SheetTitle>
+				<SheetHeader className="w-full flex-col items-start gap-1 p-0 py-4" headerClassName="mb-0 bg-card sticky -top-4 z-10 px-4 md:px-8">
+					<SheetTitle className="font-medium">{agent ? name.trim() : t("mcp:agents.empty.newAgent")}</SheetTitle>
 					<SheetDescription className="line-clamp-2">{inspection?.description || t("mcp:agents.sheet.desc")}</SheetDescription>
 				</SheetHeader>
-				<div className="grow space-y-6 px-4 pb-6 md:px-8">
-					<div className="space-y-4">
-						<SectionHeader title={t("mcp:agents.sheet.basicTitle")} description={t("mcp:agents.sheet.basicDesc")} />
-						<div className="space-y-2">
-							<Label>{t("common:fields.name")}</Label>
+				<div className="space-y-8 px-4 pb-8 md:px-8">
+					<section ref={connectionRef} className="scroll-mt-4 space-y-4">
+						<div className="flex flex-col gap-2">
+							<Label>{t("mcp:agents.sheet.name")}</Label>
 							<Input
 								value={name}
 								placeholder="accounting-agent"
 								disabled={isEditing}
+								data-testid="agent-name-input"
 								onChange={(event) => {
 									setName(event.target.value);
-									setNameError(event.target.value ? validateAgentName(event.target.value, t) : null);
+									setNameError(event.target.value ? validateAgentName(event.target.value) : null);
 								}}
 							/>
-							{nameError && <p className="text-destructive text-sm">{nameError}</p>}
+							{nameError && <p className="text-destructive text-xs">{nameError}</p>}
 							{grpc && name.length > 63 && (
 								<Alert variant="warning" data-testid="agent-grpc-name-length-warning">
 									<AlertTriangle className="h-4 w-4" />
@@ -514,53 +388,40 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 								</Alert>
 							)}
 						</div>
-						<div className="space-y-2">
+						<div className="flex flex-col gap-2">
 							<Label>{t("mcp:agents.col.agentCardUrl")}</Label>
 							<div className="flex gap-2">
 								<Input
 									value={agentCardUrl}
 									placeholder="https://agent.example.com/.well-known/agent-card.json"
+									data-testid="agent-card-url-input"
 									onChange={(event) => {
 										setAgentCardUrl(event.target.value);
 										setAgentCardUrlError(null);
 										setInspection(null);
 									}}
 								/>
-								<Button
-									type="button"
-									variant="outline"
-									className="h-9 shrink-0 self-end"
-									onClick={() => void handleInspect()}
-									isLoading={isInspecting}
-									disabled={!agentCardUrl.trim()}
-								>
-									<RefreshCw className="h-4 w-4" />
-									{t("mcp:agents.sheet.fetchCard")}
-								</Button>
+								{fetchButton(inspection ? t("mcp:agents.sheet.refetch") : t("mcp:agents.sheet.fetch"))}
 							</div>
-							{agentCardUrlError && <p className="text-destructive text-sm">{agentCardUrlError}</p>}
+							{agentCardUrlError && <p className="text-destructive text-xs">{agentCardUrlError}</p>}
 						</div>
-					</div>
-					<div className="space-y-4">
-						<SectionHeader title={t("mcp:agents.sheet.cardAuthTitle")} description={t("mcp:agents.sheet.cardAuthDesc")} />
-						<AuthFields
-							value={cardAuth}
-							onChange={(next) => {
-								setCardAuth(next);
-								setInspection(null);
-							}}
-						/>
-					</div>
-					<Collapsible open={cardTLSOpen} onOpenChange={setCardTLSOpen}>
-						<CollapsibleTrigger className="flex w-full items-center justify-between gap-3 py-1 text-left">
-							<div>
-								<p className="text-sm font-medium">{t("mcp:agents.sheet.cardTlsTitle")}</p>
-								<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.cardTlsDesc")}</p>
-							</div>
-							{cardTLSOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-						</CollapsibleTrigger>
-						<CollapsibleContent className="pt-4">
-							<div className="space-y-4 rounded-md border p-4">
+						<OptionGroup
+							title={t("mcp:agents.sheet.cardFetchOptions")}
+							tooltip={t("mcp:agents.sheet.cardFetchOptionsTooltip")}
+							summary={authSummary(cardAuth)}
+							open={cardOptionsOpen}
+							onOpenChange={setCardOptionsOpen}
+							testId="agent-card-options-toggle"
+						>
+							<AuthFields
+								value={cardAuth}
+								onChange={(next) => {
+									setCardAuth(next);
+									setInspection(null);
+								}}
+							/>
+							<div className="flex flex-col gap-2 border-t pt-4">
+								<Label>{t("mcp:agents.sheet.tlsLabel")}</Label>
 								<TLSFields
 									value={cardAuth.tls ?? {}}
 									onChange={(tls) => {
@@ -569,225 +430,74 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 									}}
 								/>
 							</div>
-						</CollapsibleContent>
-					</Collapsible>
-					{inspectionError && (
-						<div className="border-destructive/40 bg-destructive/5 text-destructive rounded-md border p-3 text-sm">{inspectionError}</div>
-					)}
-					{!inspection && !inspectionError && (
-						<div className="text-muted-foreground rounded-md border border-dashed p-5 text-center text-sm">
-							{isInspecting ? t("mcp:agents.sheet.fetchingCard") : t("mcp:agents.sheet.fetchCardHint")}
-						</div>
-					)}
-					{inspection && (
-						<div className="space-y-4 rounded-md border p-4">
-							<div className="flex items-start justify-between gap-3">
-								<div className="min-w-0 space-y-1">
-									<div className="flex flex-wrap items-center gap-2">
-										<p className="font-medium">{inspection.name || t("mcp:agents.sheet.cardFetched")}</p>
-										{inspection.version && <Badge variant="outline">v{inspection.version}</Badge>}
-									</div>
-									{inspection.provider && (
-										<p className="text-muted-foreground text-sm">
-											{t("mcp:agents.sheet.providedBy")}{" "}
-											{inspection.provider_url ? (
-												<a href={inspection.provider_url} target="_blank" rel="noreferrer" className="text-foreground hover:underline">
-													{inspection.provider}
-												</a>
-											) : (
-												inspection.provider
-											)}
-										</p>
-									)}
-									{inspection.documentation_url && (
-										<a
-											href={inspection.documentation_url}
-											target="_blank"
-											rel="noreferrer"
-											className="text-muted-foreground block text-xs hover:underline"
-										>
-											{t("mcp:agents.sheet.documentation")}
-										</a>
-									)}
+						</OptionGroup>
+						{inspectionError && (
+							<Alert variant="destructive" data-testid="agent-card-fetch-error">
+								<AlertTriangle className="h-4 w-4" />
+								<AlertTitle>{t("mcp:agents.sheet.cardFetchError")}</AlertTitle>
+								<AlertDescription>{inspectionError}</AlertDescription>
+							</Alert>
+						)}
+						{inspection ? (
+							<AgentCardPreview card={inspection.card ? { ...mapAgentCard(inspection.card), warnings: inspection.warnings } : inspection} />
+						) : (
+							!inspectionError && (
+								<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-sm border border-dashed p-6 text-center text-sm">
+									<FileSearch className="size-5" />
+									{isInspecting
+										? t("mcp:agents.sheet.fetchingCard")
+										: isEditing
+											? t("mcp:agents.sheet.refetchToPreview")
+											: t("mcp:agents.sheet.fetchCardHint")}
 								</div>
-								<Badge variant="success">{t("mcp:agents.sheet.ready")}</Badge>
-							</div>
-							<div className="grid grid-cols-2 gap-3 text-sm">
-								<div>
-									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.interfaces")}</p>
-									<p>{inspection.interfaces?.length ?? 0}</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.skills")}</p>
-									<p>{inspection.skills?.length ?? 0}</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.signatures")}</p>
-									<p>{inspection.signature_count}</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.inputModes")}</p>
-									<p className="break-all">{inspection.default_input_modes?.join(", ") || t("mcp:agents.sheet.notDeclared")}</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.outputModes")}</p>
-									<p className="break-all">{inspection.default_output_modes?.join(", ") || t("mcp:agents.sheet.notDeclared")}</p>
-								</div>
-							</div>
-							{Object.values(inspection.capabilities).some(Boolean) && (
-								<div className="space-y-2">
-									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("mcp:agents.sheet.capabilities")}</p>
-									<div className="flex flex-wrap gap-2">
-										{Object.entries(inspection.capabilities)
-											.sort(([left], [right]) => left.localeCompare(right))
-											.map(([name, supported]) => (
-												<Badge
-													key={name}
-													variant={supported ? "default" : "outline"}
-													className={supported ? undefined : "text-muted-foreground line-through opacity-60"}
-													title={supported ? t("mcp:agents.sheet.supported") : t("mcp:agents.sheet.notSupported")}
-												>
-													{capabilityLabel(name)}
-												</Badge>
-											))}
-									</div>
-									{inspection.capabilities.extendedAgentCard && (
-										<p className="text-muted-foreground text-xs leading-relaxed">{t("mcp:agents.sheet.extendedCard")}</p>
-									)}
-								</div>
-							)}
-							{inspection.interfaces && inspection.interfaces.length > 0 && (
-								<div className="space-y-2">
-									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("mcp:agents.sheet.interfaces")}</p>
-									{inspection.interfaces.map((item) => (
-										<div key={`${item.protocol_binding}-${item.url}`} className="flex items-start justify-between gap-3 text-sm">
-											<span className="font-medium">{item.protocol_binding}</span>
-											<span className="text-muted-foreground text-right break-all">
-												{item.protocol_version} · {item.url}
-												{item.tenant && <span className="block">{t("mcp:agents.sheet.tenantLabel", { tenant: item.tenant })}</span>}
-											</span>
-										</div>
-									))}
-								</div>
-							)}
-							<div className="space-y-2">
-								<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("mcp:agents.sheet.advertisedAuth")}</p>
-								<div className="flex flex-wrap gap-2">
-									{inspection.security_requirements.length === 0 ? (
-										<Badge variant="outline">{t("common:state.none")}</Badge>
-									) : (
-										inspection.security_requirements.map((requirement, index) => (
-											<Badge key={`${requirement.join("-")}-${index}`} variant="outline">
-												{requirement.length ? requirement.join(" + ") : t("common:state.none")}
-											</Badge>
-										))
-									)}
-								</div>
-							</div>
-							{inspection.extensions && inspection.extensions.length > 0 && (
-								<div className="space-y-2">
-									<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("mcp:agents.sheet.extensions")}</p>
-									<div className="flex flex-wrap gap-2">
-										{inspection.extensions.map((extension) => (
-											<TooltipProvider key={extension.uri}>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Badge variant={extension.required ? "warning" : "outline"}>{extension.uri}</Badge>
-													</TooltipTrigger>
-													{(extension.description || extension.params) && (
-														<TooltipContent className="max-w-80">
-															{extension.description && <p>{extension.description}</p>}
-															{extension.params && (
-																<pre className="mt-1 text-xs whitespace-pre-wrap">{JSON.stringify(extension.params, null, 2)}</pre>
-															)}
-														</TooltipContent>
-													)}
-												</Tooltip>
-											</TooltipProvider>
-										))}
-									</div>
-								</div>
-							)}
-							{inspection.skills && inspection.skills.length > 0 && (
-								<Collapsible open={skillsOpen} onOpenChange={setSkillsOpen}>
-									<CollapsibleTrigger className="flex w-full items-center justify-between text-sm font-medium">
-										<span>{t("mcp:agents.sheet.skillsCount", { count: inspection.skills.length })}</span>
-										{skillsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-									</CollapsibleTrigger>
-									<CollapsibleContent className="space-y-3 pt-3">
-										{inspection.skills.map((skill) => (
-											<div key={skill.id} className="space-y-1 border-t pt-3 first:border-0 first:pt-0">
-												<p className="text-sm font-medium">{skill.name}</p>
-												{skill.description && <p className="text-muted-foreground text-xs">{skill.description}</p>}
-												{skill.tags && skill.tags.length > 0 && (
-													<p className="text-muted-foreground line-clamp-2 text-xs">{skill.tags.join(", ")}</p>
-												)}
-												{(skill.input_modes?.length || skill.output_modes?.length) && (
-													<p className="text-muted-foreground text-xs">
-														{skill.input_modes?.length ? t("mcp:agents.sheet.inputLabel", { modes: skill.input_modes.join(", ") }) : ""}
-														{skill.input_modes?.length && skill.output_modes?.length ? " · " : ""}
-														{skill.output_modes?.length ? t("mcp:agents.sheet.outputLabel", { modes: skill.output_modes.join(", ") }) : ""}
-													</p>
-												)}
-												{skill.security_requirements && skill.security_requirements.length > 0 && (
-													<p className="text-muted-foreground text-xs">
-														{t("mcp:agents.sheet.authenticationLabel")}{" "}
-														{skill.security_requirements
-															.map((requirement) => requirement.join(" + ") || t("common:state.none"))
-															.join(` ${t("mcp:agents.sheet.or")} `)}
-													</p>
-												)}
-												{skill.examples && skill.examples.length > 0 && (
-													<div className="text-muted-foreground text-xs">
-														<p className="font-medium">{t("mcp:agents.sheet.examples")}</p>
-														<ul className="list-disc space-y-0.5 pl-4">
-															{skill.examples.map((example) => (
-																<li key={example}>{example}</li>
-															))}
-														</ul>
-													</div>
-												)}
-											</div>
-										))}
-									</CollapsibleContent>
-								</Collapsible>
-							)}
-							{inspection.warnings?.map((warning) => (
-								<p key={warning} className="text-sm text-amber-700">
-									{warning}
-								</p>
-							))}
-						</div>
-					)}
+							)
+						)}
+					</section>
+
 					<DottedSeparator />
-					<div className="space-y-4">
-						<SectionHeader
-							title={
-								t("mcp:agents.sheet.runtimeAuthTitle") +
-								(isEditing && !inspection && !manualMode ? t("mcp:agents.sheet.runtimeAuthSuffix") : "")
-							}
-							description={t("mcp:agents.sheet.runtimeAuthDesc")}
-						/>
-						{inspection && inspection.security_requirements.length > 1 && (
-							<div className="space-y-1">
-								<Label>{t("mcp:agents.sheet.securityRequirement")}</Label>
+
+					<section ref={authRef} className="scroll-mt-4 space-y-4">
+						<SectionHeader title={t("mcp:agents.sheet.runtimeAuthTitle")} description={t("mcp:agents.sheet.runtimeAuthDescNew")} />
+						{unsupportedReason && !manualMode && (
+							<Alert variant="destructive">
+								<AlertTriangle className="h-4 w-4" />
+								<AlertTitle>{t("mcp:agents.sheet.requirementCannotBeUsed")}</AlertTitle>
+								<AlertDescription>{`${unsupportedReason} ${t("mcp:agents.sheet.pickAnotherOrManual")}`}</AlertDescription>
+							</Alert>
+						)}
+						{authMismatch && !manualMode && (
+							<Alert variant="warning">
+								<AlertTriangle className="h-4 w-4" />
+								<AlertDescription>{t("mcp:agents.sheet.authMismatch")}</AlertDescription>
+							</Alert>
+						)}
+						{authLocked && (
+							<div className="flex items-center justify-between gap-3 rounded-sm border border-dashed p-3">
+								<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.refetchToEdit")}</p>
+								{fetchButton(t("mcp:agents.sheet.refetchCard"))}
+							</div>
+						)}
+						{!inspection && !manualMode && !isEditing && (
+							<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">
+								{t("mcp:agents.sheet.fetchAbove")}
+							</div>
+						)}
+						{inspection && inspection.security_requirements.length > 1 && !manualMode && (
+							<div className="flex flex-col gap-2">
+								<Label>{t("mcp:agents.sheet.cardRequirement")}</Label>
 								<Select value={String(selectedRequirement)} onValueChange={(value) => applyRequirement(inspection, Number(value))}>
-									<SelectTrigger>
+									<SelectTrigger className="w-full">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
 										{inspection.security_requirements.map((requirement, index) => (
 											<SelectItem key={index} value={String(index)}>
-												{requirement.length ? requirement.join(" + ") : t("common:state.none")}
+												{requirement.length ? requirement.join(" + ") : "None"}
 											</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
-							</div>
-						)}
-						{!inspection && !manualMode && !isEditing && (
-							<div className="text-muted-foreground rounded-md border border-dashed p-5 text-center text-sm">
-								{t("mcp:agents.sheet.fetchToConfigure")}
+								<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.cardAlternatives")}</p>
 							</div>
 						)}
 						{(selectedAuth || manualMode || isEditing) && (
@@ -795,98 +505,115 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 								value={runtimeAuth}
 								onChange={setRuntimeAuth}
 								readOnlyAuth={!manualMode}
-								disabled={isEditing && !inspection && !manualMode}
+								disabled={authLocked}
 								requiredHeaderKeys={manualMode ? [] : requiredHeaderKeys}
 							/>
 						)}
-						<div className="rounded-md border">
-							<div className="flex items-center justify-between gap-4 p-3">
-								<div className="space-y-0.5">
-									<Label>{t("mcp:agents.sheet.forwardAuth")}</Label>
-									<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.forwardAuthHint")}</p>
-								</div>
-								<Switch checked={forwardAcceptedCredential} onCheckedChange={setForwardAcceptedCredential} />
-							</div>
+						<OptionGroup
+							title={t("mcp:agents.sheet.tlsCertificates")}
+							summary={
+								runtimeAuth.tls?.insecure_skip_verify
+									? t("mcp:agents.sheet.summaryVerificationOff")
+									: hasTLS(runtimeAuth.tls)
+										? t("mcp:agents.sheet.summaryCustom")
+										: t("mcp:agents.sheet.summaryDefault")
+							}
+							open={runtimeTLSOpen}
+							onOpenChange={setRuntimeTLSOpen}
+							testId="agent-runtime-tls-toggle"
+						>
+							<TLSFields value={runtimeAuth.tls ?? {}} onChange={(tls) => setRuntimeAuth({ ...runtimeAuth, tls })} />
+						</OptionGroup>
+						<SettingRow
+							label={t("mcp:agents.sheet.forwardAuth")}
+							description={t("mcp:agents.sheet.forwardAuthHint")}
+							checked={forwardAcceptedCredential}
+							onCheckedChange={setForwardAcceptedCredential}
+							testId="agent-forward-credential-switch"
+						>
 							{forwardAcceptedCredential && (
-								<div className="bg-muted/30 space-y-2 border-t p-3">
+								<>
 									<Label>{t("mcp:agents.sheet.conflictLabel")}</Label>
 									<Select
 										value={forwardAcceptedCredentialOverridesAuth ? "incoming" : "configured"}
 										onValueChange={(value) => setForwardAcceptedCredentialOverridesAuth(value === "incoming")}
 									>
 										<SelectTrigger className="w-full">
-											<SelectValue />
+											<SelectValue>
+												{forwardAcceptedCredentialOverridesAuth
+													? t("mcp:agents.sheet.conflictIncoming")
+													: t("mcp:agents.sheet.conflictConfigured")}
+											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="configured">{t("mcp:agents.sheet.conflictConfigured")}</SelectItem>
-											<SelectItem value="incoming">{t("mcp:agents.sheet.conflictIncoming")}</SelectItem>
+											<SelectItem value="configured" className="py-2" textValue={t("mcp:agents.sheet.conflictConfigured")}>
+												<div className="space-y-1 whitespace-normal">
+													<p>{t("mcp:agents.sheet.conflictConfigured")}</p>
+													<p className="text-muted-foreground text-xs">
+														{t("mcp:agents.sheet.conflictConfiguredHint")}
+														on other headers.
+													</p>
+												</div>
+											</SelectItem>
+											<SelectItem value="incoming" className="py-2" textValue={t("mcp:agents.sheet.conflictIncoming")}>
+												<div className="space-y-1 whitespace-normal">
+													<p>{t("mcp:agents.sheet.conflictIncoming")}</p>
+													<p className="text-muted-foreground text-xs">
+														{t("mcp:agents.sheet.conflictIncomingHint")}
+														agents that call Bifrost for LLM or MCP traffic, this keeps usage attributed to the original caller.
+													</p>
+												</div>
+											</SelectItem>
 										</SelectContent>
 									</Select>
-									<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.conflictHint")}</p>
-								</div>
+								</>
 							)}
-						</div>
-						{unsupportedReason && !manualMode && <p className="text-destructive text-sm">{unsupportedReason}</p>}
-						{authMismatch && !manualMode && <p className="text-sm text-amber-700">{t("mcp:agents.sheet.authMismatch")}</p>}
-					</div>
-					<Collapsible open={runtimeTLSOpen} onOpenChange={setRuntimeTLSOpen}>
-						<CollapsibleTrigger className="flex w-full items-center justify-between gap-3 py-1 text-left">
-							<div>
-								<p className="text-sm font-medium">{t("mcp:agents.sheet.runtimeTlsTitle")}</p>
-								<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.runtimeTlsDesc")}</p>
-							</div>
-							{runtimeTLSOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-						</CollapsibleTrigger>
-						<CollapsibleContent className="pt-4">
-							<div className="space-y-4 rounded-md border p-4">
-								<TLSFields value={runtimeAuth.tls ?? {}} onChange={(tls) => setRuntimeAuth({ ...runtimeAuth, tls })} />
-							</div>
-						</CollapsibleContent>
-					</Collapsible>
+						</SettingRow>
+						<SettingRow
+							label={t("mcp:agents.sheet.manualAuth")}
+							description={t("mcp:agents.sheet.manualAuthHint")}
+							checked={manualMode}
+							onCheckedChange={(checked) => {
+								setManualMode(checked);
+								setRuntimeAuth((current) => ({ ...current, advanced: checked }));
+							}}
+							testId="agent-manual-auth-switch"
+						/>
+					</section>
+
 					<DottedSeparator />
-					<div className="space-y-4">
-						<SectionHeader title={t("mcp:agents.sheet.behaviorTitle")} description={t("mcp:agents.sheet.behaviorDesc")} />
-						<div className="divide-y rounded-md border">
-							<div className="flex items-center justify-between p-3">
-								<div className="flex items-center gap-2">
-									<Label>{t("mcp:agents.filters.allowedByDefault")}</Label>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Info className="text-muted-foreground h-4 w-4" />
-											</TooltipTrigger>
-											<TooltipContent>{t("mcp:agents.sheet.allowByDefaultHint")}</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-								</div>
-								<Switch checked={allowByDefault} onCheckedChange={setAllowByDefault} />
-							</div>
-						</div>
-					</div>
-					<div className="space-y-4">
+
+					<section className="space-y-4">
 						<SectionHeader
-							title={t("mcp:agents.sheet.vkGrantsTitle")}
-							description={t("mcp:agents.sheet.vkGrantsDesc")}
+							title={t("mcp:agents.sheet.accessTitle")}
+							description={t("mcp:agents.sheet.accessDesc")}
 							action={
 								<VirtualKeySelector
 									mode="add"
 									excludeIds={virtualKeyIds}
 									onSelect={(option) => setVirtualKeyIds((current) => [...current, option.value])}
 									trigger={
-										<Button type="button" variant="outline" size="sm">
+										<Button type="button" variant="outline" size="sm" disabled={allowByDefault} data-testid="agent-add-virtual-key-button">
 											<Plus className="h-4 w-4" />
-											{t("mcp:addVirtualKey")}
+											{t("mcp:agents.sheet.addKey")}
 										</Button>
 									}
 								/>
 							}
 						/>
-						{virtualKeyIds.length === 0 ? (
-							<div className="text-muted-foreground rounded-md border border-dashed p-5 text-center text-sm">
+						<SettingRow
+							label={t("mcp:agents.sheet.allowAnyVirtualKey")}
+							description={t("mcp:agents.sheet.allowByDefaultHint")}
+							checked={allowByDefault}
+							onCheckedChange={setAllowByDefault}
+							testId="agent-allow-by-default-switch"
+						/>
+						{allowByDefault || virtualKeyIds.length === 0 ? (
+							<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">
 								{allowByDefault ? t("mcp:agents.sheet.vkEveryValid") : t("mcp:agents.sheet.vkNoneGranted")}
 							</div>
 						) : (
-							<div className="divide-y rounded-md border">
+							<div className="divide-y rounded-sm border">
 								{virtualKeyIds.map((id) => (
 									<VirtualKeyListItem
 										key={id}
@@ -899,85 +626,80 @@ export default function AgentSheet({ agent, onClose, onSaved }: AgentSheetProps)
 								))}
 							</div>
 						)}
-					</div>
-					<DottedSeparator />
-					<Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-						<CollapsibleTrigger className="flex w-full items-center justify-between gap-3 py-1 text-left">
-							<p className="text-sm font-medium">{t("mcp:agents.sheet.advanced")}</p>
-							{advancedOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-						</CollapsibleTrigger>
-						<CollapsibleContent className="space-y-5 pt-4">
-							<div className="flex items-center justify-between rounded-md border p-3">
-								<div>
-									<Label>{t("mcp:agents.sheet.manualAuth")}</Label>
-									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.manualAuthHint")}</p>
+						{agent && <AgentAccessProfiles agentName={agent.name} active />}
+					</section>
+
+					<OptionGroup
+						title={t("mcp:agents.sheet.advanced")}
+						summary={advancedSummary}
+						open={advancedOpen}
+						onOpenChange={setAdvancedOpen}
+						testId="agent-advanced-toggle"
+					>
+						<div className="flex flex-col gap-2">
+							<Label>{t("mcp:agents.sheet.tenant")}</Label>
+							<Input value={tenant} placeholder="tenant-a" onChange={(event) => setTenant(event.target.value)} />
+							<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.tenantHint")}</p>
+						</div>
+						<div className="space-y-3 border-t pt-4">
+							<div className="flex items-center justify-between gap-4">
+								<div className="space-y-0.5">
+									<Label>{t("mcp:agents.sheet.extensionUris")}</Label>
+									<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.extensionUrisHint")}</p>
 								</div>
-								<Switch
-									checked={manualMode}
-									onCheckedChange={(checked) => {
-										setManualMode(checked);
-										setRuntimeAuth((current) => ({ ...current, advanced: checked }));
-									}}
-								/>
+								<Button type="button" variant="outline" size="sm" onClick={() => setExtensionUris((current) => [...current, ""])}>
+									<Plus className="h-4 w-4" />
+									{t("mcp:agents.sheet.addUri")}
+								</Button>
 							</div>
-							<div className="space-y-1">
-								<Label>{t("mcp:agents.sheet.tenant")}</Label>
-								<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.tenantHint")}</p>
-								<Input value={tenant} placeholder="tenant-a" onChange={(event) => setTenant(event.target.value)} />
-							</div>
-							<div className="space-y-3">
-								<div className="flex items-start justify-between gap-3">
-									<div className="space-y-1">
-										<Label>{t("mcp:agents.sheet.extensionUris")}</Label>
-										<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.extensionUrisHint")}</p>
-									</div>
-									<Button type="button" variant="outline" size="sm" onClick={() => setExtensionUris((current) => [...current, ""])}>
-										<Plus className="h-4 w-4" />
-										{t("mcp:agents.sheet.addUri")}
+							{extensionUris.map((uri, index) => (
+								<div key={index} className="flex gap-2">
+									<Input
+										value={uri}
+										placeholder="https://example.com/a2a/extensions/audit"
+										onChange={(event) =>
+											setExtensionUris((current) => current.map((value, itemIndex) => (itemIndex === index ? event.target.value : value)))
+										}
+									/>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										aria-label={t("mcp:agents.sheet.removeUriAria")}
+										onClick={() => setExtensionUris((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+									>
+										<Trash2 className="h-4 w-4" />
 									</Button>
 								</div>
-								{extensionUris.map((uri, index) => (
-									<div key={index} className="flex gap-2">
-										<Input
-											value={uri}
-											placeholder="https://example.com/a2a/extensions/audit"
-											onChange={(event) =>
-												setExtensionUris((current) => current.map((value, itemIndex) => (itemIndex === index ? event.target.value : value)))
-											}
-										/>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											onClick={() => setExtensionUris((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-										>
-											<Trash2 className="h-4 w-4" />
-										</Button>
-									</div>
-								))}
-							</div>
-						</CollapsibleContent>
-					</Collapsible>
+							))}
+						</div>
+					</OptionGroup>
+
 					{agent && (
 						<>
 							<DottedSeparator />
 							<AgentEndpoints agentName={agent.name} baseUrl={baseUrl} grpc={grpc} />
-							<AgentAccessProfiles agentName={agent.name} active />
 						</>
 					)}
 				</div>
-				<div className="bg-card sticky bottom-0 flex justify-end gap-2 border-t px-4 py-4 md:px-8">
-					<Button type="button" variant="outline" onClick={onClose}>
-						{t("common:actions.cancel")}
-					</Button>
-					<Button
-						type="button"
-						onClick={() => void handleSave()}
-						disabled={isCreating || isUpdating || !canSave || !!nameError || !name || !agentCardUrl}
-						isLoading={isCreating || isUpdating}
-					>
-						{agent ? t("mcp:agents.sheet.saveChanges") : t("common:actions.create")}
-					</Button>
+				<div className="bg-card sticky bottom-0 flex items-center justify-between gap-3 border-t px-4 py-4 md:px-8">
+					<p className="text-muted-foreground text-xs">
+						{isBlocked && !unsupportedRequirement ? t("mcp:agents.sheet.fetchToContinue") : ""}
+					</p>
+					<div className="flex gap-2">
+						<Button type="button" variant="outline" onClick={onClose}>
+							{t("common:actions.cancel")}
+						</Button>
+						<Button
+							type="button"
+							onClick={() => void handleSave()}
+							disabled={isCreating || isUpdating || !canSave || !!nameError || !name || !agentCardUrl}
+							isLoading={isCreating || isUpdating}
+							data-testid="agent-save-button"
+						>
+							{agent ? t("mcp:agents.sheet.saveChanges") : t("mcp:agents.sheet.create")}
+						</Button>
+					</div>
 				</div>
 			</SheetContent>
 		</Sheet>

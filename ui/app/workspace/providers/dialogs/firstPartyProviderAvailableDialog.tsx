@@ -24,6 +24,9 @@ interface Props {
 export default function FirstPartyProviderAvailableDialog({ show, customProviderName, knownProvider, onDismiss, onProceed }: Props) {
 	const { t } = useTranslation(["common", "providers"]);
 	const label = ProviderLabels[knownProvider];
+	// The exact name now belongs to the first-party provider, which the backend enforces: a custom
+	// provider holding it can no longer be updated, and config.json skips it.
+	const nameReserved = customProviderName.trim().toLowerCase() === knownProvider;
 
 	return (
 		<AlertDialog open={show}>
@@ -33,12 +36,20 @@ export default function FirstPartyProviderAvailableDialog({ show, customProvider
 						<RenderProviderIcon provider={knownProvider as ProviderIconType} size="sm" className="h-5 w-5 shrink-0" />
 						{t("providers:firstParty.title", { label })}
 					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t("providers:firstParty.description1")} <span className="text-foreground font-medium">{customProviderName}</span>
-						{t("providers:firstParty.description2", { label })}{" "}
-						<span className="text-foreground font-medium">{t("providers:addProvider.triggerAria")}</span>
-						{t("providers:firstParty.description3", { label })}
-					</AlertDialogDescription>
+					{nameReserved ? (
+						<AlertDialogDescription data-testid="first-party-provider-name-reserved">
+							{t("providers:firstParty.nameReserved1", { label })} <span className="text-foreground font-medium">{customProviderName}</span>{" "}
+							{t("providers:firstParty.nameReserved2")} <span className="text-foreground font-medium">{knownProvider}-custom</span>
+							{t("providers:firstParty.nameReserved3")}
+						</AlertDialogDescription>
+					) : (
+						<AlertDialogDescription>
+							{t("providers:firstParty.description1")} <span className="text-foreground font-medium">{customProviderName}</span>
+							{t("providers:firstParty.description2", { label })}{" "}
+							<span className="text-foreground font-medium">{t("providers:addProvider.triggerAria")}</span>
+							{t("providers:firstParty.description3", { label })}
+						</AlertDialogDescription>
+					)}
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel onClick={onDismiss}>{t("providers:firstParty.keepCustom")}</AlertDialogCancel>

@@ -116,9 +116,9 @@ describe("summarizeResponsesToolCall", () => {
 	});
 
 	it("names the operation of an apply_patch_call", () => {
-		expect(summarizeResponsesToolCall(item({ type: "apply_patch_call", operation: { type: "create_file", path: "hello.txt", diff: "+hi\n" } }))).toBe(
-			"create_file · hello.txt",
-		);
+		expect(
+			summarizeResponsesToolCall(item({ type: "apply_patch_call", operation: { type: "create_file", path: "hello.txt", diff: "+hi\n" } })),
+		).toBe("create_file · hello.txt");
 	});
 
 	it("uses the action type alone when it carries no detail", () => {

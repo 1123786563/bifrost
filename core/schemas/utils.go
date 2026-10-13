@@ -1710,10 +1710,10 @@ func DeepCopyResponsesMessage(original ResponsesMessage) ResponsesMessage {
 			copy.ResponsesToolMessage.ResponsesCodeInterpreterToolCall = &copyToolCall
 		}
 
-		// Deep copy ResponsesMCPToolCall.
-		if original.ResponsesToolMessage.ResponsesMCPToolCall != nil {
-			copyToolCall := *original.ResponsesToolMessage.ResponsesMCPToolCall
-			copy.ResponsesToolMessage.ResponsesMCPToolCall = &copyToolCall
+		// Deep copy ServerLabel (shared by the MCP items).
+		if original.ResponsesToolMessage.ServerLabel != nil {
+			serverLabel := *original.ResponsesToolMessage.ServerLabel
+			copy.ResponsesToolMessage.ServerLabel = &serverLabel
 		}
 
 		// Deep copy ResponsesImageGenerationCall.
@@ -2410,6 +2410,37 @@ func IsElevenlabsSoundModel(model string) bool {
 // endpoint (e.g. "typesafe/jev-1.13", "~typesafe/jev-latest") rather than chat.
 func IsTypesafeModel(model string) bool {
 	return strings.HasPrefix(strings.TrimPrefix(strings.ToLower(model), "~"), "typesafe/")
+}
+
+// IsClefModel checks if the model is a Clef decision model on Cloudflare Workers AI,
+// by its bare name ("clef-flash") or Cloudflare's full ID ("@cf/cloudflare/clef-flash").
+// Any "clef" name matches, so new Clef variants work without a code change.
+func IsClefModel(model string) bool {
+	return strings.HasPrefix(strings.TrimPrefix(model, "@cf/cloudflare/"), "clef")
+}
+
+// IsPerplexityDeciderModel checks if the model is one of Perplexity's decider models
+// ("pplx-decider-v1.1-27b"), served on its decisions endpoint rather than chat. Dated
+// snapshots share the prefix.
+func IsPerplexityDeciderModel(model string) bool {
+	return strings.HasPrefix(strings.ToLower(model), "pplx-decider")
+}
+
+// ollamaDecisionModelPrefixes are the System One model families in Ollama's
+// library, served on its /v1/systemone endpoint rather than chat.
+var ollamaDecisionModelPrefixes = []string{"nimble", "tev1", "clef", "laya"}
+
+// IsOllamaDecisionModel checks if the model is one of Ollama's System One
+// models ("nimble", "clef-flash", "tev1:0.8b"). Any name in a System One family
+// matches, so new variants work without a code change.
+func IsOllamaDecisionModel(model string) bool {
+	model = strings.ToLower(model)
+	for _, prefix := range ollamaDecisionModelPrefixes {
+		if strings.HasPrefix(model, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // BedrockModelSupportsCachePoints reports whether the Bedrock model supports

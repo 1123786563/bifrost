@@ -43,7 +43,7 @@
 		"classifierChoice": {
 			"aria": "Classifier",
 			"decisionTitle": "Decision model",
-			"decisionDescription": "A decision model judges the complexity of each request and picks the tier whose definition, signals, and examples fit it best. Use Typesafe Jev or OpenAI's decision models, or run Laya, Nimble, or Clef. No phrases to write or maintain.",
+			"decisionDescription": "A decision model judges the complexity of each request and picks the tier whose definition, signals, and examples fit it best. Use Typesafe Jev, OpenAI's decision models, Cloudflare Clef, or another provider that serves decision models. No phrases to write or maintain.",
 			"semanticTitle": "Semantic",
 			"semanticDescription": "Matches each request against reference phrases you write for each tier, through an embedding model you choose. You decide exactly what each tier means."
 		},
@@ -78,7 +78,8 @@
 			"footerDecisionBlocked": "The decision model is the fallback, and it needs a working provider before this can be saved.",
 			"classifierChanged": "Classifier changed to {{classifier}}. Not saved yet.",
 			"classifierSemantic": "Semantic",
-			"classifierDecisionModel": "Decision model"
+			"classifierDecisionModel": "Decision model",
+			"footerDecisionBlockedNeedsConfig": "The decision model needs a working provider before this can be saved. See Edit model configuration."
 		},
 		"restoreDialog": {
 			"title": "Restore defaults",
@@ -152,7 +153,9 @@
 			"maxMessagesLabel": "Max messages to send",
 			"maxMessagesTooltip": "User messages sent to the decision model in addition to the current request, oldest to newest. Widening this lets a short follow-up like “and make it faster” inherit earlier intent, but sends more input tokens per request. Assistant replies are never sent. Defaults to 1.",
 			"timeoutLabel": "Classification timeout (ms)",
-			"timeoutTooltip": "Maximum wait for the decision model's API call. If the limit is exceeded, we skip and fall back to the original request model. Typesafe Jev typically responds in about 600 - 800 ms."
+			"timeoutTooltip": "Maximum wait for the decision model's API call. If the limit is exceeded, we skip and fall back to the original request model. Typesafe Jev typically responds in about 600 - 800 ms.",
+			"searchDecisionModels": "Search decision models…",
+			"noDecisionModels": "This provider lists no decision models"
 		},
 		"providerAlert": {
 			"missing": {

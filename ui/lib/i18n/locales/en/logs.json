@@ -183,7 +183,10 @@
 		"voiceCost": "Voice cost",
 		"backendCost": "Backend cost",
 		"delegations": "Delegations",
-		"transcript": "Transcript"
+		"transcript": "Transcript",
+		"copyTitle": "Copy {{title}}",
+		"hiddenByMessageFilter": "Hidden by the message filter",
+		"backendResponseOf": "Backend response {{index}} of {{total}}"
 	},
 	"chat": {
 		"attachedFile": "Attached file",
@@ -238,7 +241,9 @@
 		"rowsPerPage": "Rows per page",
 		"previousPage": "Previous page",
 		"nextPage": "Next page",
-		"pageOf": "Page {{current}} of {{total}}"
+		"pageOf": "Page {{current}} of {{total}}",
+		"groups": "groups",
+		"entries": "entries"
 	},
 	"recalcDialog": {
 		"description": "The current time window and filters will be applied. Choose which logs to recompute cost for.",
@@ -480,7 +485,8 @@
 		"decisionModelClassification": "Decision Model Classification",
 		"requestBody": "Request Body",
 		"responseBody": "Response Body",
-		"instructions": "Instructions"
+		"instructions": "Instructions",
+		"tabRawCapture": "Raw Capture"
 	},
 	"mcp": {
 		"searchPlaceholder": "Search MCP logs",
@@ -650,7 +656,39 @@
 		"updateReceived": "Update received from the agent",
 		"delivered": "Delivered",
 		"accepted": "Accepted",
-		"pushConfig": "Push Config"
+		"pushConfig": "Push Config",
+		"operationTurn": "operation {{turn}}",
+		"collapseContext": "Collapse this context",
+		"expandContext": "Expand {{count}} more operations in this context",
+		"opsCount": "{{count}} ops",
+		"sessionContextTooltip": "Context of {{total}} operations sharing a context_id. Expand to see the other {{count}} operations.",
+		"session": "Session",
+		"noContent": "No content.",
+		"copyArtifactId": "Copy artifact ID",
+		"copyMessageId": "Copy message ID",
+		"configurationId": "Configuration ID",
+		"noCallbackUrl": "No callback URL provided",
+		"authentication": "Authentication",
+		"credentialsProvided": "Credentials provided",
+		"taskDetails": "Task details",
+		"responseDetails": "Response details",
+		"statusMessage": "Status message",
+		"requestParameters": "Request parameters",
+		"pushConfigDeleted": "Push configuration deleted",
+		"noResponseBody": "The operation completed without a response body.",
+		"noProtocolBody": "No protocol body was recorded.",
+		"noTasksReturned": "No tasks returned.",
+		"noMessagesOrArtifacts": "No messages or artifacts in this response.",
+		"moreTasksAvailable": "More tasks available",
+		"pushConfigurations": "Push configurations",
+		"noNotificationDestinations": "No notification destinations configured.",
+		"payloadJson": "Payload JSON",
+		"eventBodyNotRecorded": "Event body was not recorded.",
+		"rawCaptureDisabled": "Raw capture is disabled for gRPC because it uses binary protobuf messages; a size-limited capture can cut through a message and cannot be reliably decoded or inspected.",
+		"rawRequest": "Raw request",
+		"rawResponse": "Raw response",
+		"moreDetails": "More details",
+		"contextLoadFailed": "Failed to load context"
 	},
 	"otel": {
 		"addProfile": "Add Profile",

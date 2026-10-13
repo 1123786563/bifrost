@@ -5,7 +5,7 @@ export default function SCIMPage() {
 	// out of the white content card in clientLayout, which left this page reading grey
 	// while every sibling placeholder sat on the card. Matches mcp-tool-groups.
 	return (
-		<div className="mx-auto w-full no-padding-parent overflow-y-auto">
+		<div className="no-padding-parent mx-auto w-full overflow-y-auto">
 			<SCIMView />
 		</div>
 	);
