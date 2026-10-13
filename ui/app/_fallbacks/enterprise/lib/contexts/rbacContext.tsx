@@ -85,35 +85,9 @@ export function RbacProvider({ children }: { children: React.ReactNode }) {
 	);
 }
 
-// Enterprise-only resources. Their surfaces are upsell placeholders in OSS
-// ("Unlock … enterprise license" views), so OSS builds report no access: the
-// sidebar hides their entries and their route layouts render NoPermissionView
-// instead of the placeholder. Shared resources (Teams, Customers, VirtualKeys,
-// Governance, Settings, …) keep returning true — their OSS pages are real.
-const ENTERPRISE_ONLY_RESOURCES = new Set<RbacResource>([
-	RbacResource.Users,
-	RbacResource.BusinessUnits,
-	RbacResource.UserProvisioning,
-	RbacResource.AuditLogs,
-	RbacResource.RBAC,
-	RbacResource.Cluster,
-	RbacResource.GuardrailsConfig,
-	RbacResource.GuardrailsProviders,
-	RbacResource.GuardrailRules,
-	RbacResource.CircuitBreaker,
-	RbacResource.AdaptiveRouter,
-	RbacResource.AccessProfiles,
-	RbacResource.Projects,
-	RbacResource.APIKeys,
-	RbacResource.Devices,
-	RbacResource.Inventory,
-	RbacResource.EdgeConfig,
-	RbacResource.PromptDeploymentStrategy,
-]);
-
-// Hook: unrestricted in OSS, except for enterprise-only resources (see above).
-export function useRbac(resource: RbacResource, _operation: RbacOperation): boolean {
-	return !ENTERPRISE_ONLY_RESOURCES.has(resource);
+// Hook that always returns true (no restrictions in OSS)
+export function useRbac(_resource: RbacResource, _operation: RbacOperation): boolean {
+	return true;
 }
 
 // Hook to access full RBAC context

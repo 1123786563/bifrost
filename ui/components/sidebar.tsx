@@ -921,44 +921,40 @@ export default function AppSidebar() {
 				description: t("workspaces:nav.plugins.description"),
 				hasAccess: hasPluginsAccess,
 			},
-			...(IS_ENTERPRISE
-				? [
-						{
-							title: t("workspaces:nav.alerting.title"),
-							testId: "alerting",
-							url: "/workspace/alerting",
-							icon: Siren,
-							description: t("workspaces:nav.alerting.description"),
-							hasAccess: hasAlertingAccess,
-							subItems: [
-								{
-									title: t("workspaces:nav.alerting.channels.title"),
-									testId: "channels",
-									url: "/workspace/alerting/channels",
-									icon: Megaphone,
-									description: t("workspaces:nav.alerting.channels.description"),
-									hasAccess: hasAlertingAccess,
-								},
-								{
-									title: t("workspaces:nav.alerting.rules.title"),
-									testId: "rules",
-									url: "/workspace/alerting/rules",
-									icon: Gavel,
-									description: t("workspaces:nav.alerting.rules.description"),
-									hasAccess: hasAlertingAccess,
-								},
-								{
-									title: t("workspaces:nav.alerting.history.title"),
-									testId: "history",
-									url: "/workspace/alerting/history",
-									icon: History,
-									description: t("workspaces:nav.alerting.history.description"),
-									hasAccess: hasAlertingAccess,
-								},
-							],
-						},
-					]
-				: []),
+			{
+				title: t("workspaces:nav.alerting.title"),
+				testId: "alerting",
+				url: "/workspace/alerting",
+				icon: Siren,
+				description: t("workspaces:nav.alerting.description"),
+				hasAccess: hasAlertingAccess,
+				subItems: [
+					{
+						title: t("workspaces:nav.alerting.channels.title"),
+						testId: "channels",
+						url: "/workspace/alerting/channels",
+						icon: Megaphone,
+						description: t("workspaces:nav.alerting.channels.description"),
+						hasAccess: hasAlertingAccess,
+					},
+					{
+						title: t("workspaces:nav.alerting.rules.title"),
+						testId: "rules",
+						url: "/workspace/alerting/rules",
+						icon: Gavel,
+						description: t("workspaces:nav.alerting.rules.description"),
+						hasAccess: hasAlertingAccess,
+					},
+					{
+						title: t("workspaces:nav.alerting.history.title"),
+						testId: "history",
+						url: "/workspace/alerting/history",
+						icon: History,
+						description: t("workspaces:nav.alerting.history.description"),
+						hasAccess: hasAlertingAccess,
+					},
+				],
+			},
 			{
 				title: t("workspaces:nav.governance.title"),
 				testId: "governance",
