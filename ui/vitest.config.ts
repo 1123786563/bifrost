@@ -7,7 +7,14 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "."),
+			// Mirror the OSS branch of vite.config.mts: tests run against the
+			// enterprise fallbacks so modules importing @enterprise/* resolve.
+			"@enterprise": path.resolve(__dirname, "app", "_fallbacks", "enterprise"),
+			"@schemas": path.resolve(__dirname, "app", "_fallbacks", "enterprise", "lib", "schemas"),
 		},
+	},
+	define: {
+		"process.env.BIFROST_IS_ENTERPRISE": JSON.stringify("false"),
 	},
 	test: {
 		globals: true,
