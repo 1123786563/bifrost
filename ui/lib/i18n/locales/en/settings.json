@@ -37,7 +37,9 @@
 		"externalUrlDescription1": "Bifrost's public base URL, used for served agent cards and push-notification callback URLs. If left blank, agent cards fall back to the incoming",
 		"externalUrlDescription2": "header and",
 		"externalUrlDescription3": ". Supports env var syntax (e.g.",
-		"externalUrlPlaceholder": "https://bifrost.example.com or env.BIFROST_EXTERNAL_URL"
+		"externalUrlPlaceholder": "https://bifrost.example.com or env.BIFROST_EXTERNAL_URL",
+		"captureRawLabel": "Capture Raw Request and Response",
+		"captureRawDescription": "Persist raw request and response payloads in log records. Raw capture is disabled for gRPC because it uses binary protobuf messages; a size-limited capture can cut through a message and cannot be reliably decoded or inspected."
 	},
 	"featureFlags": {
 		"title": "Feature Flags",

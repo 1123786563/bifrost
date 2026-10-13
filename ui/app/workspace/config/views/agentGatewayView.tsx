@@ -72,7 +72,7 @@ export default function AgentGatewayView() {
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		}
-	}, [t, bifrostConfig, localConfig, updateCoreConfig, t]);
+	}, [bifrostConfig, localConfig, updateCoreConfig, t]);
 
 	if (isConfigLoading && !bifrostConfig) {
 		return <FullPageLoader />;
@@ -121,12 +121,9 @@ export default function AgentGatewayView() {
 			<div className="flex items-center justify-between gap-4 rounded-sm border p-4">
 				<div className="space-y-1">
 					<label htmlFor="a2a-raw-capture" className="text-sm font-medium">
-						Capture Raw Request and Response
+						{t("settings:agentGateway.captureRawLabel")}
 					</label>
-					<p className="text-muted-foreground text-sm">
-						Persist raw request and response payloads in log records. Raw capture is disabled for gRPC because it uses binary protobuf
-						messages; a size-limited capture can cut through a message and cannot be reliably decoded or inspected.
-					</p>
+					<p className="text-muted-foreground text-sm">{t("settings:agentGateway.captureRawDescription")}</p>
 				</div>
 				<Switch
 					id="a2a-raw-capture"

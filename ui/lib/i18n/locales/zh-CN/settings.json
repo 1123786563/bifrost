@@ -37,7 +37,9 @@
 		"externalUrlDescription1": "Bifrost 的公开基础 URL，用于对外提供的 agent card 和推送通知回调 URL。如果留空，agent card 会回退使用请求的",
 		"externalUrlDescription2": "请求头，且",
 		"externalUrlDescription3": "。支持环境变量语法（例如",
-		"externalUrlPlaceholder": "https://bifrost.example.com 或 env.BIFROST_EXTERNAL_URL"
+		"externalUrlPlaceholder": "https://bifrost.example.com 或 env.BIFROST_EXTERNAL_URL",
+		"captureRawLabel": "捕获原始请求和响应",
+		"captureRawDescription": "在日志记录中持久化原始请求和响应负载。gRPC 不支持原始捕获，因为它使用二进制 protobuf 消息；有大小限制的捕获可能截断消息，无法可靠解码或检查。"
 	},
 	"featureFlags": {
 		"title": "功能开关",
