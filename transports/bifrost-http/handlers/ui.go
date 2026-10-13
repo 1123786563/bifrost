@@ -14,7 +14,13 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-const uiDevServerAddr = "localhost:3000"
+// uiDevServerAddr is the Vite dev server the dashboard proxies to in dev mode
+// (BIFROST_UI_DEV=true). It must stay an explicit IPv4 loopback literal — with a
+// hostname, fasthttp's HostClient resolves "localhost" once and, on hosts where
+// that resolves IPv6-first, dials ::1 while Vite (ui/vite.config.mts pins it to
+// 127.0.0.1) never hears the request: the proxy silently falls back to the
+// compiled-in UI and serves a stale bundle. Keep in sync with vite.config.mts.
+const uiDevServerAddr = "127.0.0.1:3000"
 
 // ShellRewriter may rewrite the pre-hydration HTML shell before it is served.
 //
@@ -188,6 +194,15 @@ func (h *UIHandler) serveDevDashboard(ctx *fasthttp.RequestCtx) bool {
 		return false
 	}
 	if !ctx.RemoteIP().IsLoopback() {
+		return false
+	}
+	// Never proxy a WebSocket upgrade. fasthttp's HostClient cannot carry an
+	// upgrade: forwarding the handshake as a plain request mangles it and pipes
+	// raw frames into Vite's HMR socket, which crashes the Vite process with an
+	// unhandled ws Receiver error. Fall through to the embedded UI instead —
+	// the HMR client connects to Vite directly (server.hmr.clientPort in
+	// ui/vite.config.mts), so nothing legitimate needs this path.
+	if ctx.Request.Header.ConnectionUpgrade() {
 		return false
 	}
 

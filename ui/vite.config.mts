@@ -51,10 +51,21 @@ export default defineConfig({
 		"process.env.BIFROST_PORT": JSON.stringify(process.env.BIFROST_PORT ?? ""),
 	},
 	server: {
+		// Pin the dev server to explicit IPv4 loopback. With the default host
+		// ("localhost"), Node ≥17 binds only ::1 on hosts where localhost resolves
+		// IPv6-first, while the Go UI dev proxy (handlers/ui.go, uiDevServerAddr)
+		// dials 127.0.0.1 — the proxy then fails and silently falls back to the
+		// stale embedded UI. Both sides must stay pinned to the same explicit IP.
+		host: "127.0.0.1",
 		port: 3000,
+		// The dashboard is usually opened through the Go gateway (e.g.
+		// localhost:8080), whose dev proxy cannot carry WebSocket upgrades. Point
+		// the HMR client straight at this dev server so live reload keeps working
+		// behind the gateway and no upgrade ever transits the proxy.
+		hmr: { host: "127.0.0.1", clientPort: 3000 },
 		proxy: {
 			"/api": {
-				target: `http://localhost:${process.env.BIFROST_PORT || "8080"}`,
+				target: `http://127.0.0.1:${process.env.BIFROST_PORT || "8080"}`,
 				changeOrigin: true,
 			},
 		},

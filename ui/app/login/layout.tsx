@@ -1,3 +1,4 @@
+import { LanguageSwitcher } from "@/components/ui/languageSwitcher";
 import { ThemeProvider } from "@/components/themeProvider";
 import { useBranding } from "@/lib/hooks/useBranding";
 import { ReduxProvider } from "@/lib/store/provider";
@@ -15,7 +16,13 @@ function RouteComponent() {
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
 			<ReduxProvider>
 				<NuqsAdapter>
-					<div className="bg-background min-h-screen">
+					<div className="bg-background relative min-h-screen">
+						{/* Language is switchable before login too — the setup-token screen and
+						 * the login form are the first surfaces an operator sees, and both are
+						 * translated. Corner placement keeps it clear of the centered card. */}
+						<div className="absolute top-4 right-4 z-10">
+							<LanguageSwitcher />
+						</div>
 						<LoginPage />
 					</div>
 				</NuqsAdapter>
