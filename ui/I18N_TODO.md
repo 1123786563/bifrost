@@ -6,13 +6,13 @@
 
 ## Wave 2 成果(Run `run_3d75432031e8`)
 
-| Worker | 命名空间 | 新增键 | 内容 |
-|--------|----------|--------|------|
-| WA | logs + errors | samples/agentHandover 等 | 3 个 emptyState 样例提示、otelView toast、agentHandoverView(原本零 i18n)、接通 4 个既有未用键 |
-| WB | playground | breadcrumbAriaLabel 等 | skillEditForm/shared 的 aria;**查明 docs 页 12 条标题只用于生成 data-testid(刻意英文)** |
-| WC | governance | (复用既有键) | virtualKeySheet 清掉死字段;tree 页 metadata 惰性 getter 接既有键 |
-| WD | workspaces | ~120 | skills/prompts 全套、providerSelector/modelSelector/multiSelect/entityAssociationSelect、providerConfigCard 摘要、celBuilder、budgetOverride、overheadBreakdown、clientLayout、**pprof 页 + devProfiler** |
-| 协调者 | auth/mcp/playground | +11 | loginView 页脚链接(Discord/GitHub/Docs)、agentSheet 摘要、agent-gateway toast、fileManagerView 草稿节点名 |
+| Worker | 命名空间            | 新增键                   | 内容                                                                                                                                                                                                      |
+| ------ | ------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WA     | logs + errors       | samples/agentHandover 等 | 3 个 emptyState 样例提示、otelView toast、agentHandoverView(原本零 i18n)、接通 4 个既有未用键                                                                                                             |
+| WB     | playground          | breadcrumbAriaLabel 等   | skillEditForm/shared 的 aria;**查明 docs 页 12 条标题只用于生成 data-testid(刻意英文)**                                                                                                                   |
+| WC     | governance          | (复用既有键)             | virtualKeySheet 清掉死字段;tree 页 metadata 惰性 getter 接既有键                                                                                                                                          |
+| WD     | workspaces          | ~120                     | skills/prompts 全套、providerSelector/modelSelector/multiSelect/entityAssociationSelect、providerConfigCard 摘要、celBuilder、budgetOverride、overheadBreakdown、clientLayout、**pprof 页 + devProfiler** |
+| 协调者 | auth/mcp/playground | +11                      | loginView 页脚链接(Discord/GitHub/Docs)、agentSheet 摘要、agent-gateway toast、fileManagerView 草稿节点名                                                                                                 |
 
 ## 深扫残留收敛
 
@@ -25,8 +25,8 @@
 2. **产品名**:icons.tsx svg 标题(Python/LangChain/Mistral AI…)、harnesses/platformSelect(Claude Code/Cursor/VS Code/Windows)、skillListView、observabilityView 插件名、agentCardPreview OAuth 规范字段、OTel/Prometheus/Datadog/Kafka 等
 3. **Trans 组件回退文案**:mcpClientSheet "Allow by Default"、mcpUsageGuideSheet "MCP settings"
 4. **getter defaultValue 英文回退**:loginView 链接、routing tree 页(既定 fallback 模式)
-5. **技术标识**:x-bf-* header 示例、X-Bifrost-Setup-Token、SYNC_INTERVAL_REQUIRED 错误码、GOMAXPROCS/GC、HTTP+JSON、"Jan 20" 日期样例
-6. **品牌/徽章**:BETA、Esc、"Powered by"、modelSelector "*" 常量(渲染处已翻译)
+5. **技术标识**:x-bf-\* header 示例、X-Bifrost-Setup-Token、SYNC_INTERVAL_REQUIRED 错误码、GOMAXPROCS/GC、HTTP+JSON、"Jan 20" 日期样例
+6. **品牌/徽章**:BETA、Esc、"Powered by"、modelSelector "\*" 常量(渲染处已翻译)
 
 ## 总账(两波合计)
 

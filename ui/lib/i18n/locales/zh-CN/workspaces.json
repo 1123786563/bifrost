@@ -878,10 +878,7 @@
 			"not_configured": {
 				"summary": "Warp 尚未配置。",
 				"cause": "未设置 provider 和模型，或 Warp 已在设置中关闭。",
-				"suggestions": [
-					"打开 Warp 设置并选择 provider 和模型。",
-					"确认「启用 Warp」开关已打开。"
-				]
+				"suggestions": ["打开 Warp 设置并选择 provider 和模型。", "确认「启用 Warp」开关已打开。"]
 			},
 			"max_iterations": {
 				"summary": "Warp 未能得出结论。",
@@ -896,19 +893,12 @@
 			"timeout": {
 				"summary": "耗时过长。",
 				"cause": "整个请求在 Warp 完成前超出了时间预算。较长的时间范围和过宽的范围会让每个查询变慢，而 Warp 会运行多个查询。",
-				"suggestions": [
-					"尝试更短的时间范围。",
-					"收窄到单个团队、客户或虚拟密钥。",
-					"如果模型本身就慢，在 Warp 设置中调高请求超时。"
-				]
+				"suggestions": ["尝试更短的时间范围。", "收窄到单个团队、客户或虚拟密钥。", "如果模型本身就慢，在 Warp 设置中调高请求超时。"]
 			},
 			"upstream_error": {
 				"summary": "无法连接 Warp 的模型。",
 				"cause": "provider 拒绝了请求或不可达。这针对的是 Warp 自身的模型，与您询问的流量无关。",
-				"suggestions": [
-					"在 Warp 设置中检查 provider、模型和密钥。",
-					"在 playground 中试用同一模型，看它是否能正常回答。"
-				]
+				"suggestions": ["在 Warp 设置中检查 provider、模型和密钥。", "在 playground 中试用同一模型，看它是否能正常回答。"]
 			},
 			"access_denied": {
 				"summary": "您的账户无权访问 Warp 的模型。",
@@ -930,27 +920,17 @@
 			"rate_limited": {
 				"summary": "已触发速率限制。",
 				"cause": "您的账户在窗口期内发送的请求数或 token 数超过了速率限制，因此治理拒绝了 Warp 的模型调用。Warp 的模型调用计入您的账户，共享相同限额。",
-				"suggestions": [
-					"稍等片刻后再次提问。",
-					"如果反复出现，请联系管理员提高限额。",
-					"下方详情会说明是哪条限额拒绝了请求。"
-				]
+				"suggestions": ["稍等片刻后再次提问。", "如果反复出现，请联系管理员提高限额。", "下方详情会说明是哪条限额拒绝了请求。"]
 			},
 			"model_blocked": {
 				"summary": "您的账户不允许使用 Warp 的模型。",
 				"cause": "此部署的治理规则阻止您的账户使用 Warp 所设置的模型或 provider，请求在到达 provider 前被拒绝。",
-				"suggestions": [
-					"请联系管理员为您的账户放行 Warp 的模型。",
-					"或在 Warp 设置中将 Warp 改为您的账户允许使用的模型。"
-				]
+				"suggestions": ["请联系管理员为您的账户放行 Warp 的模型。", "或在 Warp 设置中将 Warp 改为您的账户允许使用的模型。"]
 			},
 			"tool_error": {
 				"summary": "查询失败。",
 				"cause": "Warp 的某个数据查询返回了错误，且它无法在剩余步骤内恢复。",
-				"suggestions": [
-					"尝试更窄的时间范围。",
-					"检查您提到的模型、密钥或团队是否确实存在。"
-				]
+				"suggestions": ["尝试更窄的时间范围。", "检查您提到的模型、密钥或团队是否确实存在。"]
 			},
 			"cancelled": {
 				"summary": "已停止。",
@@ -960,10 +940,7 @@
 			"unknown": {
 				"summary": "出现错误。",
 				"cause": "Warp 返回了无法识别代码的错误。",
-				"suggestions": [
-					"重新提问试试。",
-					"如果反复出现，请连同下方详情反馈。"
-				]
+				"suggestions": ["重新提问试试。", "如果反复出现，请连同下方详情反馈。"]
 			}
 		}
 	},
@@ -1001,7 +978,24 @@
 		"remindLater": "稍后提醒",
 		"vulnerableWarning": "不完成这些步骤会使您的 Bifrost 部署处于风险中。",
 		"tomorrow": "明天",
-		"inAWeek": "一周后"
+		"inAWeek": "一周后",
+		"minimizedLabel": "设置清单（{{done}}/{{total}}）",
+		"pickDate": "选择日期…",
+		"hideForAll": "我接受风险 - 对所有人隐藏",
+		"sections": {
+			"security": "安全",
+			"providerSetup": "提供商配置",
+			"everythingElse": "其他事项"
+		},
+		"steps": {
+			"cors": "限制 CORS 来源",
+			"dashboard-auth": "设置控制台认证",
+			"enforce-inference-auth": "对推理请求强制认证",
+			"provider-key": "添加提供商密钥",
+			"scim": "配置 SCIM 自动开通",
+			"models": "配置治理模型目录",
+			"virtual-keys": "设置虚拟密钥 / 访问配置"
+		}
 	},
 	"agentSelect": {
 		"openToAll": "对所有密钥开放",

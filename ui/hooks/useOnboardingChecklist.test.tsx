@@ -46,9 +46,11 @@ function expectResolves(key: string) {
 
 describe("useOnboardingChecklist locale contract", () => {
 	it("exposes the seven known step ids", () => {
-		expect(renderSteps().map((s) => s.id).sort()).toEqual(
-			["cors", "dashboard-auth", "enforce-inference-auth", "models", "provider-key", "scim", "virtual-keys"].sort(),
-		);
+		expect(
+			renderSteps()
+				.map((s) => s.id)
+				.sort(),
+		).toEqual(["cors", "dashboard-auth", "enforce-inference-auth", "models", "provider-key", "scim", "virtual-keys"].sort());
 	});
 
 	it("every step id resolves a workspaces:onboarding.steps.<id> entry", () => {

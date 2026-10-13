@@ -312,12 +312,7 @@ export function CELRuleBuilder({
 							)}
 						</>
 					) : (
-						<Textarea
-							value={celExpression || t("governance:routingRules.cel.noRules")}
-							readOnly
-							className="font-mono text-sm"
-							rows={4}
-						/>
+						<Textarea value={celExpression || t("governance:routingRules.cel.noRules")} readOnly className="font-mono text-sm" rows={4} />
 					)}
 				</div>
 			)}

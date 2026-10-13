@@ -69,17 +69,16 @@ export function MCPClientConfigsEditor({
 }: MCPClientConfigsEditorProps) {
 	const { t } = useTranslation(["common", "mcp", "workspaces"]);
 	const resolvedLabel = label ?? t("mcp:editors.configsLabel");
-	const resolvedTooltip =
-		tooltip ?? (
-			<p>
-				<Trans
-					t={t}
-					i18nKey="mcp:editors.configsTooltip"
-					values={{ allowAll: t("workspaces:mcpConfigs.allowAllTools") }}
-					components={{ em: <span className="font-medium" /> }}
-				/>
-			</p>
-		);
+	const resolvedTooltip = tooltip ?? (
+		<p>
+			<Trans
+				t={t}
+				i18nKey="mcp:editors.configsTooltip"
+				values={{ allowAll: t("workspaces:mcpConfigs.allowAllTools") }}
+				components={{ em: <span className="font-medium" /> }}
+			/>
+		</p>
+	);
 	// Resolved server records, filled in by the resolvers below.
 	const [resolved, setResolved] = useState<Record<string, MCPClient>>({});
 	const handleResolved = useCallback((key: string, client: MCPClient) => {

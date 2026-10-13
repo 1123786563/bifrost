@@ -442,9 +442,7 @@ function ArtifactView({ artifact }: { artifact: unknown }) {
 	return (
 		<div className="rounded-sm border">
 			<div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-				<span className="text-foreground truncate text-[12.5px] font-medium">
-					{name ?? artifactId ?? t("logs:agent.artifact")}
-				</span>
+				<span className="text-foreground truncate text-[12.5px] font-medium">{name ?? artifactId ?? t("logs:agent.artifact")}</span>
 				{name && artifactId && <span className="text-muted-foreground shrink-0 font-mono text-[10.5px]">{artifactId}</span>}
 			</div>
 			<div className="space-y-2 p-3">
@@ -548,9 +546,7 @@ function ErrorView({ error }: { error: Record<string, unknown> }) {
 				)}
 			</div>
 			<div className="space-y-3 p-3">
-				<div className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">
-				{message ?? t("logs:agent.noErrorMessage")}
-			</div>
+				<div className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">{message ?? t("logs:agent.noErrorMessage")}</div>
 				<UnclaimedFields source={rest} claimed={[]} />
 			</div>
 		</div>

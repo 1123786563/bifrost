@@ -111,9 +111,7 @@ export function RFRuleNode({ data }: { data: any }) {
 						{rule.chain_rule && (
 							<div className="mb-1 flex items-start gap-2 border-b px-3 pb-1.5">
 								<Link2 className="mt-0.5 h-3 w-3 shrink-0" style={{ color: scopeColor }} />
-								<p className="text-muted-foreground text-[10px] leading-snug">
-									{t("governance:routingRules.tree.chainRuleNote")}
-								</p>
+								<p className="text-muted-foreground text-[10px] leading-snug">{t("governance:routingRules.tree.chainRuleNote")}</p>
 							</div>
 						)}
 						<p className="mb-1 px-3 text-[10px] font-semibold tracking-wide uppercase" style={{ color: scopeColor }}>

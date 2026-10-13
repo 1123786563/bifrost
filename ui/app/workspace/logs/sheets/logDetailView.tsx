@@ -1437,9 +1437,7 @@ export function LogDetailView({
 									}
 								/>
 								{!isContainer && <LogEntryDetailsView className="w-full" label={t("logs:columns.model")} value={log.model} />}
-								{!isContainer && log.alias && (
-									<LogEntryDetailsView className="w-full" label={t("logs:details.alias")} value={log.alias} />
-								)}
+								{!isContainer && log.alias && <LogEntryDetailsView className="w-full" label={t("logs:details.alias")} value={log.alias} />}
 								{!isContainer && log.canonical_model_name && (
 									<LogEntryDetailsView className="w-full" label={t("logs:details.canonicalModel")} value={log.canonical_model_name} />
 								)}
@@ -1828,7 +1826,11 @@ export function LogDetailView({
 											/>
 										)}
 										{(log.params as any).audio.voice && (
-											<LogEntryDetailsView className="w-full" label={t("logs:details.audioVoice")} value={(log.params as any).audio.voice} />
+											<LogEntryDetailsView
+												className="w-full"
+												label={t("logs:details.audioVoice")}
+												value={(log.params as any).audio.voice}
+											/>
 										)}
 									</>
 								)}
@@ -1971,7 +1973,11 @@ export function LogDetailView({
 									    has no cost of its own. Without this the detail view of a video
 									    generation reads as free while the list beside it shows the spend. */}
 										{log.cost == null && (log.children_cost ?? 0) > 0 && (
-											<LogEntryDetailsView className="w-full" label={t("logs:details.settledCost")} value={formatCostPrecise(log.children_cost)} />
+											<LogEntryDetailsView
+												className="w-full"
+												label={t("logs:details.settledCost")}
+												value={formatCostPrecise(log.children_cost)}
+											/>
 										)}
 										{/* Additional cost (guardrail / semantic cache / routing / MCP) on its own row below. */}
 										{(log.cost_breakdown?.additional_cost ?? 0) > 0 && (
@@ -2220,20 +2226,26 @@ export function LogDetailView({
 											{videoAccounting && (
 												<div className="grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3">
 													{videoAccounting.seconds != null && (
-														<LogEntryDetailsView className="w-full" label={t("logs:details.billedSeconds")} value={String(videoAccounting.seconds)} />
+														<LogEntryDetailsView
+															className="w-full"
+															label={t("logs:details.billedSeconds")}
+															value={String(videoAccounting.seconds)}
+														/>
 													)}
 													{videoAccounting.size && (
 														<LogEntryDetailsView className="w-full" label={t("logs:details.resolution")} value={videoAccounting.size} />
 													)}
 													{videoAccounting.output_count != null && (
-														<LogEntryDetailsView className="w-full" label={t("logs:details.clipsBilled")} value={String(videoAccounting.output_count)} />
+														<LogEntryDetailsView
+															className="w-full"
+															label={t("logs:details.clipsBilled")}
+															value={String(videoAccounting.output_count)}
+														/>
 													)}
 												</div>
 											)}
 											{videoAccounting?.incomplete && (
-												<p className="text-muted-foreground text-xs">
-													{t("logs:details.videoUnpricedNote")}
-												</p>
+												<p className="text-muted-foreground text-xs">{t("logs:details.videoUnpricedNote")}</p>
 											)}
 										</div>
 									</>
@@ -2274,10 +2286,18 @@ export function LogDetailView({
 																	/>
 																)}
 																{log.cache_debug.model_used && (
-																	<LogEntryDetailsView className="w-full" label={t("logs:details.embeddingModel")} value={log.cache_debug.model_used} />
+																	<LogEntryDetailsView
+																		className="w-full"
+																		label={t("logs:details.embeddingModel")}
+																		value={log.cache_debug.model_used}
+																	/>
 																)}
 																{log.cache_debug.threshold && (
-																	<LogEntryDetailsView className="w-full" label={t("logs:details.threshold")} value={log.cache_debug.threshold || "-"} />
+																	<LogEntryDetailsView
+																		className="w-full"
+																		label={t("logs:details.threshold")}
+																		value={log.cache_debug.threshold || "-"}
+																	/>
 																)}
 																{log.cache_debug.similarity && (
 																	<LogEntryDetailsView
@@ -2310,7 +2330,11 @@ export function LogDetailView({
 															/>
 														)}
 														{log.cache_debug.model_used && (
-															<LogEntryDetailsView className="w-full" label={t("logs:details.embeddingModel")} value={log.cache_debug.model_used} />
+															<LogEntryDetailsView
+																className="w-full"
+																label={t("logs:details.embeddingModel")}
+																value={log.cache_debug.model_used}
+															/>
 														)}
 														{log.cache_debug.input_tokens && (
 															<LogEntryDetailsView

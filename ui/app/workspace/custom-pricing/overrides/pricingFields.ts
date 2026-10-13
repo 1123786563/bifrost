@@ -824,10 +824,7 @@ export function pricingFieldUnit(key: string): PricingFieldUnit {
 export type PricingFieldKey = (typeof PRICING_FIELDS)[number]["key"];
 
 // English label per key, kept separate from the translated view below.
-const englishLabelByKey = Object.fromEntries(PRICING_FIELDS.map((field) => [field.key, field.label])) as Record<
-	PricingFieldKey,
-	string
->;
+const englishLabelByKey = Object.fromEntries(PRICING_FIELDS.map((field) => [field.key, field.label])) as Record<PricingFieldKey, string>;
 
 /** Translated label for a pricing field, falling back to its English label. */
 export function pricingFieldLabel(key: PricingFieldKey | (string & {})): string {

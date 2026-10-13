@@ -55,8 +55,7 @@ export function FieldLabel({ htmlFor, children, tooltip }: { htmlFor?: string; c
 			{tooltip && (
 				<InfoTip
 					label={t("governance:complexityRouter.decisionGuidance.infoTip", {
-						field:
-							typeof children === "string" ? children : t("governance:complexityRouter.form.infoTipFallback"),
+						field: typeof children === "string" ? children : t("governance:complexityRouter.form.infoTipFallback"),
 					})}
 				>
 					{tooltip}

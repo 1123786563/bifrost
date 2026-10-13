@@ -878,10 +878,7 @@
 			"not_configured": {
 				"summary": "Warp is not configured yet.",
 				"cause": "No provider and model are set, or Warp is switched off in settings.",
-				"suggestions": [
-					"Open Warp settings and choose a provider and model.",
-					"Make sure Enable Warp is switched on."
-				]
+				"suggestions": ["Open Warp settings and choose a provider and model.", "Make sure Enable Warp is switched on."]
 			},
 			"max_iterations": {
 				"summary": "Warp could not settle on an answer.",
@@ -947,10 +944,7 @@
 			"tool_error": {
 				"summary": "A query failed.",
 				"cause": "One of Warp's data queries returned an error, and it could not recover within its remaining steps.",
-				"suggestions": [
-					"Try a narrower time range.",
-					"Check that the model, key or team you named actually exists."
-				]
+				"suggestions": ["Try a narrower time range.", "Check that the model, key or team you named actually exists."]
 			},
 			"cancelled": {
 				"summary": "Stopped.",
@@ -960,10 +954,7 @@
 			"unknown": {
 				"summary": "Something went wrong.",
 				"cause": "Warp returned an error without a recognised code.",
-				"suggestions": [
-					"Try the question again.",
-					"If it keeps happening, report it with the details below."
-				]
+				"suggestions": ["Try the question again.", "If it keeps happening, report it with the details below."]
 			}
 		}
 	},
@@ -1001,7 +992,24 @@
 		"remindLater": "Remind me later",
 		"vulnerableWarning": "Not completing these steps keeps your Bifrost setup vulnerable.",
 		"tomorrow": "Tomorrow",
-		"inAWeek": "In a week"
+		"inAWeek": "In a week",
+		"minimizedLabel": "Setup checklist ({{done}}/{{total}})",
+		"pickDate": "Pick a date…",
+		"hideForAll": "I accept the risk - hide for everyone",
+		"sections": {
+			"security": "Security",
+			"providerSetup": "Provider Setup",
+			"everythingElse": "Everything Else"
+		},
+		"steps": {
+			"cors": "Restrict CORS origins",
+			"dashboard-auth": "Set up dashboard auth",
+			"enforce-inference-auth": "Enforce auth on inference",
+			"provider-key": "Add a provider key",
+			"scim": "Configure SCIM provisioning",
+			"models": "Configure governance model catalog",
+			"virtual-keys": "Set up virtual keys / access profiles"
+		}
 	},
 	"agentSelect": {
 		"openToAll": "Open to all keys",

@@ -111,11 +111,7 @@ function SecurityFields({ fields }: { fields: Record<string, unknown> }) {
 								)
 							) : (
 								<span className="font-mono break-all">
-									{Array.isArray(value)
-										? value.join(", ")
-										: value === "REDACTED"
-											? t("workspaces:agentCard.redacted")
-											: String(value)}
+									{Array.isArray(value) ? value.join(", ") : value === "REDACTED" ? t("workspaces:agentCard.redacted") : String(value)}
 								</span>
 							)}
 						</dd>
@@ -367,9 +363,7 @@ export function AgentCardPreview({
 										<div className="min-w-0 flex-1">
 											<TruncatedLabel className="block font-mono text-xs">{item.url}</TruncatedLabel>
 											{item.tenant && (
-												<p className="text-muted-foreground mt-1 text-xs">
-													{t("workspaces:agentCard.tenant", { tenant: item.tenant })}
-												</p>
+												<p className="text-muted-foreground mt-1 text-xs">{t("workspaces:agentCard.tenant", { tenant: item.tenant })}</p>
 											)}
 										</div>
 									</div>

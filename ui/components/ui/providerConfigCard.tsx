@@ -267,7 +267,9 @@ export function ProviderConfigCard({
 						)}
 					>
 						<span className="text-muted-foreground/50 text-sm">└</span>
-						<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">{t("workspaces:providerConfigs.providerBudget")}</span>
+						<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">
+							{t("workspaces:providerConfigs.providerBudget")}
+						</span>
 						<span className="text-muted-foreground min-w-0 flex-1 truncate text-sm">{capLabel}</span>
 						{ws != null && (
 							<span className="text-muted-foreground/70 shrink-0 text-sm whitespace-nowrap">
@@ -320,7 +322,9 @@ export function ProviderConfigCard({
 								className="hover:bg-accent/30 flex cursor-pointer items-center gap-2.5 border-t py-2.5 pr-3.5 pl-10"
 							>
 								<span className="text-muted-foreground/50 text-sm">└</span>
-								<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">{t("workspaces:providerConfigs.modelBudgets")}</span>
+								<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">
+									{t("workspaces:providerConfigs.modelBudgets")}
+								</span>
 								<span className="text-muted-foreground/60 min-w-0 flex-1 truncate text-sm">
 									{modelsOpen
 										? t("workspaces:providerConfigs.modelsShareProviderBudget")
@@ -521,7 +525,9 @@ export function ProviderConfigCard({
 						className="hover:bg-accent/30 flex cursor-pointer items-center gap-2.5 border-t py-2.5 pr-3.5 pl-10"
 					>
 						<span className="text-muted-foreground/50 text-sm">└</span>
-						<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">{t("workspaces:providerConfigs.accessAndRateLimits")}</span>
+						<span className="text-muted-foreground text-sm font-medium whitespace-nowrap">
+							{t("workspaces:providerConfigs.accessAndRateLimits")}
+						</span>
 						<span className="text-muted-foreground/60 min-w-0 flex-1 truncate text-sm" data-testid={`${tid}-access-summary-${index}`}>
 							{keysSummary} · {modelsSummary} · {rlSummary}
 						</span>

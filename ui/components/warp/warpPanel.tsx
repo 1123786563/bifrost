@@ -282,9 +282,7 @@ export default function WarpPanel() {
 					<span className="bg-muted text-muted-foreground flex size-9 items-center justify-center rounded-full">
 						<WarpIcon className="size-5" />
 					</span>
-					<p className="text-sm font-medium">
-						{isDisabledButComplete ? t("workspaces:warp.turnedOff") : t("workspaces:warp.notSetUp")}
-					</p>
+					<p className="text-sm font-medium">{isDisabledButComplete ? t("workspaces:warp.turnedOff") : t("workspaces:warp.notSetUp")}</p>
 					{canConfigure ? (
 						<>
 							<p className="text-muted-foreground text-xs">
@@ -348,11 +346,7 @@ export default function WarpPanel() {
 													</div>
 													<div className="text-muted-foreground flex items-center justify-end gap-1.5 text-[11px]">
 														<Clock aria-hidden="true" className="size-3 shrink-0" />
-														<span>
-															{index === 0 && isStreaming
-																? t("workspaces:warp.sendsWhenFinish")
-																: t("workspaces:warp.queued")}
-														</span>
+														<span>{index === 0 && isStreaming ? t("workspaces:warp.sendsWhenFinish") : t("workspaces:warp.queued")}</span>
 														<span aria-hidden="true">·</span>
 														<button
 															type="button"

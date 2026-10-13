@@ -138,9 +138,7 @@ export default function WarpComposer({
 							submit();
 						}
 					}}
-					placeholder={
-						isStreaming && onQueue ? t("workspaces:warp.placeholderQueued") : t("workspaces:warp.placeholder")
-					}
+					placeholder={isStreaming && onQueue ? t("workspaces:warp.placeholderQueued") : t("workspaces:warp.placeholder")}
 					disabled={disabled}
 					minRows={1}
 					maxRows={8}
@@ -257,9 +255,7 @@ function WarpModelSwitcher({ models, selectedModel, onSelectModel }: WarpModelSw
 							data-testid={`warp-model-option-${model.provider}-${model.model}`}
 						>
 							<WarpModelName model={model} />
-							{index === 0 && (
-								<span className="text-muted-foreground ml-auto pl-2 text-[10px]">{t("workspaces:warp.default")}</span>
-							)}
+							{index === 0 && <span className="text-muted-foreground ml-auto pl-2 text-[10px]">{t("workspaces:warp.default")}</span>}
 						</DropdownMenuRadioItem>
 					))}
 				</DropdownMenuRadioGroup>

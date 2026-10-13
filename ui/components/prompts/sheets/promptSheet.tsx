@@ -83,7 +83,9 @@ export function PromptSheet({ open, onOpenChange, prompt, folderId, onSaved }: P
 			>
 				<form onSubmit={handleSubmit(onSubmit)} className="flex grow flex-col">
 					<SheetHeader className="flex flex-col items-start pt-8" headerClassName="px-4 md:px-8">
-						<SheetTitle>{isEditing ? t("workspaces:promptsRepo.promptSheet.renameTitle") : t("workspaces:promptsRepo.promptSheet.createTitle")}</SheetTitle>
+						<SheetTitle>
+							{isEditing ? t("workspaces:promptsRepo.promptSheet.renameTitle") : t("workspaces:promptsRepo.promptSheet.createTitle")}
+						</SheetTitle>
 						<SheetDescription>
 							{isEditing
 								? t("workspaces:promptsRepo.promptSheet.editDesc")

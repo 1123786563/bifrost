@@ -2,7 +2,6 @@ import { MessageContent } from "@/lib/message";
 import { Mic, FileIcon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-
 /**
  * Renders a compact badge for a single attachment with an inline remove control.
  *
@@ -87,7 +86,11 @@ export function AttachmentDisplay({
 					return (
 						<div key={i} className="group/att relative max-w-full">
 							{/* eslint-disable-next-line jsx-a11y/alt-text */}
-							<img src={att.image_url.url} alt={t("workspaces:prompts.attachments.alt")} className="max-h-48 max-w-full rounded-sm border object-contain sm:max-w-xs" />
+							<img
+								src={att.image_url.url}
+								alt={t("workspaces:prompts.attachments.alt")}
+								className="max-h-48 max-w-full rounded-sm border object-contain sm:max-w-xs"
+							/>
 							{editable && onRemoveAttachment && (
 								<button
 									onClick={() => onRemoveAttachment(i)}

@@ -270,7 +270,9 @@ function GoroutineHealthSection({
 									<div className="flex items-center gap-2 pl-5 text-[10px]">
 										<span className={`rounded px-1 py-0.5 ${getCategoryColor(g.category)}`}>{g.category}</span>
 										<span className="text-zinc-400">{g.count}x</span>
-										{g.wait_minutes != null && <span className="text-amber-400">{t("workspaces:pprof.waitMinutes", { minutes: g.wait_minutes })}</span>}
+										{g.wait_minutes != null && (
+											<span className="text-amber-400">{t("workspaces:pprof.waitMinutes", { minutes: g.wait_minutes })}</span>
+										)}
 									</div>
 								</div>
 								<button
@@ -300,7 +302,11 @@ function GoroutineHealthSection({
 													{line}
 												</div>
 											))}
-											{g.stack.length > 10 && <div className="text-[9px] text-zinc-400">... {t("workspaces:devProfiler.moreFrames", { count: g.stack.length - 10 })}</div>}
+											{g.stack.length > 10 && (
+												<div className="text-[9px] text-zinc-400">
+													... {t("workspaces:devProfiler.moreFrames", { count: g.stack.length - 10 })}
+												</div>
+											)}
 										</div>
 									</div>
 								)}
@@ -493,10 +499,18 @@ export function DevProfiler(): React.ReactNode {
 					>
 						{isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
 					</button>
-					<button onClick={handleToggleVisible} className="rounded p-1 transition-colors hover:bg-zinc-700" title={t("workspaces:devProfiler.minimize")}>
+					<button
+						onClick={handleToggleVisible}
+						className="rounded p-1 transition-colors hover:bg-zinc-700"
+						title={t("workspaces:devProfiler.minimize")}
+					>
 						<ChevronDown className="h-4 w-4" />
 					</button>
-					<button onClick={handleDismiss} className="rounded p-1 transition-colors hover:bg-zinc-700" title={t("workspaces:devProfiler.dismiss")}>
+					<button
+						onClick={handleDismiss}
+						className="rounded p-1 transition-colors hover:bg-zinc-700"
+						title={t("workspaces:devProfiler.dismiss")}
+					>
 						<X className="h-4 w-4" />
 					</button>
 				</div>
@@ -653,7 +667,14 @@ export function DevProfiler(): React.ReactNode {
 										}}
 										labelStyle={{ color: "#a1a1aa" }}
 									/>
-									<Area type="monotone" dataKey="alloc" stroke="#22d3ee" strokeWidth={1.5} fill="url(#allocGradient)" name={t("workspaces:pprof.alloc")} />
+									<Area
+										type="monotone"
+										dataKey="alloc"
+										stroke="#22d3ee"
+										strokeWidth={1.5}
+										fill="url(#allocGradient)"
+										name={t("workspaces:pprof.alloc")}
+									/>
 									<Area
 										type="monotone"
 										dataKey="heapInuse"
@@ -696,7 +717,9 @@ export function DevProfiler(): React.ReactNode {
 									</div>
 									<div className="flex flex-col items-end">
 										<span className="text-rose-400">{formatBytes(alloc.bytes)}</span>
-										<span className="text-[10px] text-zinc-400">{t("workspaces:devProfiler.allocCount", { count: alloc.count.toLocaleString() })}</span>
+										<span className="text-[10px] text-zinc-400">
+											{t("workspaces:devProfiler.allocCount", { count: alloc.count.toLocaleString() })}
+										</span>
 									</div>
 								</div>
 							))}
@@ -718,7 +741,8 @@ export function DevProfiler(): React.ReactNode {
 
 					{/* Footer with info */}
 					<div className="border-t border-zinc-700 bg-zinc-800 px-3 py-2 text-[10px] text-zinc-400">
-						{t("workspaces:pprof.cpus")} {data.runtime.num_cpu} | {t("workspaces:pprof.gomaxprocs")} {data.runtime.gomaxprocs} | {t("workspaces:devProfiler.gcLabel")} {data.runtime.num_gc} | {t("workspaces:devProfiler.objectsLabel")}{" "}
+						{t("workspaces:pprof.cpus")} {data.runtime.num_cpu} | {t("workspaces:pprof.gomaxprocs")} {data.runtime.gomaxprocs} |{" "}
+						{t("workspaces:devProfiler.gcLabel")} {data.runtime.num_gc} | {t("workspaces:devProfiler.objectsLabel")}{" "}
 						{data.memory.heap_objects.toLocaleString()}
 					</div>
 				</div>
@@ -727,9 +751,15 @@ export function DevProfiler(): React.ReactNode {
 			{/* Collapsed state */}
 			{!isExpanded && data && (
 				<div className="flex items-center justify-between bg-zinc-800/50 px-3 py-2">
-					<span className="text-orange-400">{t("workspaces:devProfiler.cpuLabel")} {data.cpu.usage_percent.toFixed(1)}%</span>
-					<span className="text-zinc-400">{t("workspaces:devProfiler.heapLabel")} {formatBytes(data.memory.heap_inuse)}</span>
-					<span className="text-zinc-400">{t("workspaces:devProfiler.goroutinesLabel")} {data.runtime.num_goroutine}</span>
+					<span className="text-orange-400">
+						{t("workspaces:devProfiler.cpuLabel")} {data.cpu.usage_percent.toFixed(1)}%
+					</span>
+					<span className="text-zinc-400">
+						{t("workspaces:devProfiler.heapLabel")} {formatBytes(data.memory.heap_inuse)}
+					</span>
+					<span className="text-zinc-400">
+						{t("workspaces:devProfiler.goroutinesLabel")} {data.runtime.num_goroutine}
+					</span>
 				</div>
 			)}
 		</div>

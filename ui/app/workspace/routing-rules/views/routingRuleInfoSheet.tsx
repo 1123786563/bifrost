@@ -312,9 +312,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 													{t("governance:routingRules.chainRule")}
 												</Badge>
 											</TooltipTrigger>
-											<TooltipContent className="max-w-64">
-												{t("governance:routingRules.info.chainRuleTooltip")}
-											</TooltipContent>
+											<TooltipContent className="max-w-64">{t("governance:routingRules.info.chainRuleTooltip")}</TooltipContent>
 										</Tooltip>
 									)}
 								</div>

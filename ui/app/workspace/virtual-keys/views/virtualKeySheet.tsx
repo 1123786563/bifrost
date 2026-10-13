@@ -364,11 +364,7 @@ function contentLoggingValue(choice: ContentLoggingChoice): boolean | null {
 
 // Labels are translated at the render site (virtualKeys.sheet.contentLogging*) so the pool of
 // choices stays a plain value list.
-const contentLoggingOptions: { value: ContentLoggingChoice }[] = [
-	{ value: "inherit" },
-	{ value: "disabled" },
-	{ value: "enabled" },
-];
+const contentLoggingOptions: { value: ContentLoggingChoice }[] = [{ value: "inherit" }, { value: "disabled" }, { value: "enabled" }];
 
 // A key owned by a profile-holding team, customer or business unit is governed by that profile: the
 // server discards the key's own providers, budgets, rate limits and MCP access. The editors for

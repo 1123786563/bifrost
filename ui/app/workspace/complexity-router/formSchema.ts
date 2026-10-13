@@ -302,7 +302,8 @@ export const analyzerConfigSchema = z
 				ctx.addIssue({
 					code: "custom",
 					message: i18n.t("governance:complexityRouter.phrases.phrasesOverLimit", {
-						defaultValue: "Semantic routing has {{total}} phrases ({{simple}} simple, {{medium}} medium, {{complex}} complex); the maximum is {{max}} across all tiers.",
+						defaultValue:
+							"Semantic routing has {{total}} phrases ({{simple}} simple, {{medium}} medium, {{complex}} complex); the maximum is {{max}} across all tiers.",
 						total: counts.total,
 						simple: counts.simple,
 						medium: counts.medium,

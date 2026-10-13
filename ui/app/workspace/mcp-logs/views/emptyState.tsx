@@ -305,15 +305,13 @@ if (response.choices[0].message.tool_calls) {
 						<li className="flex items-start gap-2">
 							<span className="text-primary">2.</span>
 							<span>
-								{t("logs:mcp.prereq2pre")} <code className="bg-muted rounded px-1">tools_to_execute</code>{" "}
-								{t("logs:mcp.prereq2post")}
+								{t("logs:mcp.prereq2pre")} <code className="bg-muted rounded px-1">tools_to_execute</code> {t("logs:mcp.prereq2post")}
 							</span>
 						</li>
 						<li className="flex items-start gap-2">
 							<span className="text-primary">3.</span>
 							<span>
-								{t("logs:mcp.prereq3pre")} <code className="bg-muted rounded px-1">tools_to_auto_execute</code>{" "}
-								{t("logs:mcp.prereq3post")}
+								{t("logs:mcp.prereq3pre")} <code className="bg-muted rounded px-1">tools_to_auto_execute</code> {t("logs:mcp.prereq3post")}
 							</span>
 						</li>
 					</ul>

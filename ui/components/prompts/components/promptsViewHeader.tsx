@@ -249,9 +249,13 @@ export default function PromptsViewHeader() {
 											<div className="flex min-w-0 flex-col">
 												<span className="truncate text-sm">
 													v{version.version_number}
-													{version.is_latest && <span className="text-primary ml-1.5 text-xs">{t("workspaces:promptsRepo.header.latest")}</span>}
+													{version.is_latest && (
+														<span className="text-primary ml-1.5 text-xs">{t("workspaces:promptsRepo.header.latest")}</span>
+													)}
 												</span>
-												<span className="text-muted-foreground truncate text-xs">{version.commit_message || t("workspaces:promptsRepo.header.noCommitMessage")}</span>
+												<span className="text-muted-foreground truncate text-xs">
+													{version.commit_message || t("workspaces:promptsRepo.header.noCommitMessage")}
+												</span>
 												<span className="text-muted-foreground text-xs">{formatSessionDate(version.created_at)}</span>
 											</div>
 											{selectedVersionId === version.id && <Check className="text-primary h-4 w-4 shrink-0" />}

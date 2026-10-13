@@ -245,7 +245,8 @@ export function BudgetOverrideManagerDialog({
 								/>
 								{validUntil ? (
 									<p className="text-muted-foreground text-xs">
-										{t("workspaces:budgetOverride.validUntil")} <span className="text-foreground font-medium">{validUntil.toLocaleString()}</span>
+										{t("workspaces:budgetOverride.validUntil")}{" "}
+										<span className="text-foreground font-medium">{validUntil.toLocaleString()}</span>
 									</p>
 								) : null}
 							</div>

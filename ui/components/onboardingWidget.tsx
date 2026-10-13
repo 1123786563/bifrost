@@ -164,7 +164,7 @@ export default function OnboardingWidget() {
 				className="bg-card text-card-foreground fixed right-6 bottom-4 z-40 flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-lg transition-transform hover:scale-105"
 			>
 				<span aria-hidden>👋</span>
-				Setup checklist ({doneCount}/{steps.length})
+				{t("workspaces:onboarding.minimizedLabel", { done: doneCount, total: steps.length })}
 			</button>
 		);
 	}
@@ -303,7 +303,7 @@ export default function OnboardingWidget() {
 									<div
 										className={cn("text-muted-foreground px-2 pb-1 text-[10px] font-semibold tracking-wider uppercase", idx > 0 && "pt-3")}
 									>
-										{step.section}
+										{t(`workspaces:onboarding.sections.${step.section}`)}
 									</div>
 								)}
 								<div
@@ -336,7 +336,9 @@ export default function OnboardingWidget() {
 												skipped && !step.complete && "text-muted-foreground italic",
 											)}
 										>
-											{step.title}
+											{/* defaultValue is the hook's English title, so a step whose key is
+											 * missing from the locales still renders copy instead of a raw key. */}
+											{t(`workspaces:onboarding.steps.${step.id}`, { defaultValue: step.title })}
 										</span>
 									</button>
 									{!done && (
@@ -369,7 +371,7 @@ export default function OnboardingWidget() {
 					>
 						<PopoverTrigger asChild>
 							<button type="button" data-testid="onboarding-later" className="text-muted-foreground hover:text-foreground py-2 text-center">
-								Remind me later
+								{t("workspaces:onboarding.remindLater")}
 							</button>
 						</PopoverTrigger>
 						<PopoverContent align="start" className="z-[1002] w-64 p-3">
@@ -385,7 +387,7 @@ export default function OnboardingWidget() {
 										onClick={() => handleRemindAt(addDaysFromToday(1))}
 										className="hover:bg-accent rounded-sm px-2 py-1.5 text-left text-sm"
 									>
-										Tomorrow
+										{t("workspaces:onboarding.tomorrow")}
 									</button>
 									<button
 										type="button"
@@ -393,7 +395,7 @@ export default function OnboardingWidget() {
 										onClick={() => handleRemindAt(addDaysFromToday(7))}
 										className="hover:bg-accent rounded-sm px-2 py-1.5 text-left text-sm"
 									>
-										In a week
+										{t("workspaces:onboarding.inAWeek")}
 									</button>
 									<button
 										type="button"
@@ -401,7 +403,7 @@ export default function OnboardingWidget() {
 										onClick={() => setRemindPickerView("calendar")}
 										className="hover:bg-accent rounded-sm px-2 py-1.5 text-left text-sm"
 									>
-										Pick a date…
+										{t("workspaces:onboarding.pickDate")}
 									</button>
 								</div>
 							) : (
@@ -423,7 +425,7 @@ export default function OnboardingWidget() {
 						disabled={writingMetadata}
 						className="text-muted-foreground hover:text-foreground py-2 text-center disabled:opacity-50"
 					>
-						I accept the risk - hide for everyone
+						{t("workspaces:onboarding.hideForAll")}
 					</button>
 				</CardFooter>
 			</Card>

@@ -252,9 +252,7 @@ function ConsentView({ flowId }: { flowId: string }) {
 								t("auth:consent.connectWithKey")
 							)}
 						</Button>
-						{hasUser && (
-							<p className="text-muted-foreground mt-2.5 text-xs">{t("auth:consent.linkedKeyNote")}</p>
-						)}
+						{hasUser && <p className="text-muted-foreground mt-2.5 text-xs">{t("auth:consent.linkedKeyNote")}</p>}
 					</div>
 				)}
 

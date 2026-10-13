@@ -131,7 +131,9 @@ export function warpToolLabel(name: string, isRunning = false, t?: TFunction): s
 /** Screen-reader text for a tool row's status, which the icons convey only by shape and color. */
 export function warpToolStatusLabel(call: { durationMs?: number; failed?: boolean }, t?: TFunction): string {
 	if (call.durationMs === undefined) return t?.("workspaces:warp.toolStatus.inProgress") ?? "In progress";
-	return call.failed ? t?.("workspaces:warp.toolStatus.failed") ?? "Failed" : t?.("workspaces:warp.toolStatus.completed") ?? "Completed";
+	return call.failed
+		? (t?.("workspaces:warp.toolStatus.failed") ?? "Failed")
+		: (t?.("workspaces:warp.toolStatus.completed") ?? "Completed");
 }
 
 const WARP_TOOL_LABELS: Record<string, { running: string; done: string }> = {
@@ -258,7 +260,7 @@ export function indexStatusLabel(status: WarpLogIndexStatus, t?: TFunction): Ind
 			const scanned = backfill?.scanned ?? 0;
 			if (total > 0) {
 				const percent = Math.min(100, Math.floor((scanned / total) * 100));
-				return { label: (t?.("workspaces:warp.index.indexingPercent", { percent }) ?? `Indexing ${percent}%`), tone: "busy" };
+				return { label: t?.("workspaces:warp.index.indexingPercent", { percent }) ?? `Indexing ${percent}%`, tone: "busy" };
 			}
 			return { label: t?.("workspaces:warp.index.indexing") ?? "Indexing", tone: "busy" };
 		}
@@ -441,9 +443,7 @@ export function warpErrorDetail(code: string | undefined, message: string | unde
 		case "tool_error":
 			return {
 				summary: field(code, "summary") ?? "A query failed.",
-				cause:
-					field(code, "cause") ??
-					"One of Warp's data queries returned an error, and it could not recover within its remaining steps.",
+				cause: field(code, "cause") ?? "One of Warp's data queries returned an error, and it could not recover within its remaining steps.",
 				suggestions: [
 					field(code, "suggestions.0") ?? "Try a narrower time range.",
 					field(code, "suggestions.1") ?? "Check that the model, key or team you named actually exists.",

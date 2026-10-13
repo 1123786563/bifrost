@@ -677,7 +677,8 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 										setTtftEdited(true);
 									},
 									validate: (value) =>
-										parseTTFTTimeoutInput(value) !== null || t("governance:routingRules.sheet.ttftValidation", { max: MAX_TTFT_TIMEOUT_MS }),
+										parseTTFTTimeoutInput(value) !== null ||
+										t("governance:routingRules.sheet.ttftValidation", { max: MAX_TTFT_TIMEOUT_MS }),
 								})}
 							/>
 							<p className="text-muted-foreground text-xs">{t("governance:routingRules.sheet.ttftHelp")}</p>

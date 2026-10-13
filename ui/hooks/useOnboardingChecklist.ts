@@ -16,7 +16,9 @@ export const REMIND_LATER_COOKIE = "bifrost_onboarding_remind_at";
 // card can read the same hidden/snoozed state the floating widget uses.
 export const HIDDEN_UNTIL_NAV_COOKIE = "bifrost_onboarding_hidden_until_nav";
 
-export type OnboardingSection = "Security" | "Provider Setup" | "Everything Else";
+// Stable i18n keys, not display strings — the widget resolves them via
+// workspaces:onboarding.sections.<key> so the checklist localizes.
+export type OnboardingSection = "security" | "providerSetup" | "everythingElse";
 
 export interface OnboardingStep {
 	id: string;
@@ -73,7 +75,7 @@ export function useOnboardingChecklist({ skip = false }: { skip?: boolean } = {}
 	const ssoGatesDashboard = IS_ENTERPRISE && (scimProviders?.some((provider) => provider.enabled) ?? false);
 
 	const steps: OnboardingStep[] = useMemo(() => {
-		// Order: 1) Security, 2) Provider Setup, 3) Everything Else.
+		// Order: 1) security, 2) providerSetup, 3) everythingElse.
 		// Security comes first so admins lock down access before exposing keys.
 		const allowedOrigins = clientConfig?.allowed_origins ?? [];
 		const common: OnboardingStep[] = [
@@ -81,14 +83,14 @@ export function useOnboardingChecklist({ skip = false }: { skip?: boolean } = {}
 				id: "cors",
 				title: "Restrict CORS origins",
 				route: "/workspace/config/security",
-				section: "Security",
+				section: "security",
 				complete: allowedOrigins.some((origin) => origin.trim().length > 0) && allowedOrigins.every((origin) => origin.trim() !== "*"),
 			},
 			{
 				id: "dashboard-auth",
 				title: "Set up dashboard auth",
 				route: "/workspace/config/security",
-				section: "Security",
+				section: "security",
 				complete:
 					ssoGatesDashboard ||
 					(!!authConfig?.is_enabled && authValueSet(authConfig?.admin_username) && authValueSet(authConfig?.admin_password)),
@@ -97,14 +99,14 @@ export function useOnboardingChecklist({ skip = false }: { skip?: boolean } = {}
 				id: "enforce-inference-auth",
 				title: "Enforce auth on inference",
 				route: "/workspace/config/security",
-				section: "Security",
+				section: "security",
 				complete: !!clientConfig?.enforce_auth_on_inference,
 			},
 			{
 				id: "provider-key",
 				title: "Add a provider key",
 				route: "/workspace/providers",
-				section: "Provider Setup",
+				section: "providerSetup",
 				complete: (allKeys?.length ?? 0) > 0,
 			},
 		];
@@ -114,21 +116,21 @@ export function useOnboardingChecklist({ skip = false }: { skip?: boolean } = {}
 						id: "scim",
 						title: "Configure SCIM provisioning",
 						route: "/workspace/scim",
-						section: "Everything Else",
+						section: "everythingElse",
 						complete: (scimProviders?.length ?? 0) > 0,
 					},
 					{
 						id: "models",
 						title: "Configure governance model catalog",
 						route: "/workspace/model-catalog",
-						section: "Everything Else",
+						section: "everythingElse",
 						complete: (modelConfigsResponse?.total_count ?? 0) > 0,
 					},
 					{
 						id: "virtual-keys",
 						title: "Set up virtual keys / access profiles",
 						route: "/workspace/virtual-keys",
-						section: "Everything Else",
+						section: "everythingElse",
 						complete: (vksResponse?.total_count ?? 0) > 0,
 					},
 				]

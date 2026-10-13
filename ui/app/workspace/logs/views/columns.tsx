@@ -253,13 +253,25 @@ export function LogMessageCell({
 						compact ? "max-h-[30px] overflow-hidden text-[11px] leading-[15px]" : "text-sm leading-5",
 					)}
 				>
-					{realtimeMessages.tool ? <div className="truncate">{t("logs:columns.toolResultPrefix")}: {realtimeMessages.tool}</div> : null}
-					{realtimeMessages.user ? <div className="truncate">{t("logs:columns.userPrefix")}: {realtimeMessages.user}</div> : null}
+					{realtimeMessages.tool ? (
+						<div className="truncate">
+							{t("logs:columns.toolResultPrefix")}: {realtimeMessages.tool}
+						</div>
+					) : null}
+					{realtimeMessages.user ? (
+						<div className="truncate">
+							{t("logs:columns.userPrefix")}: {realtimeMessages.user}
+						</div>
+					) : null}
 					{realtimeMessages.assistantToolCall ? (
-						<div className="truncate">{t("logs:columns.assistantToolCallPrefix")}: {realtimeMessages.assistantToolCall}</div>
+						<div className="truncate">
+							{t("logs:columns.assistantToolCallPrefix")}: {realtimeMessages.assistantToolCall}
+						</div>
 					) : null}
 					{realtimeMessages.assistant ? (
-						<div className="truncate">{t("logs:columns.assistantPrefix")}: {realtimeMessages.assistant}</div>
+						<div className="truncate">
+							{t("logs:columns.assistantPrefix")}: {realtimeMessages.assistant}
+						</div>
 					) : null}
 				</div>
 			) : (

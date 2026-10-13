@@ -570,7 +570,9 @@ function GoroutineGroupRow({
 						<span className="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">{group.count}x</span>
 						<span className="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">{group.state}</span>
 						{group.wait_minutes != null && group.wait_minutes > 0 && (
-							<span className="rounded bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">{t("workspaces:pprof.waitMinutes", { minutes: group.wait_minutes })}</span>
+							<span className="rounded bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
+								{t("workspaces:pprof.waitMinutes", { minutes: group.wait_minutes })}
+							</span>
 						)}
 					</div>
 					{group.wait_reason && (
@@ -875,10 +877,30 @@ export default function PprofPage() {
 				<>
 					{/* Overview Stats */}
 					<div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-						<StatCard label={t("workspaces:pprof.cpuUsage")} value={`${data.cpu.usage_percent.toFixed(1)}%`} color="text-orange-400" icon={Cpu} />
-						<StatCard label={t("settings:devtools.profiler.heapAlloc")} value={formatBytes(data.memory.alloc)} color="text-cyan-400" icon={HardDrive} />
-						<StatCard label={t("settings:devtools.profiler.heapInUse")} value={formatBytes(data.memory.heap_inuse)} color="text-blue-400" icon={HardDrive} />
-						<StatCard label={t("workspaces:pprof.systemMemory")} value={formatBytes(data.memory.sys)} color="text-purple-400" icon={HardDrive} />
+						<StatCard
+							label={t("workspaces:pprof.cpuUsage")}
+							value={`${data.cpu.usage_percent.toFixed(1)}%`}
+							color="text-orange-400"
+							icon={Cpu}
+						/>
+						<StatCard
+							label={t("settings:devtools.profiler.heapAlloc")}
+							value={formatBytes(data.memory.alloc)}
+							color="text-cyan-400"
+							icon={HardDrive}
+						/>
+						<StatCard
+							label={t("settings:devtools.profiler.heapInUse")}
+							value={formatBytes(data.memory.heap_inuse)}
+							color="text-blue-400"
+							icon={HardDrive}
+						/>
+						<StatCard
+							label={t("workspaces:pprof.systemMemory")}
+							value={formatBytes(data.memory.sys)}
+							color="text-purple-400"
+							icon={HardDrive}
+						/>
 						<StatCard
 							label={t("settings:devtools.pprof.goroutines")}
 							value={data.runtime.num_goroutine}
@@ -1016,7 +1038,14 @@ export default function PprofPage() {
 											}}
 											labelStyle={{ color: "#a1a1aa" }}
 										/>
-										<Area type="monotone" dataKey="alloc" stroke="#22d3ee" strokeWidth={2} fill="url(#allocGradient)" name={`${t("workspaces:pprof.alloc")} (MB)`} />
+										<Area
+											type="monotone"
+											dataKey="alloc"
+											stroke="#22d3ee"
+											strokeWidth={2}
+											fill="url(#allocGradient)"
+											name={`${t("workspaces:pprof.alloc")} (MB)`}
+										/>
 										<Area
 											type="monotone"
 											dataKey="heapInuse"
@@ -1064,9 +1093,7 @@ export default function PprofPage() {
 									</span>
 								)}
 							</div>
-							<p className="mt-1 text-xs text-zinc-500">
-								{t("workspaces:pprof.leaksDesc")}
-															</p>
+							<p className="mt-1 text-xs text-zinc-500">{t("workspaces:pprof.leaksDesc")}</p>
 						</div>
 						<LeakTable candidates={leakCandidates} expandedKeys={expandedLeaks} onToggle={toggleLeakExpand} />
 					</div>
@@ -1077,11 +1104,11 @@ export default function PprofPage() {
 							<div className="flex items-center gap-2">
 								<HardDrive className="h-4 w-4 text-emerald-400" />
 								<span className="font-medium text-zinc-300">{t("settings:devtools.pprof.liveHeap")}</span>
-								<span className="text-sm text-zinc-500">({t("workspaces:pprof.sitesCount", { count: sortedInuseAllocations.length })})</span>
+								<span className="text-sm text-zinc-500">
+									({t("workspaces:pprof.sitesCount", { count: sortedInuseAllocations.length })})
+								</span>
 							</div>
-							<p className="mt-1 text-xs text-zinc-500">
-								{t("workspaces:pprof.liveHeapDesc")}
-							</p>
+							<p className="mt-1 text-xs text-zinc-500">{t("workspaces:pprof.liveHeapDesc")}</p>
 						</div>
 						<AllocationTable
 							allocations={sortedInuseAllocations}
@@ -1103,9 +1130,7 @@ export default function PprofPage() {
 								<span className="font-medium text-zinc-300">{t("settings:devtools.pprof.cumulativeAlloc")}</span>
 								<span className="text-sm text-zinc-500">({t("workspaces:pprof.sitesCount", { count: sortedAllocations.length })})</span>
 							</div>
-							<p className="mt-1 text-xs text-zinc-500">
-								{t("workspaces:pprof.cumulativeDesc")}
-							</p>
+							<p className="mt-1 text-xs text-zinc-500">{t("workspaces:pprof.cumulativeDesc")}</p>
 						</div>
 						<AllocationTable
 							allocations={sortedAllocations}
@@ -1201,9 +1226,7 @@ export default function PprofPage() {
 							})}
 							{filteredGoroutines.length === 0 && (
 								<div className="px-4 py-8 text-center text-zinc-500">
-									{skippedGoroutines.size > 0
-										? t("workspaces:pprof.allHidden")
-										: t("workspaces:pprof.noGoroutineData")}
+									{skippedGoroutines.size > 0 ? t("workspaces:pprof.allHidden") : t("workspaces:pprof.noGoroutineData")}
 								</div>
 							)}
 						</div>
