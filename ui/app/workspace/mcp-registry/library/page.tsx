@@ -233,7 +233,7 @@ export default function MCPLibraryPage() {
 								{hasSettingsAccess && (
 									<Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)} data-testid="mcp-library-settings-btn">
 										<Settings className="h-4 w-4" />
-										{t("mcp:library.settings")}
+										{t("mcp:library.settings.title")}
 									</Button>
 								)}
 							</div>
