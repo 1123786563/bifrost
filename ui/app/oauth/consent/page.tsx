@@ -14,18 +14,20 @@ import { getActiveTempToken } from "@/lib/store/apis/tempToken";
 import { Fingerprint, KeyRound, Loader2, LogIn, ShieldCheck, UserRound } from "lucide-react";
 import { useQueryState } from "nuqs";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 // Mirrors handlers.TempTokenRejectedCode: a presented token was refused.
 const TEMP_TOKEN_REJECTED_CODE = "temp_token_rejected";
 
 export default function OAuth2ConsentPage() {
+	const { t } = useTranslation(["common", "auth"]);
 	const [flowId] = useQueryState("flow");
 
 	if (!flowId) {
 		return (
 			<Shell>
 				<div className="text-center">
-					<h1 className="text-xl font-semibold">Missing flow identifier</h1>
+					<h1 className="text-xl font-semibold">{t("auth:consent.missingFlow")}</h1>
 					<p className="text-muted-foreground mt-2 text-sm">
 						This URL is missing the <code className="bg-muted rounded px-1 py-0.5 text-xs">flow</code> query parameter. Restart the
 						connection from your MCP client.
@@ -51,6 +53,7 @@ function isSafeRedirect(url: string): boolean {
 }
 
 function ConsentView({ flowId }: { flowId: string }) {
+	const { t } = useTranslation(["common", "auth"]);
 	const { data: flow, isLoading, isError, error } = useGetOAuth2ConsentFlowQuery(flowId);
 	const { data: authState } = useIsAuthEnabledQuery();
 	const [submitFlow, { isLoading: submitting }] = useSubmitOAuth2ConsentFlowMutation();
@@ -108,7 +111,7 @@ function ConsentView({ flowId }: { flowId: string }) {
 		return (
 			<Shell>
 				<div className="text-center">
-					<h1 className="text-xl font-semibold">Link unavailable</h1>
+					<h1 className="text-xl font-semibold">{t("auth:consent.linkUnavailable")}</h1>
 					<p className="text-muted-foreground mt-2 text-sm">
 						This authorization link may have expired or already been used. Restart the connection from your MCP client to get a fresh link.
 					</p>
@@ -131,8 +134,8 @@ function ConsentView({ flowId }: { flowId: string }) {
 					<ShieldCheck className="text-primary size-7" />
 				</div>
 				<h1 className="text-xl font-semibold tracking-tight">{clientName} wants to connect</h1>
-				<p className="text-muted-foreground mt-1.5 text-sm">Choose how you'd like to identify yourself to Bifrost</p>
-				<p className="mt-4 text-sm">Continue only if you recognize this application and its callback destination:</p>
+				<p className="text-muted-foreground mt-1.5 text-sm">{t("auth:consent.chooseIdentity")}</p>
+				<p className="mt-4 text-sm">{t("auth:consent.recognizeWarning")}:</p>
 				<p className="mt-2 font-mono text-sm break-all" data-testid="oauth-consent-redirect-uri">
 					{flow.redirect_uri}
 				</p>
@@ -142,7 +145,7 @@ function ConsentView({ flowId }: { flowId: string }) {
 				{/* No mode available — nothing the user can act on here */}
 				{!hasAnyMode && (
 					<div className="rounded-sm border p-4 text-center" data-testid="oauth-consent-empty-state">
-						<p className="text-sm font-medium">No authentication options available</p>
+						<p className="text-sm font-medium">{t("auth:consent.noOptions")}</p>
 						<p className="text-muted-foreground mt-1 text-xs">Restart the connection from your MCP client.</p>
 					</div>
 				)}
@@ -309,6 +312,7 @@ function formatExpiry(iso: string): string {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+	const { t } = useTranslation(["common", "auth"]);
 	return (
 		<div className="mx-auto flex min-h-screen w-full items-center justify-center p-4 sm:p-6">
 			<div className="bg-card w-full max-w-md rounded-sm border p-6 shadow-sm sm:p-8">{children}</div>

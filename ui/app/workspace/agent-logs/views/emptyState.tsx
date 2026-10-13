@@ -85,12 +85,12 @@ export function AgentEmptyState({ error }: AgentEmptyStateProps) {
 			<div className="w-full space-y-6 p-4">
 				<div className="flex items-center gap-4">
 					<div>
-						<h3 className="text-lg font-semibold">Send your first agent request</h3>
-						<p className="text-muted-foreground text-sm">Route an agent request through Bifrost to start collecting Agent Logs.</p>
+						<h3 className="text-lg font-semibold">{t("logs:agent.emptyTitle")}</h3>
+						<p className="text-muted-foreground text-sm">{t("logs:agent.emptyDesc")}</p>
 					</div>
 					<Button asChild variant="outline" className="ml-auto">
 						<Link to="/workspace/agent-gateway">
-							Open Agent Gateway
+							{t("logs:agent.openAgentGateway")}
 							<ArrowRight className="size-4" />
 						</Link>
 					</Button>
@@ -102,34 +102,29 @@ export function AgentEmptyState({ error }: AgentEmptyStateProps) {
 						<TabsTrigger value="http">HTTP+JSON</TabsTrigger>
 					</TabsList>
 					<TabsContent value="jsonrpc" className="px-4">
-						<p className="text-muted-foreground mb-3 text-sm">Send a strict A2A v1 SendMessage request over JSON-RPC.</p>
+						<p className="text-muted-foreground mb-3 text-sm">{t("logs:agent.jsonrpcHint")}</p>
 						<CodeBlock code={examples.jsonrpc} />
 					</TabsContent>
 					<TabsContent value="http" className="px-4">
-						<p className="text-muted-foreground mb-3 text-sm">Send the same message through the A2A HTTP+JSON binding.</p>
+						<p className="text-muted-foreground mb-3 text-sm">{t("logs:agent.httpHint")}</p>
 						<CodeBlock code={examples.http} />
 					</TabsContent>
 				</Tabs>
 
 				<div className="bg-muted/50 rounded-lg border p-4">
-					<h4 className="mb-2 text-sm font-semibold">Before you send a request</h4>
+					<h4 className="mb-2 text-sm font-semibold">{t("logs:agent.beforeYouSend")}</h4>
 					<ol className="text-muted-foreground space-y-2 text-sm">
 						<li className="flex items-start gap-2">
 							<span className="text-primary">1.</span>
-							<span>Register and enable the upstream agent in Agent Gateway.</span>
+							<span>{t("logs:agent.beforeStep1")}</span>
 						</li>
 						<li className="flex items-start gap-2">
 							<span className="text-primary">2.</span>
-							<span>
-								Replace <code className="bg-muted rounded px-1">&lt;agent-name&gt;</code> with its registered name.
-							</span>
+							<span>{t("logs:agent.beforeStep2", { name: "<agent-name>" })}</span>
 						</li>
 						<li className="flex items-start gap-2">
 							<span className="text-primary">3.</span>
-							<span>
-								Use a virtual key that can access the agent, or remove the <code className="bg-muted rounded px-1">x-bf-vk</code> header
-								when authentication is disabled.
-							</span>
+							<span>{t("logs:agent.beforeStep3", { header: "x-bf-vk" })}</span>
 						</li>
 					</ol>
 				</div>

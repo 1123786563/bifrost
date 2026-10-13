@@ -651,7 +651,13 @@
 			"reassignDescription": "This key is currently assigned to another team. Reassigning it will move budget tracking to this team; future requests through this key will count against this team’s budget, not the previous one.",
 			"reassign": "Reassign",
 			"virtualKeyEntity": "virtual key"
-		}
+		},
+		"loadFailed": "Failed to load virtual keys: {{error}}",
+		"viewLogs": "View logs",
+		"exporting": "Exporting...",
+		"exportCsv": "Export CSV",
+		"assignedTo": "Assigned To",
+		"rateLimits": "Rate Limits"
 	},
 	"webhooks": {
 		"view": {
@@ -974,6 +980,41 @@
 			"targets": "Targets",
 			"resolvedTarget": "Resolved target (new input)",
 			"passthrough": "Passthrough"
-		}
+		},
+		"delete_": "Delete",
+		"priority": "Priority",
+		"actions": "Actions",
+		"noMatch": "No matching routing rules found.",
+		"chainRule": "Chain Rule",
+		"overview": "Overview",
+		"conditions": "Conditions",
+		"fallbackChain": "Fallback Chain",
+		"created": "Created",
+		"lastUpdated": "Last Updated",
+		"viewTree": "View Tree",
+		"addRule": "Add Rule",
+		"viewRules": "View routing rules",
+		"loadFailed": "Failed to load routing rules",
+		"noneToDisplay": "No routing rules to display",
+		"backToRules": "Back to rules",
+		"routingTree": "Routing Tree",
+		"staticChain": "Static chain",
+		"dynamicChain": "Dynamic chain",
+		"treeTooSmall": "Routing tree needs a larger screen",
+		"treeTooSmallDesc": "Use the routing rules list to review and modify rules on mobile.",
+		"emptyDesc": "Routing rules direct requests using CEL conditions",
+		"newRule": "New Rule",
+		"ruleName": "Rule Name",
+		"activeHint": "Rule will be active and applied to matching requests",
+		"noFallbacks": "No fallbacks configured",
+		"loadingCelBuilder": "Loading CEL builder...",
+		"weight": "Weight"
+	},
+	"budgets": {
+		"addOverride": "Add override",
+		"additionalBudget": "Additional budget",
+		"duration": "Duration",
+		"resetCycles": "Reset cycles",
+		"validUntil": "Valid until"
 	}
 }

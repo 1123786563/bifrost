@@ -303,7 +303,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 											<TooltipTrigger asChild>
 												<Badge variant="outline" className="cursor-default gap-1">
 													<GitMerge className="h-3 w-3" />
-													Chain Rule
+													t("governance:routingRules.chainRule")
 												</Badge>
 											</TooltipTrigger>
 											<TooltipContent className="max-w-64">
@@ -327,7 +327,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 						<div className="-mx-4 space-y-6 overflow-y-auto px-4 pb-8 md:-mx-8 md:px-8">
 							{/* Overview */}
 							<div className="space-y-3">
-								<h3 className="text-sm font-semibold">Overview</h3>
+								<h3 className="text-sm font-semibold">{t("governance:routingRules.overview")}</h3>
 								<div className="grid gap-3">
 									<div className="grid grid-cols-1 items-center gap-4 md:grid-cols-3">
 										<span className="text-muted-foreground text-sm">Scope</span>
@@ -351,7 +351,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 
 							{/* Conditions */}
 							<div className="space-y-3">
-								<h3 className="text-sm font-semibold">Conditions</h3>
+								<h3 className="text-sm font-semibold">{t("governance:routingRules.conditions")}</h3>
 								{hasQuery ? (
 									<ConditionGroup group={rule.query!} />
 								) : hasCel ? (
@@ -396,7 +396,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 
 							{/* Fallback Chain */}
 							<div className="space-y-3">
-								<h3 className="text-sm font-semibold">Fallback Chain</h3>
+								<h3 className="text-sm font-semibold">{t("governance:routingRules.fallbackChain")}</h3>
 								{fallbacks.length > 0 ? (
 									<FallbackChain fallbacks={fallbacks} />
 								) : (
@@ -417,7 +417,9 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 							{/* Timestamps */}
 							<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 								<div>
-									<p className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">Created</p>
+									<p className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
+										{t("governance:routingRules.created")}
+									</p>
 									<span className="text-sm">
 										{formatDistanceToNow(new Date(rule.created_at), {
 											addSuffix: true,
@@ -425,7 +427,9 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 									</span>
 								</div>
 								<div>
-									<p className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">Last Updated</p>
+									<p className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
+										{t("governance:routingRules.lastUpdated")}
+									</p>
 									<span className="text-sm">
 										{formatDistanceToNow(new Date(rule.updated_at), {
 											addSuffix: true,

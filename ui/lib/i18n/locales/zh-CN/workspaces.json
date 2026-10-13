@@ -324,7 +324,9 @@
 			"helpTitle": "需要生产环境部署方面的帮助？",
 			"helpBody": "我们提供生产环境部署帮助，包括自定义集成与专属支持。",
 			"bookDemo": "与我们的团队预约演示"
-		}
+		},
+		"createAdmin": "创建管理员",
+		"resumeSetup": "继续设置"
 	},
 	"pageTitle": {
 		"beta": "Beta",
@@ -392,10 +394,12 @@
 	},
 	"rateLimit": {
 		"usageAria": "{{label}}用量",
-		"requestNoun": "请求"
+		"requestNoun": "请求",
+		"resets": "{{duration}} 重置"
 	},
 	"scopeChips": {
-		"showAllAria": "显示全部 {{count}} 个权限范围"
+		"showAllAria": "显示全部 {{count}} 个权限范围",
+		"granted": "已授权范围"
 	},
 	"filters": {
 		"header": "筛选器",
@@ -682,7 +686,12 @@
 		"jobFinishedToast": "该任务已经完成",
 		"cancelFailedToast": "无法取消任务",
 		"unread": "{{count}} 条未读",
-		"running": "{{count}} 个运行中"
+		"running": "{{count}} 个运行中",
+		"clearFinished": "清除已完成",
+		"loading": "正在加载通知",
+		"loadFailed": "通知加载失败。",
+		"emptyHint": "新通知将显示在这里。",
+		"clearAll": "全部清除"
 	},
 	"sidekiq": {
 		"queued": "排队中",
@@ -709,12 +718,30 @@
 		"whatThisCovers": "覆盖内容",
 		"question": "问题",
 		"skip": "跳过",
-		"orTypeOwn": "或在下方输入您自己的回答。"
+		"orTypeOwn": "或在下方输入您自己的回答。",
+		"preview": "预览",
+		"indexUnavailable": "索引状态不可用",
+		"loading": "正在加载 Warp…",
+		"askYourData": "询问您的 Bifrost 数据",
+		"resumeQueued": "恢复排队消息",
+		"loadingHistory": "正在加载历史",
+		"historyFailed": "无法加载历史。",
+		"noConversations": "暂无保存的对话。",
+		"chartUnavailable": "图表不可用。",
+		"partialAnswer": "部分回答",
+		"whatToTry": "建议尝试",
+		"thinking": "思考中"
 	},
 	"onboarding": {
 		"expandAria": "展开设置清单",
 		"minimizeAria": "最小化",
-		"closeAria": "暂时关闭"
+		"closeAria": "暂时关闭",
+		"title": "设置清单",
+		"completed": "已完成",
+		"remindLater": "稍后提醒",
+		"vulnerableWarning": "不完成这些步骤会使您的 Bifrost 部署处于风险中。",
+		"tomorrow": "明天",
+		"inAWeek": "一周后"
 	},
 	"agentSelect": {
 		"openToAll": "对所有密钥开放",
@@ -864,5 +891,70 @@
 		"toggleSidebar": "切换侧边栏",
 		"fiscalYearStarts": "财年起始月",
 		"unreadAria": "未读"
-	}
+	},
+	"webhooks": {
+		"loadFailed": "加载 webhook 端点失败。",
+		"recentDeliveries": "最近投递",
+		"noDeliveries": "暂无投递。",
+		"clearFilters": "清除筛选",
+		"waiting": "等待新投递…",
+		"secretIntro": "使用此密钥验证"
+	},
+	"jobs": {
+		"empty": "没有后台任务",
+		"emptyHint": "长时间运行的任务将在此处显示进度。",
+		"stopJob": "停止任务"
+	},
+	"prompts": {
+		"responded": "已响应",
+		"ready": "就绪",
+		"arguments": "参数",
+		"submitResult": "提交结果",
+		"connectAccount": "连接您的账户以执行此工具。",
+		"authenticate": "身份验证",
+		"awaitingResult": "等待工具结果",
+		"awaitingHint": "执行调用或手动添加结果。",
+		"addManually": "手动添加",
+		"addPrompt": "添加提示词",
+		"addFolder": "添加文件夹",
+		"editFolder": "编辑文件夹",
+		"deleteFolder": "删除文件夹",
+		"configuration": "配置",
+		"requiredHeaders": "必需请求头",
+		"variables": "变量",
+		"detectedFrom": "检测自",
+		"variable": "变量",
+		"saveSession": "保存会话",
+		"noVersions": "暂无版本",
+		"commitVersion": "提交版本",
+		"searchSessions": "搜索会话…",
+		"inputLabel": "输入",
+		"outputLabel": "输出",
+		"totalLabel": "总计",
+		"assistantPlaceholder": "输入助手消息…",
+		"emptyMessage": "空消息",
+		"noResults": "未找到结果。",
+		"dropFiles": "拖放文件以附加",
+		"userPlaceholder": "输入用户消息…",
+		"attachFile": "附加文件",
+		"noneSelected": "未选择提示词",
+		"toolResultPlaceholder": "输入工具结果…",
+		"systemPlaceholder": "输入系统消息…",
+		"variablesHint": "检测自消息中的",
+		"variablesHint2": "语法。值在运行时替换。"
+	},
+	"virtualMcps": {
+		"addButton": "添加虚拟 MCP",
+		"servedAt": "服务地址",
+		"allowAllTools": "允许所有工具",
+		"assignHint1": "将此密钥分配给虚拟 MCP。该密钥随后可通过以下端点访问每个虚拟 MCP:",
+		"assignHint2": "且该密钥会显示在该虚拟 MCP 的已分配密钥下。"
+	},
+	"budgets": {
+		"addBudget": "添加预算",
+		"noneConfigured": "未配置预算限制。",
+		"resetPeriod": "重置周期",
+		"nextResetOn": "下次重置于"
+	},
+	"settingsUnaffected": "您的设置和数据不受影响。"
 }

@@ -45,6 +45,7 @@ export function FilterSection({
 	onOpenChange?: (open: boolean) => void;
 	testId?: string;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const [open, setOpen] = useState(defaultOpen);
 
 	useEffect(() => {
@@ -89,6 +90,7 @@ export function CheckboxFilterItem({
 	labelClassName?: string;
 	testId?: string;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	return (
 		<label className="hover:bg-muted/50 flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm" data-testid={testId}>
 			<Checkbox checked={checked} onCheckedChange={onCheckedChange} />
@@ -202,7 +204,7 @@ export function SearchableCheckboxList({
 				/>
 			))}
 			{filtered.length === 0 && !showAddCustom && (
-				<div className="text-muted-foreground flex h-9 items-center px-3 text-xs">No results</div>
+				<div className="text-muted-foreground flex h-9 items-center px-3 text-xs">{tPrimitives("common:state.noResults")}</div>
 			)}
 			{showAddCustom && (
 				<button

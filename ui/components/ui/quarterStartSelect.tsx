@@ -74,8 +74,8 @@ export default function QuarterStartSelect({ "data-testid": testId, value, onCha
 				})}
 			</div>
 			<p className="text-muted-foreground border-t pt-2.5 text-[0.8rem] leading-relaxed">
-				Next reset on <span className="text-foreground font-medium">{format(nextReset, "MMM d, yyyy")}</span>. The current quarter ends{" "}
-				{format(currentQuarterEnd, "MMM d, yyyy")}.
+				{t("workspaces:budgets.nextResetOn")} <span className="text-foreground font-medium">{format(nextReset, "MMM d, yyyy")}</span>. The
+				current quarter ends {format(currentQuarterEnd, "MMM d, yyyy")}.
 			</p>
 		</div>
 	);

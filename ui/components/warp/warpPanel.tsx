@@ -18,6 +18,7 @@ import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { Link } from "@tanstack/react-router";
 import { ArrowDown, Clock, Database, History, Loader2, SquarePen, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const STARTERS = [
 	"What did I spend on each provider in the last 7 days?",
@@ -27,6 +28,7 @@ const STARTERS = [
 ];
 
 export default function WarpPanel() {
+	const { t } = useTranslation(["common", "workspaces"]);
 	// Node in state, not a ref: the controls mount after the loading branch, so a [] effect would miss them.
 	const [controlsNode, setControlsNode] = useState<HTMLDivElement | null>(null);
 	const [controlsHeight, setControlsHeight] = useState(112);
@@ -199,7 +201,7 @@ export default function WarpPanel() {
 							data-testid="warp-index-status-unavailable"
 							title="Warp could not read its index status. Semantic search may or may not be available."
 						>
-							Index status unavailable
+							{t("workspaces:warp.indexUnavailable")}
 						</span>
 					)}
 				</div>
@@ -257,7 +259,7 @@ export default function WarpPanel() {
 			{isConfigLoading || (isConfigFetching && !isConfigured) ? (
 				// An undefined config reads as unconfigured, so without this the setup prompt flashes on open.
 				<div className="flex min-h-0 flex-1 items-center justify-center px-6" data-testid="warp-config-loading">
-					<p className="text-muted-foreground text-xs">Loading Warp...</p>
+					<p className="text-muted-foreground text-xs">{t("workspaces:warp.loading")}</p>
 				</div>
 			) : isConfigError ? (
 				<div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center" data-testid="warp-config-error">
@@ -310,7 +312,7 @@ export default function WarpPanel() {
 							<div className="min-w-0 space-y-5 p-4" style={{ paddingBottom: controlsHeight + 16 }} ref={contentRef}>
 								{warp.turns.length === 0 && !isStreaming ? (
 									<div className="space-y-3 pt-6" data-testid="warp-empty-state">
-										<p className="text-sm font-medium">Ask about your Bifrost data</p>
+										<p className="text-sm font-medium">{t("workspaces:warp.askYourData")}</p>
 										<div className="space-y-1.5">
 											{STARTERS.map((starter) => (
 												<button

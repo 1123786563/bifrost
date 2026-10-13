@@ -18,7 +18,7 @@ function formatMicros(us: number): string {
 // parse/encode), Conversion (API schema translation), Plugins, Middleware (auth/access),
 // Key selection, Processing (internal request pipeline), Networking
 // (client<->gateway<->provider handling), Client delivery (SSE egress to the client), and Miscellaneous
-// (small glue on no dedicated span plus the residual goroutine-hop latency between phases). "View details" drills into the member
+// (small glue on no dedicated span plus the residual goroutine-hop latency between phases). "{t("common:actions.viewDetails")}" drills into the member
 // spans inside each grouped category with their friendly labels. See OVERHEAD_LABELS /
 // OVERHEAD_BUCKET_CATEGORY / overheadCategoryKey for the mapping.
 type OverheadCategory = {
@@ -268,7 +268,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center justify-between gap-2">
-				<BlockHeader title="Overhead Breakdown" />
+				<BlockHeader title={t("logs:metrics.overheadBreakdown")} />
 				<div className="font-mono text-xs tabular-nums">{formatMicros(overheadUs ?? sumUs)}</div>
 			</div>
 

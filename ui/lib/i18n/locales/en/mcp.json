@@ -71,7 +71,8 @@
 			"searchMcpServers": "Search MCP servers",
 			"searchVirtualKeys": "Search virtual keys",
 			"searchUsers": "Search by name or email",
-			"noResults": "No results"
+			"noResults": "No results",
+			"searchPlaceholder": "Search..."
 		},
 		"authFailed": {
 			"title": "Authentication failed",
@@ -448,7 +449,19 @@
 			"allowAnyVirtualKey": "Allow any virtual key",
 			"fetchToContinue": "Fetch the agent card to continue.",
 			"create": "Create",
-			"fetchFirstOrManual": "Fetch the agent card first, or configure authentication manually."
+			"fetchFirstOrManual": "Fetch the agent card first, or configure authentication manually.",
+			"removeUriAria": "Remove extension URI"
+		},
+		"card": {
+			"copySkillId": "Click to copy skill ID",
+			"fetched": "Fetched",
+			"interfaces": "Interfaces",
+			"securitySchemes": "Security schemes",
+			"extendedCard": "Extended card",
+			"extendedCardDesc": "Supports fetching an extended agent card with authentication.",
+			"required": "Required",
+			"skills": "Skills",
+			"none": "None"
 		}
 	},
 	"registry": {
@@ -813,7 +826,9 @@
 			"noChanges": "No changes to save",
 			"unsavedTitle": "Unsaved Changes",
 			"unsavedDesc": "You have unsaved changes. Are you sure you want to navigate away? Your changes will be lost.",
-			"discardChanges": "Discard Changes"
+			"discardChanges": "Discard Changes",
+			"authType": "Authentication Type",
+			"authTypePlaceholder": "Select authentication type"
 		},
 		"credential": {
 			"replacementHint": "The provider rejected Bifrost's client itself, not just this token, so redoing consent with it will fail the same way. Use Reauthorize with a new client from the server's actions menu to register a replacement first.",
@@ -852,7 +867,16 @@
 			"submissionNoun_other": "submissions",
 			"viewSessions": "View sessions",
 			"viewSubmissions": "View submissions"
-		}
+		},
+		"gatewayLlmRequests": "Gateway and LLM requests",
+		"staticAdminHeaders": "Static admin headers",
+		"noDeclaredHeaders": "No header keys have been declared on this MCP client.",
+		"rejectedUpstream": "Rejected upstream",
+		"notIssued": "Not issued",
+		"parametersSchema": "Parameters Schema",
+		"noParameters": "No parameters defined",
+		"noToolsSelected": "No tools selected. Use the search above to add tools.",
+		"noServersSelected": "No servers selected. Use the search above to add MCP servers."
 	},
 	"usageGuide": {
 		"serverCount_one": "{{count}} server",

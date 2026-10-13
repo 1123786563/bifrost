@@ -48,6 +48,7 @@ import { Plus, Trash2, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { RuleGroupType } from "react-querybuilder";
 import { toast } from "sonner";
 // Side-effect import: registers the enterprise user picker (no-op in OSS builds).
@@ -90,7 +91,7 @@ const CELRuleBuilderLazy = lazy(() =>
 	})),
 );
 const CELRuleBuilder = (props: React.ComponentProps<typeof CELRuleBuilderLazy>) => (
-	<Suspense fallback={<div className="text-sm text-gray-500">Loading CEL builder...</div>}>
+	<Suspense fallback={<div className="text-sm text-gray-500">{i18n.t("governance:routingRules.loadingCelBuilder")}</div>}>
 		<CELRuleBuilderLazy {...props} />
 	</Suspense>
 );
@@ -408,7 +409,7 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 						{/* Rule Name */}
 						<div className="space-y-3">
 							<Label htmlFor="name">
-								Rule Name <span className="text-red-500">*</span>
+								{t("governance:routingRules.ruleName")} <span className="text-red-500">*</span>
 							</Label>
 							<Input
 								id="name"
@@ -436,7 +437,7 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 						<div className="flex items-center justify-between rounded-lg border p-4">
 							<div className="space-y-0.5">
 								<Label htmlFor="enabled">{t("governance:routingRules.sheet.enableRule")}</Label>
-								<p className="text-muted-foreground text-sm">Rule will be active and applied to matching requests</p>
+								<p className="text-muted-foreground text-sm">{t("governance:routingRules.activeHint")}</p>
 							</div>
 							<Switch id="enabled" checked={enabled} onCheckedChange={(checked) => setValue("enabled", checked)} />
 						</div>
@@ -643,7 +644,7 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 							</div>
 							<div className="space-y-2">
 								{(fallbacks || []).length === 0 ? (
-									<p className="text-muted-foreground text-sm">No fallbacks configured</p>
+									<p className="text-muted-foreground text-sm">{t("governance:routingRules.noFallbacks")}</p>
 								) : (
 									(fallbacks || []).map((fallback, index) => (
 										<FallbackRow
@@ -698,7 +699,7 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 					{/* Action Buttons */}
 					<div className="bg-card sticky bottom-0 flex justify-end gap-3 border-t px-4 py-4 md:px-8">
 						<Button type="button" variant="outline" onClick={handleCancel} disabled={isLoading}>
-							Cancel
+							{t("common:actions.cancel")}
 						</Button>
 						<Button type="submit" disabled={isLoading || !hasRequiredAccess}>
 							{isEditing ? t("governance:routingRules.sheet.updateRule") : t("governance:routingRules.sheet.saveRule")}

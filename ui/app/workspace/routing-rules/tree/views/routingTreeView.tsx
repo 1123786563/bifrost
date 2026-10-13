@@ -352,12 +352,12 @@ export function RoutingTreeView() {
 				<div className="bg-card flex max-w-md flex-col items-center gap-3 rounded-md border p-6 text-center shadow-sm">
 					<GitBranch className="text-muted-foreground size-10" />
 					<div>
-						<h2 className="font-semibold">Routing tree needs a larger screen</h2>
-						<p className="text-muted-foreground mt-1 text-sm">Use the routing rules list to review and modify rules on mobile.</p>
+						<h2 className="font-semibold">{t("governance:routingRules.treeTooSmall")}</h2>
+						<p className="text-muted-foreground mt-1 text-sm">{t("governance:routingRules.treeTooSmallDesc")}</p>
 					</div>
 					<Button onClick={() => navigate({ to: "/workspace/routing-rules" })} data-testid="routing-tree-mobile-list-btn">
 						<ArrowLeft className="size-4" />
-						View routing rules
+						{t("governance:routingRules.viewRules")}
 					</Button>
 				</div>
 			</div>
@@ -375,7 +375,7 @@ export function RoutingTreeView() {
 		return (
 			<div className="text-muted-foreground flex h-full items-center justify-center gap-2">
 				<AlertCircle className="h-5 w-5" />
-				<span className="text-sm">Failed to load routing rules</span>
+				<span className="text-sm">{t("governance:routingRules.loadFailed")}</span>
 			</div>
 		);
 	}
@@ -383,7 +383,7 @@ export function RoutingTreeView() {
 		return (
 			<div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3">
 				<GitBranch className="h-10 w-10 opacity-20" />
-				<p className="text-sm">No routing rules to display</p>
+				<p className="text-sm">{t("governance:routingRules.noneToDisplay")}</p>
 				<Button
 					variant="outline"
 					size="sm"
@@ -391,7 +391,7 @@ export function RoutingTreeView() {
 					onClick={() => navigate({ to: "/workspace/routing-rules" })}
 				>
 					<ArrowLeft className="mr-1.5 h-4 w-4" />
-					Back to rules
+					{t("governance:routingRules.backToRules")}
 				</Button>
 			</div>
 		);
@@ -441,7 +441,7 @@ export function RoutingTreeView() {
 						<div className="bg-border h-5 w-px" />
 						<div className="flex items-center gap-2">
 							<GitBranch className="text-muted-foreground h-4 w-4" />
-							<p className="text-foreground text-sm leading-tight font-semibold">Routing Tree</p>
+							<p className="text-foreground text-sm leading-tight font-semibold">{t("governance:routingRules.routingTree")}</p>
 							<p className="text-muted-foreground text-[11px]" data-testid="routing-tree-rule-count">
 								{search
 									? highlightedIds && highlightedIds.size > 0
@@ -470,7 +470,7 @@ export function RoutingTreeView() {
 							data-testid="routing-tree-reset-layout-btn"
 						>
 							<RotateCcw className="h-3.5 w-3.5" />
-							Reset layout
+							{t("governance:routingRules.tree.resetLayout")}
 						</Button>
 					</div>
 					{/* Scope + edge legend — floats below */}
@@ -484,7 +484,7 @@ export function RoutingTreeView() {
 						<div className="bg-border h-3 w-px" />
 						<div className="flex items-center gap-1.5">
 							<Link2 className="text-muted-foreground h-2.5 w-2.5" />
-							<span className="text-muted-foreground text-[10px] font-medium">Chain rule</span>
+							<span className="text-muted-foreground text-[10px] font-medium">{t("governance:routingRules.chainRule")}</span>
 						</div>
 						<div className="bg-border h-3 w-px" />
 						{/* Chain edge styles — both dashed (long = static, short = dynamic); arrows at path midpoint */}
@@ -502,7 +502,7 @@ export function RoutingTreeView() {
 								/>
 								<polygon points="20,6 14,2.5 14,9.5" fill="var(--muted-foreground)" />
 							</svg>
-							<span className="text-muted-foreground text-[10px] font-medium">Static chain</span>
+							<span className="text-muted-foreground text-[10px] font-medium">{t("governance:routingRules.staticChain")}</span>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Info
@@ -537,7 +537,7 @@ export function RoutingTreeView() {
 									strokeLinejoin="round"
 								/>
 							</svg>
-							<span className="text-muted-foreground text-[10px] font-medium">Dynamic chain</span>
+							<span className="text-muted-foreground text-[10px] font-medium">{t("governance:routingRules.dynamicChain")}</span>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Info

@@ -322,7 +322,7 @@ export function WebhookSheet({ open, endpoint, onClose, onSecret }: WebhookSheet
 					<div className="dark:bg-card border-border border-t bg-white px-4 py-4 md:px-8">
 						<div className="flex justify-end gap-2">
 							<Button type="button" variant="outline" onClick={onClose} disabled={isSaving} data-testid="webhook-cancel-btn">
-								Cancel
+								{t("common:actions.cancel")}
 							</Button>
 							<Button type="submit" disabled={isSaving || !hasChanges} data-testid="webhook-save-btn">
 								{isSaving

@@ -810,7 +810,7 @@ export default function VirtualKeysTable({
 							{isExporting ? (
 								<>
 									<Loader2 className="h-4 w-4 animate-spin" />
-									Exporting...
+									{t("governance:virtualKeys.exporting")}
 								</>
 							) : (
 								<>
@@ -1006,7 +1006,7 @@ export default function VirtualKeysTable({
 								<TableHead className="w-[200px]">
 									<SortableHeader column="budget_spent" label="Budget" />
 								</TableHead>
-								<TableHead className="w-[200px]">Rate Limits</TableHead>
+								<TableHead className="w-[200px]">{t("governance:virtualKeys.rateLimits")}</TableHead>
 								<TableHead className="w-[180px]">
 									<SortableHeader column="status" label="Status" />
 								</TableHead>

@@ -11,6 +11,7 @@ import { Info, Trash2 } from "lucide-react";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 // One server's tool grant. tools_to_execute: ["*"] = all, [] = none, list = specific.
 // Keyed by name (VK shape); mcp_client_id rides along when known, for by-id resolution.
@@ -42,8 +43,8 @@ interface MCPClientConfigsEditorProps {
 const DEFAULT_TOOLTIP = (
 	<p>
 		Configure which MCP servers this virtual key can use and their allowed tools. Leaving this section empty blocks all MCP tools. After
-		adding an MCP server, you must select specific tools or choose <span className="font-medium">Allow All Tools</span> to grant tool
-		access.
+		adding an MCP server, you must select specific tools or choose{" "}
+		<span className="font-medium">{i18n.t("workspaces:virtualMcps.allowAllTools")}</span> to grant tool access.
 	</p>
 );
 

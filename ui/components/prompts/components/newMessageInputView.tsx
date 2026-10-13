@@ -182,7 +182,7 @@ export function NewMessageInputView() {
 				<div className="bg-background/80 border-primary absolute inset-0 z-50 flex items-center justify-center rounded-sm border-2 border-dashed backdrop-blur-sm">
 					<div className="text-primary flex flex-col items-center gap-1">
 						<Paperclip className="h-5 w-5" />
-						<span className="text-xs font-medium">Drop files to attach</span>
+						<span className="text-xs font-medium">{t("workspaces:prompts.dropFiles")}</span>
 					</div>
 				</div>
 			)}
@@ -208,7 +208,7 @@ export function NewMessageInputView() {
 						/>
 						<button
 							type="button"
-							aria-label="Attach file"
+							aria-label={t("workspaces:prompts.attachFile")}
 							data-testid="new-message-attach-file"
 							onClick={() => fileInputRef.current?.click()}
 							className="hover:bg-muted focus:bg-muted rounded-sm p-1"

@@ -452,7 +452,7 @@ export default function ToolCallMessageView({
 												<div className="text-foreground text-xs font-medium">
 													Authentication required for {authErrors[tc.id].mcpClientName}
 												</div>
-												<div className="text-muted-foreground text-[10px]">Connect your account to execute this tool.</div>
+												<div className="text-muted-foreground text-[10px]">{t("workspaces:prompts.connectAccount")}</div>
 											</div>
 										</div>
 										<div className="ml-auto flex items-center gap-1.5">
@@ -487,8 +487,8 @@ export default function ToolCallMessageView({
 									<div className="flex flex-wrap items-center gap-2">
 										{!isMultiple && (
 											<div className="min-w-0">
-												<div className="text-foreground text-xs font-medium">Awaiting tool result</div>
-												<div className="text-muted-foreground text-[10px]">Execute the call or add the result manually.</div>
+												<div className="text-foreground text-xs font-medium">{t("workspaces:prompts.awaitingResult")}</div>
+												<div className="text-muted-foreground text-[10px]">{t("workspaces:prompts.awaitingHint")}</div>
 											</div>
 										)}
 										<div className={cn("flex items-center gap-1.5", !isMultiple && "ml-auto")}>

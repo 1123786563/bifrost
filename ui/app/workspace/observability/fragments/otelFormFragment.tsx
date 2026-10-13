@@ -551,9 +551,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 										<div className="flex w-full flex-row items-center gap-2">
 											<div className="flex flex-col gap-1">
 												<h3 className="text-sm font-medium">{t("logs:otel.enableTraceExport")}</h3>
-												<p className="text-muted-foreground text-xs">
-													Export spans to the OTLP collector. Turn off for a metrics-only profile.
-												</p>
+												<p className="text-muted-foreground text-xs">{t("settings:observability.exportSpans")}</p>
 											</div>
 											<div className="ml-auto">
 												<Switch
@@ -675,7 +673,7 @@ function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, op
 										render={({ field }) => (
 											<FormItem className="w-full">
 												<FormLabel>
-													Request Headers <span className="text-muted-foreground font-normal">(Optional)</span>
+													{t("settings:observability.requestHeaders")} <span className="text-muted-foreground font-normal">(Optional)</span>
 												</FormLabel>
 												<FormDescription>
 													Comma-separated list of request headers to capture and emit as span attributes. Supports exact names and wildcard

@@ -539,14 +539,14 @@ export function ModelSelector(props: ModelSelectorProps) {
 					{isSearching && loadedCount === 0 && (
 						<div className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm">
 							<Loader2Icon className="size-3.5 animate-spin" />
-							Searching…
+							{t("common:state.searching")}
 						</div>
 					)}
 
 					{hasMore && isFetching && (
 						<div className="text-muted-foreground flex items-center justify-center gap-2 py-2 text-xs">
 							<Loader2Icon className="size-3 animate-spin" />
-							Loading more…
+							{t("common:state.loadingMore")}
 						</div>
 					)}
 				</ComboboxList>

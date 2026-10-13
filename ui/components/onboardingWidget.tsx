@@ -55,7 +55,7 @@ export default function OnboardingWidget() {
 	const { t } = useTranslation(["common", "workspaces"]);
 	const navigate = useNavigate();
 	const pathname = useLocation({ select: (l) => l.pathname });
-	// "Remind me later" is a real snooze: it survives navigation and reloads
+	// "{t("workspaces:onboarding.remindLater")}" is a real snooze: it survives navigation and reloads
 	// until the chosen date, via a cookie whose own expiry is that date.
 	const [cookies, setCookie, removeCookie] = useCookies([REMIND_LATER_COOKIE, HIDDEN_UNTIL_NAV_COOKIE]);
 	const isSnoozed = !!cookies[REMIND_LATER_COOKIE];
@@ -328,7 +328,7 @@ export default function OnboardingWidget() {
 										>
 											<Checkbox checked={step.complete} disabled tabIndex={-1} className="pointer-events-none" />
 										</span>
-										{step.complete && <span className="sr-only">Completed:</span>}
+										{step.complete && <span className="sr-only">{t("workspaces:onboarding.completed")}:</span>}
 										<span
 											className={cn(
 												"flex-1 text-sm",
@@ -375,7 +375,7 @@ export default function OnboardingWidget() {
 						<PopoverContent align="start" className="z-[1002] w-64 p-3">
 							<div className="mb-2 flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
 								<AlertTriangle className="mt-0.5 size-3.5 flex-shrink-0" />
-								<p className="text-xs leading-snug">Not completing these steps keeps your Bifrost setup vulnerable.</p>
+								<p className="text-xs leading-snug">{t("workspaces:onboarding.vulnerableWarning")}</p>
 							</div>
 							{remindPickerView === "options" ? (
 								<div className="flex flex-col gap-0.5">

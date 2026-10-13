@@ -110,7 +110,9 @@ export default function MultiBudgetLines({
 			</div>
 
 			{lines.length === 0 && (
-				<div className="text-muted-foreground rounded-md border border-dashed p-3 text-center text-sm">No budget limits configured.</div>
+				<div className="text-muted-foreground rounded-md border border-dashed p-3 text-center text-sm">
+					{t("workspaces:budgets.noneConfigured")}
+				</div>
 			)}
 
 			{lines.map((line, index) => {

@@ -239,10 +239,10 @@ export function PrometheusFormFragment({
 				<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "pull" | "push")}>
 					<TabsList className="gap-2">
 						<TabsTrigger value="pull" className="px-2 py-1" data-testid="prometheus-tab-pull">
-							Pull-based
+							{t("settings:observability.pullBased")}
 						</TabsTrigger>
 						<TabsTrigger value="push" className="px-2 py-1" data-testid="prometheus-tab-push">
-							Push-based
+							{t("settings:observability.pushBased")}
 						</TabsTrigger>
 					</TabsList>
 
@@ -292,9 +292,7 @@ export function PrometheusFormFragment({
 									</Button>
 								)}
 							</div>
-							<p className="text-muted-foreground mt-2 text-xs">
-								Configure your Prometheus server to scrape this endpoint. Served only while Pull-based scraping is enabled.
-							</p>
+							<p className="text-muted-foreground mt-2 text-xs">{t("settings:observability.pullScrapeHint")}</p>
 						</div>
 					</TabsContent>
 

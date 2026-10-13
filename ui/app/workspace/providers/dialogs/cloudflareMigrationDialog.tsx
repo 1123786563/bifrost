@@ -45,6 +45,7 @@ import { getErrorStatus, maskSecret, MigrationResult, MigrationStep } from "@/li
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { AlertTriangle, Check, CircleDashed, Loader2, X } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
 	show: boolean;
@@ -62,6 +63,7 @@ const wrapError = (err: unknown): Error =>
 	});
 
 export default function CloudflareMigrationDialog({ show, provider, onDeferred, onMigrated }: Props) {
+	const { t } = useTranslation(["common", "providers"]);
 	const dispatch = useAppDispatch();
 	const providerFormIsDirty = useAppSelector((state) => state.provider.isDirty);
 	const canCreate = useRbac(RbacResource.ModelProvider, RbacOperation.Create);
@@ -151,9 +153,9 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 	};
 
 	const migrateDisabledReason = !hasAccess
-		? "Migrating requires create and update access to providers."
+		? t("providers:cloudflareMigration.noAccess")
 		: providerFormIsDirty
-			? "Save or discard your unsaved provider changes first."
+			? t("providers:cloudflareMigration.dirtyForm")
 			: undefined;
 
 	const canMigrate = !!plan && !migrateDisabledReason && !planNeedsInput(plan);
@@ -174,21 +176,12 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 						<div className="space-y-2">
 							{(stage === "intro" || stage === "loading") && (
 								<>
-									<p>
-										<span className="text-foreground font-medium">{provider.name}</span> is a custom provider pointing at Cloudflare Workers
-										AI. Bifrost now supports Cloudflare natively, and the name &quot;cloudflare&quot; belongs to the official provider, so
-										this custom provider can no longer be edited. Your existing configuration needs to be migrated to the official provider.
-									</p>
-									<p>
-										The provider is converted in place, so its keys, virtual key access, budgets and limits are kept, and nothing is
-										deleted. Nothing changes until you confirm, and you will see what will change before the migration runs.
-									</p>
+									<p>{t("providers:cloudflareMigration.intro1", { name: provider.name })}</p>
+									<p>{t("providers:cloudflareMigration.intro2")}</p>
 								</>
 							)}
-							{stage === "preview" && (
-								<p>Review what will change. Keys keep their stored tokens; anything that could not be read must be entered below.</p>
-							)}
-							{stage === "running" && <p>Migrating. Keep this window open until it finishes.</p>}
+							{stage === "preview" && <p>{t("providers:cloudflareMigration.reviewNote")}</p>}
+							{stage === "running" && <p>{t("providers:cloudflareMigration.running")}</p>}
 							{stage === "finished" && result && <p>{result.message}</p>}
 						</div>
 					</AlertDialogDescription>
@@ -197,7 +190,7 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 				{loadError && (
 					<Alert variant="destructive">
 						<AlertTriangle className="h-4 w-4" />
-						<AlertTitle>Could not read the custom provider</AlertTitle>
+						<AlertTitle>{t("providers:cloudflareMigration.loadErrorTitle")}</AlertTitle>
 						<AlertDescription>{loadError}</AlertDescription>
 					</Alert>
 				)}
@@ -216,7 +209,7 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 					{(stage === "intro" || stage === "loading") && (
 						<>
 							<AlertDialogCancel onClick={onDeferred} disabled={stage === "loading"} data-testid="cloudflare-migration-not-now">
-								Not now
+								{t("providers:cloudflareMigration.notNow")}
 							</AlertDialogCancel>
 							<DisabledTooltip reason={migrateDisabledReason}>
 								<Button
@@ -233,14 +226,16 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 					{stage === "preview" && (
 						<>
 							<Button variant="ghost" onClick={() => setStage("intro")}>
-								Back
+								{t("common:actions.back")}
 							</Button>
-							<AlertDialogCancel onClick={onDeferred}>Not now</AlertDialogCancel>
+							<AlertDialogCancel onClick={onDeferred}>{t("providers:cloudflareMigration.notNow")}</AlertDialogCancel>
 							<DisabledTooltip
-								reason={migrateDisabledReason ?? (plan && planNeedsInput(plan) ? "Fill in the missing values above." : undefined)}
+								reason={
+									migrateDisabledReason ?? (plan && planNeedsInput(plan) ? t("providers:cloudflareMigration.fillMissing") : undefined)
+								}
 							>
 								<Button onClick={runMigration} disabled={!canMigrate} data-testid="cloudflare-migration-confirm">
-									Migrate
+									{t("providers:cloudflareMigration.migrate")}
 								</Button>
 							</DisabledTooltip>
 						</>
@@ -249,12 +244,12 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 						<>
 							{!result.ok && (
 								<AlertDialogCancel onClick={onDeferred} data-testid="cloudflare-migration-close">
-									Close
+									{t("common:actions.close")}
 								</AlertDialogCancel>
 							)}
 							{result.ok && (
 								<AlertDialogAction onClick={onMigrated} data-testid="cloudflare-migration-done">
-									Go to Cloudflare
+									{t("providers:cloudflareMigration.goTo")}
 								</AlertDialogAction>
 							)}
 						</>
@@ -284,6 +279,7 @@ interface PreviewProps {
 }
 
 function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: PreviewProps) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const net = plan.providerSettings.network_config;
 	const perf = plan.providerSettings.concurrency_and_buffer_size;
 	const otherHeaders = Object.keys(net.extra_headers ?? {});
@@ -291,9 +287,9 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 	return (
 		<div className="space-y-4 text-sm" data-testid="cloudflare-migration-preview">
 			<section className="space-y-2">
-				<SectionTitle>Account</SectionTitle>
+				<SectionTitle>{t("providers:cloudflareMigration.account")}</SectionTitle>
 				<div className="space-y-1">
-					<Label htmlFor="cloudflare-migration-account-id">Account ID</Label>
+					<Label htmlFor="cloudflare-migration-account-id">{t("providers:cloudflareMigration.accountId")}</Label>
 					<Input
 						id="cloudflare-migration-account-id"
 						data-testid="cloudflare-migration-account-id"
@@ -301,21 +297,30 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 						placeholder="023e105f4ecef8ad9ca31a8372d0c353"
 						onChange={(e) => onAccountIdChange(e.target.value)}
 					/>
-					<p className="text-muted-foreground text-xs">Read from the custom provider&apos;s base URL.</p>
+					<p className="text-muted-foreground text-xs">{t("providers:cloudflareMigration.accountIdHint")}</p>
 				</div>
 			</section>
 
 			<section className="space-y-2">
-				<SectionTitle>{plan.headerToken ? "Authentication" : `Keys (${plan.keys.length})`}</SectionTitle>
+				<SectionTitle>
+					{plan.headerToken
+						? t("providers:cloudflareMigration.authentication")
+						: t("providers:cloudflareMigration.keysCount", { count: plan.keys.length })}
+				</SectionTitle>
 				<div className="divide-y rounded-md border">
 					{plan.keys.map((key) => (
 						<div key={key.id} className="space-y-1 p-3" data-testid={`cloudflare-migration-key-${key.id}`}>
 							<span className="font-medium">{key.name}</span>
 							<div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
-								<span>Models: {!key.models?.length || key.models.includes("*") ? "all" : key.models.join(", ")}</span>
-								<span>Aliases: {Object.keys(key.aliases ?? {}).length}</span>
-								<span>Token: kept</span>
-								{!key.enabled && <span>Disabled</span>}
+								<span>
+									{t("providers:cloudflareMigration.models", {
+										models:
+											!key.models?.length || key.models.includes("*") ? t("providers:cloudflareMigration.all") : key.models.join(", "),
+									})}
+								</span>
+								<span>{t("providers:cloudflareMigration.aliases", { count: Object.keys(key.aliases ?? {}).length })}</span>
+								<span>{t("providers:cloudflareMigration.tokenKept")}</span>
+								{!key.enabled && <span>{t("common:state.disabled")}</span>}
 							</div>
 						</div>
 					))}
@@ -353,18 +358,24 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 			</section>
 
 			<section className="space-y-2">
-				<SectionTitle>Provider settings</SectionTitle>
+				<SectionTitle>{t("providers:cloudflareMigration.providerSettings")}</SectionTitle>
 				<dl className="text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3">
-					<Stat label="Timeout" value={`${net.default_request_timeout_in_seconds}s`} />
-					<Stat label="Retries" value={String(net.max_retries)} />
-					<Stat label="Backoff" value={`${net.retry_backoff_initial}ms → ${net.retry_backoff_max}ms`} />
-					<Stat label="Concurrency" value={String(perf.concurrency)} />
-					<Stat label="Buffer size" value={String(perf.buffer_size)} />
-					<Stat label="Proxy" value={plan.providerSettings.proxy_config?.type ?? "none"} />
-					<Stat label="Extra headers" value={otherHeaders.length > 0 ? otherHeaders.join(", ") : "none"} />
-					<Stat label="Private network" value={net.allow_private_network ? "allowed" : "blocked"} />
+					<Stat label={t("providers:cloudflareMigration.statTimeout")} value={`${net.default_request_timeout_in_seconds}s`} />
+					<Stat label={t("providers:cloudflareMigration.statRetries")} value={String(net.max_retries)} />
 					<Stat
-						label="Raw request/response"
+						label={t("providers:cloudflareMigration.statBackoff")}
+						value={`${net.retry_backoff_initial}ms → ${net.retry_backoff_max}ms`}
+					/>
+					<Stat label={t("providers:cloudflareMigration.statConcurrency")} value={String(perf.concurrency)} />
+					<Stat label={t("providers:cloudflareMigration.statBufferSize")} value={String(perf.buffer_size)} />
+					<Stat label={t("providers:cloudflareMigration.statProxy")} value={plan.providerSettings.proxy_config?.type ?? "none"} />
+					<Stat
+						label={t("providers:cloudflareMigration.statExtraHeaders")}
+						value={otherHeaders.length > 0 ? otherHeaders.join(", ") : "none"}
+					/>
+					<Stat label={t("providers:cloudflareMigration.statPrivateNetwork")} value={net.allow_private_network ? "allowed" : "blocked"} />
+					<Stat
+						label={t("providers:cloudflareMigration.statRaw")}
 						value={plan.providerSettings.send_back_raw_request || plan.providerSettings.send_back_raw_response ? "on" : "off"}
 					/>
 				</dl>
@@ -373,7 +384,7 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 			{plan.warnings.length > 0 && (
 				<Alert data-testid="cloudflare-migration-warnings">
 					<AlertTriangle className="h-4 w-4" />
-					<AlertTitle>Before you continue</AlertTitle>
+					<AlertTitle>{t("providers:cloudflareMigration.beforeYouContinue")}</AlertTitle>
 					<AlertDescription>
 						<ul className="list-disc space-y-1 pl-4">
 							{plan.warnings.map((warning) => (

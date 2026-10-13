@@ -324,7 +324,9 @@
 			"helpTitle": "Need help with production setup?",
 			"helpBody": "We offer help with production setup including custom integrations and dedicated support.",
 			"bookDemo": "Book a demo with our team"
-		}
+		},
+		"createAdmin": "Create admin",
+		"resumeSetup": "Resume setup"
 	},
 	"pageTitle": {
 		"beta": "Beta",
@@ -392,10 +394,12 @@
 	},
 	"rateLimit": {
 		"usageAria": "{{label}} usage",
-		"requestNoun": "Request"
+		"requestNoun": "Request",
+		"resets": "Resets {{duration}}"
 	},
 	"scopeChips": {
-		"showAllAria": "Show all {{count}} scopes"
+		"showAllAria": "Show all {{count}} scopes",
+		"granted": "Granted scopes"
 	},
 	"filters": {
 		"header": "Filters",
@@ -682,7 +686,12 @@
 		"jobFinishedToast": "That job had already finished",
 		"cancelFailedToast": "Couldn't cancel the job",
 		"unread": "{{count}} unread",
-		"running": "{{count}} running"
+		"running": "{{count}} running",
+		"clearFinished": "Clear finished",
+		"loading": "Loading notifications",
+		"loadFailed": "Notifications could not be loaded.",
+		"emptyHint": "New notifications will appear here.",
+		"clearAll": "Clear all"
 	},
 	"sidekiq": {
 		"queued": "Queued",
@@ -709,12 +718,30 @@
 		"whatThisCovers": "What this covers",
 		"question": "Question",
 		"skip": "Skip",
-		"orTypeOwn": "Or type your own answer below."
+		"orTypeOwn": "Or type your own answer below.",
+		"preview": "Preview",
+		"indexUnavailable": "Index status unavailable",
+		"loading": "Loading Warp...",
+		"askYourData": "Ask about your Bifrost data",
+		"resumeQueued": "Resume queued messages",
+		"loadingHistory": "Loading history",
+		"historyFailed": "Could not load history.",
+		"noConversations": "No saved conversations yet.",
+		"chartUnavailable": "Chart unavailable.",
+		"partialAnswer": "Partial answer",
+		"whatToTry": "What to try",
+		"thinking": "Thinking"
 	},
 	"onboarding": {
 		"expandAria": "Expand setup checklist",
 		"minimizeAria": "Minimize",
-		"closeAria": "Close for now"
+		"closeAria": "Close for now",
+		"title": "Setup checklist",
+		"completed": "Completed",
+		"remindLater": "Remind me later",
+		"vulnerableWarning": "Not completing these steps keeps your Bifrost setup vulnerable.",
+		"tomorrow": "Tomorrow",
+		"inAWeek": "In a week"
 	},
 	"agentSelect": {
 		"openToAll": "Open to all keys",
@@ -864,5 +891,70 @@
 		"toggleSidebar": "Toggle Sidebar",
 		"fiscalYearStarts": "Fiscal year starts",
 		"unreadAria": "Unread"
-	}
+	},
+	"webhooks": {
+		"loadFailed": "Failed to load webhook endpoints.",
+		"recentDeliveries": "Recent Deliveries",
+		"noDeliveries": "No deliveries yet.",
+		"clearFilters": "Clear filters",
+		"waiting": "Waiting for new deliveries...",
+		"secretIntro": "Use this secret to verify the"
+	},
+	"jobs": {
+		"empty": "No background jobs",
+		"emptyHint": "Long-running tasks will show their progress here.",
+		"stopJob": "Stop job"
+	},
+	"prompts": {
+		"responded": "Responded",
+		"ready": "Ready",
+		"arguments": "Arguments",
+		"submitResult": "Submit result",
+		"connectAccount": "Connect your account to execute this tool.",
+		"authenticate": "Authenticate",
+		"awaitingResult": "Awaiting tool result",
+		"awaitingHint": "Execute the call or add the result manually.",
+		"addManually": "Add manually",
+		"addPrompt": "Add Prompt",
+		"addFolder": "Add Folder",
+		"editFolder": "Edit Folder",
+		"deleteFolder": "Delete Folder",
+		"configuration": "Configuration",
+		"requiredHeaders": "Required Headers",
+		"variables": "Variables",
+		"detectedFrom": "Detected from",
+		"variable": "Variable",
+		"saveSession": "Save Session",
+		"noVersions": "No versions yet",
+		"commitVersion": "Commit Version",
+		"searchSessions": "Search sessions...",
+		"inputLabel": "Input",
+		"outputLabel": "Output",
+		"totalLabel": "Total",
+		"assistantPlaceholder": "Enter assistant message...",
+		"emptyMessage": "Empty message",
+		"noResults": "No results found.",
+		"dropFiles": "Drop files to attach",
+		"userPlaceholder": "Enter user message...",
+		"attachFile": "Attach file",
+		"noneSelected": "No prompt selected",
+		"toolResultPlaceholder": "Enter tool result...",
+		"systemPlaceholder": "Enter system message...",
+		"variablesHint": "Detected from",
+		"variablesHint2": "syntax in messages. Values are substituted at runtime."
+	},
+	"virtualMcps": {
+		"addButton": "Add Virtual MCP",
+		"servedAt": "Served at",
+		"allowAllTools": "Allow All Tools",
+		"assignHint1": "Assign this key to Virtual MCPs. The key can then reach each Virtual MCP at its",
+		"assignHint2": "endpoint, and the key shows up under that Virtual MCP’s assigned keys."
+	},
+	"budgets": {
+		"addBudget": "Add Budget",
+		"noneConfigured": "No budget limits configured.",
+		"resetPeriod": "Reset Period",
+		"nextResetOn": "Next reset on"
+	},
+	"settingsUnaffected": "Your settings and data are unaffected."
 }

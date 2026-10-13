@@ -89,7 +89,8 @@
 				"user": "仅适用于来自匹配用户的请求。",
 				"user_provider": "仅适用于来自匹配用户和 provider 的请求。",
 				"user_provider_key": "仅适用于来自匹配用户和 provider key 的请求。"
-			}
+			},
+			"descriptionLabel": "描述"
 		},
 		"emptyState": {
 			"title": "尚未配置任何 provider",
@@ -430,5 +431,13 @@
 			"ocr_cost_per_page": "OCR / 页",
 			"annotation_cost_per_page": "标注 / 页"
 		}
+	},
+	"access": {
+		"allModels": "所有模型",
+		"allModelsBlocked": "所有模型已阻止",
+		"regexHint": "与整个模型名称匹配,不区分大小写。"
+	},
+	"parameters": {
+		"addString": "添加字符串"
 	}
 }

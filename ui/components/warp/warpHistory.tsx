@@ -66,21 +66,21 @@ export default function WarpHistory({ activeConversationId, onOpen, onDeleted }:
 	if (isLoading) {
 		return (
 			<div className="text-muted-foreground flex items-center justify-center gap-2 p-6 text-xs" data-testid="warp-history-loading">
-				<Loader2 className="size-3.5 animate-spin" /> Loading history
+				<Loader2 className="size-3.5 animate-spin" /> {t("workspaces:warp.loadingHistory")}
 			</div>
 		);
 	}
 	if (isError) {
 		return (
 			<p className="text-destructive p-6 text-center text-xs" data-testid="warp-history-error">
-				Could not load history.
+				{t("workspaces:warp.historyFailed")}
 			</p>
 		);
 	}
 	if (!conversations || conversations.length === 0) {
 		return (
 			<p className="text-muted-foreground p-6 text-center text-xs" data-testid="warp-history-empty">
-				No saved conversations yet.
+				{t("workspaces:warp.noConversations")}
 			</p>
 		);
 	}

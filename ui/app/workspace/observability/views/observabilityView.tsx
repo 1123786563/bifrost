@@ -159,7 +159,7 @@ export default function ObservabilityView() {
 				<div className="flex w-full flex-col gap-2 pb-10">
 					<div className="rounded-md bg-zinc-100/10 p-4 dark:bg-zinc-800/20">
 						<div className="flex flex-col gap-1">
-							<div className="text-muted-foreground mb-2 text-xs font-medium">Providers</div>
+							<div className="text-muted-foreground mb-2 text-xs font-medium">{t("settings:observability.providers")}</div>
 							{supportedPlatforms.map((tab) => (
 								<button
 									type="button"

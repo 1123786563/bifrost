@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useTranslation } from "react-i18next";
 
 // ============================================================================
 // Utility Functions
@@ -125,6 +126,7 @@ const LEAK_MIN_GROWTH_SAMPLES = 3;
 const LEAK_SEVERITY_RANK: Record<LeakSeverity, number> = { high: 0, medium: 1, low: 2 };
 
 function makeStackKey(stack: string[]): string {
+	const { t } = useTranslation(["common", "settings"]);
 	return stack.join("\n");
 }
 
@@ -276,6 +278,7 @@ function AllocationTable({
 	bytesColorClass?: string;
 	testIdPrefix?: string;
 }) {
+	const { t } = useTranslation(["common", "settings"]);
 	const SortIcon = sortDirection === "asc" ? ArrowUp : ArrowDown;
 
 	const SortHeader = ({ field, children }: { field: AllocationSortField; children: React.ReactNode }) => (
@@ -302,10 +305,10 @@ function AllocationTable({
 				<thead>
 					<tr className="border-b border-zinc-800">
 						<th scope="col" className="w-8 px-2 py-3" aria-label="Expand" />
-						<SortHeader field="function">Function</SortHeader>
-						<SortHeader field="file">File:Line</SortHeader>
-						<SortHeader field="bytes">Bytes</SortHeader>
-						<SortHeader field="count">Count</SortHeader>
+						<SortHeader field="function">{t("settings:devtools.pprof.function")}</SortHeader>
+						<SortHeader field="file">{t("settings:devtools.pprof.fileLine")}</SortHeader>
+						<SortHeader field="bytes">{t("settings:devtools.pprof.bytes")}</SortHeader>
+						<SortHeader field="count">{t("settings:devtools.pprof.count")}</SortHeader>
 					</tr>
 				</thead>
 				<tbody>
@@ -361,7 +364,7 @@ function AllocationTable({
 									<tr className="border-b border-zinc-800/50 bg-zinc-900/50">
 										<td />
 										<td colSpan={4} className="px-4 py-3">
-											<div className="mb-2 text-xs font-medium text-zinc-500">Stack Trace</div>
+											<div className="mb-2 text-xs font-medium text-zinc-500">{t("settings:devtools.pprof.stackTrace")}</div>
 											<div className="space-y-0.5 font-mono text-xs">
 												{alloc.stack.map((line, j) => (
 													<div key={j} className="break-all text-zinc-400">
@@ -378,7 +381,7 @@ function AllocationTable({
 					{allocations.length === 0 && (
 						<tr>
 							<td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-								No allocations data available
+								{t("settings:devtools.pprof.noAllocations")}
 							</td>
 						</tr>
 					)}
@@ -612,6 +615,7 @@ function GoroutineGroupRow({
 // ============================================================================
 
 export default function PprofPage() {
+	const { t } = useTranslation(["common", "settings"]);
 	const [expandedGoroutines, setExpandedGoroutines] = useState<Set<string>>(new Set());
 	const [skippedGoroutines, setSkippedGoroutines] = useState<Set<string>>(new Set());
 	const [hasLoadedSkipped, setHasLoadedSkipped] = useState(false);
@@ -825,7 +829,7 @@ export default function PprofPage() {
 			<div className="flex min-h-screen items-center justify-center">
 				<div className="flex items-center gap-3 text-zinc-400">
 					<RefreshCw className="h-5 w-5 animate-spin" />
-					Loading profiling data...
+					{t("settings:devtools.pprof.loading")}
 				</div>
 			</div>
 		);
@@ -836,7 +840,7 @@ export default function PprofPage() {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
 				<div className="rounded-lg border border-red-800 bg-red-900/20 px-6 py-4 text-red-400">
-					Failed to load profiling data. Make sure the backend is running in dev mode.
+					{t("settings:devtools.pprof.loadFailed")}
 				</div>
 			</div>
 		);
@@ -847,13 +851,13 @@ export default function PprofPage() {
 			{/* Header */}
 			<div className="mb-8 flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold text-zinc-100">Pprof Profiler</h1>
-					<p className="mt-1 text-sm text-zinc-500">Development only - Runtime profiling and memory analysis</p>
+					<h1 className="text-2xl font-semibold text-zinc-100">{t("settings:devtools.pprof.title")}</h1>
+					<p className="mt-1 text-sm text-zinc-500">{t("settings:devtools.pprof.subtitle")}</p>
 				</div>
 				<div className="flex items-center gap-4">
 					<span className="flex items-center gap-2 text-sm text-zinc-500">
 						<span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-						Auto-refresh: 10s
+						{t("settings:devtools.pprof.autoRefresh")}
 					</span>
 					<button
 						onClick={() => refetch()}
@@ -977,7 +981,7 @@ export default function PprofPage() {
 						<div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
 							<div className="mb-4 flex items-center gap-2">
 								<HardDrive className="h-4 w-4 text-cyan-400" />
-								<span className="font-medium text-zinc-300">Memory Usage</span>
+								<span className="font-medium text-zinc-300">{t("settings:devtools.pprof.memoryUsage")}</span>
 								<span className="text-sm text-zinc-500">(last 5 min)</span>
 							</div>
 							<div className="h-64">
@@ -1036,7 +1040,7 @@ export default function PprofPage() {
 						</div>
 					</div>
 
-					{/* Potential Leaks — stacks accumulating live memory without being freed */}
+					{/* {t("settings:devtools.pprof.potentialLeaks")} — stacks accumulating live memory without being freed */}
 					<div className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900">
 						<div className="border-b border-zinc-800 px-4 py-3">
 							<div className="flex items-center gap-2">
@@ -1067,7 +1071,7 @@ export default function PprofPage() {
 						<LeakTable candidates={leakCandidates} expandedKeys={expandedLeaks} onToggle={toggleLeakExpand} />
 					</div>
 
-					{/* Live Heap Allocations — what's currently consuming the heap */}
+					{/* {t("settings:devtools.pprof.liveHeap")} — what's currently consuming the heap */}
 					<div className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900">
 						<div className="border-b border-zinc-800 px-4 py-3">
 							<div className="flex items-center gap-2">
@@ -1091,7 +1095,7 @@ export default function PprofPage() {
 						/>
 					</div>
 
-					{/* Cumulative Memory Allocations — total since process start */}
+					{/* {t("settings:devtools.pprof.cumulativeAlloc")} — total since process start */}
 					<div className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900">
 						<div className="border-b border-zinc-800 px-4 py-3">
 							<div className="flex items-center gap-2">
@@ -1113,7 +1117,7 @@ export default function PprofPage() {
 						/>
 					</div>
 
-					{/* Goroutine Health */}
+					{/* {t("settings:devtools.profiler.goroutineHealth")} */}
 					<div className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900">
 						<div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
 							<div className="flex items-center gap-2">
@@ -1128,7 +1132,7 @@ export default function PprofPage() {
 								{goroutineHealth === "critical" && (
 									<span className="flex items-center gap-1 rounded bg-red-500/10 px-2 py-0.5 text-xs text-red-400">
 										<AlertTriangle className="h-3 w-3" />
-										Stuck Goroutines
+										{t("settings:devtools.pprof.stuckGoroutines")}
 									</span>
 								)}
 								{goroutineHealth === "warning" && (
@@ -1138,7 +1142,9 @@ export default function PprofPage() {
 									</span>
 								)}
 								{goroutineHealth === "healthy" && (
-									<span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">Healthy</span>
+									<span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
+										{t("settings:devtools.pprof.healthy")}
+									</span>
 								)}
 							</div>
 							{skippedGoroutines.size > 0 && (
@@ -1158,7 +1164,7 @@ export default function PprofPage() {
 							<div className="grid grid-cols-4 gap-4 border-b border-zinc-800 p-4">
 								<div className="text-center">
 									<div className="text-2xl font-semibold text-emerald-400">{goroutineData.total_goroutines}</div>
-									<div className="text-sm text-zinc-500">Total</div>
+									<div className="text-sm text-zinc-500">{t("settings:devtools.pprof.total")}</div>
 								</div>
 								<div className="text-center">
 									<div className="text-2xl font-semibold text-blue-400">{goroutineData.summary.background}</div>

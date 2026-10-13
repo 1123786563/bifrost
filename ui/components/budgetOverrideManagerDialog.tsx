@@ -211,7 +211,7 @@ export function BudgetOverrideManagerDialog({
 								</div>
 							</div>
 							<div className="space-y-1.5">
-								<Label className="text-xs">Duration</Label>
+								<Label className="text-xs">{t("governance:budgets.duration")}</Label>
 								<Select value={mode} onValueChange={(value) => setMode(value as "cycles" | "forever")} disabled={busy}>
 									<SelectTrigger className="w-full rounded-sm" data-testid="budget-override-mode">
 										<SelectValue />

@@ -139,7 +139,7 @@ export function RoutingRulesView() {
 						<Button variant="outline" size="sm" asChild className="gap-2">
 							<Link to="/workspace/routing-rules/tree" aria-label={t("governance:routingRules.table.viewTreeAria")}>
 								<GitBranch className="h-4 w-4" />
-								<span className="hidden sm:inline">View Tree</span>
+								<span className="hidden sm:inline">{t("governance:routingRules.viewTree")}</span>
 							</Link>
 						</Button>
 						{canCreate && (
@@ -151,7 +151,7 @@ export function RoutingRulesView() {
 								aria-label={t("governance:routingRules.table.addAria")}
 							>
 								<Plus className="h-4 w-4" />
-								<span className="hidden sm:inline">Add Rule</span>
+								<span className="hidden sm:inline">{t("governance:routingRules.addRule")}</span>
 							</Button>
 						)}
 					</>

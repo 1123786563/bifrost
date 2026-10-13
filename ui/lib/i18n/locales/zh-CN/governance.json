@@ -651,7 +651,13 @@
 			"reassignDescription": "此密钥当前已分配给另一个团队。重新分配后，预算统计将转移到该团队；通过此密钥的未来请求将计入该团队的预算，而非原团队。",
 			"reassign": "重新分配",
 			"virtualKeyEntity": "Virtual Key"
-		}
+		},
+		"loadFailed": "加载虚拟密钥失败:{{error}}",
+		"viewLogs": "查看日志",
+		"exporting": "导出中…",
+		"exportCsv": "导出 CSV",
+		"assignedTo": "分配给",
+		"rateLimits": "速率限制"
 	},
 	"webhooks": {
 		"view": {
@@ -974,6 +980,41 @@
 			"targets": "目标",
 			"resolvedTarget": "已解析目标（新输入）",
 			"passthrough": "透传"
-		}
+		},
+		"delete_": "删除",
+		"priority": "优先级",
+		"actions": "操作",
+		"noMatch": "未找到匹配的路由规则。",
+		"chainRule": "链式规则",
+		"overview": "概览",
+		"conditions": "条件",
+		"fallbackChain": "回退链",
+		"created": "创建时间",
+		"lastUpdated": "最后更新",
+		"viewTree": "查看树",
+		"addRule": "添加规则",
+		"viewRules": "查看路由规则",
+		"loadFailed": "加载路由规则失败",
+		"noneToDisplay": "没有可显示的路由规则",
+		"backToRules": "返回规则列表",
+		"routingTree": "路由树",
+		"staticChain": "静态链",
+		"dynamicChain": "动态链",
+		"treeTooSmall": "路由树需要更大的屏幕",
+		"treeTooSmallDesc": "在移动设备上使用路由规则列表查看和修改规则。",
+		"emptyDesc": "路由规则使用 CEL 条件引导请求",
+		"newRule": "新建规则",
+		"ruleName": "规则名称",
+		"activeHint": "规则将处于活动状态并应用于匹配的请求",
+		"noFallbacks": "未配置回退",
+		"loadingCelBuilder": "正在加载 CEL 构建器…",
+		"weight": "权重"
+	},
+	"budgets": {
+		"addOverride": "添加覆盖",
+		"additionalBudget": "额外预算",
+		"duration": "周期",
+		"resetCycles": "重置周期",
+		"validUntil": "有效期至"
 	}
 }

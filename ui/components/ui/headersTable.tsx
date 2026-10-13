@@ -274,7 +274,7 @@ export function HeadersTable<T extends HeaderValue>({
 													disabled={disabled}
 												/>
 											)}
-											{hasConflict && <span className="text-destructive px-3 text-xs">Duplicate key</span>}
+											{hasConflict && <span className="text-destructive px-3 text-xs">{t("common:validation.duplicateKey")}</span>}
 										</div>
 									</TableCell>
 									<TableCell className="p-2">

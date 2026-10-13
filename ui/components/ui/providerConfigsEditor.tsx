@@ -128,7 +128,7 @@ export function ProviderConfigsEditor({
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center gap-2">
-				<Label className="text-sm font-medium">Provider Configurations</Label>
+				<Label className="text-sm font-medium">{t("providers:configSheet.providerConfigurations")}</Label>
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -183,7 +183,7 @@ export function ProviderConfigsEditor({
 					groupByCustom
 					excludeValues={configuredProviderNames}
 					extraOptions={manageProvidersOption}
-					emptyMessage="No providers left to configure"
+					emptyMessage={t("providers:configSheet.noProvidersLeft")}
 					onSelect={(provider) => {
 						if (provider === MANAGE_PROVIDERS_VALUE) {
 							onManageProviders?.();

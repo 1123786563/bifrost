@@ -7,6 +7,8 @@ import type { InspectAgentCardResponse, InspectedAgentSkill } from "@/lib/types/
 import { AlertTriangle, Bot, CheckCircle2, ChevronDown, ExternalLink } from "lucide-react";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 function capabilityLabel(name: string) {
 	return name
@@ -18,7 +20,7 @@ function capabilityLabel(name: string) {
 function requirementLabel(requirement: string[], details?: Record<string, string[]>) {
 	return requirement.length
 		? requirement.map((name) => (details?.[name]?.length ? `${name} (${details[name].join(", ")})` : name)).join(" + ")
-		: "None";
+		: i18n.t("mcp:agents.card.none");
 }
 
 function DefinitionFields({ fields }: { fields: Record<string, unknown> }) {
@@ -136,6 +138,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 }
 
 function SkillItem({ skill }: { skill: InspectedAgentSkill }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const idRef = useRef<HTMLButtonElement>(null);
 	const [idTruncated, setIdTruncated] = useState(false);
 	const { copy } = useCopyToClipboard({ successMessage: "Copied" });
@@ -172,7 +175,7 @@ function SkillItem({ skill }: { skill: InspectedAgentSkill }) {
 								</TooltipTrigger>
 								<TooltipContent>
 									{idTruncated && <p>{skill.id}</p>}
-									<p>Click to copy skill ID</p>
+									<p>{t("mcp:agents.card.copySkillId")}</p>
 								</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>
@@ -229,6 +232,7 @@ export function AgentCardPreview({
 	showFetched?: boolean;
 	gatewayCard?: boolean;
 }) {
+	const { t } = useTranslation(["common", "mcp"]);
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const [iconFailed, setIconFailed] = useState(false);
 	const capabilities = Object.entries(card.capabilities)
@@ -282,7 +286,7 @@ export function AgentCardPreview({
 				{showFetched && (
 					<span className="inline-flex shrink-0 items-center gap-1 text-xs text-green-700 dark:text-green-400">
 						<CheckCircle2 className="size-3.5" />
-						Fetched
+						{t("mcp:agents.card.fetched")}
 					</span>
 				)}
 			</div>
@@ -348,7 +352,7 @@ export function AgentCardPreview({
 				<CollapsibleContent className="divide-y border-t px-4 pb-2">
 					{interfaces.length > 0 && (
 						<section className="py-3">
-							<p className="text-muted-foreground mb-2 text-xs">Interfaces</p>
+							<p className="text-muted-foreground mb-2 text-xs">{t("mcp:agents.card.interfaces")}</p>
 							<div className="space-y-2">
 								{interfaces.map((item) => (
 									<div key={`${item.protocol_binding}-${item.url}`} className="flex min-w-0 items-start gap-3">
@@ -374,7 +378,7 @@ export function AgentCardPreview({
 					<DetailRow label="Authentication">
 						<div className="flex flex-wrap gap-1">
 							{card.security_requirements.length === 0 ? (
-								<Badge variant="outline">None</Badge>
+								<Badge variant="outline">{t("mcp:agents.card.none")}</Badge>
 							) : (
 								card.security_requirements.map((requirement, index) => (
 									<Badge key={`${requirement.join("-")}-${index}`} variant="outline">
@@ -386,7 +390,7 @@ export function AgentCardPreview({
 					</DetailRow>
 					{card.security_schemes.length > 0 && (
 						<section className="py-3">
-							<p className="text-muted-foreground mb-2 text-xs">Security schemes</p>
+							<p className="text-muted-foreground mb-2 text-xs">{t("mcp:agents.card.securitySchemes")}</p>
 							<div className="divide-y overflow-hidden rounded-sm border">
 								{card.security_schemes.map((scheme) => (
 									<details key={scheme.name} className="group/scheme">
@@ -434,8 +438,8 @@ export function AgentCardPreview({
 						</DetailRow>
 					)}
 					{card.capabilities.extendedAgentCard && (
-						<DetailRow label="Extended card">
-							<p className="text-muted-foreground text-xs">Supports fetching an extended agent card with authentication.</p>
+						<DetailRow label={t("mcp:agents.card.extendedCard")}>
+							<p className="text-muted-foreground text-xs">{t("mcp:agents.card.extendedCardDesc")}</p>
 						</DetailRow>
 					)}
 					{extensions.length > 0 && (
@@ -456,7 +460,7 @@ export function AgentCardPreview({
 											</TooltipTrigger>
 											{(extension.description || extension.params || extension.required) && (
 												<TooltipContent className="max-w-80">
-													{extension.required && <p className="font-medium">Required</p>}
+													{extension.required && <p className="font-medium">{t("mcp:agents.card.required")}</p>}
 													{extension.description && <p>{extension.description}</p>}
 													{extension.params && (
 														<pre className="mt-1 text-xs whitespace-pre-wrap">{JSON.stringify(extension.params, null, 2)}</pre>
@@ -471,7 +475,7 @@ export function AgentCardPreview({
 					)}
 					{skills.length > 0 && (
 						<section className="py-3">
-							<p className="text-muted-foreground mb-2 text-xs">Skills</p>
+							<p className="text-muted-foreground mb-2 text-xs">{t("mcp:agents.card.skills")}</p>
 							<div className="divide-y overflow-hidden rounded-sm border">
 								{skills.map((skill) => (
 									<SkillItem key={skill.id} skill={skill} />

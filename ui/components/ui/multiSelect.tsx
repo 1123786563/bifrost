@@ -859,7 +859,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 							)}
 							{searchable && (
 								<div id={`${multiSelectId}-search-help`} className="sr-only">
-									Type to filter options. Use arrow keys to navigate results.
+									{t("common:hint.typeToFilter")}
 								</div>
 							)}
 							<CommandList

@@ -138,7 +138,7 @@ export default function PluginTracingSheet({ open, onClose, pluginName, destinat
 					<div className="flex flex-col gap-4">
 						<div>
 							<div className="mb-2 flex items-center justify-between">
-								<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Plugins</p>
+								<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t("settings:observability.plugins")}</p>
 								<TriStateCheckbox
 									allIds={allPlugins}
 									selectedIds={allPlugins.filter((n) => toggles[n] ?? true)}
@@ -165,13 +165,13 @@ export default function PluginTracingSheet({ open, onClose, pluginName, destinat
 							<>
 								<div className="border-t" />
 								<div>
-									<p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">Overhead</p>
+									<p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+										{t("settings:observability.overhead")}
+									</p>
 									<div className="flex items-center justify-between rounded-md border px-3 py-2.5">
 										<div className="flex flex-col">
-											<span className="text-sm">Overhead latency spans</span>
-											<span className="text-muted-foreground text-xs">
-												Internal timing spans (setup, key selection, pipeline phases). Off by default.
-											</span>
+											<span className="text-sm">{t("settings:observability.overheadLatencySpans")}</span>
+											<span className="text-muted-foreground text-xs">{t("settings:observability.internalTimingSpans")}default.</span>
 										</div>
 										<Switch checked={exportOverheadSpans} onCheckedChange={setExportOverheadSpans} data-testid="tracing-overhead-toggle" />
 									</div>

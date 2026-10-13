@@ -77,7 +77,7 @@ export default function WebhooksFilterBar(props: WebhooksFilterBarProps) {
 							className="size-9 px-0 @5xl/webhooks-toolbar:w-auto @5xl/webhooks-toolbar:px-3"
 						>
 							<X className="h-4 w-4" />
-							<span className="hidden @5xl/webhooks-toolbar:inline">Clear filters</span>
+							<span className="hidden @5xl/webhooks-toolbar:inline">{t("workspaces:webhooks.clearFilters")}</span>
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>{t("governance:webhooks.filterBar.clearFilters")}</TooltipContent>

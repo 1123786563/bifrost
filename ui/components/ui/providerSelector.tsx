@@ -469,7 +469,7 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 					{isLoading ? (
 						<div className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm">
 							<Loader2Icon className="size-3.5 animate-spin" />
-							Loading providers…
+							{t("common:state.loadingProviders")}
 						</div>
 					) : (
 						<ComboboxEmpty className="text-muted-foreground">

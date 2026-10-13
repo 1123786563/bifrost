@@ -41,8 +41,8 @@ export default function SidekiqJobsSection({ jobs, cancellingId, onCancel, onDis
 				<span className="bg-muted text-muted-foreground flex size-9 items-center justify-center rounded-full">
 					<Check className="size-4" />
 				</span>
-				<p className="text-sm font-medium">No background jobs</p>
-				<p className="text-muted-foreground text-xs">Long-running tasks will show their progress here.</p>
+				<p className="text-sm font-medium">{t("workspaces:jobs.empty")}</p>
+				<p className="text-muted-foreground text-xs">{t("workspaces:jobs.emptyHint")}</p>
 			</section>
 		);
 	}

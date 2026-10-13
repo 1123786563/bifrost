@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { ArrowUpRight, Check, Copy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const WEBHOOKS_VERIFICATION_DOCS_URL = "https://docs.getbifrost.ai/features/webhooks?utm_source=bfd#verifying-deliveries";
 
@@ -18,6 +19,7 @@ interface WebhookSecretDialogProps {
 // The signing secret is returned exactly once by create and rotate-secret;
 // the API never exposes it again, so this dialog is the only chance to copy it.
 export function WebhookSecretDialog({ reveal, onClose }: WebhookSecretDialogProps) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const { copy, copied } = useCopyToClipboard();
 
 	return (
@@ -26,8 +28,8 @@ export function WebhookSecretDialog({ reveal, onClose }: WebhookSecretDialogProp
 				<DialogHeader>
 					<DialogTitle>Signing secret for {reveal?.endpointName}</DialogTitle>
 					<DialogDescription>
-						Use this secret to verify the <code>webhook-signature</code> header on deliveries. It is shown only once - copy it now and store
-						it securely. If you lose it, rotate the endpoint to get a new one.
+						{t("workspaces:webhooks.secretIntro")} <code>webhook-signature</code> header on deliveries. It is shown only once - copy it now
+						and store it securely. If you lose it, rotate the endpoint to get a new one.
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex items-center gap-2 rounded-sm border p-3">
@@ -54,7 +56,7 @@ export function WebhookSecretDialog({ reveal, onClose }: WebhookSecretDialogProp
 							window.open(WEBHOOKS_VERIFICATION_DOCS_URL, "_blank", "noopener,noreferrer");
 						}}
 					>
-						Read more <ArrowUpRight className="text-muted-foreground h-3 w-3" />
+						{t("common:actions.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
 					<Button onClick={onClose} data-testid="webhook-secret-done-btn">
 						I&apos;ve stored the secret

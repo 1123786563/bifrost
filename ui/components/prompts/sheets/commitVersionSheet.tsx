@@ -42,6 +42,7 @@ function MessagePreview({
 	selected: boolean;
 	onToggle: () => void;
 }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces"]);
 	const checkboxId = useId();
 	const msg = useMemo(() => Message.deserialize(sessionMessage.message), [sessionMessage.message]);
 	const role = msg.role;
@@ -65,7 +66,7 @@ function MessagePreview({
 					) : content ? (
 						<Markdown content={content} className="text-muted-foreground [&_*]:text-sm" />
 					) : (
-						<span className="italic">Empty message</span>
+						<span className="italic">{t("workspaces:prompts.emptyMessage")}</span>
 					)}
 				</div>
 			</div>

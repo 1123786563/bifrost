@@ -98,13 +98,13 @@ export function AssistantMessageView({
 							<TooltipContent side="bottom">
 								<div className="flex flex-col gap-0.5 text-xs tabular-nums">
 									<span>
-										<span className="inline-block w-12">Input:</span> {usage.prompt_tokens} tokens
+										<span className="inline-block w-12">{t("workspaces:prompts.inputLabel")}:</span> {usage.prompt_tokens} tokens
 									</span>
 									<span>
-										<span className="inline-block w-12">Output:</span> {usage.completion_tokens} tokens
+										<span className="inline-block w-12">{t("workspaces:prompts.outputLabel")}:</span> {usage.completion_tokens} tokens
 									</span>
 									<span>
-										<span className="inline-block w-12">Total:</span> {usage.total_tokens} tokens
+										<span className="inline-block w-12">{t("workspaces:prompts.totalLabel")}:</span> {usage.total_tokens} tokens
 									</span>
 								</div>
 							</TooltipContent>
@@ -165,7 +165,7 @@ export function AssistantMessageView({
 						}}
 					/>
 				) : isEmpty ? (
-					<div className="text-muted-foreground min-h-[20px] text-sm italic">Enter assistant message...</div>
+					<div className="text-muted-foreground min-h-[20px] text-sm italic">{t("workspaces:prompts.assistantPlaceholder")}</div>
 				) : contentIsJson ? (
 					<CodeEditor
 						wrap

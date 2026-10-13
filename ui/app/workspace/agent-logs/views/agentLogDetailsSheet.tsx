@@ -148,6 +148,7 @@ function HeroStat({
 
 /** Explain current capture settings without attributing them to a historical request. */
 function RawCaptureUnavailableNotice({ detail }: { detail?: AgentLogDetail }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const hasSettingsAccess = useRbac(RbacResource.Settings, RbacOperation.View);
 	const { data, isLoading, isError } = useGetCoreConfigQuery({ fromDB: true }, { skip: !hasSettingsAccess });
 	if (hasSettingsAccess && isLoading)
@@ -163,37 +164,31 @@ function RawCaptureUnavailableNotice({ detail }: { detail?: AgentLogDetail }) {
 	if (config?.a2a_store_raw_request_response && !contentDisabled && localOperation && (detail?.request_body || detail?.response_body)) {
 		return (
 			<div className="space-y-4">
-				<p className="text-muted-foreground text-sm">
-					This operation is handled by Bifrost without an upstream request. The protocol payloads below are serialized data, not transport
-					captures.
-				</p>
-				{detail.request_body && <PayloadBlock title="Request payload" code={formatPayload(detail.request_body)} />}
-				{detail.response_body && <PayloadBlock title="Response payload" code={formatPayload(detail.response_body)} />}
+				<p className="text-muted-foreground text-sm">{t("logs:agent.localOperationNote")}</p>
+				{detail.request_body && <PayloadBlock title={t("logs:agent.requestPayload")} code={formatPayload(detail.request_body)} />}
+				{detail.response_body && <PayloadBlock title={t("logs:agent.responsePayload")} code={formatPayload(detail.response_body)} />}
 			</div>
 		);
 	}
 	if (!captureDisabled && !contentDisabled) {
-		return <div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">No raw capture available.</div>;
+		return (
+			<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">{t("logs:agent.noRawCapture")}</div>
+		);
 	}
 	return (
 		<div className="text-muted-foreground space-y-3 rounded-sm border border-dashed p-5 text-sm">
-			<div className="text-foreground font-medium">Raw capture storage is disabled by settings</div>
-			<p>
-				<span className="text-foreground font-medium">Agent Gateway</span> is configured not to persist raw request and response payloads in
-				log records, so there is nothing to show here. To start capturing them:
-			</p>
+			<div className="text-foreground font-medium">{t("logs:details.rawJsonDisabledBySettings")}</div>
+			<p>{t("logs:agent.rawDisabledIntro")}:</p>
 			<ol className="ml-4 list-decimal space-y-1">
 				{captureDisabled && (
 					<>
 						<li>
 							Open{" "}
 							<Link to="/workspace/config/agent-gateway" className="text-foreground font-medium underline underline-offset-2">
-								Agent Gateway Settings
+								{t("logs:agent.agentGatewaySettings")}
 							</Link>
 						</li>
-						<li>
-							Turn on <span className="text-foreground font-medium">Capture Raw Request and Response</span>
-						</li>
+						<li>{t("logs:details.rawStep4", { setting: t("logs:agent.captureRawSetting") })}</li>
 					</>
 				)}
 				{contentDisabled && (
@@ -201,16 +196,14 @@ function RawCaptureUnavailableNotice({ detail }: { detail?: AgentLogDetail }) {
 						<li>
 							Open{" "}
 							<Link to="/workspace/config/logging" className="text-foreground font-medium underline underline-offset-2">
-								Logs Settings
+								{t("logs:agent.logsSettings")}
 							</Link>
 						</li>
-						<li>
-							Turn off <span className="text-foreground font-medium">Disable Content Logging</span>
-						</li>
+						<li>{t("logs:agent.turnOffDisableContent", { setting: t("logs:agent.disableContentLogging") })}</li>
 					</>
 				)}
 			</ol>
-			<p className="text-xs">This applies to new requests only, existing logs will not gain raw capture.</p>
+			<p className="text-xs">{t("logs:agent.rawAppliesNoteCapture")}</p>
 		</div>
 	);
 }
@@ -476,7 +469,7 @@ export function AgentLogDetailSheet({
 			<Sheet open={open} onOpenChange={onOpenChange}>
 				<SheetContent className="border-secondary flex w-full flex-col gap-2 overflow-x-hidden border p-0 sm:max-w-[60%]">
 					<div className="flex h-full items-center justify-center p-4 md:p-8">
-						<SheetTitle className="sr-only">Loading A2A log details</SheetTitle>
+						<SheetTitle className="sr-only">{t("logs:agent.loadingDetails")}</SheetTitle>
 						<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
 					</div>
 				</SheetContent>
@@ -655,10 +648,10 @@ export function AgentLogDetailSheet({
 							onNavigate={(dir) => onNavigate?.(dir)}
 							prevKeys={prevKeys}
 							nextKeys={nextKeys}
-							entityLabel="operation"
+							entityLabel={t("logs:agent.operation")}
 						/>
 						<SheetTitle className="flex w-fit items-center gap-2 font-medium">
-							<span className="text-foreground text-sm font-medium">Agent operation</span>
+							<span className="text-foreground text-sm font-medium">{t("logs:agent.operationTitle")}</span>
 						</SheetTitle>
 						{displayLog.context_id && onViewContext ? (
 							<Button
@@ -667,7 +660,7 @@ export function AgentLogDetailSheet({
 								data-testid="a2alogdetails-view-context"
 								onClick={() => onViewContext(displayLog.context_id!, displayLog.id)}
 							>
-								View session
+								{t("logs:agent.viewSession")}
 							</Button>
 						) : null}
 					</div>
@@ -688,7 +681,7 @@ export function AgentLogDetailSheet({
 									}}
 								>
 									<Download className="h-4 w-4" />
-									Export as JSON
+									{t("logs:agent.exportJson")}
 								</DropdownMenuItem>
 								{handleDelete ? (
 									<>
@@ -710,11 +703,11 @@ export function AgentLogDetailSheet({
 						</DropdownMenu>
 						<AlertDialogContent>
 							<AlertDialogHeader>
-								<AlertDialogTitle>Are you sure you want to delete this log?</AlertDialogTitle>
-								<AlertDialogDescription>This action cannot be undone. This will permanently delete the log entry.</AlertDialogDescription>
+								<AlertDialogTitle>{t("logs:details.deleteConfirmTitle")}</AlertDialogTitle>
+								<AlertDialogDescription>{t("logs:details.deleteConfirmDesc")}</AlertDialogDescription>
 							</AlertDialogHeader>
 							<AlertDialogFooter>
-								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								<AlertDialogCancel>{t("common:actions.cancel")}</AlertDialogCancel>
 								<AlertDialogAction
 									onClick={async (e) => {
 										e.preventDefault();
@@ -730,7 +723,7 @@ export function AgentLogDetailSheet({
 										}
 									}}
 								>
-									Delete
+									{t("logs:details.deleteLog")}
 								</AlertDialogAction>
 							</AlertDialogFooter>
 						</AlertDialogContent>
@@ -776,7 +769,7 @@ export function AgentLogDetailSheet({
 										{displayLog.virtual_key_id && (
 											<div className="mt-1 flex items-center gap-2">
 												<span className="text-muted-foreground w-24 shrink-0 text-[10.5px] font-semibold tracking-wider uppercase">
-													Virtual key
+													{t("logs:columns.virtualKey")}
 												</span>
 												<Link
 													to="/workspace/governance/virtual-keys"
@@ -806,7 +799,7 @@ export function AgentLogDetailSheet({
 										{displayLog.context_id && (
 											<div className="mt-1 flex max-w-full items-center gap-2 first:mt-0">
 												<span className="text-muted-foreground w-24 shrink-0 text-[10.5px] font-semibold tracking-wider uppercase">
-													Context
+													{t("logs:agent.context")}
 												</span>
 												<InteractiveValue
 													value={displayLog.context_id}
@@ -1020,12 +1013,12 @@ export function AgentLogDetailSheet({
 						<TabsList className="bg-muted/60 h-10 w-fit">
 							{hasConversation && (
 								<TabsTrigger value="conversation" className="px-3">
-									Conversation
+									{t("logs:agent.conversation")}
 								</TabsTrigger>
 							)}
 							{!isConversationOperation && !isPushConversationOperation && hasPayload && (
 								<TabsTrigger value="payload" className="px-3">
-									Payload
+									{t("logs:agent.payload")}
 								</TabsTrigger>
 							)}
 							{correlatedRows.length > 0 && (
@@ -1040,7 +1033,7 @@ export function AgentLogDetailSheet({
 							)}
 							{pluginLogCount > 0 && (
 								<TabsTrigger value="plugins" className="px-3">
-									Plugin Logs
+									{t("logs:pluginLogs.title")}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{pluginLogCount}
 									</span>
@@ -1191,7 +1184,7 @@ export function AgentLogDetailSheet({
 									{detail.raw_request ? (
 										<RawCaptureBlock title={t("logs:agent.rawRequest")} body={detail.raw_request} />
 									) : (
-										<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-sm">No raw request available.</div>
+										<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-sm">{t("logs:agent.noRawRequest")}</div>
 									)}
 									{detail.raw_response ? (
 										<RawCaptureBlock title={t("logs:agent.rawResponse")} body={detail.raw_response} />
@@ -1199,7 +1192,7 @@ export function AgentLogDetailSheet({
 										<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-sm">
 											{displayLog.status === "processing"
 												? "Raw response is not available yet. The operation is still processing."
-												: "No raw response available."}
+												: t("logs:agent.noRawResponse")}
 										</div>
 									)}
 								</>

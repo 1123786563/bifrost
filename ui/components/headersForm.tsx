@@ -121,7 +121,7 @@ export default function HeadersForm({
 			{adminHeaderKeys && adminHeaderKeys.length > 0 && (
 				<div className="border-muted-foreground/20 bg-muted/40 rounded-md border p-3">
 					<div className="flex items-center gap-1.5">
-						<p className="text-muted-foreground text-xs font-medium">Static admin headers</p>
+						<p className="text-muted-foreground text-xs font-medium">{t("mcp:registry.staticAdminHeaders")}</p>
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -148,7 +148,7 @@ export default function HeadersForm({
 
 			<div className="space-y-3">
 				{requiredKeys.length === 0 ? (
-					<p className="text-muted-foreground text-sm">No header keys have been declared on this MCP client.</p>
+					<p className="text-muted-foreground text-sm">{t("mcp:registry.noDeclaredHeaders")}</p>
 				) : (
 					requiredKeys.map((key) => {
 						const isRevealed = reveal[key] === true;

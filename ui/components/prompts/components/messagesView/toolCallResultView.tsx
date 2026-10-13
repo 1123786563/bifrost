@@ -134,7 +134,7 @@ export default function ToolResultMessageView({
 						onBlur={() => setEditMode(false)}
 					/>
 				) : isEmpty ? (
-					<div className="text-muted-foreground min-h-[20px] font-mono text-sm italic">Enter tool result...</div>
+					<div className="text-muted-foreground min-h-[20px] font-mono text-sm italic">{t("workspaces:prompts.toolResultPlaceholder")}</div>
 				) : contentIsJson ? (
 					<CodeEditor
 						wrap

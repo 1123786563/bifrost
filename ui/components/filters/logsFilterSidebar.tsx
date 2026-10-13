@@ -304,6 +304,7 @@ function SearchableCheckboxList({
 	onSearch?: (query: string) => void;
 	fetching?: boolean;
 }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces"]);
 	const [query, setQuery] = useState("");
 	const normalized = query.trim().toLowerCase();
 	const filtered = normalized ? items.filter((item) => item.label.toLowerCase().includes(normalized)) : items;
@@ -369,7 +370,7 @@ function SearchableCheckboxList({
 				/>
 			))}
 			{filtered.length === 0 && !showAddCustom && (
-				<div className="text-muted-foreground flex h-9 items-center px-3 text-xs">No results</div>
+				<div className="text-muted-foreground flex h-9 items-center px-3 text-xs">{t("common:state.noResults")}</div>
 			)}
 			{showAddCustom && (
 				<button
@@ -1528,6 +1529,7 @@ function LabelledMetadataFilter({
 	onFiltersChange,
 	defaultOpen,
 }: FilterComponentProps & { group: LabelledMetadataFilterGroup }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const hasActive = group.fields.some((field) => filters.metadata_filters?.[field.key] !== undefined);
 	const [opened, setOpened] = useState(defaultOpen || hasActive);
 	// The page's time range: a custom one as it is, a relative period (which carries no start or end)
@@ -1554,7 +1556,7 @@ function LabelledMetadataFilter({
 			onOpenChange={setOpened}
 			testId={`labelled-metadata-${group.title}-filter-toggle`}
 		>
-			{fields.length === 0 && <div className="text-muted-foreground px-3 py-2 text-xs">Nothing recorded in this time range</div>}
+			{fields.length === 0 && <div className="text-muted-foreground px-3 py-2 text-xs">{t("logs:filters.nothingInRange")}</div>}
 			{fields.map(({ field, options }) => (
 				<div key={field.key} data-testid={`labelled-metadata-${field.key}-filter-group`}>
 					<div className="text-muted-foreground px-3 pt-2 pb-1 text-xs font-medium">{field.label}</div>
@@ -1619,7 +1621,7 @@ function MetadataFilters({ filters, onFiltersChange, defaultOpen }: FilterCompon
 			testId="metadata-filter-toggle"
 		>
 			{isEmpty ? (
-				<div className="text-muted-foreground px-3 py-2 text-xs">No metadata keys</div>
+				<div className="text-muted-foreground px-3 py-2 text-xs">{t("logs:filters.noMetadataKeys")}</div>
 			) : (
 				<>
 					<div className="relative border-b">

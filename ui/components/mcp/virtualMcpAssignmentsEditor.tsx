@@ -7,13 +7,14 @@ import { useGetVirtualMCPQuery } from "@/lib/store";
 import { Info, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 const DEFAULT_LABEL = "Virtual MCP Server Configurations";
 
 const DEFAULT_TOOLTIP = (
 	<p>
-		Assign this key to Virtual MCPs. The key can then reach each Virtual MCP at its <span className="font-medium">/mcp/&lt;slug&gt;</span>{" "}
-		endpoint, and the key shows up under that Virtual MCP&apos;s assigned keys.
+		{i18n.t("workspaces:virtualMcps.assignHint1")} <span className="font-medium">/mcp/&lt;slug&gt;</span>{" "}
+		{i18n.t("workspaces:virtualMcps.assignHint2")}
 	</p>
 );
 

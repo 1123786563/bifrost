@@ -201,7 +201,7 @@ export function SettingsPanel() {
 							data-testid="prompts-configuration-trigger"
 							className="text-muted-foreground shrink-0 pt-2 pr-1 pb-3 text-xs font-medium uppercase hover:no-underline"
 						>
-							<span className="min-w-0 flex-1 text-left font-semibold">Configuration</span>
+							<span className="min-w-0 flex-1 text-left font-semibold">{t("workspaces:prompts.configuration")}</span>
 						</AccordionTrigger>
 						<AccordionContent
 							containerClassName="data-[state=open]:flex data-[state=open]:min-h-0 data-[state=open]:flex-1 data-[state=open]:flex-col"
@@ -267,7 +267,9 @@ export function SettingsPanel() {
 									<>
 										<Separator />
 										<div className="flex flex-col gap-2" data-testid="settings-required-headers">
-											<Label className="text-muted-foreground text-xs font-medium uppercase">Required Headers</Label>
+											<Label className="text-muted-foreground text-xs font-medium uppercase">
+												{t("workspaces:prompts.requiredHeaders")}
+											</Label>
 											<p className="text-muted-foreground text-xs">
 												These headers are required by the server. Provide a value for each to send requests from the playground.
 											</p>

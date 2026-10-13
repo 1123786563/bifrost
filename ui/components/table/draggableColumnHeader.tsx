@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { Header, flexRender } from "@tanstack/react-table";
 import { ArrowLeftToLine, ArrowRightToLine, Ellipsis, EyeOff, PinOff } from "lucide-react";
 import { CSSProperties, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const TH_CLASS = "text-foreground h-10 px-4 text-left align-middle font-medium whitespace-nowrap";
 
@@ -34,6 +35,7 @@ export function DraggableColumnHeader<TData>({
 	onDrop: (draggedId: string, targetId: string) => void;
 	cellRef: (el: HTMLTableCellElement | null) => void;
 }) {
+	const { t } = useTranslation(["common"]);
 	const [isDragging, setIsDragging] = useState(false);
 	const [isDropTarget, setIsDropTarget] = useState(false);
 	const pinned = header.column.getIsPinned();
@@ -87,7 +89,7 @@ export function DraggableColumnHeader<TData>({
 									className="ml-1 shrink-0 opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100"
 									onClick={(e) => e.stopPropagation()}
 									onMouseDown={(e) => e.stopPropagation()}
-									aria-label="Column actions"
+									aria-label={t("common:table.columnActions")}
 								>
 									<Ellipsis className="h-3.5 w-3.5" />
 								</Button>
@@ -95,7 +97,7 @@ export function DraggableColumnHeader<TData>({
 							<DropdownMenuContent align="start" side="bottom">
 								<DropdownMenuItem onClick={() => onHide(header.column.id)}>
 									<EyeOff className="h-4 w-4" />
-									Hide column
+									{t("common:table.hideColumn")}
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								{pinned === "left" ? (
@@ -106,7 +108,7 @@ export function DraggableColumnHeader<TData>({
 								) : (
 									<DropdownMenuItem onClick={() => onPin(header.column.id, "left")}>
 										<ArrowLeftToLine className="h-4 w-4" />
-										Pin to left
+										{t("common:table.pinLeft")}
 									</DropdownMenuItem>
 								)}
 								{pinned === "right" ? (
@@ -117,7 +119,7 @@ export function DraggableColumnHeader<TData>({
 								) : (
 									<DropdownMenuItem onClick={() => onPin(header.column.id, "right")}>
 										<ArrowRightToLine className="h-4 w-4" />
-										Pin to right
+										{t("common:table.pinRight")}
 									</DropdownMenuItem>
 								)}
 							</DropdownMenuContent>

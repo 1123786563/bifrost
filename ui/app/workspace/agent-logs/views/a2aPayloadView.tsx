@@ -276,6 +276,7 @@ function FilePartView({ source, mediaType, filename }: { source: string; mediaTy
 }
 
 function PartView({ part }: { part: unknown }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const record = asRecord(part);
 	if (!record) return <JsonBlock code={prettyPrint(part)} maxHeight={200} />;
 
@@ -321,6 +322,7 @@ function PartView({ part }: { part: unknown }) {
 }
 
 export function A2APartsView({ parts, showMetadata = true }: { parts: unknown[]; showMetadata?: boolean }) {
+	const { t } = useTranslation(["common", "logs"]);
 	if (parts.length === 0) return <div className="text-muted-foreground text-[12.5px]">{i18n.t("logs:agent.noContent")}</div>;
 	return (
 		<div className="space-y-2">
@@ -334,7 +336,7 @@ export function A2APartsView({ parts, showMetadata = true }: { parts: unknown[];
 							<details className="group/part mt-2">
 								<summary className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer list-none items-center gap-1.5 text-[11px] [&::-webkit-details-marker]:hidden">
 									<ChevronDown className="size-3 transition-transform group-open/part:rotate-180" />
-									Part details
+									{t("logs:agent.partDetails")}
 								</summary>
 								<div className="mt-2">
 									<OperationParametersView params={details} />
@@ -515,6 +517,7 @@ function ConfigurationView({ configuration }: { configuration: Record<string, un
 // ---------------------------------------------------------------------------
 
 function ErrorView({ error }: { error: Record<string, unknown> }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	// Both JSON-RPC (`{code, message, data}`) and BifrostError (`{error: {...}}`)
 	// shapes reach this view.
 	const inner = asRecord(error.error) ?? error;
@@ -534,7 +537,7 @@ function ErrorView({ error }: { error: Record<string, unknown> }) {
 		<div className="border-destructive/50 rounded-sm border">
 			<div className="border-destructive/50 text-destructive flex items-center gap-2 border-b px-3 py-2">
 				<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-				<span className="text-[12.5px] font-semibold">Error</span>
+				<span className="text-[12.5px] font-semibold">{t("logs:agent.errorLabel")}</span>
 				{code !== undefined && code !== null && code !== "" && (
 					<Badge variant="outline" className="border-destructive/40 text-destructive rounded-sm px-1.5 py-0 font-mono text-[11px]">
 						{String(code)}
@@ -719,6 +722,7 @@ function OperationParametersView({ params }: { params: Record<string, unknown> }
 // ArtifactMetadata collects fields not already shown in the artifact body.
 // File cards show names and media types, while media previews need them here.
 function ArtifactMetadata({ artifact, parts }: { artifact: Record<string, unknown>; parts: unknown[] }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const fields = unclaimedFields(artifact, ["artifactId", "name", "description", "parts"]);
 	if (fields) {
 		for (const key of Object.keys(fields)) if (fields[key] === "") delete fields[key];
@@ -750,7 +754,7 @@ function ArtifactMetadata({ artifact, parts }: { artifact: Record<string, unknow
 		<details className="group/metadata mt-2" data-testid="agent-artifact-metadata">
 			<summary className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer list-none items-center gap-1.5 text-[11px] [&::-webkit-details-marker]:hidden">
 				<ChevronDown className="size-3 transition-transform group-open/metadata:rotate-180" />
-				Metadata
+				{t("logs:agent.metadata")}
 			</summary>
 			<div className="mt-2 space-y-3">
 				{fields && Object.keys(fields).length > 0 && <OperationParametersView params={fields} />}
@@ -953,7 +957,7 @@ function TaskCollectionView({ response }: { response: Record<string, unknown> })
 			<div className="overflow-hidden rounded-sm border">
 				<div className="bg-muted/20 flex items-center justify-between gap-3 border-b px-3 py-2.5">
 					<div className="flex items-center gap-2">
-						<span className="text-sm font-medium">Tasks</span>
+						<span className="text-sm font-medium">{t("logs:agent.tasksLabel")}</span>
 						<Badge variant="secondary" className="rounded-sm px-1.5 text-[11px] font-normal tabular-nums">
 							{tasks.length}
 						</Badge>
@@ -966,7 +970,7 @@ function TaskCollectionView({ response }: { response: Record<string, unknown> })
 							const task = asRecord(entry);
 							if (!task) return <JsonBlock key={index} code={prettyPrint(entry)} maxHeight={240} />;
 							const state = asString(asRecord(task.status)?.state);
-							const taskId = asString(task.id) ?? `Task ${index + 1}`;
+							const taskId = asString(task.id) ?? i18n.t("logs:agent.taskIndex", { index: index + 1 });
 							const title = taskTitle(task, index);
 							return (
 								<details key={taskId} className="group/task">

@@ -34,7 +34,13 @@
 		"loadMore": "Load more",
 		"clear": "Clear",
 		"enable": "Enable",
-		"disable": "Disable"
+		"disable": "Disable",
+		"readMore": "Read more",
+		"tryAgain": "Try again",
+		"rename": "Rename",
+		"contactUs": "Contact us",
+		"viewDetails": "View details",
+		"toggleSidebar": "Toggle Sidebar"
 	},
 	"state": {
 		"loading": "Loading…",
@@ -51,7 +57,11 @@
 		"unknown": "Unknown",
 		"none": "None",
 		"all": "All",
-		"empty": "Nothing here yet"
+		"empty": "Nothing here yet",
+		"searching": "Searching…",
+		"loadingMore": "Loading more…",
+		"loadingProviders": "Loading providers…",
+		"noResults": "No results"
 	},
 	"fields": {
 		"name": "Name",
@@ -63,7 +73,11 @@
 		"createdAt": "Created at",
 		"updatedAt": "Updated at",
 		"optional": "Optional",
-		"required": "Required"
+		"required": "Required",
+		"provider": "Provider",
+		"model": "Model",
+		"selected": "Selected",
+		"timezone": "Timezone"
 	},
 	"messages": {
 		"deleteConfirm": "Are you sure you want to delete this?",
@@ -71,5 +85,20 @@
 		"notFound": "Not found",
 		"copySuccess": "Copied to clipboard",
 		"operationFailed": "Operation failed. Please try again."
+	},
+	"table": {
+		"actions": "Actions",
+		"hideColumn": "Hide column",
+		"pinLeft": "Pin to left",
+		"pinRight": "Pin to right",
+		"columnActions": "Column actions",
+		"resetToDefault": "Reset to default"
+	},
+	"hint": {
+		"resolvedAfterSaving": "The resolved value will appear after saving",
+		"typeToFilter": "Type to filter options. Use arrow keys to navigate results."
+	},
+	"validation": {
+		"duplicateKey": "Duplicate key"
 	}
 }

@@ -232,7 +232,7 @@ export function MCPServerSelector({
 			{/* Empty state */}
 			{selectedServersWithInfo.length === 0 && (
 				<div className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm">
-					No servers selected. Use the search above to add MCP servers.
+					{t("mcp:registry.noServersSelected")}
 				</div>
 			)}
 		</div>

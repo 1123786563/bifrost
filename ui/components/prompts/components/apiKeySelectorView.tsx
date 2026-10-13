@@ -134,10 +134,12 @@ export function ApiKeySelectorView({
 						{isSearching && !hasResults && (
 							<div className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm">
 								<Loader2 className="size-4 animate-spin" />
-								Searching...
+								{t("common:state.searching")}
 							</div>
 						)}
-						{!isSearching && !hasResults && <div className="text-muted-foreground py-6 text-center text-sm">No results found.</div>}
+						{!isSearching && !hasResults && (
+							<div className="text-muted-foreground py-6 text-center text-sm">{t("workspaces:prompts.noResults")}</div>
+						)}
 					</ComboboxList>
 				</ComboboxContent>
 			</Combobox>

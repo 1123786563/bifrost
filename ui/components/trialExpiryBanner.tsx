@@ -2,8 +2,10 @@ import { TRIAL_EXPIRY } from "@/lib/constants/config";
 import { cn } from "@/lib/utils";
 import { differenceInDays } from "date-fns";
 import { AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function TrialExpiryBanner() {
+	const { t } = useTranslation(["common", "mcp", "workspaces"]);
 	if (!TRIAL_EXPIRY) return null;
 
 	const daysRemaining = differenceInDays(TRIAL_EXPIRY, new Date());

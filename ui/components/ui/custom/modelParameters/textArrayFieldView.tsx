@@ -5,6 +5,7 @@ import { Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import FieldLabel from "./fieldLabel";
 import { Parameter } from "./types";
+import { useTranslation } from "react-i18next";
 
 interface Props {
 	field: Parameter;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function TextArrayFieldView(props: Props) {
+	const { t } = useTranslation(["common", "logs", "workspaces"]);
 	const [shouldFocus, setShouldFocus] = useState(false);
 	const { field, config } = props;
 	const fieldValue = (config[field.id] as string[]) || [];

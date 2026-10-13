@@ -89,7 +89,8 @@
 				"user": "Applies only to requests from the matching user.",
 				"user_provider": "Applies only to requests from the matching user and provider.",
 				"user_provider_key": "Applies only to requests from the matching user and provider key."
-			}
+			},
+			"descriptionLabel": "Description"
 		},
 		"emptyState": {
 			"title": "No providers configured yet",
@@ -430,5 +431,13 @@
 			"ocr_cost_per_page": "OCR / page",
 			"annotation_cost_per_page": "Annotation / page"
 		}
+	},
+	"access": {
+		"allModels": "All Models",
+		"allModelsBlocked": "All Models Blocked",
+		"regexHint": "Matched against the whole model name, case-insensitive."
+	},
+	"parameters": {
+		"addString": "Add string"
 	}
 }

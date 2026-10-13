@@ -23,6 +23,7 @@ import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import { lazy, Suspense, useEffect } from "react";
 import { CookiesProvider } from "react-cookie";
 import { toast, Toaster } from "sonner";
+import { useTranslation } from "react-i18next";
 
 // Lazy import — only loaded in development, completely excluded from prod bundle
 const DevProfilerLazy = lazy(() =>
@@ -37,6 +38,7 @@ const DevProfiler = () => (
 );
 
 function StoreSyncInitializer() {
+	const { t } = useTranslation(["common", "logs", "workspaces"]);
 	useStoreSync();
 	useNotificationSync();
 	return null;
@@ -197,6 +199,7 @@ function FullPage({
 }
 
 function ConfigUnreachable({ isRetrying, onRetry }: { isRetrying: boolean; onRetry: () => void }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	return (
 		<div className="h-base flex items-center justify-center p-4 sm:p-6" data-testid="config-unreachable">
 			<section className="bg-card w-full max-w-lg rounded-sm border p-6 sm:p-8" aria-labelledby="config-unreachable-title">
@@ -214,7 +217,7 @@ function ConfigUnreachable({ isRetrying, onRetry }: { isRetrying: boolean; onRet
 						{!isRetrying && <RefreshCw aria-hidden="true" />}
 						{isRetrying ? "Trying again…" : "Try again"}
 					</Button>
-					<p className="text-muted-foreground text-xs">Your settings and data are unaffected.</p>
+					<p className="text-muted-foreground text-xs">{t("workspaces:settingsUnaffected")}</p>
 				</div>
 			</section>
 		</div>

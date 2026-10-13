@@ -2,6 +2,7 @@ import { AutoSizeTextarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { VariableMap } from "@/lib/message";
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export function VariablesTableView({
 	variables,
@@ -10,6 +11,7 @@ export function VariablesTableView({
 	variables: VariableMap;
 	onChange: React.Dispatch<React.SetStateAction<VariableMap>>;
 }) {
+	const { t } = useTranslation(["common", "workspaces"]);
 	const entries = useMemo(() => Object.entries(variables).sort(([a], [b]) => a.localeCompare(b)), [variables]);
 
 	const handleValueChange = useCallback(
@@ -21,9 +23,10 @@ export function VariablesTableView({
 
 	return (
 		<div className="flex flex-col gap-3">
-			<Label className="text-muted-foreground text-xs font-medium uppercase">Variables</Label>
+			<Label className="text-muted-foreground text-xs font-medium uppercase">{t("workspaces:prompts.variables")}</Label>
 			<p className="text-muted-foreground text-xs">
-				Detected from <code className="bg-muted rounded px-1">{"{{ }}"}</code> syntax in messages. Values are substituted at runtime.
+				{t("workspaces:prompts.variablesHint")} <code className="bg-muted rounded px-1">{"{{ }}"}</code>{" "}
+				{t("workspaces:prompts.variablesHint2")}
 			</p>
 			<div className="border-border overflow-hidden rounded-sm border">
 				<table className="w-full table-fixed text-sm">

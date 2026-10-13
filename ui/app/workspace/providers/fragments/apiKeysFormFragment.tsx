@@ -1183,8 +1183,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 						name="key.cloudflare_key_config.account_id"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Account ID (Required)</FormLabel>
-								<FormDescription>The Cloudflare account that runs Workers AI.</FormDescription>
+								<FormLabel>{t("providers:oauthKeys.accountId")}</FormLabel>
+								<FormDescription>{t("providers:oauthKeys.accountIdDesc")}</FormDescription>
 								<FormControl>
 									<SecretVarInput data-testid="key-input-cloudflare-account-id" placeholder="env.CLOUDFLARE_ACCOUNT_ID" {...field} />
 								</FormControl>
@@ -1197,7 +1197,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 			{isOpenAICompatible && (
 				<div className="space-y-4">
 					<div className="space-y-2">
-						<FormLabel>Authentication Method</FormLabel>
+						<FormLabel>{t("providers:oauthKeys.authMethod")}</FormLabel>
 						<Tabs
 							value={openaiAuthType}
 							onValueChange={(v) => {
@@ -1229,7 +1229,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 							name="key.value"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel>API Key</FormLabel>
+									<FormLabel>{t("providers:oauthKeys.apiKey")}</FormLabel>
 									<FormControl>
 										<SecretVarInput data-testid="key-input-openai-api-key" placeholder="API Key or env.MY_KEY" type="text" {...field} />
 									</FormControl>
@@ -1249,7 +1249,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 								name="key.oauth_key_config.grant_type"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Grant Type</FormLabel>
+										<FormLabel>{t("providers:oauthKeys.grantType")}</FormLabel>
 										<Select value={field.value ?? "client_credentials"} onValueChange={field.onChange}>
 											<FormControl>
 												<SelectTrigger className="w-full" data-testid="key-select-oauth-grant-type">
@@ -1257,8 +1257,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
-												<SelectItem value="client_credentials">Client credentials (client ID + secret)</SelectItem>
-												<SelectItem value="jwt_bearer">JWT bearer (signed assertion, RFC 7523)</SelectItem>
+												<SelectItem value="client_credentials">{t("providers:oauthKeys.grantClientCredentials")}</SelectItem>
+												<SelectItem value="jwt_bearer">{t("providers:oauthKeys.grantJwtBearer")}</SelectItem>
 											</SelectContent>
 										</Select>
 										<FormMessage />
@@ -1270,8 +1270,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 								name="key.oauth_key_config.token_url"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Token URL</FormLabel>
-										<FormDescription>The identity provider&apos;s token endpoint. Must be https.</FormDescription>
+										<FormLabel>{t("providers:oauthKeys.tokenUrl")}</FormLabel>
+										<FormDescription>{t("providers:oauthKeys.tokenUrlDesc")}</FormDescription>
 										<FormControl>
 											<SecretVarInput
 												data-testid="key-input-oauth-token-url"
@@ -1290,7 +1290,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.client_id"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Client ID</FormLabel>
+												<FormLabel>{t("providers:oauthKeys.clientId")}</FormLabel>
 												<FormControl>
 													<SecretVarInput data-testid="key-input-oauth-client-id" placeholder="Client ID or env.IDP_CLIENT_ID" {...field} />
 												</FormControl>
@@ -1303,7 +1303,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.client_secret"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Client Secret</FormLabel>
+												<FormLabel>{t("providers:oauthKeys.clientSecret")}</FormLabel>
 												<FormControl>
 													<SecretVarInput
 														data-testid="key-input-oauth-client-secret"
@@ -1320,7 +1320,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.auth_style"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Credential Placement</FormLabel>
+												<FormLabel>{t("providers:oauthKeys.credentialPlacement")}</FormLabel>
 												<FormDescription>
 													Where the token request carries the client ID and secret. Header (HTTP Basic) is the standard; some providers only
 													accept them as form fields.
@@ -1332,8 +1332,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent>
-														<SelectItem value="header">Authorization header (HTTP Basic)</SelectItem>
-														<SelectItem value="body">Form body (client_id / client_secret)</SelectItem>
+														<SelectItem value="header">{t("providers:oauthKeys.placementBasic")}</SelectItem>
+														<SelectItem value="body">{t("providers:oauthKeys.placementBody")}</SelectItem>
 													</SelectContent>
 												</Select>
 												<FormMessage />
@@ -1349,8 +1349,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.private_key"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Private Key</FormLabel>
-												<FormDescription>RSA or EC private key in PEM form. Bifrost signs each assertion with it.</FormDescription>
+												<FormLabel>{t("providers:oauthKeys.privateKey")}</FormLabel>
+												<FormDescription>{t("providers:oauthKeys.privateKeyDesc")}</FormDescription>
 												<FormControl>
 													<SecretVarInput
 														data-testid="key-input-oauth-private-key"
@@ -1369,8 +1369,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.issuer"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Issuer</FormLabel>
-												<FormDescription>The iss claim, usually the client or service account ID.</FormDescription>
+												<FormLabel>{t("providers:oauthKeys.issuer")}</FormLabel>
+												<FormDescription>{t("providers:oauthKeys.issuerDesc")}</FormDescription>
 												<FormControl>
 													<Input data-testid="key-input-oauth-issuer" placeholder="client-id" {...field} value={field.value ?? ""} />
 												</FormControl>
@@ -1383,8 +1383,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.subject"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Subject (Optional)</FormLabel>
-												<FormDescription>The sub claim. Defaults to the issuer.</FormDescription>
+												<FormLabel>{t("providers:oauthKeys.subject")}</FormLabel>
+												<FormDescription>{t("providers:oauthKeys.subjectDesc")}</FormDescription>
 												<FormControl>
 													<Input
 														data-testid="key-input-oauth-subject"
@@ -1402,8 +1402,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.audience"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Audience</FormLabel>
-												<FormDescription>The aud claim, usually the token endpoint itself.</FormDescription>
+												<FormLabel>{t("providers:oauthKeys.audience")}</FormLabel>
+												<FormDescription>{t("providers:oauthKeys.audienceDesc")}</FormDescription>
 												<FormControl>
 													<Input
 														data-testid="key-input-oauth-audience"
@@ -1421,8 +1421,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.key_id"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Key ID (Optional)</FormLabel>
-												<FormDescription>The kid header, when the identity provider selects keys by ID.</FormDescription>
+												<FormLabel>{t("providers:oauthKeys.keyId")}</FormLabel>
+												<FormDescription>{t("providers:oauthKeys.keyIdDesc")}</FormDescription>
 												<FormControl>
 													<Input data-testid="key-input-oauth-key-id" placeholder="kid-1" {...field} value={field.value ?? ""} />
 												</FormControl>
@@ -1435,7 +1435,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.signing_algorithm"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Signing Algorithm</FormLabel>
+												<FormLabel>{t("providers:oauthKeys.signingAlgorithm")}</FormLabel>
 												<Select value={field.value ?? "RS256"} onValueChange={field.onChange}>
 													<FormControl>
 														<SelectTrigger className="w-full" data-testid="key-select-oauth-signing-algorithm">
@@ -1459,8 +1459,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 										name="key.oauth_key_config.assertion_lifetime_seconds"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Assertion Lifetime (seconds)</FormLabel>
-												<FormDescription>How long each signed assertion is valid for. Default 300.</FormDescription>
+												<FormLabel>{t("providers:oauthKeys.assertionLifetime")}</FormLabel>
+												<FormDescription>{t("providers:oauthKeys.assertionLifetimeDesc")}</FormDescription>
 												<FormControl>
 													<Input
 														data-testid="key-input-oauth-assertion-lifetime"
@@ -1484,7 +1484,7 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 								name="key.oauth_key_config.scopes"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Scopes (Optional)</FormLabel>
+										<FormLabel>{t("providers:oauthKeys.scopes")}</FormLabel>
 										<FormControl>
 											<TagInput
 												data-testid="key-input-oauth-scopes"
@@ -1503,8 +1503,8 @@ export function ApiKeyFormFragment({ control, providerName, baseProviderType, fo
 									name="key.oauth_key_config.audience"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Audience (Optional)</FormLabel>
-											<FormDescription>Sent as the audience form parameter, for providers that scope tokens by API.</FormDescription>
+											<FormLabel>{t("providers:oauthKeys.audienceOptional")}</FormLabel>
+											<FormDescription>{t("providers:oauthKeys.audienceOptionalDesc")}</FormDescription>
 											<FormControl>
 												<Input
 													data-testid="key-input-oauth-cc-audience"

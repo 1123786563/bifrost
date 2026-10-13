@@ -17,6 +17,7 @@ import {
 import { formatBytes } from "@/lib/utils/strings";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useTranslation } from "react-i18next";
 
 // Format nanoseconds to human-readable string
 function formatNs(ns: number): string {
@@ -124,7 +125,7 @@ function saveBooleanToStorage(key: string, value: boolean): void {
 	}
 }
 
-// Goroutine Health Section subcomponent
+// {t("settings:devtools.profiler.goroutineHealth")} Section subcomponent
 interface GoroutineHealthProps {
 	goroutineData:
 		| {
@@ -194,7 +195,9 @@ function GoroutineHealthSection({
 						</span>
 					)}
 					{goroutineHealth === "healthy" && (
-						<span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-400">Healthy</span>
+						<span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-400">
+							{t("settings:devtools.profiler.healthy")}
+						</span>
 					)}
 				</div>
 			</div>
@@ -202,15 +205,15 @@ function GoroutineHealthSection({
 			{/* Summary stats */}
 			<div className="mb-2 grid grid-cols-4 gap-2 rounded bg-zinc-800/50 p-2">
 				<div className="flex flex-col items-center">
-					<span className="text-[10px] text-zinc-400">Total</span>
+					<span className="text-[10px] text-zinc-400">{t("settings:devtools.profiler.total")}</span>
 					<span className="font-semibold text-emerald-400">{total_goroutines}</span>
 				</div>
 				<div className="flex flex-col items-center">
-					<span className="text-[10px] text-zinc-400">Background</span>
+					<span className="text-[10px] text-zinc-400">{t("settings:devtools.profiler.background")}</span>
 					<span className="font-semibold text-blue-400">{summary.background}</span>
 				</div>
 				<div className="flex flex-col items-center">
-					<span className="text-[10px] text-zinc-400">Per-Request</span>
+					<span className="text-[10px] text-zinc-400">{t("settings:devtools.profiler.perRequest")}</span>
 					<span className="font-semibold text-amber-400">{summary.per_request}</span>
 				</div>
 				<div className="flex flex-col items-center">
@@ -225,7 +228,7 @@ function GoroutineHealthSection({
 			{(problemGoroutines.length > 0 || skippedGoroutines.size > 0) && (
 				<div className="space-y-1">
 					<div className="flex items-center justify-between">
-						<span className="text-[10px] text-zinc-400">Potential Leaks</span>
+						<span className="text-[10px] text-zinc-400">{t("settings:devtools.profiler.potentialLeaks")}</span>
 						{skippedGoroutines.size > 0 && (
 							<button
 								onClick={onClearSkipped}
@@ -283,10 +286,10 @@ function GoroutineHealthSection({
 								{expandedGoroutines.has(gid) && (
 									<div className="border-t border-zinc-700 bg-zinc-900/50 px-2 py-1.5">
 										<div className="mb-1 text-[10px] text-zinc-400">
-											State: <span className="text-zinc-400">{g.state}</span>
+											{t("settings:devtools.profiler.state")}: <span className="text-zinc-400">{g.state}</span>
 											{g.wait_reason && (
 												<span className="ml-2">
-													Wait: <span className="text-amber-400">{g.wait_reason}</span>
+													{t("settings:devtools.profiler.wait")}: <span className="text-amber-400">{g.wait_reason}</span>
 												</span>
 											)}
 										</div>
@@ -305,7 +308,9 @@ function GoroutineHealthSection({
 					})}
 
 					{problemGoroutines.length === 0 && skippedGoroutines.size > 0 && (
-						<div className="rounded bg-zinc-800/30 py-2 text-center text-[10px] text-zinc-400">All potential leaks hidden</div>
+						<div className="rounded bg-zinc-800/30 py-2 text-center text-[10px] text-zinc-400">
+							{t("settings:devtools.profiler.allLeaksHidden")}
+						</div>
 					)}
 					{problemGoroutines.length === 0 &&
 						skippedGoroutines.size === 0 &&
@@ -323,7 +328,7 @@ function GoroutineHealthSection({
 
 			{/* No problems message */}
 			{problemGoroutines.length === 0 && summary.long_waiting === 0 && summary.potentially_stuck === 0 && (
-				<div className="rounded bg-zinc-800/30 py-2 text-center text-[10px] text-zinc-400">No goroutine leaks detected</div>
+				<div className="rounded bg-zinc-800/30 py-2 text-center text-[10px] text-zinc-400">{t("settings:devtools.profiler.noLeaks")}</div>
 			)}
 		</div>
 	);
@@ -475,7 +480,7 @@ export function DevProfiler(): React.ReactNode {
 			{/* Header */}
 			<div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800 px-3 py-2">
 				<div className="flex items-center gap-2">
-					<span className="font-semibold text-emerald-400">Dev Profiler</span>
+					<span className="font-semibold text-emerald-400">{t("settings:devtools.profiler.title")}</span>
 					{isLoading && <span className="ml-2 h-2 w-2 animate-pulse rounded-full bg-amber-400" />}
 				</div>
 				<div className="flex items-center gap-1">
@@ -495,7 +500,9 @@ export function DevProfiler(): React.ReactNode {
 				</div>
 			</div>
 
-			{Boolean(error) && <div className="border-b border-zinc-700 bg-red-900/30 px-3 py-2 text-red-300">Failed to load profiling data</div>}
+			{Boolean(error) && (
+				<div className="border-b border-zinc-700 bg-red-900/30 px-3 py-2 text-red-300">{t("settings:devtools.profiler.loadFailed")}</div>
+			)}
 
 			{isExpanded && data && (
 				<div className="custom-scrollbar max-h-[70vh] overflow-x-hidden overflow-y-auto">
@@ -506,15 +513,15 @@ export function DevProfiler(): React.ReactNode {
 							<span className="font-semibold text-orange-400">{data.cpu.usage_percent.toFixed(1)}%</span>
 						</div>
 						<div className="flex flex-col">
-							<span className="text-zinc-400">Heap Alloc</span>
+							<span className="text-zinc-400">{t("settings:devtools.profiler.heapAlloc")}</span>
 							<span className="font-semibold text-cyan-400">{formatBytes(data.memory.alloc)}</span>
 						</div>
 						<div className="flex flex-col">
-							<span className="text-zinc-400">Heap In-Use</span>
+							<span className="text-zinc-400">{t("settings:devtools.profiler.heapInUse")}</span>
 							<span className="font-semibold text-blue-400">{formatBytes(data.memory.heap_inuse)}</span>
 						</div>
 						<div className="flex flex-col">
-							<span className="text-zinc-400">System</span>
+							<span className="text-zinc-400">{t("settings:devtools.profiler.system")}</span>
 							<span className="font-semibold text-purple-400">{formatBytes(data.memory.sys)}</span>
 						</div>
 						<div className="flex flex-col">
@@ -611,7 +618,7 @@ export function DevProfiler(): React.ReactNode {
 					<div className="border-b border-zinc-700 p-3">
 						<div className="mb-2 flex items-center gap-2">
 							<HardDrive className="h-3 w-3 text-cyan-400" />
-							<span className="text-zinc-400">Memory (last 5 min)</span>
+							<span className="text-zinc-400">{t("settings:devtools.profiler.memoryRecent")}</span>
 						</div>
 						<div className="h-24">
 							<ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 1 }}>
@@ -668,7 +675,7 @@ export function DevProfiler(): React.ReactNode {
 						</div>
 					</div>
 
-					{/* Top Allocations */}
+					{/* {t("settings:devtools.profiler.topAllocations")} */}
 					<div className="border-b border-zinc-700 p-3">
 						<div className="mb-2 flex items-center gap-2">
 							<HardDrive className="h-3 w-3 text-rose-400" />
@@ -726,3 +733,4 @@ export function DevProfiler(): React.ReactNode {
 		</div>
 	);
 }
+const { t } = useTranslation(["common", "settings"]);

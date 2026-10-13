@@ -45,6 +45,7 @@ function RoutingRuleActionsMenu({
 	onEdit: (rule: RoutingRule) => void;
 	onDelete: (ruleId: string) => void;
 }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
@@ -86,7 +87,7 @@ function RoutingRuleActionsMenu({
 					}}
 				>
 					<Trash2 className="h-4 w-4" />
-					Delete
+					{t("governance:routingRules.delete_")}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
@@ -153,10 +154,10 @@ export function RoutingRulesTable({
 							<TableHead>{t("governance:routingRules.table.headers.name")}</TableHead>
 							<TableHead>{t("governance:routingRules.table.headers.targets")}</TableHead>
 							<TableHead>{t("governance:routingRules.table.headers.scope")}</TableHead>
-							<TableHead className="text-right">Priority</TableHead>
+							<TableHead className="text-right">{t("governance:routingRules.priority")}</TableHead>
 							<TableHead>{t("governance:routingRules.table.headers.expression")}</TableHead>
 							<TableHead>{t("governance:routingRules.table.headers.enabled")}</TableHead>
-							<TableHead className="text-right">Actions</TableHead>
+							<TableHead className="text-right">{t("governance:routingRules.actions")}</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -199,10 +200,10 @@ export function RoutingRulesTable({
 					<TableHeader className="bg-muted sticky top-0 z-10">
 						<TableRow className="bg-muted/50">
 							<TableHead className="font-semibold">Name</TableHead>
-							<TableHead className="font-semibold">Targets</TableHead>
-							<TableHead className="font-semibold">Scope</TableHead>
+							<TableHead className="font-semibold">{t("governance:routingRules.table.headers.targets")}</TableHead>
+							<TableHead className="font-semibold">{t("governance:routingRules.table.headers.scope")}</TableHead>
 							<TableHead className="text-right font-semibold">Priority</TableHead>
-							<TableHead className="font-semibold">Expression</TableHead>
+							<TableHead className="font-semibold">{t("governance:routingRules.table.headers.expression")}</TableHead>
 							<TableHead className="font-semibold">Status</TableHead>
 							<TableHead className={`bg-muted sticky right-0 z-30 w-[50px] text-right font-semibold ${PIN_SHADOW_RIGHT}`}>
 								Actions
@@ -213,7 +214,7 @@ export function RoutingRulesTable({
 						{sortedRules.length === 0 ? (
 							<TableRow>
 								<TableCell colSpan={7} className="h-24 text-center">
-									<span className="text-muted-foreground text-sm">No matching routing rules found.</span>
+									<span className="text-muted-foreground text-sm">{t("governance:routingRules.noMatch")}</span>
 								</TableCell>
 							</TableRow>
 						) : (

@@ -161,7 +161,7 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 
 				<div className="mt-4 flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<h3 className="font-semibold">Recent Deliveries</h3>
+						<h3 className="font-semibold">{t("workspaces:webhooks.recentDeliveries")}</h3>
 						<Button
 							variant="link"
 							size="sm"
@@ -277,7 +277,7 @@ export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, on
 							) : deliveries.length === 0 ? (
 								<TableRow>
 									<TableCell colSpan={7} className="text-muted-foreground h-24 text-center">
-										No deliveries yet.
+										{t("workspaces:webhooks.noDeliveries")}
 									</TableCell>
 								</TableRow>
 							) : (

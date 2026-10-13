@@ -471,7 +471,7 @@ export default function MCPView() {
 							{t("settings:mcp.maxInstrTotal")}
 						</label>
 						<p className="text-muted-foreground text-sm">
-							{t("settings:mcp.maxInstrTotalDescPre")} <code className="text-xs">Gateway and LLM requests</code>{" "}
+							{t("settings:mcp.maxInstrTotalDescPre")} <code className="text-xs">{t("mcp:registry.gatewayLlmRequests")}</code>{" "}
 							{t("settings:mcp.maxInstrTotalDescPost")}
 						</p>
 					</div>

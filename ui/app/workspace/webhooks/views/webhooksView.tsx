@@ -339,10 +339,10 @@ export default function WebhooksView() {
 	if (isError && !data) {
 		return (
 			<div className="flex flex-col items-center justify-center gap-3 py-16 text-center" data-testid="webhooks-load-error">
-				<p className="text-sm font-medium">Failed to load webhook endpoints.</p>
+				<p className="text-sm font-medium">{t("workspaces:webhooks.loadFailed")}</p>
 				<p className="text-muted-foreground max-w-md text-sm">{getErrorMessage(error)}</p>
 				<Button variant="outline" size="sm" onClick={() => void refetch()}>
-					Retry
+					{t("common:actions.retry")}
 				</Button>
 			</div>
 		);

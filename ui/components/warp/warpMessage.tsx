@@ -104,6 +104,7 @@ function WarpTimeline({
 	toolCalls?: WarpTurnToolCall[];
 	isStreaming?: boolean;
 }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces"]);
 	const items = useMemo(() => warpTimeline(content, toolCalls), [content, toolCalls]);
 	const last = items[items.length - 1];
 	// Nothing yet, or every lookup is back: the longest silence, which otherwise reads as hung.
@@ -140,7 +141,7 @@ function WarpTimeline({
 								className="text-muted-foreground my-3 rounded-sm border border-dashed p-3 text-xs"
 								data-testid="warp-chart-invalid"
 							>
-								Chart unavailable.
+								{t("workspaces:warp.chartUnavailable")}
 							</div>
 						);
 					}
@@ -360,6 +361,7 @@ function WarpAnswer({ content, toolCalls }: { content: string; toolCalls?: WarpT
 }
 
 function WarpPartialNote({ className }: { className?: string }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	return (
 		<div
 			className={cn("flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-xs", className)}
@@ -367,7 +369,7 @@ function WarpPartialNote({ className }: { className?: string }) {
 		>
 			<Info className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
 			<div className="space-y-0.5">
-				<p className="font-medium">Partial answer</p>
+				<p className="font-medium">{t("workspaces:warp.partialAnswer")}</p>
 				<p className="text-muted-foreground">
 					Warp used all of its research steps before it finished checking. This is what it found so far, and it says what it could not
 					confirm. A narrower question usually completes.
@@ -378,6 +380,7 @@ function WarpPartialNote({ className }: { className?: string }) {
 }
 
 function WarpTurnError({ error, className }: { error: string; className?: string }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const [expanded, setExpanded] = useState(false);
 	// Not a bare split: a message with no colon is a message, not a code.
 	const { code, message } = decodeTurnError(error);
@@ -403,7 +406,7 @@ function WarpTurnError({ error, className }: { error: string; className?: string
 					<p>{detail.cause}</p>
 					{detail.suggestions.length > 0 && (
 						<div className="space-y-1">
-							<p className="text-foreground">What to try:</p>
+							<p className="text-foreground">{t("workspaces:warp.whatToTry")}:</p>
 							<ul className="list-disc space-y-0.5 pl-4">
 								{detail.suggestions.map((suggestion) => (
 									<li key={suggestion}>{suggestion}</li>

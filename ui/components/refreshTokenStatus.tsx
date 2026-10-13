@@ -1,13 +1,14 @@
 // RefreshTokenStatus is the shared one-line reading of an OAuth credential's
 // refresh token, used by the MCP sessions table and the MCP server sheet so
 // both describe the same row with the same words. Present: Bifrost renews
-// the access token at use time. Not issued: the provider returned none, so
+// the access token at use time. {t("mcp:registry.notIssued")}: the provider returned none, so
 // the credential must be re-authenticated once the access token expires.
-// Rejected upstream: the provider refused the last refresh (the row is in
+// {t("mcp:registry.rejectedUpstream")}: the provider refused the last refresh (the row is in
 // needs_reauth), whether or not a refresh token string is still stored.
 
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface RefreshTokenStatusProps {
 	hasRefreshToken: boolean;

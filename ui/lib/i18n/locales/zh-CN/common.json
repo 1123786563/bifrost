@@ -34,7 +34,13 @@
 		"loadMore": "加载更多",
 		"clear": "清除",
 		"enable": "启用",
-		"disable": "禁用"
+		"disable": "禁用",
+		"readMore": "了解更多",
+		"tryAgain": "重试",
+		"rename": "重命名",
+		"contactUs": "联系我们",
+		"viewDetails": "查看详情",
+		"toggleSidebar": "切换侧边栏"
 	},
 	"state": {
 		"loading": "加载中…",
@@ -51,7 +57,11 @@
 		"unknown": "未知",
 		"none": "无",
 		"all": "全部",
-		"empty": "暂无内容"
+		"empty": "暂无内容",
+		"searching": "搜索中…",
+		"loadingMore": "加载更多…",
+		"loadingProviders": "正在加载提供商…",
+		"noResults": "无结果"
 	},
 	"fields": {
 		"name": "名称",
@@ -63,7 +73,11 @@
 		"createdAt": "创建时间",
 		"updatedAt": "更新时间",
 		"optional": "可选",
-		"required": "必填"
+		"required": "必填",
+		"provider": "提供商",
+		"model": "模型",
+		"selected": "已选",
+		"timezone": "时区"
 	},
 	"messages": {
 		"deleteConfirm": "确定要删除吗？",
@@ -71,5 +85,20 @@
 		"notFound": "未找到",
 		"copySuccess": "已复制到剪贴板",
 		"operationFailed": "操作失败，请重试。"
+	},
+	"table": {
+		"actions": "操作",
+		"hideColumn": "隐藏列",
+		"pinLeft": "固定到左侧",
+		"pinRight": "固定到右侧",
+		"columnActions": "列操作",
+		"resetToDefault": "恢复默认"
+	},
+	"hint": {
+		"resolvedAfterSaving": "保存后将显示解析后的值",
+		"typeToFilter": "输入以筛选选项。使用方向键浏览结果。"
+	},
+	"validation": {
+		"duplicateKey": "重复的键"
 	}
 }

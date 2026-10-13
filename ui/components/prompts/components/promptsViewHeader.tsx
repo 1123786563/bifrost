@@ -194,7 +194,7 @@ export default function PromptsViewHeader() {
 						onOpenChange: setSessionsOpen,
 						children: (
 							<Command>
-								<CommandInput placeholder="Search sessions..." data-testid="header-sessions-search" />
+								<CommandInput placeholder={t("workspaces:prompts.searchSessions")} data-testid="header-sessions-search" />
 								<CommandList>
 									<CommandEmpty>{t("workspaces:promptsRepo.header.noSessions")}</CommandEmpty>
 									<CommandGroup>
@@ -238,7 +238,7 @@ export default function PromptsViewHeader() {
 								<DropdownMenuLabel>{t("workspaces:promptsRepo.header.versions")}</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								{versions.length === 0 ? (
-									<div className="text-muted-foreground px-2 py-3 text-center text-sm">No versions yet</div>
+									<div className="text-muted-foreground px-2 py-3 text-center text-sm">{t("workspaces:prompts.noVersions")}</div>
 								) : (
 									versions.map((version) => (
 										<DropdownMenuItem

@@ -266,7 +266,7 @@ export function MCPToolSelector({ value, onChange, mcpClients, placeholder, disa
 												<tr>
 													<td colSpan={4} className="p-0">
 														<div className="bg-muted/30 border-t px-4 py-3">
-															<div className="text-muted-foreground mb-2 text-xs font-medium">Parameters Schema</div>
+															<div className="text-muted-foreground mb-2 text-xs font-medium">{t("mcp:registry.parametersSchema")}</div>
 															{tool.parameters ? (
 																<CodeEditor
 																	className="z-0 w-full rounded-md border"
@@ -284,7 +284,7 @@ export function MCPToolSelector({ value, onChange, mcpClients, placeholder, disa
 																	}}
 																/>
 															) : (
-																<div className="text-muted-foreground text-sm">No parameters defined</div>
+																<div className="text-muted-foreground text-sm">{t("mcp:registry.noParameters")}</div>
 															)}
 														</div>
 													</td>
@@ -302,7 +302,7 @@ export function MCPToolSelector({ value, onChange, mcpClients, placeholder, disa
 			{/* Empty state */}
 			{selectedToolsWithInfo.length === 0 && (
 				<div className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm">
-					No tools selected. Use the search above to add tools.
+					{t("mcp:registry.noToolsSelected")}
 				</div>
 			)}
 		</div>

@@ -1,5 +1,6 @@
 import { MessageContent } from "@/lib/message";
 import { Mic, FileIcon, XIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /**
  * Renders a compact badge for a single attachment with an inline remove control.

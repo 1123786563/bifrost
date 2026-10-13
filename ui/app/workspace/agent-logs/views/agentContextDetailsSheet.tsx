@@ -195,6 +195,7 @@ function buildSessionContent(log: AgentLogOperation): SessionContent[] {
 }
 
 function ConversationFailedResponse({ state }: { state: string }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	return (
 		<div className="flex gap-3">
 			<div className="flex flex-col items-center pt-1.5">
@@ -203,16 +204,17 @@ function ConversationFailedResponse({ state }: { state: string }) {
 			</div>
 			<div className="min-w-0 flex-1">
 				<div className="mb-1.5 flex min-w-0 items-center gap-2">
-					<span className="text-xs font-semibold">Agent response</span>
+					<span className="text-xs font-semibold">{t("logs:agent.agentResponse")}</span>
 					<TaskStateBadge state={state} />
 				</div>
-				<div className="bg-card text-muted-foreground rounded-sm border p-3 text-sm leading-5">The agent did not return a response.</div>
+				<div className="bg-card text-muted-foreground rounded-sm border p-3 text-sm leading-5">{t("logs:agent.noResponseReturned")}</div>
 			</div>
 		</div>
 	);
 }
 
 function ConversationError({ error, timestamp }: { error: unknown; timestamp?: string }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	return (
 		<div className="flex gap-3">
 			<div className="flex flex-col items-center pt-1.5">
@@ -221,7 +223,7 @@ function ConversationError({ error, timestamp }: { error: unknown; timestamp?: s
 			</div>
 			<div className="min-w-0 flex-1">
 				<div className="mb-1.5 flex min-w-0 items-center gap-2">
-					<span className="text-xs font-semibold">Error</span>
+					<span className="text-xs font-semibold">{t("logs:agent.errorLabel")}</span>
 					{timestamp ? <span className="text-muted-foreground ml-auto font-mono text-[10px]">{timestamp}</span> : null}
 				</div>
 				<A2APayloadView errorDetails={error} showSectionTitles={false} />
@@ -231,6 +233,7 @@ function ConversationError({ error, timestamp }: { error: unknown; timestamp?: s
 }
 
 export function A2AConversationHistory({ responseBody }: { responseBody?: string }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const response = parseProtocolBody(responseBody);
 	const history = Array.isArray(response?.history) ? response.history : [];
 	if (history.length === 0) return null;
@@ -238,10 +241,8 @@ export function A2AConversationHistory({ responseBody }: { responseBody?: string
 	return (
 		<details className="group rounded-sm border">
 			<summary className="hover:bg-muted/30 flex cursor-pointer items-center justify-between px-3 py-2 text-sm transition">
-				<span className="font-medium">Conversation history</span>
-				<span className="text-muted-foreground text-xs">
-					{history.length} {history.length === 1 ? "message" : "messages"}
-				</span>
+				<span className="font-medium">{t("logs:agent.conversationHistory")}</span>
+				<span className="text-muted-foreground text-xs">{t("logs:agent.messageCount", { count: history.length })}</span>
 			</summary>
 			<div className="border-t p-3">
 				{history.map((value, index) => {
@@ -322,6 +323,7 @@ function latestTaskState(log: AgentLogOperation) {
 }
 
 function ProtocolActivity({ log, showTimestamp }: { log: AgentLogOperation; showTimestamp: boolean }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const definition = protocolActivityDefinition(log.operation);
 	const taskState = definition.showsTaskState ? latestTaskState(log) : undefined;
 	const timestamp = new Date(log.timestamp);
@@ -334,7 +336,7 @@ function ProtocolActivity({ log, showTimestamp }: { log: AgentLogOperation; show
 			</div>
 			<div className="min-w-0 flex-1 pb-5">
 				<div className="mb-1.5 flex min-w-0 items-center gap-2">
-					<span className="text-xs font-semibold">Event</span>
+					<span className="text-xs font-semibold">{t("logs:agent.event")}</span>
 					{showTimestamp ? (
 						<span className="text-muted-foreground ml-auto shrink-0 font-mono text-[10px]">
 							{isValid(timestamp) ? format(timestamp, "MMM d, HH:mm:ss") : log.timestamp}
@@ -345,8 +347,8 @@ function ProtocolActivity({ log, showTimestamp }: { log: AgentLogOperation; show
 					<div className="flex flex-wrap items-center gap-2">
 						<span className="text-sm font-medium">{definition.label}</span>
 						{taskState ? <TaskStateBadge state={taskState} /> : null}
-						{log.status === "error" ? <span className="text-destructive text-xs">Failed</span> : null}
-						{log.status === "processing" ? <span className="text-muted-foreground text-xs">In progress</span> : null}
+						{log.status === "error" ? <span className="text-destructive text-xs">{t("logs:metrics.failed")}</span> : null}
+						{log.status === "processing" ? <span className="text-muted-foreground text-xs">{t("logs:agent.inProgress")}</span> : null}
 					</div>
 				</div>
 			</div>
@@ -371,6 +373,7 @@ export function A2AOperationConversation({
 	showTimestamp?: boolean;
 	allowPushConversation?: boolean;
 }) {
+	const { t } = useTranslation(["common", "logs"]);
 	const timestamp = new Date(log.timestamp);
 	const conversationOperation =
 		isA2AConversationOperation(log.operation) || (allowPushConversation && isA2APushConversationOperation(log.operation));
@@ -410,7 +413,7 @@ export function A2AOperationConversation({
 			) : null}
 			{messages.length === 0 && !hasError && !hasFailedTaskState && log.status === "processing" ? (
 				<div className="text-muted-foreground flex items-center justify-between gap-3 px-5 text-sm">
-					<span>Waiting for a response.</span>
+					<span>{t("logs:agent.waitingForResponse")}</span>
 					{renderedTimestamp ? <span className="font-mono text-[10px]">{renderedTimestamp}</span> : null}
 				</div>
 			) : null}
@@ -419,6 +422,7 @@ export function A2AOperationConversation({
 }
 
 function Operation({ log, current, onClick }: { log: AgentLogOperation; current: boolean; onClick: () => void }) {
+	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
 		event.preventDefault();
@@ -438,7 +442,7 @@ function Operation({ log, current, onClick }: { log: AgentLogOperation; current:
 		>
 			{current ? (
 				<span className="bg-background pointer-events-none absolute -top-1.5 left-3 z-10 rounded-full border border-sky-400/45 px-1.5 py-0 text-[9px] leading-tight font-semibold tracking-wide text-sky-600 uppercase dark:text-sky-300">
-					Current
+					{t("logs:agent.current")}
 				</span>
 			) : null}
 
@@ -614,7 +618,7 @@ export function AgentContextDetailsSheet({
 						<div className="pr-1">
 							{loading && logs.length === 0 ? (
 								<div className="flex h-32 items-center justify-center gap-2 text-sm">
-									<Loader2 className="size-4 animate-spin" /> Loading context...
+									<Loader2 className="size-4 animate-spin" /> {t("logs:agent.loadingContext")}
 								</div>
 							) : logs.length ? (
 								<div className="space-y-1">
@@ -624,7 +628,7 @@ export function AgentContextDetailsSheet({
 								</div>
 							) : (
 								<div className="text-muted-foreground flex h-32 items-center justify-center text-sm">
-									No operations found for this session.
+									{t("logs:agent.noOperationsFound")}
 								</div>
 							)}
 						</div>

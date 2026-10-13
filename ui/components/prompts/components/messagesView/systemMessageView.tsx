@@ -167,7 +167,7 @@ export function SystemMessageView({
 						highlightPatterns={JINJA_VAR_HIGHLIGHT_PATTERNS}
 					/>
 				) : isEmpty ? (
-					<div className="text-muted-foreground min-h-[20px] text-sm italic">Enter system message...</div>
+					<div className="text-muted-foreground min-h-[20px] text-sm italic">{t("workspaces:prompts.systemPlaceholder")}</div>
 				) : contentIsJson ? (
 					<CodeEditor
 						wrap

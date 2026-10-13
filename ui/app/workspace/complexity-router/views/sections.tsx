@@ -485,7 +485,7 @@ export function DecisionFields({ control, register, setValue, errors, canUpdate,
 						</>
 					}
 				>
-					Max messages to send
+					{t("governance:complexityRouter.decisionFields.maxMessagesLabel")}
 				</FieldLabel>
 				<Input
 					id="decision-previous-message-count"

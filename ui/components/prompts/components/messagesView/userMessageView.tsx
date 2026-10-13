@@ -209,7 +209,7 @@ export function UserMessageView({
 				<div className="bg-background/80 border-primary absolute inset-0 z-50 flex items-center justify-center rounded-sm border-2 border-dashed backdrop-blur-sm">
 					<div className="text-primary flex flex-col items-center gap-1">
 						<Paperclip className="h-5 w-5" />
-						<span className="text-xs font-medium">Drop files to attach</span>
+						<span className="text-xs font-medium">{t("workspaces:prompts.dropFiles")}</span>
 					</div>
 				</div>
 			)}
@@ -282,7 +282,7 @@ export function UserMessageView({
 						highlightPatterns={JINJA_VAR_HIGHLIGHT_PATTERNS}
 					/>
 				) : isEmpty && messageAttachments.length === 0 ? (
-					<div className="text-muted-foreground min-h-[20px] text-sm italic">Enter user message...</div>
+					<div className="text-muted-foreground min-h-[20px] text-sm italic">{t("workspaces:prompts.userPlaceholder")}</div>
 				) : contentIsJson ? (
 					<CodeEditor
 						wrap

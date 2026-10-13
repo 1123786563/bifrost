@@ -1567,7 +1567,7 @@ export default function AppSidebar() {
 						<p>{t("workspaces:sidebar.promo.setupBody", { header: <code className="font-semibold">X-Bifrost-Setup-Token</code> })}</p>
 						<div className="mt-auto flex items-center gap-3 pb-1">
 							<Link to="/workspace/config/security" className="text-primary font-medium underline" data-testid="setup-required-banner-link">
-								Create admin
+								{t("workspaces:sidebar.createAdmin")}
 							</Link>
 							<a
 								href="https://docs.getbifrost.ai/quickstart/gateway/setting-up-auth"
@@ -1615,7 +1615,7 @@ export default function AppSidebar() {
 							data-testid="onboarding-resume-btn"
 							className="text-primary mt-auto self-start pb-1 font-medium underline"
 						>
-							Resume setup
+							{t("workspaces:sidebar.resumeSetup")}
 						</button>
 					</div>
 				),

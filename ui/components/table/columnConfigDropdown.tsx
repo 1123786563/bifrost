@@ -56,7 +56,7 @@ export function ColumnConfigDropdown({ entries, labels = {}, onToggleVisibility,
 							data-testid="column-reset-default"
 						>
 							<RotateCcw className="h-3 w-3" />
-							Reset to default
+							{t("common:table.resetToDefault")}
 						</Button>
 					</div>
 				</div>

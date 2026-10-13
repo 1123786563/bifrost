@@ -71,7 +71,8 @@
 			"searchMcpServers": "搜索 MCP server",
 			"searchVirtualKeys": "搜索 Virtual Key",
 			"searchUsers": "按姓名或邮箱搜索",
-			"noResults": "无结果"
+			"noResults": "无结果",
+			"searchPlaceholder": "搜索…"
 		},
 		"authFailed": {
 			"title": "认证失败",
@@ -448,7 +449,19 @@
 			"allowAnyVirtualKey": "允许任意虚拟密钥",
 			"fetchToContinue": "请获取代理卡片以继续。",
 			"create": "创建",
-			"fetchFirstOrManual": "请先获取代理卡片,或手动配置身份验证。"
+			"fetchFirstOrManual": "请先获取代理卡片,或手动配置身份验证。",
+			"removeUriAria": "移除扩展 URI"
+		},
+		"card": {
+			"copySkillId": "点击复制技能 ID",
+			"fetched": "已获取",
+			"interfaces": "接口",
+			"securitySchemes": "安全方案",
+			"extendedCard": "扩展卡片",
+			"extendedCardDesc": "支持通过身份验证获取扩展代理卡片。",
+			"required": "必需",
+			"skills": "技能",
+			"none": "无"
 		}
 	},
 	"registry": {
@@ -813,7 +826,9 @@
 			"noChanges": "没有可保存的更改",
 			"unsavedTitle": "未保存的更改",
 			"unsavedDesc": "你有未保存的更改。确定要离开吗？你的更改将丢失。",
-			"discardChanges": "放弃更改"
+			"discardChanges": "放弃更改",
+			"authType": "身份验证类型",
+			"authTypePlaceholder": "选择身份验证类型"
 		},
 		"credential": {
 			"replacementHint": "提供商拒绝的是 Bifrost 的 client 本身，而不仅是此 token，因此用同一 client 重做授权也会以同样方式失败。请在 server 操作菜单中使用「使用新 client 重新授权」先注册替代 client。",
@@ -852,7 +867,16 @@
 			"submissionNoun_other": "个提交",
 			"viewSessions": "查看会话",
 			"viewSubmissions": "查看提交"
-		}
+		},
+		"gatewayLlmRequests": "网关与 LLM 请求",
+		"staticAdminHeaders": "静态管理员请求头",
+		"noDeclaredHeaders": "此 MCP 客户端未声明任何请求头。",
+		"rejectedUpstream": "上游拒绝",
+		"notIssued": "未签发",
+		"parametersSchema": "参数 Schema",
+		"noParameters": "未定义参数",
+		"noToolsSelected": "未选择工具。请使用上方搜索添加工具。",
+		"noServersSelected": "未选择服务器。请使用上方搜索添加 MCP 服务器。"
 	},
 	"usageGuide": {
 		"serverCount_one": "{{count}} 个 server",

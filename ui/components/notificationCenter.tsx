@@ -175,7 +175,7 @@ export default function NotificationCenter() {
 								className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer text-xs whitespace-nowrap transition-colors"
 								data-testid="sidekiq-jobs-clear-finished"
 							>
-								Clear finished
+								{t("workspaces:notifications.clearFinished")}
 							</button>
 						)}
 					</div>
@@ -201,11 +201,11 @@ export default function NotificationCenter() {
 					<TabsContent value="notifications">
 						{isLoading ? (
 							<div className="text-muted-foreground flex h-44 items-center justify-center gap-2 text-sm">
-								<RefreshCw className="size-4 animate-spin" /> Loading notifications
+								<RefreshCw className="size-4 animate-spin" /> {t("workspaces:notifications.loading")}
 							</div>
 						) : isError ? (
 							<div className="flex h-44 flex-col items-center justify-center gap-3 px-6 text-center">
-								<p className="text-muted-foreground text-sm">Notifications could not be loaded.</p>
+								<p className="text-muted-foreground text-sm">{t("workspaces:notifications.loadFailed")}</p>
 								<button type="button" onClick={() => refetch()} className="text-primary cursor-pointer text-sm font-medium hover:underline">
 									Try again
 								</button>
@@ -219,7 +219,7 @@ export default function NotificationCenter() {
 									<Check className="size-4" />
 								</span>
 								<p className="text-sm font-medium">You&apos;re all caught up</p>
-								<p className="text-muted-foreground text-xs">New notifications will appear here.</p>
+								<p className="text-muted-foreground text-xs">{t("workspaces:notifications.emptyHint")}</p>
 							</div>
 						) : (
 							<ScrollArea className="h-[min(26rem,calc(100vh-8rem))]">

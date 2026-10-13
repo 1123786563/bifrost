@@ -211,7 +211,7 @@ export function PromptSidebar() {
 										onCreatePrompt();
 									}}
 								>
-									Add Prompt
+									{t("workspaces:prompts.addPrompt")}
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									data-testid="sidebar-create-folder"
@@ -220,7 +220,7 @@ export function PromptSidebar() {
 										onCreateFolder();
 									}}
 								>
-									Add Folder
+									{t("workspaces:prompts.addFolder")}
 								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
@@ -446,7 +446,7 @@ function DroppableFolder({
 									}}
 								>
 									<Pencil className="h-4 w-4" />
-									Edit Folder
+									{t("workspaces:prompts.editFolder")}
 								</DropdownMenuItem>
 							)}
 							{canDelete && (
@@ -459,7 +459,7 @@ function DroppableFolder({
 									}}
 								>
 									<Trash2 className="h-4 w-4" />
-									Delete Folder
+									{t("workspaces:prompts.deleteFolder")}
 								</DropdownMenuItem>
 							)}
 						</DropdownMenuContent>

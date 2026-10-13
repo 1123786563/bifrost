@@ -17,7 +17,7 @@ export default function VirtualMcpToolsEditor({ value, onChange }: VirtualMcpToo
 		<p>
 			<Trans t={t} i18nKey="mcp:virtualMcps.tools.tooltip" components={{ em: <span className="font-medium" /> }}>
 				Pick which of your MCP servers this Virtual MCP exposes and, for each, which tools. After adding a server, select specific tools or
-				choose <em>Allow All Tools</em> to expose all of them.
+				choose <em>{t("workspaces:virtualMcps.allowAllTools")}</em> to expose all of them.
 			</Trans>
 		</p>
 	);
