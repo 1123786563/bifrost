@@ -1,0 +1,38 @@
+<clickhouse>
+	<!-- IPv4 only: OrbStack VM has IPv6 disabled, localhost does not resolve to a usable v6 addr -->
+	<listen_host>0.0.0.0</listen_host>
+	<listen_try>1</listen_try>
+	<!-- Built-in Keeper for single-node replication (required by Langfuse migrations: ReplicatedMergeTree ON CLUSTER) -->
+	<keeper_server>
+		<tcp_port>9181</tcp_port>
+		<server_id>1</server_id>
+		<raft_configuration>
+			<server>
+				<id>1</id>
+				<hostname>clickhouse</hostname>
+				<port>9234</port>
+			</server>
+		</raft_configuration>
+		<storage_path_keep_version>/var/lib/clickhouse/coordination</storage_path_keep_version>
+	</keeper_server>
+	<remote_servers>
+		<default>
+			<shard>
+				<replica>
+					<host>clickhouse</host>
+					<port>9000</port>
+				</replica>
+			</shard>
+		</default>
+	</remote_servers>
+	<zookeeper>
+		<node>
+			<host>clickhouse</host>
+			<port>9181</port>
+		</node>
+	</zookeeper>
+	<macros>
+		<shard>01</shard>
+		<replica>01</replica>
+	</macros>
+</clickhouse>

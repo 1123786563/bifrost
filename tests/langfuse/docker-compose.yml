@@ -1,0 +1,153 @@
+# Self-hosted Langfuse v3 for local Bifrost OTel integration.
+# Only the Langfuse web UI / OTLP endpoint is published (127.0.0.1:3300).
+# Postgres / ClickHouse / MinIO / Redis are internal-only to avoid clashing
+# with other stacks already bound to 5432 / 6379 / 9000 on this machine.
+#
+# Dev-only secrets and fixed bootstrap API keys — do NOT reuse in production.
+#
+# Usage:
+#   docker compose -f tests/langfuse/docker-compose.yml up -d
+#   UI:            http://localhost:3300  (admin@bifrost.dev / bifrost-dev)
+#   Health:        curl -sf http://localhost:3300/api/public/health
+#   OTLP endpoint: http://localhost:3300/api/public/otel/v1/traces
+#
+# NOTE: the MinIO bucket must exist once before OTLP ingestion works:
+#   docker exec -w /app/web langfuse-langfuse-1 node -e 'const{S3Client,CreateBucketCommand,HeadBucketCommand}=require("@aws-sdk/client-s3");const c=new S3Client({endpoint:"http://minio:9000",region:"auto",forcePathStyle:true,credentials:{accessKeyId:"minio",secretAccessKey:"miniosecret"}});(async()=>{try{await c.send(new HeadBucketCommand({Bucket:"langfuse"}));console.log("exists")}catch(_){await c.send(new CreateBucketCommand({Bucket:"langfuse"}));console.log("created")}})()'
+
+services:
+  langfuse-db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - langfuse_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    restart: unless-stopped
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./clickhouse-listen.xml:/etc/clickhouse-server/config.d/listen.xml
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: miniosecret
+    volumes:
+      - langfuse_minio_data:/minio_data
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    command: ["/bin/sh", "-c", "redis-server --appendonly yes"]
+    volumes:
+      - langfuse_redis_data:/data
+
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    restart: unless-stopped
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      redis:
+        condition: service_started
+    environment: &langfuse_env
+      NEXTAUTH_URL: http://localhost:3300
+      NEXTAUTH_SECRET: bifrost-dev-nextauth-secret
+      SALT: bifrost-dev-salt
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      DATABASE_URL: postgresql://postgres:postgres@langfuse-db:5432/postgres
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: true
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: true
+      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
+      LANGFUSE_S3_MEDIA_UPLOAD_ENABLED: "false"
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+      REDIS_CONNECTION_STRING: redis://redis:6379
+      # Bootstrap org / project / user / API keys on first boot only.
+      LANGFUSE_INIT_ORG_ID: bifrost-dev-org
+      LANGFUSE_INIT_ORG_NAME: Bifrost Dev Org
+      LANGFUSE_INIT_PROJECT_ID: bifrost-dev-project
+      LANGFUSE_INIT_PROJECT_NAME: Bifrost Dev
+      LANGFUSE_INIT_USER_EMAIL: admin@bifrost.dev
+      LANGFUSE_INIT_USER_NAME: Bifrost Admin
+      LANGFUSE_INIT_USER_PASSWORD: bifrost-dev
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-bifrost-dev-0000000000
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-bifrost-dev-0000000000
+
+  langfuse:
+    image: langfuse/langfuse:3
+    restart: unless-stopped
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      redis:
+        condition: service_started
+    ports:
+      - "127.0.0.1:3300:3000"
+    environment:
+      <<: *langfuse_env
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/public/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  langfuse_db_data:
+  langfuse_clickhouse_data:
+  langfuse_clickhouse_logs:
+  langfuse_minio_data:
+  langfuse_redis_data:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.201.0.0/24
