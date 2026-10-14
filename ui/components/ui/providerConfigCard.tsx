@@ -179,14 +179,14 @@ export function ProviderConfigCard({
 	const update = (patch: Partial<ProviderConfigCardValue>) => onChange({ ...value, ...patch });
 
 	const modelBudgets = value.modelBudgets || [];
-	const capLabel = budgetLinesLabel(value.budgets);
+	const capLabel = budgetLinesLabel(t, value.budgets, t("workspaces:providerConfigs.noCap"));
 	// Header summary: the provider cap and/or a model-budget count, falling back to
 	// "No budget" only when neither is set — so a provider with only model budgets
 	// doesn't read as "No budget".
 	const modelBudgetCount = showModelBudgets ? modelBudgets.length : 0;
 	const headerSummary =
 		[
-			budgetLinesLabel(value.budgets, ""),
+			budgetLinesLabel(t, value.budgets, ""),
 			modelBudgetCount > 0 ? t("workspaces:providerConfigs.modelBudgetCount", { count: modelBudgetCount }) : "",
 		]
 			.filter(Boolean)
@@ -364,7 +364,7 @@ export function ProviderConfigCard({
 													{mb.model_name || t("workspaces:providerConfigs.selectModel")}
 												</span>
 												<span className="text-muted-foreground shrink-0 text-sm whitespace-nowrap">
-													{budgetLinesLabel(mb.budgets, t("workspaces:providerConfigs.noCap"))}
+													{budgetLinesLabel(t, mb.budgets, t("workspaces:providerConfigs.noCap"))}
 												</span>
 												<button
 													type="button"

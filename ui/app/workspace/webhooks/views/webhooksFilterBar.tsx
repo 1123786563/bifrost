@@ -26,7 +26,7 @@ export interface WebhooksFilterBarProps {
 }
 
 export default function WebhooksFilterBar(props: WebhooksFilterBarProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation(["common", "governance", "workspaces"]);
 	const STATUS_OPTIONS = [
 		{ label: t("governance:webhooks.filterBar.statusEnabled"), value: "enabled" },
 		{ label: t("governance:webhooks.filterBar.statusDisabled"), value: "disabled" },

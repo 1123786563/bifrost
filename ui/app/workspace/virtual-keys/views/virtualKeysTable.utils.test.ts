@@ -1,5 +1,9 @@
+import { mockI18n } from "@/lib/i18n/testI18n";
 import { describe, expect, it } from "vitest";
 import { assignedToLabel, csvAssignedToCell, latestGraceDeadline } from "./virtualKeysTable.utils";
+
+// assignedToLabel/csvAssignedToCell resolve labels through the i18n singleton.
+mockI18n();
 
 describe("latestGraceDeadline", () => {
 	it("returns null when no rotated key has a grace window", () => {

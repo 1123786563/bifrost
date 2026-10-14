@@ -598,6 +598,12 @@
 			"expiresIn": "This key expires {{time}}.",
 			"neverExpires": "This key never expires.",
 			"never": "Never",
+			"expiryPresets": {
+				"min30": "30 min",
+				"hour1": "1 hour",
+				"hours24": "24 hours",
+				"days7": "7 days"
+			},
 			"deleteAfterExpire": "Delete after expire",
 			"deleteAfterExpireHelp": "The key is removed automatically within about a day of expiring.",
 			"followsWorkspaceDefault": "Follows the workspace default ({{state}}), set under Settings → Security.",
@@ -607,6 +613,16 @@
 			"loadKeysFailed": "Failed to load available keys: {{error}}",
 			"loadProvidersFailed": "Failed to load available providers: {{error}}",
 			"mcpAlreadyConfigured": "This MCP client is already configured",
+			"virtualKeyRequired": "Virtual key is required",
+			"validation": {
+				"nameRequired": "Virtual key name is required",
+				"providerRequired": "Provider is required",
+				"weightMin": "Weight must be at least 0",
+				"weightMax": "Weight must be at most 1",
+				"modelNameRequired": "Model name is required",
+				"mcpClientRequired": "MCP client name is required",
+				"entityRequired": "Please select a valid team, business unit, customer, or user when assignment type is chosen"
+			},
 			"budgetOverLimitWarning": "{{scope}} {{duration}} budget has {{usage}} usage, which meets or exceeds the new {{limit}} limit.",
 			"budgetQuarterShiftWarning": "{{scope}} quarterly budget has {{usage}} of usage. Changing the fiscal quarter moves the reset date and carries that spend into the new quarter.",
 			"budgetInheritWarning": "{{scope}} {{duration}} budget will inherit {{usage}} from the {{source}} budget, which meets or exceeds the new {{limit}} limit.",
@@ -669,6 +685,26 @@
 		"exporting": "Exporting...",
 		"exportCsv": "Export CSV",
 		"assignedTo": "Assigned To",
+		"assignedToLabels": {
+			"team": "Team: {{name}}",
+			"customer": "Customer: {{name}}",
+			"businessUnit": "Business unit",
+			"businessUnitNamed": "Business unit: {{name}}",
+			"user": "User: {{name}}",
+			"unknownUnresolved": "Unknown (not resolved)"
+		},
+		"csv": {
+			"headers": {
+				"name": "Name",
+				"status": "Status",
+				"assignedTo": "Assigned To",
+				"budgetLimit": "Budget Limit",
+				"budgetSpent": "Budget Spent",
+				"budgetReset": "Budget Reset",
+				"description": "Description",
+				"createdAt": "Created At"
+			}
+		},
 		"rateLimits": "Rate Limits"
 	},
 	"webhooks": {

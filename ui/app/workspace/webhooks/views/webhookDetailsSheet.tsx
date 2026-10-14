@@ -44,7 +44,7 @@ interface WebhookDetailsSheetProps {
 }
 
 export function WebhookDetailsSheet({ endpoint, isTesting, canManage, onTest, onClose }: WebhookDetailsSheetProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation(["common", "governance", "workspaces"]);
 	const redeliverHint = (outcome: string, endpointDisabled?: boolean, redelivering?: boolean) => {
 		if (redelivering) return t("governance:webhooks.details.redelivering");
 		if (endpointDisabled) return t("governance:webhooks.details.enableToRedeliver");

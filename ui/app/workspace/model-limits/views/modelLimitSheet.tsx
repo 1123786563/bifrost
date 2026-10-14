@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DottedSeparator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useBudgetUsageResetPrompt } from "@/hooks/useBudgetUsageResetPrompt";
-import { resetDurationLabels, resetDurationOptions } from "@/lib/constants/governance";
+import { resetDurationLabel, resetDurationOptions } from "@/lib/constants/governance";
 import { ProviderLabels, ProviderName } from "@/lib/constants/logs";
 import { getModelLimitScope, getModelLimitScopes } from "@/lib/registries/modelLimitScopes";
 import { budgetSignature } from "@/lib/utils/governance";
@@ -368,7 +368,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 												{formatCurrency(b.current_usage)} / {formatCurrency(b.max_limit)}
 											</p>
 											<p className="text-muted-foreground text-xs">
-												{t("models:limits.sheet.resets", { duration: resetDurationLabels[b.reset_duration] || b.reset_duration })}
+												{t("models:limits.sheet.resets", { duration: resetDurationLabel(t, b.reset_duration) })}
 											</p>
 										</div>
 									))}
@@ -390,9 +390,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 											<p className="text-sm font-medium">
 												{modelConfig.rate_limit.token_current_usage.toLocaleString()} /{" "}
 												{modelConfig.rate_limit.token_max_limit.toLocaleString()} (
-												{resetDurationLabels[modelConfig.rate_limit.token_reset_duration || "1h"] ||
-													modelConfig.rate_limit.token_reset_duration}
-												)
+												{resetDurationLabel(t, modelConfig.rate_limit.token_reset_duration || "1h")})
 											</p>
 										</div>
 									) : null}
@@ -402,9 +400,7 @@ export default function ModelLimitSheet({ modelConfig, onSave, onCancel }: Model
 											<p className="text-sm font-medium">
 												{modelConfig.rate_limit.request_current_usage.toLocaleString()} /{" "}
 												{modelConfig.rate_limit.request_max_limit.toLocaleString()} (
-												{resetDurationLabels[modelConfig.rate_limit.request_reset_duration || "1h"] ||
-													modelConfig.rate_limit.request_reset_duration}
-												)
+												{resetDurationLabel(t, modelConfig.rate_limit.request_reset_duration || "1h")})
 											</p>
 										</div>
 									) : null}

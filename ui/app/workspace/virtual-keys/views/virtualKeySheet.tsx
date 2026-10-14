@@ -80,6 +80,7 @@ import "@enterprise/lib/registrations/userPicker";
 import "@enterprise/lib/registrations/businessUnitPicker";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -96,8 +97,12 @@ interface VirtualKeySheetProps {
 // Provider configuration schema
 const providerConfigSchema = z.object({
 	id: z.number().optional(),
-	provider: z.string().min(1, "Provider is required"),
-	weight: z.number().min(0, "Weight must be at least 0").max(1, "Weight must be at most 1").optional(),
+	provider: z.string().min(1, { error: () => i18n.t("governance:virtualKeys.sheet.validation.providerRequired") }),
+	weight: z
+		.number()
+		.min(0, { error: () => i18n.t("governance:virtualKeys.sheet.validation.weightMin") })
+		.max(1, { error: () => i18n.t("governance:virtualKeys.sheet.validation.weightMax") })
+		.optional(),
 	allowed_models: z.array(z.string()).optional(),
 	blacklisted_models: z.array(z.string()).optional(),
 	key_ids: z.array(z.string()).optional(), // Keys associated with this provider config
@@ -127,7 +132,10 @@ const providerConfigSchema = z.object({
 	model_budgets: z
 		.array(
 			z.object({
-				model_name: z.string().trim().min(1, "Model name is required"),
+				model_name: z
+					.string()
+					.trim()
+					.min(1, { error: () => i18n.t("governance:virtualKeys.sheet.validation.modelNameRequired") }),
 				budgets: z
 					.array(
 						z.object({
@@ -153,14 +161,14 @@ const providerConfigSchema = z.object({
 
 const mcpConfigSchema = z.object({
 	id: z.number().optional(),
-	mcp_client_name: z.string().min(1, "MCP client name is required"),
+	mcp_client_name: z.string().min(1, { error: () => i18n.t("governance:virtualKeys.sheet.validation.mcpClientRequired") }),
 	tools_to_execute: z.array(z.string()).optional(),
 });
 
 // Main form schema
 const formSchema = z
 	.object({
-		name: z.string().min(1, "Virtual key name is required"),
+		name: z.string().min(1, { error: () => i18n.t("governance:virtualKeys.sheet.validation.nameRequired") }),
 		description: z.string().optional(),
 		providerConfigs: z.array(providerConfigSchema).optional(),
 		// When true, all providers are allowed; providerConfigs remain optional per-provider overrides.
@@ -219,7 +227,8 @@ const formSchema = z
 			return true;
 		},
 		{
-			message: "Please select a valid team, business unit, customer, or user when assignment type is chosen",
+			// Lazy error fn so the message resolves in the active language at parse time.
+			error: () => i18n.t("governance:virtualKeys.sheet.validation.entityRequired"),
 			path: ["entityType"], // This will show the error on the entityType field
 		},
 	);
@@ -247,10 +256,12 @@ const toDatetimeLocal = (d: Date) =>
 const presetFromNow = (offsetMs: number) => toDatetimeLocal(new Date(Date.now() + offsetMs));
 
 const EXPIRY_PRESETS = [
-	{ label: "30 min", ms: 30 * 60_000 },
-	{ label: "1 hour", ms: 60 * 60_000 },
-	{ label: "24 hours", ms: 24 * 60 * 60_000 },
-	{ label: "7 days", ms: 7 * 24 * 60 * 60_000 },
+	// `label` is the stable identity (selection state + data-testid, which E2E derives
+	// from it); `key` localizes the displayed text.
+	{ label: "30 min", key: "governance:virtualKeys.sheet.expiryPresets.min30", ms: 30 * 60_000 },
+	{ label: "1 hour", key: "governance:virtualKeys.sheet.expiryPresets.hour1", ms: 60 * 60_000 },
+	{ label: "24 hours", key: "governance:virtualKeys.sheet.expiryPresets.hours24", ms: 24 * 60 * 60_000 },
+	{ label: "7 days", key: "governance:virtualKeys.sheet.expiryPresets.days7", ms: 7 * 24 * 60 * 60_000 },
 ] as const;
 
 interface ExpiryFieldProps {
@@ -291,7 +302,7 @@ function ExpiryPickerField({ value, onChange, deleteAfterExpire, onDeleteAfterEx
 				>
 					{t("governance:virtualKeys.sheet.never")}
 				</Button>
-				{EXPIRY_PRESETS.map(({ label, ms }) => (
+				{EXPIRY_PRESETS.map(({ label, key, ms }) => (
 					<Button
 						key={label}
 						type="button"
@@ -303,7 +314,7 @@ function ExpiryPickerField({ value, onChange, deleteAfterExpire, onDeleteAfterEx
 							onChange(presetFromNow(ms));
 						}}
 					>
-						{label}
+						{t(key)}
 					</Button>
 				))}
 				<DateTimePicker
@@ -538,11 +549,11 @@ export default function VirtualKeySheet({ virtualKey, defaultOwner, onSave, onCa
 		),
 	];
 	const saveBudgetOverride = async (budgetId: string, data: BudgetOverrideRequest) => {
-		if (!virtualKey) throw new Error("Virtual key is required");
+		if (!virtualKey) throw new Error(i18n.t("governance:virtualKeys.sheet.virtualKeyRequired"));
 		await setBudgetOverride({ vkId: virtualKey.id, budgetId, data }).unwrap();
 	};
 	const clearBudgetOverride = async (budgetId: string) => {
-		if (!virtualKey) throw new Error("Virtual key is required");
+		if (!virtualKey) throw new Error(i18n.t("governance:virtualKeys.sheet.virtualKeyRequired"));
 		await removeBudgetOverride({ vkId: virtualKey.id, budgetId }).unwrap();
 	};
 
@@ -1761,7 +1772,6 @@ export default function VirtualKeySheet({ virtualKey, defaultOwner, onSave, onCa
 														</Label>
 														<p id="vk-budget-calendar-aligned-description" className="text-muted-foreground text-xs">
 															{t("governance:org.sheet.alignDescription")}
-															date. Quarterly budgets always align to fiscal quarter starts. Applies to durations of a day or longer.
 														</p>
 													</div>
 													<Switch

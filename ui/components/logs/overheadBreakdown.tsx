@@ -250,7 +250,7 @@ function buildOverheadCategories(buckets: OverheadBucket[]): OverheadCategory[] 
 // overhead number. "View details" expands every category into its individual members
 // so a specific phase or plugin can be inspected.
 export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBucket[]; overheadMs?: number }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation(["common", "workspaces", "logs"]);
 	const [showDetails, setShowDetails] = useState(false);
 	if (!buckets || buckets.length === 0) return null;
 

@@ -391,11 +391,16 @@
 	"budgetDisplay": {
 		"usageAria": "Budget usage",
 		"overrideTag": "override",
-		"overrideBreakdown": "Base {{base}} + {{extra}} override"
+		"overrideBreakdown": "Base {{base}} + {{extra}} override",
+		"resets": "Resets {{duration}}",
+		"more": "+{{count}} more"
 	},
 	"rateLimit": {
 		"usageAria": "{{label}} usage",
 		"requestNoun": "Request",
+		"tokenNoun": "Tokens",
+		"tokens": "tokens",
+		"requests": "req",
 		"resets": "Resets {{duration}}"
 	},
 	"scopeChips": {
@@ -563,6 +568,7 @@
 		"noneLeft": "No providers left to configure. Click to add",
 		"allowAll": "Allow all providers",
 		"selectToAdd": "Select a provider to add",
+		"allowAllHelp": "Grant access to every provider, including ones added later. Set budgets or limits on specific providers below, or remove a provider to allow all except that one.",
 		"providerBudget": "Provider budget",
 		"modelBudgets": "Model budgets",
 		"accessAndRateLimits": "Access & rate limits",
@@ -1254,7 +1260,10 @@
 		"addBudget": "Add Budget",
 		"noneConfigured": "No budget limits configured.",
 		"resetPeriod": "Reset Period",
-		"nextResetOn": "Next reset on"
+		"nextResetOn": "Next reset on",
+		"reset": "Reset",
+		"removeBudgetAria": "Remove budget {{n}}",
+		"duplicateResetPeriod": "Duplicate reset period; each budget line must use a different interval."
 	},
 	"settingsUnaffected": "Your settings and data are unaffected.",
 	"providerSelector": {

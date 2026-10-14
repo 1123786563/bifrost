@@ -657,6 +657,8 @@
 		"rotationCooldownDesc": "After rotating a virtual key, the previous value keeps authenticating for this long, giving callers time to switch to the new key. Use a duration like <b>30s</b>, <b>5m</b>, or <b>1h</b>. Leave empty (or 0) to have the old value stop working immediately. Maximum 30 days.",
 		"deleteExpired": "Delete Expired Virtual Keys",
 		"deleteExpiredDesc": "When enabled, a daily cleanup job deletes every virtual key whose expiry has passed and posts a notification listing the removed keys. Each key can override this from its <b>Delete after expire</b> switch: a key set to off is kept, and a key set to on is deleted even while this is disabled.",
+		"vkObjectOwnership": "Restrict Provider Objects to the Creating Virtual Key",
+		"vkObjectOwnershipDesc": "When enabled, files, batches, videos, containers, cached contents and live sessions created with a virtual key can only be read, listed or deleted with that same key. Other virtual keys get a not-found error and do not see them in lists. Requests without a virtual key are not affected. The creating key is recorded even while this is disabled, so enabling it again also covers objects created in the meantime, except any whose creating key could not be recorded.",
 		"allowedOrigins": "Allowed Origins",
 		"allowedOriginsDesc": "Comma-separated list of allowed origins for CORS and WebSocket connections. Localhost origins are always allowed. Each origin must be a complete URL with protocol (e.g., https://app.example.com, http://10.0.0.100:3000). Wildcards are supported for subdomains (e.g., https://*.example.com) or use \"*\" to allow all origins.",
 		"allowedOriginsPlaceholder": "https://app.example.com, https://*.example.com, *",

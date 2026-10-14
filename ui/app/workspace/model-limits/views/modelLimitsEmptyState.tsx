@@ -35,7 +35,7 @@ export function ModelLimitsEmptyState({ onAddClick, canCreate = true }: ModelLim
 					>
 						{t("models:limits.emptyState.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
-					<DisabledReason reason={actionDisabledReason(canCreate, "create", "model limits")}>
+					<DisabledReason reason={actionDisabledReason(canCreate, "create", "modelLimits")}>
 						<Button
 							aria-label={t("models:limits.emptyState.addLimitAria")}
 							onClick={onAddClick}

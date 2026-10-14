@@ -12,7 +12,7 @@ interface VirtualMcpToolsEditorProps {
 // Adapts id-native Virtual MCP specs to the shared editor, which resolves names and tools.
 // A deleted server keeps its id (name falls back to it), so edits don't drop it.
 export default function VirtualMcpToolsEditor({ value, onChange }: VirtualMcpToolsEditorProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation(["common", "mcp", "workspaces"]);
 	const toolsTooltip = (
 		<p>
 			<Trans t={t} i18nKey="mcp:virtualMcps.tools.tooltip" components={{ em: <span className="font-medium" /> }}>

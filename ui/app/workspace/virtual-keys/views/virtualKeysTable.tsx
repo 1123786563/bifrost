@@ -27,7 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
-import { resetDurationLabels } from "@/lib/constants/governance";
+import { resetDurationLabel } from "@/lib/constants/governance";
 import { getUserPicker } from "@/lib/registries/userPicker";
 import { useVirtualKeyAccessAudit } from "@enterprise/lib/hooks/useVirtualKeyAccessAudit";
 import {
@@ -71,6 +71,7 @@ import {
 import { useQueryState } from "nuqs";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { toast } from "sonner";
 import { useVirtualKeyUsage } from "../hooks/useVirtualKeyUsage";
 import VirtualKeyDetailSheet from "./virtualKeyDetailsSheet";
@@ -82,12 +83,21 @@ import { assignedToLabel, csvAssignedToCell, latestGraceDeadline } from "./virtu
 // where the user filter stays hidden because no picker is registered.
 import "@enterprise/lib/registrations/userPicker";
 
-const formatResetDuration = (duration: string) => resetDurationLabels[duration] || duration;
+const formatResetDuration = (duration: string) => resetDurationLabel(i18n.t, duration);
 
 type ExportScope = "current_page" | "all";
 
 function virtualKeysToCSV(vks: VirtualKey[]): string {
-	const headers = ["Name", "Status", "Assigned To", "Budget Limit", "Budget Spent", "Budget Reset", "Description", "Created At"];
+	const headers = [
+		i18n.t("governance:virtualKeys.csv.headers.name"),
+		i18n.t("governance:virtualKeys.csv.headers.status"),
+		i18n.t("governance:virtualKeys.csv.headers.assignedTo"),
+		i18n.t("governance:virtualKeys.csv.headers.budgetLimit"),
+		i18n.t("governance:virtualKeys.csv.headers.budgetSpent"),
+		i18n.t("governance:virtualKeys.csv.headers.budgetReset"),
+		i18n.t("governance:virtualKeys.csv.headers.description"),
+		i18n.t("governance:virtualKeys.csv.headers.createdAt"),
+	];
 	const rows = vks.map((vk) => {
 		const isExhausted =
 			vk.budgets?.some((b) => b.current_usage >= getEffectiveBudgetLimit(b)) ||
@@ -98,7 +108,13 @@ function virtualKeysToCSV(vks: VirtualKey[]): string {
 				vk.rate_limit?.request_max_limit &&
 				vk.rate_limit.request_current_usage >= vk.rate_limit.request_max_limit);
 		const isExpired = !!vk.expires_at && Date.now() >= new Date(vk.expires_at).getTime();
-		const status = !vk.is_active ? "Inactive" : isExpired ? "Expired" : isExhausted ? "Exhausted" : "Active";
+		const status = !vk.is_active
+			? i18n.t("governance:virtualKeys.status.inactive")
+			: isExpired
+				? i18n.t("governance:virtualKeys.status.expired")
+				: isExhausted
+					? i18n.t("governance:virtualKeys.status.exhausted")
+					: i18n.t("governance:virtualKeys.status.active");
 		const assignedTo = csvAssignedToCell(vk);
 		const budgetLimit = vk.budgets?.length ? vk.budgets.map((b) => formatCurrency(getEffectiveBudgetLimit(b))).join("; ") : "";
 		const budgetSpent = vk.budgets?.length ? vk.budgets.map((b) => formatCurrency(b.current_usage)).join("; ") : "";
@@ -266,7 +282,7 @@ function VKActionsMenu({
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
 					<DisabledReasonMenuItem
-						reason={actionDisabledReason(hasUpdateAccess, "edit", "virtual keys")}
+						reason={actionDisabledReason(hasUpdateAccess, "edit", "virtualKeys")}
 						className="cursor-pointer"
 						data-testid={`vk-edit-btn-${vk.name}`}
 						onSelect={(e) => {
@@ -288,7 +304,7 @@ function VKActionsMenu({
 						reason={actionDisabledReason(
 							hasDeleteAccess,
 							"delete",
-							"virtual keys",
+							"virtualKeys",
 							isManagedByProfile ? t("governance:virtualKeys.menu.managedNoDelete") : undefined,
 						)}
 						variant="destructive"
@@ -946,7 +962,7 @@ export default function VirtualKeysTable({
 									</span>
 								</TooltipTrigger>
 								<TooltipContent>
-									{actionDisabledReason(hasUpdateAccess, "rotate", "virtual keys") ??
+									{actionDisabledReason(hasUpdateAccess, "rotate", "virtualKeys") ??
 										t("governance:virtualKeys.table.rotateSelectedAria", { count: selectedCount })}
 								</TooltipContent>
 							</Tooltip>
@@ -983,7 +999,7 @@ export default function VirtualKeysTable({
 								</span>
 							</TooltipTrigger>
 							<TooltipContent>
-								{actionDisabledReason(hasCreateAccess, "create", "virtual keys") ?? t("governance:virtualKeys.table.addVirtualKey")}
+								{actionDisabledReason(hasCreateAccess, "create", "virtualKeys") ?? t("governance:virtualKeys.table.addVirtualKey")}
 							</TooltipContent>
 						</Tooltip>
 					</div>

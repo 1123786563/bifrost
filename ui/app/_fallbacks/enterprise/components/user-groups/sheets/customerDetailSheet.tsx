@@ -1,11 +1,12 @@
 import { CopyableId } from "@/components/copyableId";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { fiscalQuarterNote, resetDurationLabels } from "@/lib/constants/governance";
+import { fiscalQuarterNote, resetDurationLabel } from "@/lib/constants/governance";
 import { Customer } from "@/lib/types/governance";
 import { cn } from "@/lib/utils";
 import { formatCompactNumber } from "@/lib/utils/numbers";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 interface Props {
 	customer: Customer | null;
@@ -15,7 +16,7 @@ interface Props {
 
 function formatResetDuration(duration: string | null | undefined): string {
 	if (!duration) return "";
-	return resetDurationLabels[duration] || duration;
+	return resetDurationLabel(i18n.t, duration);
 }
 
 function formatCurrency(value: number): string {
@@ -53,7 +54,7 @@ function BudgetLineBar({
 				<span className="font-medium" />
 				<span className="text-muted-foreground">
 					{formatResetDuration(resetDuration)}
-					{fiscalQuarterNote(resetDuration, resetConfig)}
+					{fiscalQuarterNote(i18n.t, resetDuration, resetConfig)}
 				</span>
 			</div>
 			<div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">

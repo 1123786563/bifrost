@@ -70,7 +70,7 @@ export function ProviderConfigsEditor({
 	onManageProviders,
 	error,
 }: ProviderConfigsEditorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation(["common", "workspaces", "providers"]);
 	const { data: providersData, isLoading: isLoadingProviders, isError: isProvidersError } = useGetProvidersQuery();
 	const { data: keysData } = useGetAllKeysQuery();
 	const availableProviders = providersData || [];
@@ -137,10 +137,7 @@ export function ProviderConfigsEditor({
 							</span>
 						</TooltipTrigger>
 						<TooltipContent className="max-w-sm">
-							<p>
-								Configure which providers this can use and their specific settings. Leave empty to block all providers. Add providers to
-								allow them.
-							</p>
+							<p>{t("providers:configSheet.providerConfigurationsHelp")}</p>
 						</TooltipContent>
 					</Tooltip>
 				</TooltipProvider>
@@ -158,10 +155,7 @@ export function ProviderConfigsEditor({
 								</span>
 							</TooltipTrigger>
 							<TooltipContent className="max-w-sm">
-								<p>
-									Grant access to every provider, including ones added later. Set budgets or limits on specific providers below, or remove a
-									provider to allow all except that one.
-								</p>
+								<p>{t("workspaces:providerConfigs.allowAllHelp")}</p>
 							</TooltipContent>
 						</Tooltip>
 					</TooltipProvider>

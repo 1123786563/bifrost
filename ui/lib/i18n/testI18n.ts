@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import common from "@/lib/i18n/locales/en/common.json";
+import governance from "@/lib/i18n/locales/en/governance.json";
 import logs from "@/lib/i18n/locales/en/logs.json";
 import mcp from "@/lib/i18n/locales/en/mcp.json";
 import workspaces from "@/lib/i18n/locales/en/workspaces.json";
@@ -15,7 +16,7 @@ import workspaces from "@/lib/i18n/locales/en/workspaces.json";
  * The mock must cover every namespace the component renders (common, logs, mcp).
  */
 
-const RESOURCES: Record<string, unknown> = { common, logs, mcp, workspaces };
+const RESOURCES: Record<string, unknown> = { common, governance, logs, mcp, workspaces };
 
 function lookup(ns: string, key: string): string {
 	const value = key.split(".").reduce<unknown>((node, part) => {

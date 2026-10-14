@@ -623,14 +623,9 @@ export default function SecurityView() {
 				<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 					<div className="space-y-0.5">
 						<label htmlFor="enforce-vk-object-ownership" className="text-sm font-medium">
-							Restrict Provider Objects to the Creating Virtual Key
+							{t("settings:security.vkObjectOwnership")}
 						</label>
-						<p className="text-muted-foreground text-sm">
-							When enabled, files, batches, videos, containers, cached contents and live sessions created with a virtual key can only be
-							read, listed or deleted with that same key. Other virtual keys get a not-found error and do not see them in lists. Requests
-							without a virtual key are not affected. The creating key is recorded even while this is disabled, so enabling it again also
-							covers objects created in the meantime, except any whose creating key could not be recorded.
-						</p>
+						<p className="text-muted-foreground text-sm">{t("settings:security.vkObjectOwnershipDesc")}</p>
 					</div>
 					<Switch
 						id="enforce-vk-object-ownership"

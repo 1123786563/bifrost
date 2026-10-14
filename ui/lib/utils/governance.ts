@@ -25,6 +25,7 @@ export function parseResetPeriod(duration: string): string {
 	return `${timeValue} ${unitName}`;
 }
 
+import i18n from "@/lib/i18n";
 import { budgetOverrideFormSchema } from "@/lib/types/schemas";
 
 import { formatCompactNumber } from "./numbers";
@@ -241,6 +242,9 @@ export const budgetSignature = (budgets?: BudgetComparisonEntry[]) =>
 
 export type GovernanceAction = "create" | "edit" | "delete" | "rotate";
 
+/** Governance entities a permission-denied reason can name. Keys into common:permissions.entities. */
+export type GovernanceEntity = "virtualKeys" | "teams" | "customers" | "modelLimits";
+
 /**
  * Why a governance action is disabled, or undefined when it is allowed. A reason
  * that is not about permissions (e.g. the entity is managed elsewhere) wins, since
@@ -249,9 +253,14 @@ export type GovernanceAction = "create" | "edit" | "delete" | "rotate";
 export function actionDisabledReason(
 	allowed: boolean,
 	action: GovernanceAction,
-	entityPlural: string,
+	entity: GovernanceEntity,
 	blockedReason?: string,
 ): string | undefined {
 	if (blockedReason) return blockedReason;
-	return allowed ? undefined : `You don't have permission to ${action} ${entityPlural}.`;
+	return allowed
+		? undefined
+		: i18n.t("common:permissions.noPermission", {
+				action: i18n.t(`common:permissions.actions.${action}`),
+				entity: i18n.t(`common:permissions.entities.${entity}`),
+			});
 }

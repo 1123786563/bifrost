@@ -19,7 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { resetDurationLabels } from "@/lib/constants/governance";
+import { resetDurationLabel } from "@/lib/constants/governance";
+import i18n from "@/lib/i18n";
 import { getErrorMessage, useDeleteTeamMutation } from "@/lib/store";
 import { Team } from "@/lib/types/governance";
 import { cn } from "@/lib/utils";
@@ -34,9 +35,7 @@ import TeamSheet from "./teamSheet";
 import { TeamsEmptyState } from "./teamsEmptyState";
 
 // Helper to format reset duration for display
-const formatResetDuration = (duration: string) => {
-	return resetDurationLabels[duration] || duration;
-};
+const formatResetDuration = (duration: string) => resetDurationLabel(i18n.t, duration);
 
 function TeamActionsMenu({
 	team,

@@ -409,7 +409,7 @@ export default function VirtualKeyDetailSheet({
 																					{virtualKey.calendar_aligned &&
 																						supportsCalendarAlignment(b.reset_duration) &&
 																						t("governance:virtualKeys.details.calendar")}
-																					{fiscalQuarterNote(b.reset_duration, b.reset_config)}
+																					{fiscalQuarterNote(t, b.reset_duration, b.reset_config)}
 																				</span>
 																				{b.last_reset ? (
 																					<span>
@@ -537,7 +537,7 @@ export default function VirtualKeyDetailSheet({
 																									{virtualKey.calendar_aligned &&
 																										supportsCalendarAlignment(b.reset_duration) &&
 																										t("governance:virtualKeys.details.calendar")}
-																									{fiscalQuarterNote(b.reset_duration, b.reset_config)}
+																									{fiscalQuarterNote(t, b.reset_duration, b.reset_config)}
 																								</span>
 																								{b.last_reset ? (
 																									<span>
@@ -710,7 +710,7 @@ export default function VirtualKeyDetailSheet({
 														{virtualKey.calendar_aligned &&
 															supportsCalendarAlignment(b.reset_duration) &&
 															t("governance:virtualKeys.details.calendar")}
-														{fiscalQuarterNote(b.reset_duration, b.reset_config)}
+														{fiscalQuarterNote(t, b.reset_duration, b.reset_config)}
 													</span>
 													{b.last_reset ? (
 														<span>

@@ -598,6 +598,12 @@
 			"expiresIn": "此密钥将于{{time}}过期。",
 			"neverExpires": "此密钥永不过期。",
 			"never": "永不过期",
+			"expiryPresets": {
+				"min30": "30 分钟",
+				"hour1": "1 小时",
+				"hours24": "24 小时",
+				"days7": "7 天"
+			},
 			"deleteAfterExpire": "过期后删除",
 			"deleteAfterExpireHelp": "密钥会在过期后约一天内自动移除。",
 			"followsWorkspaceDefault": "遵循工作区默认设置（{{state}}），位于「设置 → 安全」下。",
@@ -607,6 +613,16 @@
 			"loadKeysFailed": "加载可用密钥失败：{{error}}",
 			"loadProvidersFailed": "加载可用 provider 失败：{{error}}",
 			"mcpAlreadyConfigured": "此 MCP 客户端已配置",
+			"virtualKeyRequired": "缺少 Virtual Key",
+			"validation": {
+				"nameRequired": "Virtual Key 名称必填",
+				"providerRequired": "Provider 必填",
+				"weightMin": "权重必须至少为 0",
+				"weightMax": "权重最大为 1",
+				"modelNameRequired": "模型名称必填",
+				"mcpClientRequired": "MCP 客户端名称必填",
+				"entityRequired": "选择分配类型时，请选择有效的团队、业务单元、客户或用户"
+			},
 			"budgetOverLimitWarning": "{{scope}}的 {{duration}} 预算已有 {{usage}} 用量，达到或超过新的 {{limit}} 上限。",
 			"budgetQuarterShiftWarning": "{{scope}}的季度预算已有 {{usage}} 用量。更改财季会移动重置日期，并将该支出带入新季度。",
 			"budgetInheritWarning": "{{scope}}的 {{duration}} 预算将继承 {{source}} 预算的 {{usage}}，达到或超过新的 {{limit}} 上限。",
@@ -669,6 +685,26 @@
 		"exporting": "导出中…",
 		"exportCsv": "导出 CSV",
 		"assignedTo": "分配给",
+		"assignedToLabels": {
+			"team": "团队：{{name}}",
+			"customer": "客户：{{name}}",
+			"businessUnit": "业务单元",
+			"businessUnitNamed": "业务单元：{{name}}",
+			"user": "用户：{{name}}",
+			"unknownUnresolved": "未知（未解析）"
+		},
+		"csv": {
+			"headers": {
+				"name": "名称",
+				"status": "状态",
+				"assignedTo": "分配对象",
+				"budgetLimit": "预算上限",
+				"budgetSpent": "已用预算",
+				"budgetReset": "预算重置",
+				"description": "描述",
+				"createdAt": "创建时间"
+			}
+		},
 		"rateLimits": "速率限制"
 	},
 	"webhooks": {

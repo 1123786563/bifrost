@@ -19,7 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { resetDurationLabels } from "@/lib/constants/governance";
+import { resetDurationLabel } from "@/lib/constants/governance";
+import i18n from "@/lib/i18n";
 import { getErrorMessage, useDeleteCustomerMutation } from "@/lib/store";
 import { Customer } from "@/lib/types/governance";
 import { cn } from "@/lib/utils";
@@ -36,9 +37,7 @@ import { CustomersEmptyState } from "./customersEmptyState";
 import CustomerSheet from "./customerSheet";
 
 // Helper to format reset duration for display
-const formatResetDuration = (duration: string) => {
-	return resetDurationLabels[duration] || duration;
-};
+const formatResetDuration = (duration: string) => resetDurationLabel(i18n.t, duration);
 
 const ACTIONS_COLUMN_CLASS = `sticky right-0 z-10 w-[56px] min-w-[56px] text-right ${PIN_SHADOW_RIGHT}`;
 

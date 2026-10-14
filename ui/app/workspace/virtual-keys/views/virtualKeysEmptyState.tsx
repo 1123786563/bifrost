@@ -38,7 +38,7 @@ export function VirtualKeysEmptyState({ onAddClick, canCreate = true }: VirtualK
 					>
 						{t("governance:virtualKeys.empty.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
-					<DisabledReason reason={actionDisabledReason(canCreate, "create", "virtual keys")}>
+					<DisabledReason reason={actionDisabledReason(canCreate, "create", "virtualKeys")}>
 						<Button onClick={onAddClick} disabled={!canCreate} data-testid="create-vk-btn">
 							{t("governance:virtualKeys.empty.add")}
 						</Button>

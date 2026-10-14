@@ -150,6 +150,7 @@
 			"tools": "Tools"
 		},
 		"providerConfigurations": "Provider Configurations",
+		"providerConfigurationsHelp": "Configure which providers this can use and their specific settings. Leave empty to block all providers. Add providers to allow them.",
 		"noProvidersLeft": "No providers left to configure"
 	},
 	"allowedRequests": {

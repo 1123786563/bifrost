@@ -106,5 +106,34 @@
 	},
 	"validation": {
 		"duplicateKey": "重复的键"
+	},
+	"resetDurations": {
+		"1m": "每分钟",
+		"5m": "每 5 分钟",
+		"15m": "每 15 分钟",
+		"30m": "每 30 分钟",
+		"1h": "每小时",
+		"6h": "每 6 小时",
+		"1d": "每天",
+		"1w": "每周",
+		"1M": "每月",
+		"1Q": "每季度"
+	},
+	"calendarAlignedSuffix": "{{label}}（日历）",
+	"fiscalQuarterNote": " · 财年始于 {{month}}",
+	"permissions": {
+		"noPermission": "您没有{{action}} {{entity}}的权限。",
+		"actions": {
+			"create": "创建",
+			"edit": "编辑",
+			"delete": "删除",
+			"rotate": "轮换"
+		},
+		"entities": {
+			"virtualKeys": "Virtual Key",
+			"teams": "团队",
+			"customers": "客户",
+			"modelLimits": "模型限制"
+		}
 	}
 }

@@ -51,7 +51,7 @@ export function BudgetOverrideManagerDialog({
 	disabled,
 	triggerLabel,
 }: BudgetOverrideManagerDialogProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation(["common", "workspaces", "governance"]);
 	const [open, setOpen] = useState(false);
 	const [expandedKey, setExpandedKey] = useState<string | null>(null);
 	const [amount, setAmount] = useState("");

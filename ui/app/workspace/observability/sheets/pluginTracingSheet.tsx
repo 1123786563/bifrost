@@ -64,7 +64,7 @@ function PluginRow({ name, checked, onChange }: { name: string; checked: boolean
 }
 
 export default function PluginTracingSheet({ open, onClose, pluginName, destination, showOverheadToggle = true }: PluginTracingSheetProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation(["common", "logs", "settings"]);
 	// All currently loaded plugins (built-in, enterprise, custom, and auto-loaded) that can
 	// emit spans, named to match the connector's span filter. One flat list — the backend
 	// already returns the complete set, so there's no built-in/custom split to maintain.

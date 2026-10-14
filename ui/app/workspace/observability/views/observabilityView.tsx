@@ -102,7 +102,7 @@ const supportedPlatformsList = (resolvedTheme: string): SupportedPlatform[] => [
 ];
 
 export default function ObservabilityView() {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation(["logs", "settings"]);
 	const isMobile = useIsMobile();
 	const dispatch = useAppDispatch();
 	const { data: plugins, isLoading } = useGetPluginsQuery();

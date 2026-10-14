@@ -20,7 +20,8 @@ import { ProviderSelector } from "@/components/ui/providerSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { resetDurationLabels, supportsCalendarAlignment } from "@/lib/constants/governance";
+import { resetDurationLabel, supportsCalendarAlignment } from "@/lib/constants/governance";
+import i18n from "@/lib/i18n";
 import { ProviderIconType, RenderProviderIcon } from "@/lib/constants/icons";
 import { ProviderLabels, ProviderName } from "@/lib/constants/logs";
 import { getModelLimitScope, getModelLimitScopeFilterOptions } from "@/lib/registries/modelLimitScopes";
@@ -44,9 +45,7 @@ import "@enterprise/lib/registrations/modelLimitScopes";
 import { useNavigate } from "@tanstack/react-router";
 
 // Helper to format reset duration for display
-const formatResetDuration = (duration: string) => {
-	return resetDurationLabels[duration] || duration;
-};
+const formatResetDuration = (duration: string) => resetDurationLabel(i18n.t, duration);
 
 const toTestIdPart = (value: string) =>
 	value
@@ -89,7 +88,7 @@ function ModelLimitActionsMenu({
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
 				<DisabledReasonMenuItem
-					reason={actionDisabledReason(isManaged || hasUpdateAccess, "edit", "model limits")}
+					reason={actionDisabledReason(isManaged || hasUpdateAccess, "edit", "modelLimits")}
 					className="cursor-pointer"
 					data-testid={`model-limit-button-edit-${toTestIdPart(config.model_name)}-${toTestIdPart(config.provider || "all")}`}
 					onSelect={(e) => {
@@ -105,7 +104,7 @@ function ModelLimitActionsMenu({
 					reason={actionDisabledReason(
 						hasDeleteAccess,
 						"delete",
-						"model limits",
+						"modelLimits",
 						isManaged ? t("models:limits.table.managedDeleteReason") : undefined,
 					)}
 					variant="destructive"
@@ -342,7 +341,7 @@ export default function ModelLimitsTable({
 						</Button>
 					)}
 
-					<DisabledReason reason={actionDisabledReason(hasCreateAccess, "create", "model limits")} className="ml-auto">
+					<DisabledReason reason={actionDisabledReason(hasCreateAccess, "create", "modelLimits")} className="ml-auto">
 						<Button
 							className="ml-auto h-9"
 							onClick={handleAddModelLimit}

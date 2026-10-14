@@ -657,6 +657,8 @@
 		"rotationCooldownDesc": "轮换 Virtual Key 后，旧值在此时长内仍然可以认证，给调用方切换到新密钥的时间。可使用形如 <b>30s</b>、<b>5m</b> 或 <b>1h</b> 的时长。留空（或 0）则旧值立即失效。最长 30 天。",
 		"deleteExpired": "删除已过期的 Virtual Key",
 		"deleteExpiredDesc": "启用后，每日清理任务会删除所有已过期的 Virtual Key，并发送列出已删除密钥的通知。每个密钥都可以通过其 <b>Delete after expire</b> 开关覆盖此设置：设为关闭的密钥会被保留，设为开启的密钥即使在此处禁用时也会被删除。",
+		"vkObjectOwnership": "将 Provider 对象限制为创建它的 Virtual Key",
+		"vkObjectOwnershipDesc": "启用后，使用某个 Virtual Key 创建的文件、批处理任务、视频、容器、缓存内容和实时会话，只能用该密钥读取、列出或删除。其他 Virtual Key 会收到未找到错误，且在列表中看不到这些对象。不携带 Virtual Key 的请求不受影响。即使此开关处于关闭状态，也会记录创建密钥，因此再次启用后同样覆盖在此期间创建的对象，但无法记录创建密钥的对象除外。",
 		"allowedOrigins": "允许的 Origin",
 		"allowedOriginsDesc": "CORS 和 WebSocket 连接允许的 origin 列表，以逗号分隔。localhost origin 始终允许。每个 origin 必须是带协议的完整 URL（例如 https://app.example.com、http://10.0.0.100:3000）。子域名支持通配符（例如 https://*.example.com），或使用 \"*\" 允许所有 origin。",
 		"allowedOriginsPlaceholder": "https://app.example.com, https://*.example.com, *",

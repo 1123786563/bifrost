@@ -66,7 +66,7 @@ export function DeliveriesTable({
 	onTogglePin,
 	onReorderColumns,
 }: DeliveriesTableProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation(["common", "governance", "workspaces"]);
 	// The expand chevron and the actions button are structural, not user-configurable.
 	const fixedColumnIds = useMemo(() => new Set<string>(["expand", "actions"]), []);
 

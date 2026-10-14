@@ -26,7 +26,7 @@ const secretVarEquals = (a?: SecretVar, b?: SecretVar) =>
 const stringListEquals = (a?: string[], b?: string[]) => (a ?? []).join("\n") === (b ?? []).join("\n");
 
 export default function MCPView() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation(["common", "settings", "mcp"]);
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
 	const { data: bifrostConfig } = useGetCoreConfigQuery({ fromDB: true });
 	const config = bifrostConfig?.client_config;

@@ -78,7 +78,7 @@ export default function HeadersForm({
 	onCancel,
 	cancelLabel = "Cancel",
 }: HeadersFormProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation(["common", "workspaces", "mcp"]);
 	const [values, setValues] = useState<Record<string, string>>(() => buildInitialValues(requiredKeys, initialValues));
 	const [reveal, setReveal] = useState<Record<string, boolean>>({});
 

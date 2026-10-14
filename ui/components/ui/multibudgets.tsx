@@ -97,13 +97,13 @@ export default function MultiBudgetLines({
 					{onReset && (showReset ?? true) && (
 						<Button data-testid={`${testId}-reset-btn`} type="button" variant="ghost" size="sm" onClick={onReset}>
 							<RotateCcw className="mr-1 h-3 w-3" />
-							Reset
+							{t("workspaces:budgets.reset")}
 						</Button>
 					)}
 					{(maxLines === undefined || lines.length < maxLines) && (
 						<Button data-testid={`${testId}-add-btn`} variant="outline" size="sm" type="button" onClick={addLine}>
 							<Plus className="mr-1 h-3 w-3" />
-							Add Budget
+							{t("workspaces:budgets.addBudget")}
 						</Button>
 					)}
 				</div>
@@ -135,7 +135,7 @@ export default function MultiBudgetLines({
 							</div>
 							<Button
 								data-testid={`${testId}-remove-${index}`}
-								aria-label={`Remove budget ${index + 1}`}
+								aria-label={t("workspaces:budgets.removeBudgetAria", { n: index + 1 })}
 								variant="ghost"
 								size="icon"
 								type="button"
@@ -156,9 +156,7 @@ export default function MultiBudgetLines({
 								/>
 							</div>
 						)}
-						{isDuplicate && (
-							<p className="text-destructive pl-0.5 text-xs">Duplicate reset period; each budget line must use a different interval.</p>
-						)}
+						{isDuplicate && <p className="text-destructive pl-0.5 text-xs">{t("workspaces:budgets.duplicateResetPeriod")}</p>}
 					</div>
 				);
 			})}

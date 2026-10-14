@@ -46,7 +46,7 @@ export function MCPServerSelector({
 	className,
 	registryPath = "/workspace/mcp-registry",
 }: MCPServerSelectorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation(["common", "workspaces", "mcp"]);
 	// Create options from MCP clients using meta for complex data
 	const allServerOptions = useMemo((): Option<ServerOptionMeta>[] => {
 		return mcpClients.map((client) => ({

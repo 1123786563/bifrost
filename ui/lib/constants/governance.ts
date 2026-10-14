@@ -23,19 +23,34 @@ export const budgetResetDurationOptions = [...resetDurationOptions, { label: "Qu
 // Case matters: "M" is a month while "m" is a minute, so "1q" is not a quarter.
 export const supportsCalendarAlignment = (duration: string): boolean => duration.length > 0 && /[dwMQY]$/.test(duration);
 
-// Map of duration values to short labels for display
-export const resetDurationLabels: Record<string, string> = {
-	"1m": "Every Minute",
-	"5m": "Every 5 Minutes",
-	"15m": "Every 15 Minutes",
-	"30m": "Every 30 Minutes",
-	"1h": "Hourly",
-	"6h": "Every 6 Hours",
-	"1d": "Daily",
-	"1w": "Weekly",
-	"1M": "Monthly",
-	"1Q": "Quarterly",
+/** Minimal translate signature satisfied by both useTranslation()'s t and i18next.t. */
+export type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+// Duration value -> common-ns i18n key; resetDurationOptions carries the canonical English labels.
+const resetDurationLabelKeys: Record<string, string> = {
+	"1m": "common:resetDurations.1m",
+	"5m": "common:resetDurations.5m",
+	"15m": "common:resetDurations.15m",
+	"30m": "common:resetDurations.30m",
+	"1h": "common:resetDurations.1h",
+	"6h": "common:resetDurations.6h",
+	"1d": "common:resetDurations.1d",
+	"1w": "common:resetDurations.1w",
+	"1M": "common:resetDurations.1M",
+	"1Q": "common:resetDurations.1Q",
 };
+
+/** Localized short label for a reset duration; unknown values pass through unchanged. */
+export function resetDurationLabel(t: Translate, duration: string): string {
+	const key = resetDurationLabelKeys[duration];
+	return key ? t(key) : duration;
+}
+
+/** Localized "(calendar)" suffix for calendar-aligned durations. */
+export function calendarAlignedLabel(t: Translate, duration: string): string {
+	const label = resetDurationLabel(t, duration);
+	return supportsCalendarAlignment(duration) ? t("common:calendarAlignedSuffix", { label }) : label;
+}
 
 const MONTH_ABBREVIATIONS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -82,13 +97,13 @@ export function formatQuarterPreview(startMonth?: number): string {
  * unset start (the default), so it only ever appears when it changes behaviour.
  * Callers append it after the reset-period label (which already reads "Quarterly").
  */
-export function fiscalQuarterNote(resetDuration?: string, resetConfig?: { quarter_start_month?: number } | null): string {
+export function fiscalQuarterNote(t: Translate, resetDuration?: string, resetConfig?: { quarter_start_month?: number } | null): string {
 	if (!resetDuration || !resetDuration.endsWith("Q")) return "";
 	const start = resetConfig?.quarter_start_month;
 	// Number.isInteger also rejects undefined/NaN; a fractional month like 2.5 would
 	// otherwise pass the range check and index MONTH_ABBREVIATIONS between slots.
 	if (start === undefined || !Number.isInteger(start) || start === 1 || start < 1 || start > 12) return "";
-	return ` · FY starts ${MONTH_ABBREVIATIONS[start - 1]}`;
+	return t("common:fiscalQuarterNote", { month: MONTH_ABBREVIATIONS[start - 1] });
 }
 
 /**

@@ -150,6 +150,7 @@
 			"tools": "工具"
 		},
 		"providerConfigurations": "提供商配置",
+		"providerConfigurationsHelp": "配置此对象可使用的 Provider 及其具体设置。留空则阻止所有 Provider。添加 Provider 即允许其访问。",
 		"noProvidersLeft": "没有剩余的提供商可配置"
 	},
 	"allowedRequests": {

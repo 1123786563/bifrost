@@ -1,6 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { resetDurationLabel } from "@/lib/constants/governance";
 import { cleanNumericInput } from "@/lib/utils/strings";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -100,7 +101,7 @@ const NumberAndSelect = ({
 			<div className="grow space-y-2">{numberInput}</div>
 			<div className="w-40 space-y-2">
 				<Label htmlFor={`${id}-select`} className={labelClassName}>
-					Reset Period
+					{t("workspaces:budgets.resetPeriod")}
 				</Label>
 				<Select value={selectValue} onValueChange={(value) => onChangeSelect(value as string)}>
 					<SelectTrigger className="m-0 w-full">
@@ -109,11 +110,16 @@ const NumberAndSelect = ({
 					<SelectContent>
 						{options
 							.filter((option) => option.value)
-							.map((option) => (
-								<SelectItem key={option.value} value={option.value}>
-									{option.label}
-								</SelectItem>
-							))}
+							.map((option) => {
+								// Options carry the canonical English labels; duration values localize here,
+								// and any non-duration option keeps its own label.
+								const label = resetDurationLabel(t, option.value);
+								return (
+									<SelectItem key={option.value} value={option.value}>
+										{label === option.value ? option.label : label}
+									</SelectItem>
+								);
+							})}
 					</SelectContent>
 				</Select>
 			</div>

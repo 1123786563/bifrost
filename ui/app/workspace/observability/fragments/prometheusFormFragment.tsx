@@ -65,7 +65,7 @@ export function PrometheusFormFragment({
 	isLoading = false,
 	metricsEndpoint,
 }: PrometheusFormFragmentProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation(["common", "logs", "settings"]);
 	const hasPrometheusAccess = useRbac(RbacResource.Observability, RbacOperation.Update);
 	const [isSaving, setIsSaving] = useState(false);
 	const { copy, copied } = useCopyToClipboard();

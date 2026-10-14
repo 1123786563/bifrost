@@ -87,7 +87,7 @@ function WebhookActionsMenu({
 	onDelete: (endpoint: WebhookEndpoint) => void;
 	onViewDeliveries: (endpoint: WebhookEndpoint) => void;
 }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation(["common", "governance", "workspaces"]);
 	const [isOpen, setIsOpen] = useState(false);
 	return (
 		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -167,7 +167,7 @@ function WebhookActionsMenu({
 }
 
 export default function WebhooksView() {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation(["common", "governance", "workspaces"]);
 	const hasCreateAccess = useRbac(RbacResource.Governance, RbacOperation.Create);
 	const hasUpdateAccess = useRbac(RbacResource.Governance, RbacOperation.Update);
 	const hasDeleteAccess = useRbac(RbacResource.Governance, RbacOperation.Delete);

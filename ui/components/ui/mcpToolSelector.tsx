@@ -53,7 +53,7 @@ interface MCPToolSelectorProps {
 }
 
 export function MCPToolSelector({ value, onChange, mcpClients, placeholder, disabled = false, className }: MCPToolSelectorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation(["common", "workspaces", "mcp"]);
 	const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
 
 	// Flatten all tools from all MCP clients into searchable options

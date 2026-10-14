@@ -168,7 +168,7 @@ export function OtelFormFragment({
 	isDeleting = false,
 	isLoading = false,
 }: OtelFormFragmentProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation(["common", "logs", "settings"]);
 	const hasOtelAccess = useRbac(RbacResource.Observability, RbacOperation.Update);
 	const [isSaving, setIsSaving] = useState(false);
 	const [profileOpenState, setProfileOpenState] = useState<Record<number, boolean>>({});
@@ -332,7 +332,7 @@ interface OtelProfileSectionProps {
 // OtelProfileSection renders one collapsible profile. The header stays visible when collapsed
 // and surfaces the profile identity plus its enable toggle and remove control.
 function OtelProfileSection({ form, control, index, hasOtelAccess, canRemove, open, onOpenChange, onRemove }: OtelProfileSectionProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation(["common", "logs", "settings"]);
 	const base = `profiles.${index}` as const;
 	const protocol = form.watch(`${base}.protocol`);
 	const tracesEnabled = form.watch(`${base}.traces_enabled`);

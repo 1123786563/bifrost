@@ -3,7 +3,7 @@
 // compact mono budget labels, allocation-bar math, and the neutral swatch ramp
 // consistent across every screen that renders a provider config.
 
-import { fiscalQuarterNote } from "./constants/governance";
+import { fiscalQuarterNote, type Translate } from "./constants/governance";
 
 export interface BudgetLineLike {
 	max_limit?: number | null;
@@ -51,7 +51,7 @@ export function money(value: number | null | undefined): string {
 
 // "$50/wk · $150/mo" — every budget line joined, in ascending period order.
 // Returns `fallback` when empty.
-export function budgetLinesLabel(budgets: BudgetLineLike[] | undefined, fallback = "No budget"): string {
+export function budgetLinesLabel(t: Translate, budgets: BudgetLineLike[] | undefined, fallback = "No budget"): string {
 	if (!budgets || budgets.length === 0) return fallback;
 	const label = [...budgets]
 		.sort((a, b) => periodRank(a.reset_duration) - periodRank(b.reset_duration))
@@ -60,7 +60,7 @@ export function budgetLinesLabel(budgets: BudgetLineLike[] | undefined, fallback
 	// A group has at most one quarterly line (duplicate periods are blocked), so a
 	// single trailing fiscal-start note is unambiguous. Empty for a January start.
 	const quarterly = budgets.find((b) => b.reset_duration?.endsWith("Q"));
-	return label + fiscalQuarterNote(quarterly?.reset_duration, quarterly?.reset_config);
+	return label + fiscalQuarterNote(t, quarterly?.reset_duration, quarterly?.reset_config);
 }
 
 // True when two or more budget lines share the same reset period. A budget
