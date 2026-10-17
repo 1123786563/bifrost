@@ -35,6 +35,23 @@ const (
 	// DecisionAgentBlocked reports that the settled grant has no Agent Gateway permit
 	// for the requested agent. It is the A2A analogue of DecisionMCPToolBlocked.
 	DecisionAgentBlocked Decision = "agent_blocked"
+	// DecisionCreditAdmissionNotEnabled refuses a provably-paid model on a deployment whose
+	// credit-admission extension is not mounted and enabled. The refusal is the deployment's
+	// posture, not the caller's mistake, and is answered with an explainable type rather
+	// than a generic error. See creditadmission.go.
+	DecisionCreditAdmissionNotEnabled Decision = "credit_admission_not_enabled"
+	// DecisionCreditReserveNotHeld refuses a request whose PreLLM reserve did not hold: the
+	// billing service refused the reservation, never answered in time, or could not be
+	// reached. Like the admission refusal it is the deployment's billing posture, not the
+	// caller's mistake, and it is the same short-circuit path every other gate answer takes:
+	// the request is marked refused and no provider is called. See creditadmission.go.
+	DecisionCreditReserveNotHeld Decision = "credit_reserve_not_held"
+	// DecisionDispatchAlreadyClaimed refuses a dispatch whose attempt identity is already
+	// claimed by an outstanding dispatch whose result is not yet known: the gateway never
+	// sends a second provider call under one attemptId, whatever asked for it. The
+	// outstanding attempt is recovered through its commitment's scan seam (08.x), never by
+	// re-dispatch. See dispatchcommitment.go.
+	DecisionDispatchAlreadyClaimed Decision = "dispatch_already_claimed"
 )
 
 // EvaluationRequest contains the context for evaluating a request
@@ -59,6 +76,10 @@ type EvaluationRequest struct {
 type EvaluationResult struct {
 	Decision Decision `json:"decision"`
 	Reason   string   `json:"reason"`
+	// ReasonCode is the machine-readable category a credit refusal answers with, from the
+	// gateway's closed five-code vocabulary (see creditrefusal.go). Empty on every other
+	// decision.
+	ReasonCode string `json:"reason_code,omitempty"`
 }
 
 // BudgetResolver provides decision logic for the new hierarchical governance system

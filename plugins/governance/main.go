@@ -83,6 +83,10 @@ type Config struct {
 	RequiredHeaders       *[]string `json:"required_headers"` // Pointer to live config slice; changes are reflected immediately without restart
 	IsEnterprise          bool      `json:"is_enterprise"`
 	DisableAutoToolInject *bool     `json:"disable_auto_tool_inject"`
+	// The OpenBot credit-admission extension's switch block. Nil means the extension is not
+	// configured, which the admission gate reads as off: known-paid models are refused until
+	// the extension is mounted and enabled. See creditadmission.go.
+	OpenBotCreditAdmission *CreditAdmissionConfig `json:"openbot_credit_admission"`
 	// Reports the live client.enforce_vk_object_ownership; nil means on
 	ObjectOwnershipEnforced func() bool `json:"-"`
 }
@@ -188,6 +192,14 @@ type GovernancePlugin struct {
 	isEnterprise          bool
 	disableAutoToolInject *bool
 
+	// The credit-admission extension's switch block, read by the admission gate
+	// (creditadmission.go). Nil means the extension is not configured.
+	openBotCreditAdmission *CreditAdmissionConfig
+
+	// The dispatch commitment store (07.4): where a provider attempt's commitment is claimed
+	// before the attempt may dispatch. Set at construction.
+	dispatchCommitments DispatchCommitmentStore
+
 	objectOwnershipEnforcedFn func() bool
 }
 
@@ -255,11 +267,13 @@ func Init(
 	var requiredHeaders *[]string
 	var disableAutoToolInject *bool
 	var objectOwnershipEnforcedFn func() bool
+	var openBotCreditAdmission *CreditAdmissionConfig
 	if config != nil {
 		isVkMandatory = config.IsVkMandatory
 		requiredHeaders = config.RequiredHeaders
 		disableAutoToolInject = config.DisableAutoToolInject
 		objectOwnershipEnforcedFn = config.ObjectOwnershipEnforced
+		openBotCreditAdmission = config.OpenBotCreditAdmission
 	}
 
 	newStoreStart := time.Now()
@@ -278,21 +292,23 @@ func Init(
 
 	ctx, cancelFunc := context.WithCancel(ctx)
 	plugin := &GovernancePlugin{
-		ctx:                   ctx,
-		cancelFunc:            cancelFunc,
-		store:                 governanceStore,
-		resolver:              resolver,
-		tracker:               tracker,
-		configStore:           configStore,
-		modelCatalog:          modelCatalog,
-		mcpCatalog:            mcpCatalog,
-		logger:                logger,
-		isVkMandatory:         isVkMandatory,
-		cfgMutex:              sync.RWMutex{},
-		requiredHeaders:       requiredHeaders,
-		isEnterprise:          config != nil && config.IsEnterprise,
-		disableAutoToolInject: disableAutoToolInject,
-		inMemoryStore:         inMemoryStore,
+		ctx:                    ctx,
+		cancelFunc:             cancelFunc,
+		store:                  governanceStore,
+		resolver:               resolver,
+		tracker:                tracker,
+		configStore:            configStore,
+		modelCatalog:           modelCatalog,
+		mcpCatalog:             mcpCatalog,
+		logger:                 logger,
+		isVkMandatory:          isVkMandatory,
+		cfgMutex:               sync.RWMutex{},
+		requiredHeaders:        requiredHeaders,
+		isEnterprise:           config != nil && config.IsEnterprise,
+		disableAutoToolInject:  disableAutoToolInject,
+		inMemoryStore:          inMemoryStore,
+		openBotCreditAdmission: openBotCreditAdmission,
+		dispatchCommitments:    newLocalDispatchCommitmentStore(),
 
 		objectOwnershipEnforcedFn: objectOwnershipEnforcedFn,
 	}
@@ -338,31 +354,35 @@ func InitFromStore(
 	var requiredHeaders *[]string
 	var disableAutoToolInject *bool
 	var objectOwnershipEnforcedFn func() bool
+	var openBotCreditAdmission *CreditAdmissionConfig
 	if config != nil {
 		isVkMandatory = config.IsVkMandatory
 		requiredHeaders = config.RequiredHeaders
 		disableAutoToolInject = config.DisableAutoToolInject
 		objectOwnershipEnforcedFn = config.ObjectOwnershipEnforced
+		openBotCreditAdmission = config.OpenBotCreditAdmission
 	}
 	resolver := NewBudgetResolver(governanceStore, modelCatalog, logger, inMemoryStore)
 	tracker := NewUsageTracker(ctx, governanceStore, resolver, configStore, logger)
 	ctx, cancelFunc := context.WithCancel(ctx)
 	plugin := &GovernancePlugin{
-		ctx:                   ctx,
-		cancelFunc:            cancelFunc,
-		store:                 governanceStore,
-		resolver:              resolver,
-		tracker:               tracker,
-		configStore:           configStore,
-		modelCatalog:          modelCatalog,
-		mcpCatalog:            mcpCatalog,
-		logger:                logger,
-		inMemoryStore:         inMemoryStore,
-		isVkMandatory:         isVkMandatory,
-		cfgMutex:              sync.RWMutex{},
-		requiredHeaders:       requiredHeaders,
-		isEnterprise:          config != nil && config.IsEnterprise,
-		disableAutoToolInject: disableAutoToolInject,
+		ctx:                    ctx,
+		cancelFunc:             cancelFunc,
+		store:                  governanceStore,
+		resolver:               resolver,
+		tracker:                tracker,
+		configStore:            configStore,
+		modelCatalog:           modelCatalog,
+		mcpCatalog:             mcpCatalog,
+		logger:                 logger,
+		inMemoryStore:          inMemoryStore,
+		isVkMandatory:          isVkMandatory,
+		cfgMutex:               sync.RWMutex{},
+		requiredHeaders:        requiredHeaders,
+		isEnterprise:           config != nil && config.IsEnterprise,
+		disableAutoToolInject:  disableAutoToolInject,
+		openBotCreditAdmission: openBotCreditAdmission,
+		dispatchCommitments:    newLocalDispatchCommitmentStore(),
 
 		objectOwnershipEnforcedFn: objectOwnershipEnforcedFn,
 	}
@@ -843,6 +863,15 @@ func (p *GovernancePlugin) Evaluate(ctx *schemas.BifrostContext, evaluationReque
 		})
 	}
 
+	// The credit-admission gate: a deployment whose admission extension is not enabled does
+	// not dispatch provably-paid work to a provider, on this attempt or any fallback after
+	// it. The check runs for every request that reaches the funnel, keyless ones included -
+	// walking past the gate by presenting no credential is not a path. See creditadmission.go
+	// for what the gate refuses and what it deliberately leaves to other gates.
+	if admission := p.evaluateCreditAdmission(ctx, evaluationRequest); admission != nil {
+		return p.decide(ctx, admission)
+	}
+
 	// Step 3: what the request may reach.
 	result := p.resolver.evaluateAccess(ctx, evaluationRequest, access)
 
@@ -942,6 +971,26 @@ func refusal(result *EvaluationResult, statusCode int, errorType schemas.ErrorTy
 	}
 }
 
+// creditRefusal builds the refusal a credit decision answers with (07.3): the decision's
+// reason code from the closed five-code vocabulary goes on the wire in error.code, and the
+// error carries AllowFallbacks=false. Core already returns a pre-hook short circuit without
+// dispatching; the flag says the same thing at every other layer that reads the error - a
+// request the credit system refused is retried against no provider, this one or any other.
+// The refusal carries the reason and the model, and nothing else: no credential, no account
+// data, nothing the billing service answered with.
+func creditRefusal(result *EvaluationResult, statusCode int) *schemas.BifrostError {
+	reasonCode := result.ReasonCode
+	if reasonCode == "" {
+		// Every credit refusal site names its category; an unnamed one is an ending this
+		// vocabulary cannot vouch for, which is what admission_unreachable owns.
+		reasonCode = CreditRefusalAdmissionUnreachable
+	}
+	err := refusal(result, statusCode, schemas.ErrorTypePolicyAccessDenied)
+	err.Error.Code = bifrost.Ptr(reasonCode)
+	err.AllowFallbacks = bifrost.Ptr(false)
+	return err
+}
+
 // decide turns a governance decision into what the caller gets back: the result, and the error to
 // refuse the request with when it was not allowed. Every step of Evaluate ends here, so a refusal
 // is marked on the request and mapped to a status in one place regardless of which step refused.
@@ -989,6 +1038,30 @@ func (p *GovernancePlugin) decide(ctx *schemas.BifrostContext, result *Evaluatio
 
 	case DecisionMCPToolBlocked:
 		return result, refusal(result, 403, schemas.ErrorTypePolicyToolBlocked)
+
+	case DecisionCreditAdmissionNotEnabled:
+		// The deployment's posture, not the caller's mistake: the gateway cannot prove the
+		// admission extension is enabled, so it will not dispatch paid work. 503, because a
+		// deployment that mounts and enables the extension stops refusing these. The
+		// refusal is final: no provider is called, no fallback is tried.
+		return result, creditRefusal(result, 503)
+
+	case DecisionCreditReserveNotHeld:
+		// The deployment's billing relationship did not hold a reservation: the billing
+		// service refused, never answered in time, or could not be reached. The same
+		// posture shape as the admission refusal - 503, because a deployment whose billing
+		// service holds reservations stops refusing these - and the same hard rule: no
+		// provider sees the request, on this attempt or any fallback after it.
+		return result, creditRefusal(result, 503)
+
+	case DecisionDispatchAlreadyClaimed:
+		// The attempt was already dispatched and its result is not yet known: a second
+		// provider call under the same attemptId is how double billing is born (07.4). The
+		// same posture shape as the other credit refusals - 503, and the same hard rule: no
+		// provider sees this request, on this attempt or any fallback after it. The
+		// outstanding attempt belongs to its commitment now; recovery (08.x), not a
+		// re-dispatch, finishes it.
+		return result, creditRefusal(result, 503)
 
 	case DecisionAccessUnresolved:
 		// A wiring fault, not a policy decision: the request reached evaluation without the grant

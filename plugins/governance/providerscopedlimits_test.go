@@ -2,6 +2,7 @@ package governance
 
 import (
 	"context"
+	"net/http"
 	"path/filepath"
 	"testing"
 
@@ -215,7 +216,17 @@ func TestARequestIsChargedOnlyToTheProviderConfigItUsed(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			store := providerScopeTestStore(t)
-			plugin, err := InitFromStore(context.Background(), &Config{IsVkMandatory: boolPtr(false)}, NewMockLogger(), store, nil, providerScopeTestCatalog(t), nil, nil)
+			// The admission gate now refuses known-paid models on a deployment that has not
+			// enabled the extension (see creditadmission_test.go), and an enabled extension
+			// dispatches a paid model only over a held reserve (07.2's seam). This test's
+			// subject is provider-scoped limit charging, not admission posture, so it arms
+			// the extension with a billing service that holds every reserve: the priced
+			// fixture models proceed to the limit machinery below.
+			fake := newFakeCreditService(t, http.StatusCreated, reservedAnswer())
+			plugin, err := InitFromStore(context.Background(), &Config{
+				IsVkMandatory:          boolPtr(false),
+				OpenBotCreditAdmission: admissionWithReserve(fake.endpoint(), 0),
+			}, NewMockLogger(), store, nil, providerScopeTestCatalog(t), nil, nil)
 			require.NoError(t, err)
 			t.Cleanup(func() { require.NoError(t, plugin.Cleanup()) })
 
