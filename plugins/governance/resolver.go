@@ -65,6 +65,13 @@ type EvaluationRequest struct {
 	// ModelUnseen marks a passthrough request that names no model anywhere governance can read:
 	// not on the request and not in its body.
 	ModelUnseen bool `json:"model_unseen,omitempty"`
+	// LLMRequest carries the typed request the LLM funnel is admitting, so the reserve's
+	// bound evidence (07.6) is derived from what will actually dispatch: the complete
+	// serialized input, truncated in place to the input ceiling before the reserve is asked.
+	// Nil on every non-LLM funnel pass (MCP, realtime, batch, A2A), which the derivation
+	// answers with an evidence insufficiency: a call whose shape the gateway cannot count
+	// is a call whose ceiling it cannot prove.
+	LLMRequest *schemas.BifrostRequest `json:"-"`
 }
 
 // EvaluationResult is a governance verdict: whether the request may proceed, and why not when it

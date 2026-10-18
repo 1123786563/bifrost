@@ -102,11 +102,17 @@ func providerScopeTestStore(t *testing.T) *LocalGovernanceStore {
 }
 
 // providerScopeTestChatRequest is a chat request whose provider is already settled, so the pair the
-// limits are narrowed against is exactly the one the case names.
+// limits are narrowed against is exactly the one the case names. It carries the output cap the
+// reserve's per-request evidence requires (07.6).
 func providerScopeTestChatRequest(provider schemas.ModelProvider, model string) *schemas.BifrostRequest {
+	maxTokens := 1024
 	return &schemas.BifrostRequest{
 		RequestType: schemas.ChatCompletionRequest,
-		ChatRequest: &schemas.BifrostChatRequest{Provider: provider, Model: model},
+		ChatRequest: &schemas.BifrostChatRequest{
+			Provider: provider,
+			Model:    model,
+			Params:   &schemas.ChatParameters{MaxCompletionTokens: &maxTokens},
+		},
 	}
 }
 
@@ -223,9 +229,16 @@ func TestARequestIsChargedOnlyToTheProviderConfigItUsed(t *testing.T) {
 			// the extension with a billing service that holds every reserve: the priced
 			// fixture models proceed to the limit machinery below.
 			fake := newFakeCreditService(t, http.StatusCreated, reservedAnswer())
+			admission := admissionWithReserve(fake.endpoint(), 0)
+			// The cells this test dispatches get verified output-cap evidence (07.7): the
+			// subject here is provider-scoped limit charging, which lives one gate downstream
+			// of the model-cell evidence.
+			admission.OutputCapEvidence = append(admission.OutputCapEvidence,
+				outputCapVerifiedRecord(schemas.OpenAI, providerScopeTestOpenAIModel),
+				outputCapVerifiedRecord(schemas.Bedrock, providerScopeTestBedrockModel))
 			plugin, err := InitFromStore(context.Background(), &Config{
 				IsVkMandatory:          boolPtr(false),
-				OpenBotCreditAdmission: admissionWithReserve(fake.endpoint(), 0),
+				OpenBotCreditAdmission: admission,
 			}, NewMockLogger(), store, nil, providerScopeTestCatalog(t), nil, nil)
 			require.NoError(t, err)
 			t.Cleanup(func() { require.NoError(t, plugin.Cleanup()) })

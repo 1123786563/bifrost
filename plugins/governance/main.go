@@ -200,6 +200,10 @@ type GovernancePlugin struct {
 	// before the attempt may dispatch. Set at construction.
 	dispatchCommitments DispatchCommitmentStore
 
+	// The settlement outbox (07.8): where a provider attempt's actual usage is persisted
+	// before the response ends, and delivered to OpenBot's Settle from. Set at construction.
+	settlementOutbox SettlementOutbox
+
 	objectOwnershipEnforcedFn func() bool
 }
 
@@ -309,6 +313,7 @@ func Init(
 		inMemoryStore:          inMemoryStore,
 		openBotCreditAdmission: openBotCreditAdmission,
 		dispatchCommitments:    newLocalDispatchCommitmentStore(),
+		settlementOutbox:       newLocalSettlementOutbox(),
 
 		objectOwnershipEnforcedFn: objectOwnershipEnforcedFn,
 	}
@@ -383,6 +388,7 @@ func InitFromStore(
 		disableAutoToolInject:  disableAutoToolInject,
 		openBotCreditAdmission: openBotCreditAdmission,
 		dispatchCommitments:    newLocalDispatchCommitmentStore(),
+		settlementOutbox:       newLocalSettlementOutbox(),
 
 		objectOwnershipEnforcedFn: objectOwnershipEnforcedFn,
 	}
@@ -1256,9 +1262,12 @@ func (p *GovernancePlugin) PreLLMHook(ctx *schemas.BifrostContext, req *schemas.
 	provider, model, _ := req.GetRequestFields()
 	// Create request context for evaluation
 	evaluationRequest := &EvaluationRequest{
-		RequestType:      req.RequestType,
-		Provider:         provider,
-		Model:            model,
+		RequestType: req.RequestType,
+		Provider:    provider,
+		Model:       model,
+		// The LLM funnel carries the typed request so the reserve's bound evidence (07.6)
+		// is derived from what will actually dispatch.
+		LLMRequest:       req,
 		OpaqueBatchInput: isOpaqueBatchInput(req),
 	}
 	// A passthrough body is forwarded as the provider reads it, and a task array (Runware) names a
@@ -1600,6 +1609,25 @@ func (p *GovernancePlugin) PostLLMHook(ctx *schemas.BifrostContext, result *sche
 		// A live session's continuation bills its usage but was already counted as a request at admission.
 		sessionContinuation := isLiveSessionContinuation(ctx)
 
+		// The held reservation of this attempt (07.2/07.4): the attested output cap the
+		// post hook books to (07.7), and the settlement stage's admission record (07.8).
+		// Zero cap when this attempt reserved nothing - free work and non-strict paths
+		// book exactly as they always have.
+		var reservation *CreditReservation
+		if held, ok := ctx.Value(CreditReservationContextKey).(*CreditReservation); ok && held != nil {
+			reservation = held
+		}
+		outputCapTokens := int64(0)
+		if reservation != nil {
+			outputCapTokens = reservation.OutputCapTokens
+		}
+
+		// The PostLLM settlement stage (07.8): the attempt's actual usage is persisted into
+		// the result outbox BEFORE this hook returns - before the caller's response ends -
+		// and delivered to OpenBot's Settle from there. A settlement written only after the
+		// response could be lost to a crash in between; one persisted here cannot.
+		p.recordAttemptSettlement(reservation, result, err, provider, requestedModel, requestType, requestID, billingNonce, fallbackIndex, isFinalChunk, outputCapTokens)
+
 		p.wg.Add(1)
 		go func() {
 			defer p.wg.Done()
@@ -1611,7 +1639,7 @@ func (p *GovernancePlugin) PostLLMHook(ctx *schemas.BifrostContext, result *sche
 				}
 			}()
 			// Use the requested model for usage tracking
-			p.postHookWorker(result, err, provider, requestedModel, requestType, requestID, billingNonce, isFinalChunk, attemptNumber, fallbackIndex, sessionContinuation, pricingScopes, accountedBudgets, accountedRateLimits, routingMetadata)
+			p.postHookWorker(result, err, provider, requestedModel, requestType, requestID, billingNonce, isFinalChunk, attemptNumber, fallbackIndex, sessionContinuation, pricingScopes, accountedBudgets, accountedRateLimits, routingMetadata, outputCapTokens)
 		}()
 	}
 
@@ -1993,7 +2021,9 @@ func (p *GovernancePlugin) Cleanup() error {
 //   - isFinalChunk: Whether the request is the final chunk
 //   - skipRequestCount: Whether this is a session continuation that must not count as a request
 //   - pricingScopes: Prebuilt pricing lookup scopes using governance VK ID (nil if not applicable)
-func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifrostErr *schemas.BifrostError, provider schemas.ModelProvider, model string, requestType schemas.RequestType, requestID string, billingNonce string, isFinalChunk bool, attemptNumber int, fallbackIndex int, skipRequestCount bool, pricingScopes *modelcatalog.PricingLookupScopes, budgets, rateLimits []schemas.Limit, routingMetadata *schemas.BifrostRoutingMetadata) {
+//   - outputCapTokens: the output cap this attempt's reservation attested (07.7); booking is
+//     held to it, and 0 - the free and non-strict paths - books exactly as before
+func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifrostErr *schemas.BifrostError, provider schemas.ModelProvider, model string, requestType schemas.RequestType, requestID string, billingNonce string, isFinalChunk bool, attemptNumber int, fallbackIndex int, skipRequestCount bool, pricingScopes *modelcatalog.PricingLookupScopes, budgets, rateLimits []schemas.Limit, routingMetadata *schemas.BifrostRoutingMetadata, outputCapTokens int64) {
 	// Determine if request was successful
 	success := (result != nil)
 	billedReason := "success"
@@ -2002,9 +2032,27 @@ func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifro
 	isStreaming := bifrost.IsStreamRequestType(requestType)
 
 	if !isStreaming || (isStreaming && isFinalChunk) {
+		// The attested output cap, held where cost is booked (07.7): what the provider
+		// reported stays on the response; what is BOOKED never exceeds the cap the
+		// reservation carried. A provider reporting beyond the cap has produced cost no
+		// reservation covers, so the excess is a violation - logged here, never billed.
+		var clampedChatUsage *schemas.BifrostLLMUsage
+		var outputCapViolated bool
+		if result != nil && result.ChatResponse != nil {
+			clampedChatUsage, outputCapViolated = clampChatUsageToOutputCap(result.ChatResponse.Usage, outputCapTokens)
+			if outputCapViolated {
+				p.logger.Warn("provider reported %d completion tokens beyond the attested cap of %d: booking is held to the cap and the excess is not billed (request %s, model %s)",
+					result.ChatResponse.Usage.CompletionTokens, outputCapTokens, requestID, model)
+			}
+		}
+
 		var cost float64
 		if p.modelCatalog != nil && result != nil {
-			cost = p.modelCatalog.CalculateCost(result, pricingScopes)
+			if outputCapViolated {
+				cost = p.modelCatalog.CalculateCostForUsage(clampedChatUsage, provider, model, requestType, pricingScopes)
+			} else {
+				cost = p.modelCatalog.CalculateCost(result, pricingScopes)
+			}
 		}
 		tokensUsed := 0
 		// The request failed/was cancelled but the provider still
@@ -2012,10 +2060,16 @@ func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifro
 		// Bill those tokens — Anthropic charges us for them regardless.
 		if result == nil && bifrostErr != nil && bifrostErr.ExtraFields.BilledUsage != nil {
 			billedUsage := bifrostErr.ExtraFields.BilledUsage
-			tokensUsed = billedUsage.TotalTokens
+			billable := billedUsage
+			if clamped, violated := clampChatUsageToOutputCap(billedUsage, outputCapTokens); violated {
+				billable = clamped
+				p.logger.Warn("billable failure reported %d completion tokens beyond the attested cap of %d: booking is held to the cap and the excess is not billed (request %s, model %s)",
+					billedUsage.CompletionTokens, outputCapTokens, requestID, model)
+			}
+			tokensUsed = billable.TotalTokens
 			billedReason = "partial_usage_on_error"
 			if p.modelCatalog != nil {
-				cost = p.modelCatalog.CalculateCostForUsage(billedUsage, provider, model, requestType, pricingScopes)
+				cost = p.modelCatalog.CalculateCostForUsage(billable, provider, model, requestType, pricingScopes)
 			}
 		}
 		if result != nil {
@@ -2023,7 +2077,11 @@ func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifro
 			case result.TextCompletionResponse != nil && result.TextCompletionResponse.Usage != nil:
 				tokensUsed = result.TextCompletionResponse.Usage.TotalTokens
 			case result.ChatResponse != nil && result.ChatResponse.Usage != nil:
-				tokensUsed = result.ChatResponse.Usage.TotalTokens
+				if outputCapViolated {
+					tokensUsed = clampedChatUsage.TotalTokens
+				} else {
+					tokensUsed = result.ChatResponse.Usage.TotalTokens
+				}
 			case result.ResponsesResponse != nil && result.ResponsesResponse.Usage != nil:
 				tokensUsed = result.ResponsesResponse.Usage.TotalTokens
 			case result.ResponsesStreamResponse != nil && result.ResponsesStreamResponse.Response != nil && result.ResponsesStreamResponse.Response.Usage != nil:

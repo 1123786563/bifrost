@@ -44,6 +44,10 @@ import (
 // reserveTestVKValue is the key value the reserve tests' store serves.
 const reserveTestVKValue = "sk-bf-reserve-vk"
 
+// reserveTestInputCeiling is the deployment input ceiling the reserve tests arm the door
+// with: generous, so the small fixture requests fit without truncation.
+const reserveTestInputCeiling = int64(100000)
+
 // reserveServiceSecret is the trusted service identity the fake expects (06.1's obot_csvc_
 // shape; the seam must present it as a Bearer credential and nothing else).
 const reserveServiceSecret = "obot_csvc_reservetestsecret"
@@ -106,32 +110,42 @@ func reserveTestCtx() *schemas.BifrostContext {
 	return ctx
 }
 
-// reserveChatRequest is a chat request for the model named, the same shape the funnel carries.
+// reserveChatRequest is a chat request for the model named, the same shape the funnel carries:
+// an output cap the provider enforces (since 07.6 the reserve is only asked for calls that
+// carry one) and nothing else.
 func reserveChatRequest(model string) *schemas.BifrostRequest {
+	maxTokens := 1024
 	return &schemas.BifrostRequest{
 		RequestType: schemas.ChatCompletionRequest,
-		ChatRequest: &schemas.BifrostChatRequest{Provider: schemas.OpenAI, Model: model},
+		ChatRequest: &schemas.BifrostChatRequest{
+			Provider: schemas.OpenAI,
+			Model:    model,
+			Params:   &schemas.ChatParameters{MaxCompletionTokens: &maxTokens},
+		},
 	}
 }
 
-// admissionWithReserve arms the extension with a reserve door pointed at the fake.
+// admissionWithReserve arms the extension with a reserve door pointed at the fake and the
+// deployment's input ceiling the per-request evidence enforces (07.6), plus verified
+// output-cap enforcement evidence for the fixture models (07.7): these fixtures exercise the
+// door's own semantics (pricing, refusals, holds), which live one gate downstream of the
+// model-cell evidence the output-cap tests own.
 func admissionWithReserve(endpoint string, timeoutMs int) *CreditAdmissionConfig {
 	enabled := true
 	return &CreditAdmissionConfig{
-		Enabled: &enabled,
+		Enabled:           &enabled,
+		OutputCapEvidence: verifiedOutputCapEvidence(),
 		Reserve: &CreditReserveConfig{
-			Endpoint:        endpoint,
-			ServiceSecret:   reserveServiceSecret,
-			GrantID:         "grant-reserve-1",
-			PayerKind:       "personal",
-			PayerID:         "user-reserve-1",
-			SnapshotVersion: 7,
-			RateVersion:     3,
-			BoundEvidence: []CreditReserveBoundEvidence{
-				{Kind: "provider_max_tokens", MaximumTokens: 4096},
-			},
-			MaximumCredits: 100,
-			TimeoutMs:      timeoutMs,
+			Endpoint:           endpoint,
+			ServiceSecret:      reserveServiceSecret,
+			GrantID:            "grant-reserve-1",
+			PayerKind:          "personal",
+			PayerID:            "user-reserve-1",
+			SnapshotVersion:    7,
+			RateVersion:        3,
+			InputCeilingTokens: reserveTestInputCeiling,
+			MaximumCredits:     100,
+			TimeoutMs:          timeoutMs,
 		},
 	}
 }
@@ -258,7 +272,11 @@ func TestPreLLMReserveSuccessContinuesTheRequestAndCarriesTheReservation(t *test
 	assert.InDelta(t, 7.0, body["snapshotVersion"], 0)
 	assert.InDelta(t, 3.0, body["rateVersion"], 0)
 	assert.InDelta(t, 100.0, body["maximumCredits"], 0)
-	assert.Equal(t, []any{map[string]any{"kind": "provider_max_tokens", "maximumTokens": 4096.0}}, body["boundEvidence"])
+	assert.Equal(t, []any{
+		map[string]any{"kind": "self_enforced_input_truncation", "maximumTokens": float64(reserveTestInputCeiling)},
+		map[string]any{"kind": "provider_max_tokens", "maximumTokens": 1024.0},
+	}, body["boundEvidence"],
+		"the reserve carries the evidence derived from this request: the enforced input ceiling and the request's own output cap")
 	assert.Equal(t, reservation.AttemptID, body["idempotencyKey"],
 		"the reserve carries the gateway attempt identity as the idempotency key OpenBot recognises")
 }

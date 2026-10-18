@@ -71,18 +71,34 @@ type CreditAdmissionConfig struct {
 	// extension without a door cannot prove a hold, so dispatchable work is refused rather
 	// than passed unreserved; explicitly free work still costs nothing and needs no hold.
 	Reserve *CreditReserveConfig `json:"reserve"`
+	// The per-model output-cap enforcement evidence (07.7): the cells whose provider the
+	// deployment has actually verified to enforce the output cap, with the verification
+	// environment, result and reproducible source. The gate is fail-closed: a cell with no
+	// verified record here is refused before the reserve door is asked, whatever the request
+	// itself carries - absence of evidence is never enablement (Q11). Records that concluded
+	// unverified or not_enforced stay with their reason and keep their cell unavailable.
+	OutputCapEvidence []OutputCapEnforcementRecord `json:"outputCapEvidence"`
+	// The deployment's settle door (07.8): where the PostLLM settlement stage delivers the
+	// attempt's actual usage, under the same trusted service identity as the reserve door.
+	// Nil or miswired, dispatch is unaffected - settlements persist undelivered and wait
+	// for the wiring; a settlement that cannot be sent is never a dropped one.
+	Settle *CreditSettleConfig `json:"settle"`
 }
 
 // The bound-evidence kinds the Reserve contract accepts (ADR 0003: only a call whose cost
 // ceiling can be ENFORCED may be admitted; an estimate is a rejection aid, never evidence).
+// Since 07.6 the evidence is constructed per request in boundevidence.go and only ever
+// carries these two mechanisms.
 var creditReserveBoundEvidenceKinds = map[string]bool{
 	"provider_max_tokens":            true,
 	"self_enforced_input_truncation": true,
 }
 
 // CreditReserveBoundEvidence is one mechanism-level ceiling the reserve carries: how one cost
-// side of the call is provably capped. The kinds are OpenBot's closed vocabulary; an unknown
-// kind or a non-positive ceiling is a miswired door, refused before anything is sent.
+// side of the call is provably capped. The kinds are OpenBot's closed vocabulary, built here
+// per request (07.6) - never accepted from configuration, so an estimate-shaped or unknown
+// entry cannot enter by wiring; a non-positive ceiling is a derivation bug, refused before
+// anything is sent.
 type CreditReserveBoundEvidence struct {
 	Kind          string `json:"kind"`
 	MaximumTokens int64  `json:"maximumTokens"`
@@ -91,13 +107,15 @@ type CreditReserveBoundEvidence struct {
 // CreditReserveConfig is the deployment's reserve door: where the credit protocol's Reserve
 // surface answers, the trusted service identity 06.1 issued for calling it, and the request's
 // stable basis - the access grant, the payment account, the locked price and rate versions,
-// the enforceable bound evidence and the hold ceiling.
+// the input ceiling the per-request evidence enforces and the hold ceiling.
 //
 // The grant and the versions ride configuration until the tickets that resolve them per
-// request land (05.x's per-authorization key issuance, the synced price basis, 07.6's input
-// bound): the seam reads them from here, so those tickets replace a config read with a
-// request read without the funnel changing shape. What the seam itself owns - and what the
-// tests hold it to - is the wire: authenticate, ask, and answer only to a held reservation.
+// request land (05.x's per-authorization key issuance, the synced price basis): the seam
+// reads them from here, so those tickets replace a config read with a request read
+// without the funnel changing shape. The bound evidence already has (07.6): it is
+// derived per request in boundevidence.go, and the deployment contributes only the
+// input ceiling below. What the seam itself owns - and what the tests hold it to - is
+// the wire: authenticate, ask, and answer only to a held reservation.
 type CreditReserveConfig struct {
 	// The Reserve surface's URL, e.g. http://openbot:3000/api/credit-protocol/reserve.
 	Endpoint string `json:"endpoint"`
@@ -113,8 +131,10 @@ type CreditReserveConfig struct {
 	// persisting them for settlement is 06.5's version locking).
 	SnapshotVersion int `json:"snapshotVersion"`
 	RateVersion     int `json:"rateVersion"`
-	// Non-empty set of enforceable-ceiling proofs; estimates are not a member.
-	BoundEvidence []CreditReserveBoundEvidence `json:"boundEvidence"`
+	// The deployment's conservative input ceiling in tokens (ADR 0001), enforced per request
+	// by self-executed truncation. Evidence itself is derived per request; this is the one
+	// bound parameter the mechanism needs.
+	InputCeilingTokens int64 `json:"inputCeilingTokens"`
 	// The hold ceiling in scaled credit units (×100), a positive integer.
 	MaximumCredits int64 `json:"maximumCredits"`
 	// How long the seam waits for the answer before treating the reserve as refused.
@@ -139,18 +159,10 @@ func (cfg *CreditReserveConfig) wiringProblem() string {
 		return "no price basis version"
 	case cfg.RateVersion < 0:
 		return "invalid conversion rate version"
+	case cfg.InputCeilingTokens <= 0:
+		return "no input ceiling"
 	case cfg.MaximumCredits <= 0:
 		return "no positive hold ceiling"
-	case len(cfg.BoundEvidence) == 0:
-		return "no bound evidence"
-	}
-	for _, evidence := range cfg.BoundEvidence {
-		switch {
-		case !creditReserveBoundEvidenceKinds[evidence.Kind]:
-			return "unknown bound evidence kind " + evidence.Kind
-		case evidence.MaximumTokens <= 0:
-			return "non-positive bound ceiling"
-		}
 	}
 	return ""
 }
@@ -185,12 +197,12 @@ type creditReserveRequest struct {
 }
 
 // requestFor builds the Reserve request this attempt sends: the door's configured basis, the
-// model cell the request names, and the gateway attempt identity as the idempotency key a
-// replay answers with.
-func (cfg *CreditReserveConfig) requestFor(evaluationRequest *EvaluationRequest, attemptID string) creditReserveRequest {
-	evidence := make([]creditReserveEvidence, 0, len(cfg.BoundEvidence))
-	for _, entry := range cfg.BoundEvidence {
-		evidence = append(evidence, creditReserveEvidence{Kind: entry.Kind, MaximumTokens: entry.MaximumTokens})
+// model cell the request names, the bound evidence derived from this request (07.6), and the
+// gateway attempt identity as the idempotency key a replay answers with.
+func (cfg *CreditReserveConfig) requestFor(evaluationRequest *EvaluationRequest, attemptID string, evidence []CreditReserveBoundEvidence) creditReserveRequest {
+	carried := make([]creditReserveEvidence, 0, len(evidence))
+	for _, entry := range evidence {
+		carried = append(carried, creditReserveEvidence{Kind: entry.Kind, MaximumTokens: entry.MaximumTokens})
 	}
 	return creditReserveRequest{
 		GrantID:         cfg.GrantID,
@@ -198,7 +210,7 @@ func (cfg *CreditReserveConfig) requestFor(evaluationRequest *EvaluationRequest,
 		Model:           creditReserveModel{Provider: string(evaluationRequest.Provider), Model: evaluationRequest.Model, Capability: creditCapabilityForRequestType(evaluationRequest.RequestType)},
 		SnapshotVersion: cfg.SnapshotVersion,
 		RateVersion:     cfg.RateVersion,
-		BoundEvidence:   evidence,
+		BoundEvidence:   carried,
 		MaximumCredits:  cfg.MaximumCredits,
 		IdempotencyKey:  attemptID,
 	}
@@ -241,6 +253,16 @@ type CreditReservation struct {
 	MaximumCredits  int64
 	SnapshotVersion int
 	RateVersion     int
+	// The ownership the reserve door was asked under (07.8): the grant and payment account
+	// the hold bills to, recorded at admission so the settlement stage and recovery read
+	// the grant-time facts rather than whatever the configuration has become since.
+	GrantID   string
+	PayerKind string
+	PayerID   string
+	// OutputCapTokens is the output cap the attempt's own evidence attested (07.6's
+	// provider_max_tokens entry, 07.7's verified cell): the ceiling the post hook holds
+	// booked output usage to, so a provider exceeding the cap can book no unreserved cost.
+	OutputCapTokens int64
 }
 
 // CreditReservationContextKey carries the request's held reservation once the reserve door
@@ -420,12 +442,43 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 		}
 	}
 
+	// The model cell's output-cap enforcement evidence (07.7): before this request may ask
+	// the door to hold anything, the deployment must hold a verified record that THIS model's
+	// provider actually enforces the output cap on THIS call method. The per-request half
+	// (below) proves the call carries a cap; this half proves the provider honors it. A cell
+	// without that proof is refused here, and the door is never asked - on this attempt or
+	// any fallback after it, since the funnel runs both through here.
+	if problem := p.outputCapEnforcementProblem(evaluationRequest.Provider, evaluationRequest.Model, evaluationRequest.RequestType); problem != "" {
+		return &EvaluationResult{
+			Decision:   DecisionCreditReserveNotHeld,
+			ReasonCode: CreditRefusalCapNotProvable,
+			Reason:     fmt.Sprintf("%s: model %q is refused and no provider is called", problem, evaluationRequest.Model),
+		}
+	}
+
+	// The bound evidence is derived from THIS request before anything is asked of the door
+	// (07.6): the complete serialized input, truncated in place to the deployment's input
+	// ceiling, and the output cap the request itself carries. Insufficiency - an input that
+	// cannot be counted in full or brought under the ceiling, a call that caps nothing -
+	// refuses the call method here, and the door is never asked: an unprovable ceiling is
+	// exactly what a reservation cannot be (ADR 0003), and the estimate that judged the fit
+	// is a rejection aid only, never evidence, never a price (ADR 0001).
+	evidence, evidenceProblem := deriveBoundEvidence(ctx, evaluationRequest, reserve)
+	if evidenceProblem != "" {
+		return &EvaluationResult{
+			Decision:   DecisionCreditReserveNotHeld,
+			ReasonCode: CreditRefusalCapNotProvable,
+			Reason: fmt.Sprintf("the call's cost ceiling cannot be proven (%s): model %q is refused and no provider is called",
+				evidenceProblem, evaluationRequest.Model),
+		}
+	}
+
 	// The attempt identity: minted here, stable for this attempt of this request, and sent as
 	// the reserve's idempotency key - so a replayed reserve for the same attempt answers the
 	// original reservation, and a lost answer can be recovered by asking under the same
 	// identity (06.7) rather than by paying twice.
 	attemptID := creditAttemptID(ctx, evaluationRequest.Provider, evaluationRequest.Model)
-	payload, err := json.Marshal(reserve.requestFor(evaluationRequest, attemptID))
+	payload, err := json.Marshal(reserve.requestFor(evaluationRequest, attemptID, evidence))
 	if err != nil {
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
@@ -466,12 +519,26 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 		if result := p.commitDispatch(ctx, evaluationRequest, attemptID, reserve, answer); result != nil {
 			return result
 		}
+		// The attested output cap rides the reservation (07.7): the post hook holds what it
+		// books to this ceiling, so the cost that settles never exceeds what the evidence
+		// proved enforceable.
+		outputCapTokens := int64(0)
+		for _, entry := range evidence {
+			if entry.Kind == "provider_max_tokens" {
+				outputCapTokens = entry.MaximumTokens
+				break
+			}
+		}
 		ctx.SetValue(CreditReservationContextKey, &CreditReservation{
 			ReservationID:   answer.ReservationID,
 			AttemptID:       attemptID,
 			MaximumCredits:  answer.MaximumCredits,
 			SnapshotVersion: answer.SnapshotVersion,
 			RateVersion:     answer.RateVersion,
+			OutputCapTokens: outputCapTokens,
+			GrantID:         reserve.GrantID,
+			PayerKind:       reserve.PayerKind,
+			PayerID:         reserve.PayerID,
 		})
 		return nil
 	case status == http.StatusUnprocessableEntity:
