@@ -8,7 +8,7 @@
 
 **Tech Stack:** `i18next@26.4.4`、`react-i18next@17.0.16`、Vite `import.meta.glob`、vitest（已有）。
 
-**Spec:** `docs/superpowers/specs/2026-10-12-ui-i18n-chinese-design.md`（本计划从 spec 出发；执行者须同时读两份）
+**Spec:** `docs/specs/superpowers/2026-10-12-ui-i18n-chinese-design.md`（本计划从 spec 出发；执行者须同时读两份）
 
 ## Global Constraints
 
