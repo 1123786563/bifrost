@@ -1,13 +1,21 @@
 package handlers
 
 import (
+	"encoding/json"
+	"testing"
+	"time"
+
 	"github.com/maximhq/bifrost/framework/kvstore"
 	"github.com/valyala/fasthttp"
 	"strings"
-	"testing"
 )
 
 // TestRealtimeNativeSubprotocolAdmission exercises HTTP admission before model resolution using synthetic credentials, not a live voice session.
+//
+// 16.3 (#324) changed one posture these cases used to pin: a provider-shaped ek_* token the
+// gateway did not mint is no longer passed upstream on an enforcing deployment — it is the
+// 旁路 the ticket closes, refused 401 and audited. The cases that intend a USABLE credential
+// now seed the gateway's own mapping for it (an ek_bf_* the minting path issued).
 func TestRealtimeNativeSubprotocolAdmission(t *testing.T) {
 	SetLogger(&mockLogger{})
 	store, err := kvstore.New(kvstore.Config{})
@@ -15,16 +23,20 @@ func TestRealtimeNativeSubprotocolAdmission(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer store.Close()
+	seedBypassTestMapping(t, store, "ek_bf_synthetic")
+	seedBypassTestMapping(t, store, "ek_bf_same")
 	for _, tc := range []struct {
 		name, protocol string
 		status         int
 	}{
 		{"xai mapped", "xai-client-secret.ek_bf_synthetic", 101},
-		{"openai unchanged", "realtime, openai-insecure-api-key.ek_synthetic", 101},
+		// An unmapped provider token is refused on an enforcing deployment (16.3, #324):
+		// the provider stays authoritative upstream, but no session stands up here.
+		{"openai unmapped refused", "realtime, openai-insecure-api-key.ek_synthetic", 401},
 		{"unknown", "future-protocol", 401},
 		{"empty xai", "xai-client-secret.", 400},
 		{"conflicting", "xai-client-secret.ek_first, openai-insecure-api-key.ek_second", 400},
-		{"duplicate same", "xai-client-secret.ek_same, xai-client-secret.ek_same", 101},
+		{"duplicate same", "xai-client-secret.ek_bf_same, xai-client-secret.ek_bf_same", 101},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := newRealtimeUpgradeRequest("/v1/realtime")
@@ -36,6 +48,19 @@ func TestRealtimeNativeSubprotocolAdmission(t *testing.T) {
 				t.Fatalf("status %d, want %d", ctx.Response.StatusCode(), tc.status)
 			}
 		})
+	}
+}
+
+// seedBypassTestMapping registers a gateway-minted ephemeral token's mapping, the shape the
+// client_secrets minting path leaves behind.
+func seedBypassTestMapping(t *testing.T, store *kvstore.Store, token string) {
+	t.Helper()
+	payload, err := json.Marshal(realtimeEphemeralKeyMapping{KeyID: "key_" + token, VirtualKey: "sk-bf-" + token})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetWithTTL(buildRealtimeEphemeralKeyMappingKey(token), payload, time.Minute); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -51,6 +76,8 @@ func TestRealtimeInvalidNativeCredentialsRejectOpenDeployment(t *testing.T) {
 }
 
 // TestRealtimeNativeExplicitAuthorizationWins preserves the existing explicit-header precedence over browser credential protocols.
+// The explicit token is a gateway-minted, mapped one (16.3, #324): the precedence being
+// pinned is the header's, and the token itself must be one the gateway issued.
 func TestRealtimeNativeExplicitAuthorizationWins(t *testing.T) {
 	SetLogger(&mockLogger{})
 	store, err := kvstore.New(kvstore.Config{})
@@ -58,8 +85,9 @@ func TestRealtimeNativeExplicitAuthorizationWins(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer store.Close()
+	seedBypassTestMapping(t, store, "ek_bf_explicit")
 	ctx := newRealtimeUpgradeRequest("/v1/realtime")
-	ctx.Request.Header.Set("Authorization", "Bearer ek_explicit")
+	ctx.Request.Header.Set("Authorization", "Bearer ek_bf_explicit")
 	ctx.Request.Header.Set("Sec-WebSocket-Protocol", "xai-client-secret.")
 	handler := newRealtimeUpgradeHandler(true)
 	handler.config.KVStore = store

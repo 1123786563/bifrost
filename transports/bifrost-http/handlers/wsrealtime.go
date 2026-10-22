@@ -17,6 +17,7 @@ import (
 	ws "github.com/fasthttp/websocket"
 	bifrost "github.com/maximhq/bifrost/core"
 	"github.com/maximhq/bifrost/core/schemas"
+	"github.com/maximhq/bifrost/plugins/governance"
 	"github.com/maximhq/bifrost/transports/bifrost-http/integrations"
 	"github.com/maximhq/bifrost/transports/bifrost-http/lib"
 	bfws "github.com/maximhq/bifrost/transports/bifrost-http/websocket"
@@ -155,6 +156,20 @@ func (h *WSRealtimeHandler) handleUpgrade(ctx *fasthttp.RequestCtx) {
 	preMapping, preMapped := lookupRealtimeEphemeralKeyMapping(h.handlerStore.GetKVStore(), token)
 	if preMapped {
 		applyRealtimeEphemeralKeyMapping(preReqCtx, preMapping)
+	}
+	// 16.3 (#324): the bypass question — an ephemeral token this gateway did not mint, or a
+	// minted one already spent on another session, ends the establishment here, before the
+	// upgrade, and is recorded in the bypass registry.
+	if bypassErr := refuseRealtimeEphemeralTokenBypass(
+		h.config.ClientConfig.EnforceAuthOnInference,
+		h.handlerStore.GetKVStore(),
+		token,
+		preMapped,
+		"websocket",
+	); bypassErr != nil {
+		preReqCancel()
+		SendBifrostError(ctx, bypassErr)
+		return
 	}
 
 	providerKey, model, err := resolveRealtimeTarget(ctx, h.config, path, modelParam, deploymentParam)
@@ -312,6 +327,20 @@ func (h *WSRealtimeHandler) handleTranscriptionUpgrade(
 		mapping, mapped := lookupRealtimeEphemeralKeyMapping(h.handlerStore.GetKVStore(), token)
 		if mapped {
 			applyRealtimeEphemeralKeyMapping(preReqCtx, mapping)
+		}
+		// 16.3 (#324): the same bypass question on the transcription entrance, post-upgrade
+		// like the resolution check beside it, still before the session slot and the
+		// upstream connection.
+		if bypassErr := refuseRealtimeEphemeralTokenBypass(
+			h.config.ClientConfig.EnforceAuthOnInference,
+			h.handlerStore.GetKVStore(),
+			token,
+			mapped,
+			"websocket-transcription",
+		); bypassErr != nil {
+			clientConn.writeRealtimeError(bypassErr)
+			preReqCancel()
+			return
 		}
 		preReq := &schemas.BifrostRequest{
 			RequestType: schemas.RealtimeRequest,
@@ -702,6 +731,29 @@ func (h *WSRealtimeHandler) processRealtimeClientMessage(
 		}
 		if inputSummary != "" {
 			session.RecordRealtimeInput(inputItemID, inputSummary, string(message))
+		}
+	}
+
+	// 15.3 (#316): the audio input gate — BEFORE the forward, not after. Billed audio
+	// input (the gate's own closed event set) is written upstream only when the session's
+	// current billing unit holds a reservation; a deny is dropped, unbilled, with the
+	// interception recorded on the gate. Everything else forwards unchanged: the gate
+	// answers nil for non-billed events, and a deployment without the governance gate
+	// (or with credit admission off) never reaches a decision here.
+	if gate := governance.RealtimeInputGateFromContext(bifrostCtx); gate != nil {
+		if decision := gate.Decide(bifrostCtx, session.ID(), providerKey, model, event, len(message)); decision != nil && !decision.Forward {
+			if decision.Shutdown {
+				// 15.6 (#319): the session's authorization is gone (revoked or expired at
+				// the door) — the best-effort shutdown closes BOTH sides: stopping this
+				// relay ends runRealtimeRelays' closeBoth, which tears down the upstream
+				// connection and the client's with it, so nothing forwards or bills on.
+				clientConn.writeRealtimeError(newRealtimeWireBifrostError(403, "session_shutdown",
+					fmt.Sprintf("the realtime session was shut down (%s): %s", decision.Reason, decision.Detail)))
+				return true, nil
+			}
+			clientConn.writeRealtimeError(newRealtimeWireBifrostError(402, "insufficient_quota",
+				fmt.Sprintf("realtime audio input is not covered by a reserved billing unit (%s): %s", decision.Reason, decision.Detail)))
+			return false, nil
 		}
 	}
 
@@ -1232,6 +1284,10 @@ var realtimeMiddlewareKeys = []any{
 	schemas.BifrostContextKeyAPIKeyName,
 	schemas.BifrostContextKeySelectedKeyID,
 	schemas.BifrostContextKeySelectedKeyName,
+	// 15.3 (#316): the session's audio input gate handle — a small pointer created by the
+	// governance plugin at the upgrade and carried here so the relay's forward path can
+	// ask it before any billed input event is written upstream.
+	governance.RealtimeInputGateContextKey(),
 	// NOTE: BifrostContextKeyTraceID (and its W3C export, BifrostContextKeyExportTraceID)
 	// are intentionally NOT inherited here. The upgrade request's trace is already ended
 	// by the time realtime turns run, so inheriting it would route each turn's log entry
