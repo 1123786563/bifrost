@@ -78,6 +78,13 @@ type CreditAdmissionConfig struct {
 	// itself carries - absence of evidence is never enablement (Q11). Records that concluded
 	// unverified or not_enforced stay with their reason and keep their cell unavailable.
 	OutputCapEvidence []OutputCapEnforcementRecord `json:"outputCapEvidence"`
+	// The per-path audio capability evidence (14.4): the audio entrances whose billing the
+	// deployment has actually verified, carried the way the output-cap records are. The gate
+	// is fail-closed the same way: a speech or transcription entrance with no VERIFIED
+	// record here is refused before the pricing classification and the reserve door, with
+	// the specific missing evidence items named - an unverified audio path is not callable
+	// at all, whatever the model's price says.
+	AudioCapabilityEvidence []AudioCapabilityRecord `json:"audioCapabilityEvidence"`
 	// The deployment's settle door (07.8): where the PostLLM settlement stage delivers the
 	// attempt's actual usage, under the same trusted service identity as the reserve door.
 	// Nil or miswired, dispatch is unaffected - settlements persist undelivered and wait
@@ -391,6 +398,19 @@ func (p *GovernancePlugin) evaluateCreditAdmission(ctx *schemas.BifrostContext, 
 	}
 	p.cfgMutex.RUnlock()
 	if enabled {
+		// The audio path capability gate (14.4): an unverified audio entrance is not
+		// callable at all, so it refuses BEFORE the free/unknown pricing classification —
+		// a free model does not make an unverifiable path verifiable — and before the
+		// reserve door is asked. Non-audio request types return from the switch inside the
+		// gate without touching the configured records, so the common case costs one
+		// switch.
+		if problem := p.audioCapabilityProblem(evaluationRequest.RequestType); problem != "" {
+			return &EvaluationResult{
+				Decision:   DecisionCreditReserveNotHeld,
+				ReasonCode: CreditRefusalCapNotProvable,
+				Reason:     problem,
+			}
+		}
 		// The extension is live, and the free/unknown distinction now carries dispatch
 		// semantics: explicitly free work costs nothing, reserves nothing, and proceeds;
 		// everything else - a known-paid model, or pricing this catalog cannot name - is
