@@ -17,6 +17,7 @@ import (
 	ws "github.com/fasthttp/websocket"
 	bifrost "github.com/maximhq/bifrost/core"
 	"github.com/maximhq/bifrost/core/schemas"
+	"github.com/maximhq/bifrost/plugins/governance"
 	"github.com/maximhq/bifrost/transports/bifrost-http/integrations"
 	"github.com/maximhq/bifrost/transports/bifrost-http/lib"
 	bfws "github.com/maximhq/bifrost/transports/bifrost-http/websocket"
@@ -705,6 +706,20 @@ func (h *WSRealtimeHandler) processRealtimeClientMessage(
 		}
 	}
 
+	// 15.3 (#316): the audio input gate — BEFORE the forward, not after. Billed audio
+	// input (the gate's own closed event set) is written upstream only when the session's
+	// current billing unit holds a reservation; a deny is dropped, unbilled, with the
+	// interception recorded on the gate. Everything else forwards unchanged: the gate
+	// answers nil for non-billed events, and a deployment without the governance gate
+	// (or with credit admission off) never reaches a decision here.
+	if gate := governance.RealtimeInputGateFromContext(bifrostCtx); gate != nil {
+		if decision := gate.Decide(bifrostCtx, session.ID(), providerKey, model, event, len(message)); decision != nil && !decision.Forward {
+			clientConn.writeRealtimeError(newRealtimeWireBifrostError(402, "insufficient_quota",
+				fmt.Sprintf("realtime audio input is not covered by a reserved billing unit (%s): %s", decision.Reason, decision.Detail)))
+			return false, nil
+		}
+	}
+
 	if err := upstream.WriteMessage(messageType, providerEvent); err != nil {
 		finalizeRealtimeTurnHooksWithError(
 			h.client,
@@ -1232,6 +1247,10 @@ var realtimeMiddlewareKeys = []any{
 	schemas.BifrostContextKeyAPIKeyName,
 	schemas.BifrostContextKeySelectedKeyID,
 	schemas.BifrostContextKeySelectedKeyName,
+	// 15.3 (#316): the session's audio input gate handle — a small pointer created by the
+	// governance plugin at the upgrade and carried here so the relay's forward path can
+	// ask it before any billed input event is written upstream.
+	governance.RealtimeInputGateContextKey(),
 	// NOTE: BifrostContextKeyTraceID (and its W3C export, BifrostContextKeyExportTraceID)
 	// are intentionally NOT inherited here. The upgrade request's trace is already ended
 	// by the time realtime turns run, so inheriting it would route each turn's log entry
