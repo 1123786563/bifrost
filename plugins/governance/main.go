@@ -1198,6 +1198,14 @@ func (p *GovernancePlugin) PreRequestHook(ctx *schemas.BifrostContext, req *sche
 		return nil
 	}
 
+	// 15.3 (#316): a realtime WS upgrade attaches the session's audio input gate — the
+	// forwarding-path handle the relay asks before any billed input event is written
+	// upstream. Inert until the relay decides through it, so every other request type
+	// (and every deployment without realtime) pays nothing here.
+	if req.RequestType == schemas.RealtimeRequest {
+		p.attachRealtimeInputGate(ctx)
+	}
+
 	// The request's provider is a fact access resolution needs to apply provider-scoped grants, and it
 	// rides on the request, not the context. Stamp it before resolving so the resolved access reflects
 	// it. The /mcp path carries no request model and never stamps this, so a provider-scoped grant

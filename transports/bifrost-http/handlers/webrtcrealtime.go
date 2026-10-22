@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/maximhq/bifrost/core/providers/openai"
 	"github.com/maximhq/bifrost/core/schemas"
 	"github.com/maximhq/bifrost/framework/grant"
+	"github.com/maximhq/bifrost/plugins/governance"
 	"github.com/maximhq/bifrost/plugins/modelcatalogresolver"
 	"github.com/maximhq/bifrost/transports/bifrost-http/integrations"
 	"github.com/maximhq/bifrost/transports/bifrost-http/lib"
@@ -293,6 +295,18 @@ func (h *WebRTCRealtimeHandler) runWebRTCRelay(
 	mapping, mapped := lookupRealtimeEphemeralKeyMapping(h.handlerStore.GetKVStore(), inboundToken)
 	if mapped {
 		applyRealtimeEphemeralKeyMapping(bifrostCtx, mapping)
+	}
+	// 16.3 (#324): the bypass question on the WebRTC entrance — the same refusal, the same
+	// registry, before the per-request pipeline, the key selection and the SDP exchange.
+	if bypassErr := refuseRealtimeEphemeralTokenBypass(
+		h.config.ClientConfig.EnforceAuthOnInference,
+		h.handlerStore.GetKVStore(),
+		inboundToken,
+		mapped,
+		"webrtc",
+	); bypassErr != nil {
+		SendBifrostError(ctx, bypassErr)
+		return
 	}
 
 	// Run the per-request pipeline so governance resolves the request's access onto the grant,
@@ -615,7 +629,38 @@ func (m *realtimeWebRTCMessages) fromBrowser(r *webrtcRelay, msg webrtc.DataChan
 	// Track session metadata only after provider translation succeeds. Rejected
 	// session.update events must not affect later turn logs.
 	updateRealtimeSessionFromEvent(m.session, event)
+
+	// 16.1 (#322): the audio input gate — the SAME gate, the SAME order, as the WebSocket
+	// relay's forward path (15.3/#316): billed audio input is written upstream only when
+	// the session's current billing unit holds a reservation; a deny is dropped, unbilled,
+	// with the interception recorded on the gate, and everything else forwards unchanged.
+	// The gate handle rides the relay context from the establishment's PreRequestHook, so
+	// the decision is the one door's — no WebRTC-side second admission exists.
+	if gate := governance.RealtimeInputGateFromContext(m.bifrostCtx); gate != nil {
+		if decision := gate.Decide(m.bifrostCtx, m.session.ID(), m.providerKey, m.model, event, len(providerEvent)); decision != nil && !decision.Forward {
+			applyRealtimeInputGateDeny(r, decision)
+			return
+		}
+	}
+
 	r.sendUpstream(providerEvent, msg.IsString)
+}
+
+// applyRealtimeInputGateDeny is the WebRTC relay's half of a denied input decision: the
+// input itself is simply not written upstream (dropped, unbilled — the gate recorded the
+// interception), and the browser is answered with the wire error the WebSocket relay sends
+// for the same verdicts, so both entrances name a refusal identically. A SHUTDOWN decision
+// (16.2, #323 — the authorization verdict) additionally closes the relay, which tears down
+// BOTH sides: the browser data channel and the upstream peer connection (尽力关停覆盖上游
+// 会话与数据通道两侧).
+func applyRealtimeInputGateDeny(r *webrtcRelay, decision *governance.RealtimeInputGateDecision) {
+	if decision.Shutdown {
+		r.closeWithErrorEvent(newRealtimeTurnErrorEventPayload(newRealtimeWireBifrostError(403, "session_shutdown",
+			fmt.Sprintf("the realtime session was shut down (%s): %s", decision.Reason, decision.Detail))))
+		return
+	}
+	r.sendDownstream(newRealtimeTurnErrorEventPayload(newRealtimeWireBifrostError(402, "insufficient_quota",
+		fmt.Sprintf("realtime audio input is not covered by a reserved billing unit (%s): %s", decision.Reason, decision.Detail))), true)
 }
 
 func (m *realtimeWebRTCMessages) fromProvider(r *webrtcRelay, msg webrtc.DataChannelMessage) {
@@ -776,6 +821,11 @@ func newRealtimeRelayContext(requestCtx *schemas.BifrostContext) (*schemas.Bifro
 		schemas.BifrostContextKeyCaptureRawResponse,
 		schemas.BifrostContextKeyDropRawRequestFromClient,
 		schemas.BifrostContextKeyDropRawResponseFromClient,
+		// 16.1 (#322): the session's audio input gate handle — the pointer the establishment's
+		// PreRequestHook attached, carried into the long-lived relay context so the WebRTC
+		// forward path asks the same gate the WebSocket relay asks (one admission, both
+		// entrances; the copy list is the WS relay's realtimeMiddlewareKeys idiom).
+		governance.RealtimeInputGateContextKey(),
 	} {
 		if value := requestCtx.Value(key); value != nil {
 			relayCtx.SetValue(key, value)

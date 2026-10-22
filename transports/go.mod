@@ -241,3 +241,7 @@ require (
 	gorm.io/driver/clickhouse v0.7.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
 )
+
+// Local development override (uncommitted): the governance plugin's realtime
+// admission exports (15.x) live in this checkout, not yet in a published version.
+replace github.com/maximhq/bifrost/plugins/governance => ../plugins/governance
