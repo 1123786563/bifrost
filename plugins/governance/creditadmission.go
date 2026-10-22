@@ -88,10 +88,13 @@ type CreditAdmissionConfig struct {
 // The bound-evidence kinds the Reserve contract accepts (ADR 0003: only a call whose cost
 // ceiling can be ENFORCED may be admitted; an estimate is a rejection aid, never evidence).
 // Since 07.6 the evidence is constructed per request in boundevidence.go and only ever
-// carries these two mechanisms.
+// carries these mechanisms: the chat pair (07.6) and the embeddings input bound (11.1/11.2
+// - counted in full and refused over the ceiling, never truncated, because a batch's
+// entries are the payload).
 var creditReserveBoundEvidenceKinds = map[string]bool{
 	"provider_max_tokens":            true,
 	"self_enforced_input_truncation": true,
+	"self_enforced_input_refusal":    true,
 }
 
 // CreditReserveBoundEvidence is one mechanism-level ceiling the reserve carries: how one cost

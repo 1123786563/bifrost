@@ -135,6 +135,17 @@ func (r OutputCapEnforcementRecord) evidenceProblem() string {
 // no record, an unusable record, a record that concluded against enforcement, and a call
 // method the capability vocabulary cannot map all refuse - absence is never enablement.
 func (p *GovernancePlugin) outputCapEnforcementProblem(provider schemas.ModelProvider, model string, requestType schemas.RequestType) string {
+	// The one structural exception (11.1's evidence, 11.2's wiring): the embeddings wire
+	// has no billable output at all - the response's usage object carries prompt tokens
+	// only, no field an output price could multiply, on the protocol both sides implement -
+	// so there is no output cap a provider could be asked to honor and no record anyone
+	// could verify. Demanding a chat-style max_tokens verification here would be demanding
+	// evidence of a cap that cannot exist; the input side still carries its own bound
+	// (boundevidence.go), and the cost the door is asked to hold is input tokens plus the
+	// per-request surcharge, nothing else.
+	if requestType == schemas.EmbeddingRequest {
+		return ""
+	}
 	callMethod := creditCapabilityForRequestType(requestType)
 	if callMethod == "unknown" {
 		return "this call method has no boundable output the gateway can attest, so no output-cap enforcement evidence can exist for it"
