@@ -208,16 +208,67 @@ func deriveChatBoundEvidence(req *schemas.BifrostChatRequest, reserve *CreditRes
 	return evidence, ""
 }
 
+// countEmbeddingRequestInputTokens is the conservative count of one embeddings request's
+// complete billable input: every byte the typed request serializes to - the model name,
+// the request-level params, and EVERY batch entry's full content - plus the extra params
+// the adapters forward verbatim, at the same ADR 0001 calibration the chat counter uses,
+// with the per-entry overhead charged per ENTRY (each entry is the smallest unit a provider
+// could bill separately). The count is of what will be sent, as it will be sent.
+func countEmbeddingRequestInputTokens(req *schemas.BifrostEmbeddingRequest) int64 {
+	if req == nil {
+		return math.MaxInt64
+	}
+	size, ok := serializedBillableBytes(req)
+	if !ok {
+		return math.MaxInt64
+	}
+	if req.Params != nil {
+		extra, ok := serializedBillableBytes(req.Params.ExtraParams)
+		if !ok {
+			return math.MaxInt64
+		}
+		size += extra
+	}
+	return conservativeTokens(size, len(req.Input))
+}
+
+// deriveEmbeddingBoundEvidence constructs one embeddings call's reserve evidence (11.2, on
+// 11.1's boundary): the counted-in-full input under the deployment's ceiling, and NO output
+// entry - the vector output has no billable dimension on the wire (the response's usage
+// carries prompt tokens only), so there is no output cap to attest. Unlike chat there is no
+// truncation fitter: an embeddings request's entries ARE the payload - dropping one changes
+// the answer the caller asked for - so the input bound is enforced by REFUSAL, never by
+// sending something uncounted or short of what was asked.
+func deriveEmbeddingBoundEvidence(req *schemas.BifrostEmbeddingRequest, reserve *CreditReserveConfig) ([]CreditReserveBoundEvidence, string) {
+	if req == nil {
+		return nil, "the request carries no embedding input to count"
+	}
+	counted := countEmbeddingRequestInputTokens(req)
+	if counted > reserve.InputCeilingTokens {
+		return nil, "the embeddings input exceeds the deployment's input ceiling; batch entries are the payload, so the call is refused rather than sent uncounted"
+	}
+	evidence := []CreditReserveBoundEvidence{
+		{Kind: "self_enforced_input_refusal", MaximumTokens: reserve.InputCeilingTokens},
+	}
+	for _, entry := range evidence {
+		if !creditReserveBoundEvidenceKinds[entry.Kind] || entry.MaximumTokens <= 0 {
+			return nil, "the derived bound evidence is not a closed-vocabulary mechanism with a positive ceiling"
+		}
+	}
+	return evidence, ""
+}
+
 // deriveBoundEvidence builds the reserve's bound evidence for one dispatchable request:
 // the complete serialized input, self-enforced under the deployment's input ceiling, plus
 // the output cap the request carries. problem != "" means this call method lacks provable,
 // enforceable bounds and is refused with cap_not_provable - estimates were only ever
 // allowed to cause this refusal, never to prevent it.
 //
-// The evidence covers the chat call shapes this integration dispatches today. Every other
-// call type - and every request whose body would go to the provider raw, which the gateway
-// can neither count in full nor truncate - stays refused until its own evidence exists:
-// interface existence is not enablement evidence (Q11/Q20).
+// The evidence covers the call shapes this integration dispatches today: chat (truncation
+// + output cap) and embeddings (count-and-refuse input; the vector output needs no cap).
+// Every other call type - and every request whose body would go to the provider raw, which
+// the gateway can neither count in full nor truncate - stays refused until its own evidence
+// exists: interface existence is not enablement evidence (Q11/Q20).
 func deriveBoundEvidence(ctx *schemas.BifrostContext, evaluationRequest *EvaluationRequest, reserve *CreditReserveConfig) ([]CreditReserveBoundEvidence, string) {
 	req := evaluationRequest.LLMRequest
 	if req == nil {
@@ -229,6 +280,8 @@ func deriveBoundEvidence(ctx *schemas.BifrostContext, evaluationRequest *Evaluat
 	switch evaluationRequest.RequestType {
 	case schemas.ChatCompletionRequest, schemas.ChatCompletionStreamRequest:
 		return deriveChatBoundEvidence(req.ChatRequest, reserve)
+	case schemas.EmbeddingRequest:
+		return deriveEmbeddingBoundEvidence(req.EmbeddingRequest, reserve)
 	default:
 		return nil, "this call type has no provable cost-ceiling evidence yet"
 	}
