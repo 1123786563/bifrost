@@ -238,6 +238,13 @@ func creditCapabilityForRequestType(requestType schemas.RequestType) string {
 		return "transcription"
 	case schemas.RealtimeRequest:
 		return "realtime"
+	case schemas.OCRRequest:
+		// 11.6 (#301): an OCR dispatch names the OCR capability cell its hold locks —
+		// the same cell OpenBot's price snapshots price (and refuse when unknown). Before
+		// this case an OCR request mapped "unknown", a cell no open scope can ever hold,
+		// so even a fully priced OCR model was unadmittable — honest, but not the
+		// capability's name; unknown PRICING stays the door's refusal, never a mapping.
+		return "ocr"
 	default:
 		return "unknown"
 	}
@@ -425,7 +432,31 @@ const defaultReserveTimeout = 5 * time.Second
 // to no provider. There is no optimistic branch: a deployment whose billing service cannot
 // answer does not dispatch paid work (AC05).
 func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, evaluationRequest *EvaluationRequest, reserve *CreditReserveConfig) *EvaluationResult {
+	// The attempt identity: minted here, stable for this attempt of this request, and sent as
+	// the reserve's idempotency key - so a replayed reserve for the same attempt answers the
+	// original reservation, and a lost answer can be recovered by asking under the same
+	// identity (06.7) rather than by paying twice.
+	attemptID := creditAttemptID(ctx, evaluationRequest.Provider, evaluationRequest.Model)
+
+	// 15.2 (#315): a realtime admission is a billing unit — the turn's response unit — and
+	// the registry entry begins BEFORE the checks, so every realtime admission attempt
+	// leaves a unit with a terminal outcome (reserved, or refused with the check's own
+	// code: unreachable wiring, an unprovable cap, the door's own refusal). The registry is
+	// the session's gate-side bookkeeping (the 15.3 input gate and the observability reads
+	// consume it); the admission decision itself proceeds unchanged whether or not the
+	// context names a session, because the unit registry is never a second admission. An
+	// empty unit id means nothing was recorded.
+	realtimeUnitID := ""
+	if evaluationRequest.RequestType == schemas.RealtimeRequest {
+		var boundCents int64
+		if reserve != nil {
+			boundCents = reserve.MaximumCredits
+		}
+		realtimeUnitID = beginRealtimeTurnUnit(ctx, attemptID, boundCents)
+	}
+
 	if reserve == nil {
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalAdmissionUnreachable)
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: CreditRefusalAdmissionUnreachable,
@@ -434,6 +465,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 		}
 	}
 	if problem := reserve.wiringProblem(); problem != "" {
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalAdmissionUnreachable)
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: CreditRefusalAdmissionUnreachable,
@@ -449,6 +481,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 	// without that proof is refused here, and the door is never asked - on this attempt or
 	// any fallback after it, since the funnel runs both through here.
 	if problem := p.outputCapEnforcementProblem(evaluationRequest.Provider, evaluationRequest.Model, evaluationRequest.RequestType); problem != "" {
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalCapNotProvable)
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: CreditRefusalCapNotProvable,
@@ -465,6 +498,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 	// is a rejection aid only, never evidence, never a price (ADR 0001).
 	evidence, evidenceProblem := deriveBoundEvidence(ctx, evaluationRequest, reserve)
 	if evidenceProblem != "" {
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalCapNotProvable)
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: CreditRefusalCapNotProvable,
@@ -473,13 +507,9 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 		}
 	}
 
-	// The attempt identity: minted here, stable for this attempt of this request, and sent as
-	// the reserve's idempotency key - so a replayed reserve for the same attempt answers the
-	// original reservation, and a lost answer can be recovered by asking under the same
-	// identity (06.7) rather than by paying twice.
-	attemptID := creditAttemptID(ctx, evaluationRequest.Provider, evaluationRequest.Model)
 	payload, err := json.Marshal(reserve.requestFor(evaluationRequest, attemptID, evidence))
 	if err != nil {
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalAdmissionUnreachable)
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: CreditRefusalAdmissionUnreachable,
@@ -490,6 +520,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 
 	status, body, transportErr := p.callReserveDoor(ctx, reserve, payload)
 	if transportErr != nil {
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalAdmissionUnreachable)
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: CreditRefusalAdmissionUnreachable,
@@ -505,6 +536,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 			// A 201 that cannot be read as a held reservation proves nothing. The request does
 			// not dispatch on it; what the service did with the call is recovery's question
 			// (06.7/06.8), asked under the same attempt identity, never a second reserve.
+			finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalAdmissionUnreachable)
 			return &EvaluationResult{
 				Decision:   DecisionCreditReserveNotHeld,
 				ReasonCode: CreditRefusalAdmissionUnreachable,
@@ -517,6 +549,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 		// attempt claims nothing new and sends nothing new. A refusal here - duplicate claim,
 		// unwritable store - is the same short-circuit ending as every other credit refusal.
 		if result := p.commitDispatch(ctx, evaluationRequest, attemptID, reserve, answer); result != nil {
+			finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalAdmissionUnreachable)
 			return result
 		}
 		// The attested output cap rides the reservation (07.7): the post hook holds what it
@@ -529,6 +562,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 				break
 			}
 		}
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, answer.ReservationID, "")
 		ctx.SetValue(CreditReservationContextKey, &CreditReservation{
 			ReservationID:   answer.ReservationID,
 			AttemptID:       attemptID,
@@ -547,6 +581,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 		if refused.Code == "" {
 			refused.Code = "unspecified"
 		}
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", creditRefusalReasonForDoorCode(refused.Code))
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: creditRefusalReasonForDoorCode(refused.Code),
@@ -554,6 +589,7 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 				refused.Code, evaluationRequest.Model),
 		}
 	default:
+		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalAdmissionUnreachable)
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: CreditRefusalAdmissionUnreachable,
