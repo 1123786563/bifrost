@@ -196,6 +196,11 @@ type GovernancePlugin struct {
 	// (creditadmission.go). Nil means the extension is not configured.
 	openBotCreditAdmission *CreditAdmissionConfig
 
+	// The tool admission gate (20.2, tooladmission.go): nil when the credit-admission
+	// extension is not configured — a gateway outside the strict-billing regime keeps its
+	// existing tool behavior; the validated state, ready to answer, when it is.
+	toolAdmissionGate *toolAdmission
+
 	// The dispatch commitment store (07.4): where a provider attempt's commitment is claimed
 	// before the attempt may dispatch. Set at construction.
 	dispatchCommitments DispatchCommitmentStore
@@ -317,6 +322,11 @@ func Init(
 
 		objectOwnershipEnforcedFn: objectOwnershipEnforcedFn,
 	}
+	if plugin.openBotCreditAdmission != nil {
+		state := validateToolAdmissionConfig(plugin.openBotCreditAdmission.ToolAdmission)
+		logToolAdmissionAudit(logger, state)
+		plugin.toolAdmissionGate = &toolAdmission{state: state}
+	}
 	return plugin, nil
 }
 
@@ -391,6 +401,11 @@ func InitFromStore(
 		settlementOutbox:       newLocalSettlementOutbox(),
 
 		objectOwnershipEnforcedFn: objectOwnershipEnforcedFn,
+	}
+	if plugin.openBotCreditAdmission != nil {
+		state := validateToolAdmissionConfig(plugin.openBotCreditAdmission.ToolAdmission)
+		logToolAdmissionAudit(logger, state)
+		plugin.toolAdmissionGate = &toolAdmission{state: state}
 	}
 	return plugin, nil
 }
@@ -1681,6 +1696,13 @@ func (p *GovernancePlugin) PreMCPHook(ctx *schemas.BifrostContext, req *schemas.
 		return req, nil, nil
 	}
 
+	// The tool admission gate (20.2): first, before anything evaluates or reserves — a
+	// tool-call kind the deployment cannot fully price and cap is refused here, with the
+	// refused mark set so no accounting writes anything for a call that never ran.
+	if shortCircuit := p.mcpToolAdmissionShortCircuit(ctx, ToolAdmissionKindMCPTool); shortCircuit != nil {
+		return req, shortCircuit, nil
+	}
+
 	// Validate required headers are present
 	if headerErr := p.validateRequiredHeaders(ctx); headerErr != nil {
 		return req, &schemas.MCPPluginShortCircuit{Error: headerErr}, nil
@@ -1880,6 +1902,12 @@ func (p *GovernancePlugin) PreA2AHook(ctx *schemas.BifrostContext, req *schemas.
 	}
 	if ctx == nil || ctx.Grant() == nil || ctx.Grant().Identity() == nil || !ctx.Grant().Identity().Presented() {
 		return req, nil, nil
+	}
+
+	// The tool admission gate (20.2): first, before agent enablement, access or permit
+	// math — an uncappable agent task is refused before any of it runs.
+	if shortCircuit := p.a2aToolAdmissionShortCircuit(ctx, ToolAdmissionKindA2AAgent); shortCircuit != nil {
+		return req, shortCircuit, nil
 	}
 
 	deny := func(decision Decision, message string) (*schemas.BifrostA2ARequest, *schemas.A2APluginShortCircuit, error) {

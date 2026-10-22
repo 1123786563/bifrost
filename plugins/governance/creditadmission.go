@@ -433,6 +433,19 @@ func (p *GovernancePlugin) evaluateCreditAdmission(ctx *schemas.BifrostContext, 
 		// dispatched only over a held reservation (07.2). Unknown pricing goes through the
 		// reserve door too, where OpenBot's price snapshot is the authority that refuses it:
 		// the gateway does not guess, either way.
+		//
+		// A TOOL EXECUTION of an admitted kind is the one structural exception (20.2): a
+		// tool call has no model output side to cap and no token ceiling to derive - the
+		// call-method vocabulary cannot map it, on purpose - so this gate has nothing to
+		// ask the reserve door for. Its admission was answered by the tool admission gate
+		// (tooladmission.go): fully priced, flat per request, therefore cappable, therefore
+		// enabled. The surcharge's own billing identity rides the enclosing request's
+		// reservation once 20.1's dimension mapping lands; until then the enablement stands
+		// on the config's audited pricing, and an unadmitted kind never reaches this line
+		// (the pre-hook short-circuited it, and the default is disabled).
+		if p.toolExecutionAdmitted(evaluationRequest.RequestType) {
+			return nil
+		}
 		if p.classifyPricing(evaluationRequest.Provider, evaluationRequest.Model) == pricingExplicitlyFree {
 			return nil
 		}
