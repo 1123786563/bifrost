@@ -69,6 +69,190 @@ func (noopPluginsLoader) ExpandPluginConfigForAPI(_ string, _ map[string]any) (m
 	return nil, nil
 }
 
+func (noopPluginsLoader) GetDeclaredExtensions() []lib.ExtensionDeclaration {
+	return nil
+}
+
+// declarationsLoader is a PluginsLoader armed with the extension declarations the
+// version-transparency tests read: one governance-like plugin declaring the OpenBot
+// credit-admission extension, and whatever else a test wants beside it.
+type declarationsLoader struct {
+	noopPluginsLoader
+	declarations []lib.ExtensionDeclaration
+	statuses     map[string]schemas.PluginStatus
+}
+
+func (l *declarationsLoader) GetDeclaredExtensions() []lib.ExtensionDeclaration {
+	return l.declarations
+}
+
+func (l *declarationsLoader) GetPluginStatus(_ context.Context) map[string]schemas.PluginStatus {
+	return l.statuses
+}
+
+// listPluginsStore is a ConfigStore that serves a fixed plugin list for list-endpoint tests.
+type listPluginsStore struct {
+	configstore.ConfigStore
+	plugins []*configstoreTables.TablePlugin
+}
+
+func (s *listPluginsStore) GetPlugins(_ context.Context) ([]*configstoreTables.TablePlugin, error) {
+	return s.plugins, nil
+}
+
+// TestGetPluginsExposesTheDeclaredExtensionVersion verifies that a plugin whose loaded
+// instance declares a versioned extension (the governance plugin's credit-admission
+// descriptor) carries that declared version on its /api/plugins entry, while a plugin that
+// declares none is left unchanged - no version key, nothing else about its entry moved
+// (07.1b: the manifest consumer needs an entry-level version it can trust).
+func TestGetPluginsExposesTheDeclaredExtensionVersion(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	h := &PluginsHandler{
+		pluginsLoader: &declarationsLoader{declarations: []lib.ExtensionDeclaration{
+			{PluginName: "governance", Name: "openbot-credit-admission", Version: "1.0.0", Enabled: true},
+		}},
+		configStore: &listPluginsStore{plugins: []*configstoreTables.TablePlugin{
+			{Name: "governance", Enabled: true, Config: map[string]any{}},
+			{Name: "otel", Enabled: true, Config: map[string]any{}},
+		}},
+	}
+
+	var fctx fasthttp.RequestCtx
+	h.getPlugins(&fctx)
+
+	if fctx.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", fctx.Response.StatusCode(), fctx.Response.Body())
+	}
+	var body struct {
+		Plugins []map[string]any `json:"plugins"`
+	}
+	if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+		t.Fatalf("decode the list response: %v", err)
+	}
+	if len(body.Plugins) != 2 {
+		t.Fatalf("expected 2 plugin entries, got %d: %s", len(body.Plugins), fctx.Response.Body())
+	}
+	byName := map[string]map[string]any{}
+	for _, entry := range body.Plugins {
+		byName[entry["name"].(string)] = entry
+	}
+	if got, _ := byName["governance"]["version"].(string); got != "1.0.0" {
+		t.Errorf("governance entry version = %q, want the declared %q", got, "1.0.0")
+	}
+	if _, present := byName["otel"]["version"]; present {
+		t.Errorf("a plugin that declares no extension must carry no version key, got %v", byName["otel"]["version"])
+	}
+}
+
+// TestGetPluginsWithoutConfigStoreExposesTheDeclaredExtensionVersion covers the status-only
+// branch (configstore disabled): the version still rides the entry of the declaring plugin.
+func TestGetPluginsWithoutConfigStoreExposesTheDeclaredExtensionVersion(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	h := &PluginsHandler{
+		pluginsLoader: &declarationsLoader{
+			declarations: []lib.ExtensionDeclaration{
+				{PluginName: "governance", Name: "openbot-credit-admission", Version: "1.0.0", Enabled: true},
+			},
+			statuses: map[string]schemas.PluginStatus{
+				"governance": {Name: "governance", Status: schemas.PluginStatusActive, Logs: []string{}},
+			},
+		},
+		configStore: nil,
+	}
+
+	var fctx fasthttp.RequestCtx
+	h.getPlugins(&fctx)
+
+	var body struct {
+		Plugins []map[string]any `json:"plugins"`
+	}
+	if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+		t.Fatalf("decode the list response: %v", err)
+	}
+	if len(body.Plugins) != 1 {
+		t.Fatalf("expected 1 plugin entry, got %d: %s", len(body.Plugins), fctx.Response.Body())
+	}
+	if got, _ := body.Plugins[0]["version"].(string); got != "1.0.0" {
+		t.Errorf("entry version = %q, want the declared %q", got, "1.0.0")
+	}
+}
+
+// TestGetExtensionManifestListsDeclaredExtensionsVerbatim is the shape test the OpenBot
+// capability negotiation parses (07.1b AC: the openbot-credit-admission entry's name and
+// version verbatim, 1.0.0): an enabled, loaded plugin that declares a versioned extension
+// contributes exactly one {name, version} identity pair, nothing else on the entry.
+func TestGetExtensionManifestListsDeclaredExtensionsVerbatim(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	h := &PluginsHandler{
+		pluginsLoader: &declarationsLoader{declarations: []lib.ExtensionDeclaration{
+			{PluginName: "governance", Name: "openbot-credit-admission", Version: "1.0.0", Enabled: true},
+		}},
+		configStore: &listPluginsStore{},
+	}
+
+	var fctx fasthttp.RequestCtx
+	h.getExtensionManifest(&fctx)
+
+	if fctx.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", fctx.Response.StatusCode(), fctx.Response.Body())
+	}
+	var body struct {
+		Plugins []map[string]any `json:"plugins"`
+		Count   int              `json:"count"`
+	}
+	if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+		t.Fatalf("decode the manifest response: %v", err)
+	}
+	if body.Count != 1 || len(body.Plugins) != 1 {
+		t.Fatalf("expected exactly one manifest entry, got count=%d plugins=%v", body.Count, fctx.Response.Body())
+	}
+	entry := body.Plugins[0]
+	if entry["name"] != "openbot-credit-admission" || entry["version"] != "1.0.0" {
+		t.Fatalf("manifest entry name+version must be verbatim, got %v", entry)
+	}
+	if len(entry) != 2 {
+		t.Fatalf("the manifest entry carries only the identity pair, got %d keys: %v", len(entry), entry)
+	}
+}
+
+// TestGetExtensionManifestOmitsAbsentAndDisabledExtensions verifies the manifest stays a
+// trusted (well-shaped, possibly empty) identity list when nothing declares an extension, and
+// that a merely-declared-but-disabled extension is not offered: an extension the gateway would
+// not honor must not negotiate the deployment ready.
+func TestGetExtensionManifestOmitsAbsentAndDisabledExtensions(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	for name, loader := range map[string]PluginsLoader{
+		"no declaration": &declarationsLoader{},
+		"not enabled": &declarationsLoader{declarations: []lib.ExtensionDeclaration{
+			{PluginName: "governance", Name: "openbot-credit-admission", Version: "1.0.0", Enabled: false},
+		}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := &PluginsHandler{pluginsLoader: loader, configStore: &listPluginsStore{}}
+			var fctx fasthttp.RequestCtx
+			h.getExtensionManifest(&fctx)
+
+			if fctx.Response.StatusCode() != fasthttp.StatusOK {
+				t.Fatalf("expected 200, got %d: %s", fctx.Response.StatusCode(), fctx.Response.Body())
+			}
+			var body struct {
+				Plugins []map[string]any `json:"plugins"`
+				Count   int              `json:"count"`
+			}
+			if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+				t.Fatalf("decode the manifest response: %v", err)
+			}
+			if body.Count != 0 || len(body.Plugins) != 0 {
+				t.Fatalf("expected an empty manifest, got %s", fctx.Response.Body())
+			}
+		})
+	}
+}
+
 // buildUpdateRequest creates a PUT /api/plugins/{name} fasthttp context.
 func buildUpdateRequest(t *testing.T, body any) *fasthttp.RequestCtx {
 	t.Helper()

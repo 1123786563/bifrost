@@ -8115,6 +8115,47 @@ func (c *Config) GetPluginStatusByName(name string) (schemas.PluginStatus, bool)
 	return status, ok
 }
 
+// ExtensionDeclaration is one loaded plugin's declared extension identity: the plugin it came
+// from, the extension's negotiated name, the version it declares, and whether the extension is
+// enabled right now. Plugins that implement no extension descriptor contribute nothing.
+type ExtensionDeclaration struct {
+	PluginName string
+	Name       string
+	Version    string
+	Enabled    bool
+}
+
+// declaredExtension is the optional capability a loaded plugin implements to declare the
+// versioned extension it serves - today the governance plugin's OpenBot credit-admission
+// descriptor (creditadmission.go). The identity pairs it returns are what OpenBot's
+// capability negotiation matches and version-classifies against.
+type declaredExtension interface {
+	CreditAdmissionExtension() governance.CreditAdmissionDescriptor
+}
+
+// GetDeclaredExtensions returns every loaded plugin's declared extension identity, read
+// through the optional descriptor interface in registration order. A plugin that is not
+// loaded, or that implements no descriptor, declares nothing; the list is a snapshot.
+func (c *Config) GetDeclaredExtensions() []ExtensionDeclaration {
+	plugins := c.BasePlugins.Load()
+	if plugins == nil {
+		return nil
+	}
+	var out []ExtensionDeclaration
+	for _, p := range *plugins {
+		if ext, ok := p.(declaredExtension); ok {
+			d := ext.CreditAdmissionExtension()
+			out = append(out, ExtensionDeclaration{
+				PluginName: p.GetName(),
+				Name:       d.Name,
+				Version:    d.Version,
+				Enabled:    d.Enabled,
+			})
+		}
+	}
+	return out
+}
+
 // ReloadPlugin adds or updates a plugin in the registry
 // This is the single entry point for all plugin additions/updates
 // If a plugin with the same name exists, it will be replaced (atomic find-and-replace)

@@ -76,6 +76,7 @@ type ServerCallbacks interface {
 	RemovePlugin(ctx context.Context, name string) error
 	GetPluginStatus(ctx context.Context) map[string]schemas.PluginStatus
 	GetLoadedPluginNames() []string
+	GetDeclaredExtensions() []lib.ExtensionDeclaration
 	NormalizePluginConfig(name string, config map[string]any) (map[string]any, error)
 	ExpandPluginConfigForAPI(name string, config map[string]any) (map[string]any, error)
 	// Auth related callbacks
@@ -2393,6 +2394,16 @@ func (s *BifrostHTTPServer) GetLoadedPluginNames() []string {
 		return []string{}
 	}
 	return s.Config.GetLoadedPluginNames()
+}
+
+// GetDeclaredExtensions implements handlers.PluginsLoader. It returns the extension identity
+// every loaded plugin declares through its optional descriptor, for the plugins API's version
+// field and the extension manifest the capability negotiation reads.
+func (s *BifrostHTTPServer) GetDeclaredExtensions() []lib.ExtensionDeclaration {
+	if s.Config == nil {
+		return []lib.ExtensionDeclaration{}
+	}
+	return s.Config.GetDeclaredExtensions()
 }
 
 // NormalizePluginConfig implements handlers.PluginsLoader. It looks up the plugin
