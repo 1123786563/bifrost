@@ -1631,6 +1631,9 @@ type gwSetup struct {
 	governance configstore.GovernanceConfig
 	rules      []*configstoreTables.TableRoutingRule
 	maxRetries map[schemas.ModelProvider]int // per provider; 2 when absent
+	// admission arms the credit-admission extension; nil leaves it unconfigured, which the
+	// gate reads as off (known-paid models are refused).
+	admission *governance.CreditAdmissionConfig
 	// catalog prices requests for governance, which charges budgets with it; nil leaves every
 	// request free. A provider named after a standard one (openai) is configured as that provider
 	// rather than as a custom one, so the catalog's prices for it apply.
@@ -1668,7 +1671,7 @@ func newGateway(t *testing.T, u *gwUpstream, setup gwSetup) *gateway {
 		}
 	}
 	governanceConfig := setup.governance
-	governancePlugin, err := governance.Init(ctx, &governance.Config{}, logger, nil, &governanceConfig, setup.catalog, nil, gwProviders{config: config})
+	governancePlugin, err := governance.Init(ctx, &governance.Config{OpenBotCreditAdmission: setup.admission}, logger, nil, &governanceConfig, setup.catalog, nil, gwProviders{config: config})
 	if err != nil {
 		t.Fatalf("governance.Init: %v", err)
 	}
@@ -1716,6 +1719,9 @@ type gwCall struct {
 	headers   map[string]string
 	stream    bool
 	responses bool // a /v1/responses request rather than a chat completion
+	// maxTokens, when positive, is the provider-enforced output cap the chat request carries -
+	// the per-request half of the bound evidence the credit-admission gate requires.
+	maxTokens int
 }
 
 // gwResult is what came back: the routing info of the attempt that answered (the one that served or,
@@ -1749,6 +1755,9 @@ func (g *gateway) send(call gwCall) gwResult {
 		Model:     model,
 		Fallbacks: fallbacks,
 		Input:     []schemas.ChatMessage{{Role: schemas.ChatMessageRoleUser, Content: &schemas.ChatMessageContent{ContentStr: schemas.Ptr("hi")}}},
+	}
+	if call.maxTokens > 0 {
+		req.Params = &schemas.ChatParameters{MaxCompletionTokens: schemas.Ptr(call.maxTokens)}
 	}
 	if call.responses {
 		responsesReq := &schemas.BifrostResponsesRequest{
@@ -2892,6 +2901,65 @@ func TestGatewayStreamsAndResponsesFollowSessionsPastAFailingPick(t *testing.T) 
 	}
 }
 
+// gwFakeCreditService stands in for OpenBot's Reserve door: one endpoint, POST, answering the
+// 201 a held reservation carries. It is the minimum an enabled credit-admission gate needs
+// before it lets a known-paid request dispatch.
+type gwFakeCreditService struct {
+	server *httptest.Server
+	mu     sync.Mutex
+	calls  int
+}
+
+func newGWFakeCreditService(t *testing.T) *gwFakeCreditService {
+	t.Helper()
+	fake := &gwFakeCreditService{}
+	fake.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fake.mu.Lock()
+		fake.calls++
+		fake.mu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"attemptId":"att-gw-1","reservationId":"res-gw-1","maximumCredits":100,"snapshotVersion":7,"rateVersion":3}`))
+	}))
+	t.Cleanup(fake.server.Close)
+	return fake
+}
+
+func (f *gwFakeCreditService) endpoint() string { return f.server.URL + "/reserve" }
+
+// gwAdmissionWithReserve arms the credit-admission extension the way a deployment that can hold
+// reserves looks: enabled, with the Reserve door and the openai/gpt-4o-mini cell's verified
+// output-cap evidence. A test whose subject is not admission uses it so its priced fixture
+// request stays dispatchable under the gate's default posture (the enabled extension dispatches
+// known-paid work only over a held reserve).
+func gwAdmissionWithReserve(endpoint string) *governance.CreditAdmissionConfig {
+	enabled := true
+	return &governance.CreditAdmissionConfig{
+		Enabled: &enabled,
+		Reserve: &governance.CreditReserveConfig{
+			Endpoint:           endpoint,
+			ServiceSecret:      "gw-test-service-secret",
+			GrantID:            "grant-gw-1",
+			PayerKind:          "personal",
+			PayerID:            "user-gw-1",
+			SnapshotVersion:    7,
+			RateVersion:        3,
+			InputCeilingTokens: 4096,
+			MaximumCredits:     100,
+		},
+		OutputCapEvidence: []governance.OutputCapEnforcementRecord{{
+			Provider:    string(schemas.OpenAI),
+			Model:       "gpt-4o-mini",
+			CallMethod:  "chat",
+			Mechanism:   governance.OutputCapMechanismProviderMaxTokens,
+			Environment: "gateway-test-harness",
+			Result:      governance.OutputCapEvidenceVerified,
+			VerifiedAt:  "2026-10-24T00:00:00Z",
+			Source:      "go test ./transports/bifrost-http/lib -run TestGatewayDirectKeyUnderAVirtualKeyIsStillCharged",
+		}},
+	}
+}
+
 // A direct key under a virtual key that restricts keys: vk1 allows only o1 on openai and carries a
 // budget and a request limit, and the gateway lets callers send their own key. A request for
 // openai/gpt-4o-mini with vk1 and the caller's key K is served on K, not on any pool key, though
@@ -2933,16 +3001,24 @@ func TestGatewayDirectKeyUnderAVirtualKeyIsStillCharged(t *testing.T) {
 	vk.RateLimit = &rateLimit
 	budget.VirtualKeyID = schemas.Ptr(vk.ID)
 	vk.Budgets = []configstoreTables.TableBudget{budget}
+	// The admission gate refuses known-paid models on a deployment that has not enabled the
+	// extension (07.1, 07.1b), and an enabled extension dispatches paid work only over a held
+	// reserve (07.2) with the model cell's output-cap evidence (07.7) and a request-carried cap
+	// (07.6). This test's subject is direct-key routing and the virtual key still being charged,
+	// so the extension is armed with a billing door that holds every reserve and the request
+	// carries its output cap.
+	credit := newGWFakeCreditService(t)
 	g := newGateway(t, u, gwSetup{
 		keys:            map[schemas.ModelProvider][]schemas.Key{schemas.OpenAI: {gwKey("o1", 1), gwKey("o2", 1)}},
 		governance:      configstore.GovernanceConfig{VirtualKeys: []configstoreTables.TableVirtualKey{vk}, RateLimits: []configstoreTables.TableRateLimit{rateLimit}, Budgets: []configstoreTables.TableBudget{budget}},
 		catalog:         catalog,
 		allowDirectKeys: true,
+		admission:       gwAdmissionWithReserve(credit.endpoint()),
 	})
 	headers := vkHeaders("vk1", "")
 	headers["x-bf-direct-key"] = "true"
 	headers["Authorization"] = "Bearer sk-caller"
-	r := g.send(gwCall{model: "openai/gpt-4o-mini", headers: headers})
+	r := g.send(gwCall{model: "openai/gpt-4o-mini", headers: headers, maxTokens: 64})
 	requireServedBy(t, r, schemas.OpenAI)
 	requireGWHits(t, u, map[string]int{"sk-caller": 1, "sk-o1": 0, "sk-o2": 0})
 
