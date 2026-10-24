@@ -149,14 +149,22 @@ func declaredVersions(declarations []lib.ExtensionDeclaration) map[string]string
 	return versions
 }
 
-// declaredVersions indexes the loaded plugins' declared extension versions by plugin name, so
-// building a list response costs one map lookup per plugin rather than a scan. A handler
-// without a loader (tests build bare ones) declares nothing.
-func (h *PluginsHandler) declaredVersions() map[string]string {
+// declaredExtensions reads the loaded plugins' declared extensions as one snapshot. It is not
+// free (the loader walks every plugin and a descriptor takes its config lock), so list
+// handlers take it once per request and hand the same snapshot to every row: rows built from
+// separate snapshots could disagree when a reload lands mid-request. A handler without a
+// loader (tests build bare ones) declares nothing.
+func (h *PluginsHandler) declaredExtensions() []lib.ExtensionDeclaration {
 	if h.pluginsLoader == nil {
-		return map[string]string{}
+		return nil
 	}
-	return declaredVersions(h.pluginsLoader.GetDeclaredExtensions())
+	return h.pluginsLoader.GetDeclaredExtensions()
+}
+
+// declaredVersions indexes one declarations snapshot by plugin name, so building a response
+// costs one map lookup per plugin rather than a scan.
+func (h *PluginsHandler) declaredVersions() map[string]string {
+	return declaredVersions(h.declaredExtensions())
 }
 
 // buildPluginResponse constructs a PluginResponse, fetching plugin statuses once.
@@ -164,10 +172,11 @@ func (h *PluginsHandler) buildPluginResponse(ctx context.Context, plugin *config
 	return h.buildPluginResponseWith(plugin, h.pluginsLoader.GetPluginStatus(ctx), h.declaredVersions())
 }
 
-// buildPluginResponseWithStatuses constructs a PluginResponse using pre-fetched statuses.
-// Use this in list endpoints to avoid calling GetPluginStatus once per plugin.
-func (h *PluginsHandler) buildPluginResponseWithStatuses(plugin *configstoreTables.TablePlugin, pluginStatuses map[string]schemas.PluginStatus) PluginResponse {
-	return h.buildPluginResponseWith(plugin, pluginStatuses, h.declaredVersions())
+// buildPluginResponseWithStatuses constructs a PluginResponse using pre-fetched statuses and
+// one declared-versions snapshot. Use this in list endpoints to avoid calling GetPluginStatus
+// or GetDeclaredExtensions once per plugin; every row shares the caller's snapshot.
+func (h *PluginsHandler) buildPluginResponseWithStatuses(plugin *configstoreTables.TablePlugin, pluginStatuses map[string]schemas.PluginStatus, versions map[string]string) PluginResponse {
+	return h.buildPluginResponseWith(plugin, pluginStatuses, versions)
 }
 
 // buildPluginResponseWith constructs a PluginResponse from pre-fetched statuses and declared
@@ -245,7 +254,7 @@ type extensionManifestEntry struct {
 // declares no extension, or whose declared extension is not enabled, contributes no entry -
 // an extension the gateway would not honor must never negotiate the deployment ready.
 func (h *PluginsHandler) getExtensionManifest(ctx *fasthttp.RequestCtx) {
-	declarations := h.pluginsLoader.GetDeclaredExtensions()
+	declarations := h.declaredExtensions()
 	entries := []extensionManifestEntry{}
 	for _, declaration := range declarations {
 		if declaration.Enabled {
@@ -292,9 +301,10 @@ func (h *PluginsHandler) getPlugins(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	pluginStatuses := h.pluginsLoader.GetPluginStatus(ctx)
+	versions := h.declaredVersions()
 	finalPlugins := []PluginResponse{}
 	for _, plugin := range plugins {
-		finalPlugins = append(finalPlugins, h.buildPluginResponseWithStatuses(plugin, pluginStatuses))
+		finalPlugins = append(finalPlugins, h.buildPluginResponseWithStatuses(plugin, pluginStatuses, versions))
 	}
 	// Creating ephemeral struct
 	SendJSON(ctx, map[string]any{

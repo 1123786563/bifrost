@@ -179,6 +179,73 @@ func TestGetPluginsWithoutConfigStoreExposesTheDeclaredExtensionVersion(t *testi
 	}
 }
 
+// countingDeclarationsLoader is a declarationsLoader whose GetDeclaredExtensions counts every
+// call and swaps in different declarations from the second call on, proving the list endpoint
+// reads the declaration snapshot once per request no matter how many rows it renders.
+type countingDeclarationsLoader struct {
+	noopPluginsLoader
+	calls        int
+	declarations []lib.ExtensionDeclaration
+	next         []lib.ExtensionDeclaration
+}
+
+func (l *countingDeclarationsLoader) GetDeclaredExtensions() []lib.ExtensionDeclaration {
+	l.calls++
+	if l.calls > 1 && l.next != nil {
+		return l.next
+	}
+	return l.declarations
+}
+
+// The list endpoint must read the declared-extension snapshot once per request, not once per
+// row. Each read walks every loaded plugin and takes a descriptor's config lock (N rows mean
+// N walks, O(N*N) on a list), and rows built from separate snapshots could disagree when a
+// reload lands mid-request - a response whose rows name different versions is not one answer.
+func TestGetPluginsReadsOneDeclarationSnapshotPerRequest(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	const rows = 5
+	plugins := make([]*configstoreTables.TablePlugin, 0, rows)
+	first := make([]lib.ExtensionDeclaration, 0, rows)
+	// A second read would see a reloaded gateway declaring 2.0.0 for every plugin; it must
+	// never happen inside one response, or the rows would name different versions.
+	second := make([]lib.ExtensionDeclaration, 0, rows)
+	for i := 0; i < rows; i++ {
+		name := fmt.Sprintf("governance-%d", i)
+		plugins = append(plugins, &configstoreTables.TablePlugin{
+			Name: name, Enabled: true, Config: map[string]any{},
+		})
+		first = append(first, lib.ExtensionDeclaration{PluginName: name, Name: "openbot-credit-admission", Version: "1.0.0", Enabled: true})
+		second = append(second, lib.ExtensionDeclaration{PluginName: name, Name: "openbot-credit-admission", Version: "2.0.0", Enabled: true})
+	}
+	loader := &countingDeclarationsLoader{declarations: first, next: second}
+	h := &PluginsHandler{pluginsLoader: loader, configStore: &listPluginsStore{plugins: plugins}}
+
+	var fctx fasthttp.RequestCtx
+	h.getPlugins(&fctx)
+
+	if fctx.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", fctx.Response.StatusCode(), fctx.Response.Body())
+	}
+	if loader.calls != 1 {
+		t.Fatalf("GetDeclaredExtensions called %d times for %d rows, want exactly 1 (one snapshot per request)", loader.calls, rows)
+	}
+	var body struct {
+		Plugins []map[string]any `json:"plugins"`
+	}
+	if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+		t.Fatalf("decode the list response: %v", err)
+	}
+	if len(body.Plugins) != rows {
+		t.Fatalf("expected %d plugin entries, got %d", rows, len(body.Plugins))
+	}
+	for _, entry := range body.Plugins {
+		if got, _ := entry["version"].(string); got != "1.0.0" {
+			t.Errorf("entry %v version = %q, want every row on the first snapshot's %q", entry["name"], got, "1.0.0")
+		}
+	}
+}
+
 // TestGetExtensionManifestListsDeclaredExtensionsVerbatim is the shape test the OpenBot
 // capability negotiation parses (07.1b AC: the openbot-credit-admission entry's name and
 // version verbatim, 1.0.0): an enabled, loaded plugin that declares a versioned extension
@@ -803,7 +870,7 @@ func TestBuildPluginResponseSurfacesRowRuntimeDivergence(t *testing.T) {
 	row := &configstoreTables.TablePlugin{Name: "datadog", Enabled: false}
 
 	t.Run("disabled row with no runtime entry reads as disabled", func(t *testing.T) {
-		got := h.buildPluginResponseWithStatuses(row, map[string]schemas.PluginStatus{})
+		got := h.buildPluginResponseWithStatuses(row, map[string]schemas.PluginStatus{}, map[string]string{})
 		if got.Enabled {
 			t.Errorf("Enabled = true, want false")
 		}
@@ -815,7 +882,7 @@ func TestBuildPluginResponseSurfacesRowRuntimeDivergence(t *testing.T) {
 	t.Run("disabled row that is actually loaded reads as active", func(t *testing.T) {
 		got := h.buildPluginResponseWithStatuses(row, map[string]schemas.PluginStatus{
 			"datadog": {Name: "datadog", Status: schemas.PluginStatusActive},
-		})
+		}, map[string]string{})
 		if got.Enabled {
 			t.Errorf("Enabled = true, want false (the row still says disabled)")
 		}
