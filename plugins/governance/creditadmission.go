@@ -78,6 +78,10 @@ type CreditAdmissionConfig struct {
 	// itself carries - absence of evidence is never enablement (Q11). Records that concluded
 	// unverified or not_enforced stay with their reason and keep their cell unavailable.
 	OutputCapEvidence []OutputCapEnforcementRecord `json:"outputCapEvidence"`
+	// The tool admission block (20.2): the explicit enablement of tool-call kinds the
+	// deployment can fully price and cap. Nil or empty = every kind disabled (Q20's v1
+	// default); validated and audited at construction (tooladmission.go).
+	ToolAdmission *ToolAdmissionConfig `json:"toolAdmission"`
 	// The per-path audio capability evidence (14.4): the audio entrances whose billing the
 	// deployment has actually verified, carried the way the output-cap records are. The gate
 	// is fail-closed the same way: a speech or transcription entrance with no VERIFIED
