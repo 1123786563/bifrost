@@ -172,15 +172,10 @@ func (h *PluginsHandler) buildPluginResponse(ctx context.Context, plugin *config
 	return h.buildPluginResponseWith(plugin, h.pluginsLoader.GetPluginStatus(ctx), h.declaredVersions())
 }
 
-// buildPluginResponseWithStatuses constructs a PluginResponse using pre-fetched statuses and
-// one declared-versions snapshot. Use this in list endpoints to avoid calling GetPluginStatus
-// or GetDeclaredExtensions once per plugin; every row shares the caller's snapshot.
-func (h *PluginsHandler) buildPluginResponseWithStatuses(plugin *configstoreTables.TablePlugin, pluginStatuses map[string]schemas.PluginStatus, versions map[string]string) PluginResponse {
-	return h.buildPluginResponseWith(plugin, pluginStatuses, versions)
-}
-
 // buildPluginResponseWith constructs a PluginResponse from pre-fetched statuses and declared
-// extension versions, both keyed by plugin name.
+// extension versions, both keyed by plugin name. List endpoints pass the one status read and
+// one declared-versions snapshot they already took, so every row shares the caller's snapshot
+// instead of re-reading either once per plugin.
 func (h *PluginsHandler) buildPluginResponseWith(plugin *configstoreTables.TablePlugin, pluginStatuses map[string]schemas.PluginStatus, versions map[string]string) PluginResponse {
 	pluginStatus := schemas.PluginStatus{
 		Name:   plugin.Name,
@@ -316,11 +311,14 @@ func (h *PluginsHandler) getPlugins(ctx *fasthttp.RequestCtx) {
 		SendError(ctx, 500, "Failed to retrieve plugins")
 		return
 	}
+	// One status read and one declared-versions snapshot serve every row: building each
+	// response from those snapshots, rather than re-reading per plugin, keeps the list
+	// internally consistent when a reload lands mid-request.
 	pluginStatuses := h.pluginsLoader.GetPluginStatus(ctx)
 	versions := h.declaredVersions()
 	finalPlugins := []PluginResponse{}
 	for _, plugin := range plugins {
-		finalPlugins = append(finalPlugins, h.buildPluginResponseWithStatuses(plugin, pluginStatuses, versions))
+		finalPlugins = append(finalPlugins, h.buildPluginResponseWith(plugin, pluginStatuses, versions))
 	}
 	// Creating ephemeral struct
 	SendJSON(ctx, map[string]any{

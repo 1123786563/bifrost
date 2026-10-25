@@ -956,7 +956,7 @@ func TestBuildPluginResponseSurfacesRowRuntimeDivergence(t *testing.T) {
 	row := &configstoreTables.TablePlugin{Name: "datadog", Enabled: false}
 
 	t.Run("disabled row with no runtime entry reads as disabled", func(t *testing.T) {
-		got := h.buildPluginResponseWithStatuses(row, map[string]schemas.PluginStatus{}, map[string]string{})
+		got := h.buildPluginResponseWith(row, map[string]schemas.PluginStatus{}, map[string]string{})
 		if got.Enabled {
 			t.Errorf("Enabled = true, want false")
 		}
@@ -966,7 +966,7 @@ func TestBuildPluginResponseSurfacesRowRuntimeDivergence(t *testing.T) {
 	})
 
 	t.Run("disabled row that is actually loaded reads as active", func(t *testing.T) {
-		got := h.buildPluginResponseWithStatuses(row, map[string]schemas.PluginStatus{
+		got := h.buildPluginResponseWith(row, map[string]schemas.PluginStatus{
 			"datadog": {Name: "datadog", Status: schemas.PluginStatusActive},
 		}, map[string]string{})
 		if got.Enabled {
