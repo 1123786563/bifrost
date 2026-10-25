@@ -179,6 +179,70 @@ func TestGetPluginsWithoutConfigStoreExposesTheDeclaredExtensionVersion(t *testi
 	}
 }
 
+// TestGetPluginsStatusOnlyLooksUpTheDeclaredVersionByRegistrationName pins the key the
+// status-only list branch reads the declared version with. GetPluginStatus returns its map
+// keyed by the registration name, while each status also carries the display name - the two
+// may differ for a custom plugin (server/plugins.go passes both to UpdatePluginOverallStatus).
+// Declarations are indexed by registration name, so a lookup by display name silently drops
+// the declared version.
+func TestGetPluginsStatusOnlyLooksUpTheDeclaredVersionByRegistrationName(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	h := &PluginsHandler{
+		pluginsLoader: &declarationsLoader{
+			declarations: []lib.ExtensionDeclaration{
+				{PluginName: "governance", Name: "openbot-credit-admission", Version: "1.0.0", Enabled: true},
+			},
+			statuses: map[string]schemas.PluginStatus{
+				// Registered as "governance", displayed as "Governance Guard", declaring a
+				// versioned extension.
+				"governance": {Name: "Governance Guard", Status: schemas.PluginStatusActive, Logs: []string{}},
+				// Registered and displayed alike, declaring nothing.
+				"otel": {Name: "otel", Status: schemas.PluginStatusActive, Logs: []string{}},
+			},
+		},
+		configStore: nil,
+	}
+
+	var fctx fasthttp.RequestCtx
+	h.getPlugins(&fctx)
+
+	if fctx.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", fctx.Response.StatusCode(), fctx.Response.Body())
+	}
+	var body struct {
+		Plugins []map[string]any `json:"plugins"`
+	}
+	if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+		t.Fatalf("decode the list response: %v", err)
+	}
+	byActualName := make(map[string]map[string]any, len(body.Plugins))
+	for _, entry := range body.Plugins {
+		actualName, _ := entry["actualName"].(string)
+		byActualName[actualName] = entry
+	}
+
+	declaring, ok := byActualName["governance"]
+	if !ok {
+		t.Fatalf("no entry reports the registration name %q as its actualName: %s", "governance", fctx.Response.Body())
+	}
+	if got, _ := declaring["name"].(string); got != "Governance Guard" {
+		t.Errorf("entry name = %q, want the display name %q the status carries", got, "Governance Guard")
+	}
+	if got, _ := declaring["version"].(string); got != "1.0.0" {
+		t.Errorf("version of the plugin registered as %q = %q, want the declared %q (the lookup keys on the registration name, not the display name)",
+			"governance", got, "1.0.0")
+	}
+
+	silent, ok := byActualName["otel"]
+	if !ok {
+		t.Fatalf("no entry reports the registration name %q as its actualName: %s", "otel", fctx.Response.Body())
+	}
+	if got, present := silent["version"]; present {
+		t.Errorf("plugin declaring no extension carries version %v, want the key omitted", got)
+	}
+}
+
 // countingDeclarationsLoader is a declarationsLoader whose GetDeclaredExtensions counts every
 // call and swaps in different declarations from the second call on, proving the list endpoint
 // reads the declaration snapshot once per request no matter how many rows it renders.

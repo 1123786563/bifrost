@@ -296,7 +296,7 @@ func (h *PluginsHandler) getPlugins(ctx *fasthttp.RequestCtx) {
 				IsCustom:   true,
 				Path:       nil,
 				Status:     pluginStatus,
-				Version:    versions[pluginStatus.Name],
+				Version:    versions[name],
 			})
 		}
 		SendJSON(ctx, map[string]any{
