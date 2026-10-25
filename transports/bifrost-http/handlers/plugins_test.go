@@ -241,6 +241,38 @@ func TestGetPluginsStatusOnlyLooksUpTheDeclaredVersionByRegistrationName(t *test
 	if got, present := silent["version"]; present {
 		t.Errorf("plugin declaring no extension carries version %v, want the key omitted", got)
 	}
+
+	// The same names diverge on the single-fetch path: getPlugin's status-only branch
+	// matches the requested name against the display name and must still key the version
+	// lookup by the registration name it found the entry under.
+	var single fasthttp.RequestCtx
+	single.SetUserValue("name", "Governance Guard")
+	h.getPlugin(&single)
+
+	if single.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("single fetch expected 200, got %d: %s", single.Response.StatusCode(), single.Response.Body())
+	}
+	var entry map[string]any
+	if err := json.Unmarshal(single.Response.Body(), &entry); err != nil {
+		t.Fatalf("decode the single-fetch response: %v", err)
+	}
+	if got, _ := entry["actualName"].(string); got != "governance" {
+		t.Errorf("single-fetch actualName = %q, want the registration name %q", got, "governance")
+	}
+	if got, _ := entry["version"].(string); got != "1.0.0" {
+		t.Errorf("single-fetch version = %q, want the declared %q (keyed on the registration name, not the display name)", got, "1.0.0")
+	}
+
+	var silentSingle fasthttp.RequestCtx
+	silentSingle.SetUserValue("name", "otel")
+	h.getPlugin(&silentSingle)
+	var silentEntry map[string]any
+	if err := json.Unmarshal(silentSingle.Response.Body(), &silentEntry); err != nil {
+		t.Fatalf("decode the silent single-fetch response: %v", err)
+	}
+	if got, present := silentEntry["version"]; present {
+		t.Errorf("single fetch of the plugin declaring no extension carries version %v, want the key omitted", got)
+	}
 }
 
 // countingDeclarationsLoader is a declarationsLoader whose GetDeclaredExtensions counts every

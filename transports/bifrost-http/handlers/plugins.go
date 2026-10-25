@@ -343,7 +343,7 @@ func (h *PluginsHandler) getPlugin(ctx *fasthttp.RequestCtx) {
 					IsCustom:   true,
 					Path:       nil,
 					Status:     pluginStatus,
-					Version:    versions[pluginStatus.Name],
+					Version:    versions[name],
 				}
 				break
 			}
