@@ -320,6 +320,92 @@ func TestGetExtensionManifestOmitsAbsentAndDisabledExtensions(t *testing.T) {
 	}
 }
 
+// The manifest's shape is a boundary guarantee, not a property of the plugins behind it: an
+// entry missing either half of the identity pair names nothing negotiable, and one name
+// declared twice is one identity offered twice. Both are dropped at this endpoint, count
+// reports what survived, and the empty shape stays the same {plugins:[],count:0}.
+func TestGetExtensionManifestDropsEmptyIdentitiesAndDuplicateNames(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	h := &PluginsHandler{
+		pluginsLoader: &declarationsLoader{declarations: []lib.ExtensionDeclaration{
+			// An entry with no name cannot be matched, and one with no version cannot be
+			// version-classified: neither can negotiate anything.
+			{PluginName: "broken-name", Name: "", Version: "1.0.0", Enabled: true},
+			{PluginName: "broken-version", Name: "openbot-credit-admission", Version: "", Enabled: true},
+			// Two plugins declaring the same identity: the first declaration wins, so the
+			// retained version does not depend on map iteration or loading order luck.
+			{PluginName: "governance-a", Name: "openbot-credit-admission", Version: "1.0.0", Enabled: true},
+			{PluginName: "governance-b", Name: "openbot-credit-admission", Version: "2.0.0", Enabled: true},
+			// A duplicate that is disabled contributes nothing at all, so it neither adds an
+			// entry nor displaces the live one.
+			{PluginName: "governance-c", Name: "openbot-credit-admission", Version: "3.0.0", Enabled: false},
+			{PluginName: "second", Name: "openbot-second-extension", Version: "0.1.0", Enabled: true},
+		}},
+		configStore: &listPluginsStore{},
+	}
+
+	var fctx fasthttp.RequestCtx
+	h.getExtensionManifest(&fctx)
+
+	if fctx.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", fctx.Response.StatusCode(), fctx.Response.Body())
+	}
+	var body struct {
+		Plugins []map[string]any `json:"plugins"`
+		Count   int              `json:"count"`
+	}
+	if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+		t.Fatalf("decode the manifest response: %v", err)
+	}
+	if body.Count != 2 || len(body.Plugins) != 2 {
+		t.Fatalf("expected the two well-formed, uniquely named identities, got count=%d plugins=%s", body.Count, fctx.Response.Body())
+	}
+	if body.Count != len(body.Plugins) {
+		t.Fatalf("count must report the entries actually served, got count=%d for %d entries", body.Count, len(body.Plugins))
+	}
+	want := []map[string]any{
+		{"name": "openbot-credit-admission", "version": "1.0.0"},
+		{"name": "openbot-second-extension", "version": "0.1.0"},
+	}
+	for i, entry := range body.Plugins {
+		if len(entry) != 2 || entry["name"] != want[i]["name"] || entry["version"] != want[i]["version"] {
+			t.Fatalf("entry %d = %v, want %v (deduped by name, first declaration kept)", i, entry, want[i])
+		}
+	}
+}
+
+// Every declaration filtered out leaves the same empty manifest shape the absent case has: no
+// nulls, no partial entries, count 0.
+func TestGetExtensionManifestEmptyShapeWhenEveryDeclarationIsUnusable(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	h := &PluginsHandler{
+		pluginsLoader: &declarationsLoader{declarations: []lib.ExtensionDeclaration{
+			{PluginName: "broken-name", Name: "", Version: "", Enabled: true},
+			{PluginName: "disabled", Name: "openbot-credit-admission", Version: "1.0.0", Enabled: false},
+		}},
+		configStore: &listPluginsStore{},
+	}
+
+	var fctx fasthttp.RequestCtx
+	h.getExtensionManifest(&fctx)
+
+	if fctx.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", fctx.Response.StatusCode(), fctx.Response.Body())
+	}
+	var body struct {
+		Plugins []map[string]any `json:"plugins"`
+		Count   int              `json:"count"`
+	}
+	if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+		t.Fatalf("decode the manifest response: %v", err)
+	}
+	if body.Count != 0 || body.Plugins == nil || len(body.Plugins) != 0 {
+		t.Fatalf("expected {plugins:[],count:0}, got %s", fctx.Response.Body())
+	}
+}
+
 // buildUpdateRequest creates a PUT /api/plugins/{name} fasthttp context.
 func buildUpdateRequest(t *testing.T, body any) *fasthttp.RequestCtx {
 	t.Helper()

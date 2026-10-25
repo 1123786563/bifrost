@@ -253,13 +253,29 @@ type extensionManifestEntry struct {
 // identity pair, sorted by name so the manifest is stable across reloads. A plugin that
 // declares no extension, or whose declared extension is not enabled, contributes no entry -
 // an extension the gateway would not honor must never negotiate the deployment ready.
+//
+// The shape is guaranteed at this boundary, not by the plugins behind it: an entry missing
+// either half of the identity pair names nothing a consumer can match or version-classify, and
+// two entries under one name are one identity declared twice. Both are dropped here - the
+// first-seen entry for a name is the one kept, so the retained version is deterministic and
+// follows declaration order - and count reports what survived, so a consumer can trust
+// len(plugins) == count without re-deriving the filters.
 func (h *PluginsHandler) getExtensionManifest(ctx *fasthttp.RequestCtx) {
 	declarations := h.declaredExtensions()
 	entries := []extensionManifestEntry{}
+	declared := make(map[string]struct{}, len(declarations))
 	for _, declaration := range declarations {
-		if declaration.Enabled {
-			entries = append(entries, extensionManifestEntry{Name: declaration.Name, Version: declaration.Version})
+		if !declaration.Enabled {
+			continue
 		}
+		if declaration.Name == "" || declaration.Version == "" {
+			continue
+		}
+		if _, duplicate := declared[declaration.Name]; duplicate {
+			continue
+		}
+		declared[declaration.Name] = struct{}{}
+		entries = append(entries, extensionManifestEntry{Name: declaration.Name, Version: declaration.Version})
 	}
 	slices.SortFunc(entries, func(a, b extensionManifestEntry) int {
 		return strings.Compare(a.Name, b.Name)
