@@ -173,9 +173,9 @@ func (h *PluginsHandler) buildPluginResponse(ctx context.Context, plugin *config
 }
 
 // buildPluginResponseWith constructs a PluginResponse from pre-fetched statuses and declared
-// extension versions, both keyed by plugin name. List endpoints pass the one status read and
-// one declared-versions snapshot they already took, so every row shares the caller's snapshot
-// instead of re-reading either once per plugin.
+// extension versions, both keyed by the registration name the plugin loaded under. List
+// endpoints pass the one status read and one declared-versions snapshot they already took,
+// so every row shares the caller's snapshot instead of re-reading either once per plugin.
 func (h *PluginsHandler) buildPluginResponseWith(plugin *configstoreTables.TablePlugin, pluginStatuses map[string]schemas.PluginStatus, versions map[string]string) PluginResponse {
 	pluginStatus := schemas.PluginStatus{
 		Name:   plugin.Name,
@@ -185,10 +185,16 @@ func (h *PluginsHandler) buildPluginResponseWith(plugin *configstoreTables.Table
 	// Report the runtime status even when the row says disabled, so a plugin that
 	// loaded against its row shows as enabled=false/status=active instead of being
 	// masked as disabled. Absent from the runtime set means it really is not loaded.
+	// The entry is matched on the display name the status carries, but it sits under
+	// the map's registration-name key - a custom plugin's binary registers under its
+	// own name, which may differ from the row's - and both the identity and the
+	// version lookup below key on that registration name.
 	loaded := false
-	for _, status := range pluginStatuses {
+	registeredName := plugin.Name
+	for name, status := range pluginStatuses {
 		if plugin.Name == status.Name {
 			pluginStatus = status
+			registeredName = name
 			loaded = true
 			break
 		}
@@ -208,7 +214,7 @@ func (h *PluginsHandler) buildPluginResponseWith(plugin *configstoreTables.Table
 	}
 	return PluginResponse{
 		Name:       plugin.Name,
-		ActualName: pluginStatus.Name,
+		ActualName: registeredName,
 		Enabled:    plugin.Enabled,
 		Config:     config,
 		IsCustom:   plugin.IsCustom,
@@ -216,7 +222,7 @@ func (h *PluginsHandler) buildPluginResponseWith(plugin *configstoreTables.Table
 		Placement:  plugin.Placement,
 		Order:      plugin.Order,
 		Status:     pluginStatus,
-		Version:    versions[plugin.Name],
+		Version:    versions[registeredName],
 	}
 }
 

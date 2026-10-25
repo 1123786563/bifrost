@@ -90,7 +90,8 @@ func (l *declarationsLoader) GetPluginStatus(_ context.Context) map[string]schem
 	return l.statuses
 }
 
-// listPluginsStore is a ConfigStore that serves a fixed plugin list for list-endpoint tests.
+// listPluginsStore is a ConfigStore that serves a fixed plugin list to list-endpoint tests,
+// and serves its rows by name to single-fetch tests.
 type listPluginsStore struct {
 	configstore.ConfigStore
 	plugins []*configstoreTables.TablePlugin
@@ -98,6 +99,15 @@ type listPluginsStore struct {
 
 func (s *listPluginsStore) GetPlugins(_ context.Context) ([]*configstoreTables.TablePlugin, error) {
 	return s.plugins, nil
+}
+
+func (s *listPluginsStore) GetPlugin(_ context.Context, name string) (*configstoreTables.TablePlugin, error) {
+	for _, plugin := range s.plugins {
+		if plugin.Name == name {
+			return plugin, nil
+		}
+	}
+	return nil, configstore.ErrNotFound
 }
 
 // TestGetPluginsExposesTheDeclaredExtensionVersion verifies that a plugin whose loaded
@@ -272,6 +282,91 @@ func TestGetPluginsStatusOnlyLooksUpTheDeclaredVersionByRegistrationName(t *test
 	}
 	if got, present := silentEntry["version"]; present {
 		t.Errorf("single fetch of the plugin declaring no extension carries version %v, want the key omitted", got)
+	}
+}
+
+// TestGetPluginsWithConfigStoreLooksUpTheDeclaredVersionByRegistrationName pins the key the
+// configStore branch reads the declared version with. A plugin row carries the display name
+// it was created under, but the loaded instance registers - and the declarations index keys -
+// under the registration name; the two differ for a custom plugin whose binary registers its
+// own name, and a version lookup by the row's display name silently drops the declaration.
+func TestGetPluginsWithConfigStoreLooksUpTheDeclaredVersionByRegistrationName(t *testing.T) {
+	SetLogger(&mockLogger{})
+
+	h := &PluginsHandler{
+		pluginsLoader: &declarationsLoader{
+			declarations: []lib.ExtensionDeclaration{
+				{PluginName: "governance", Name: "openbot-credit-admission", Version: "1.0.0", Enabled: true},
+			},
+			statuses: map[string]schemas.PluginStatus{
+				// A row created as "Governance Guard" whose binary registered as
+				// "governance", declaring a versioned extension.
+				"governance": {Name: "Governance Guard", Status: schemas.PluginStatusActive, Logs: []string{}},
+			},
+		},
+		configStore: &listPluginsStore{plugins: []*configstoreTables.TablePlugin{
+			{Name: "Governance Guard", Enabled: true, Config: map[string]any{}},
+			// A row with no runtime entry and no declaration: it must stay silent rather
+			// than pick up another plugin's version through the shared status map.
+			{Name: "otel", Enabled: true, Config: map[string]any{}},
+		}},
+	}
+
+	var fctx fasthttp.RequestCtx
+	h.getPlugins(&fctx)
+
+	if fctx.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", fctx.Response.StatusCode(), fctx.Response.Body())
+	}
+	var body struct {
+		Plugins []map[string]any `json:"plugins"`
+	}
+	if err := json.Unmarshal(fctx.Response.Body(), &body); err != nil {
+		t.Fatalf("decode the list response: %v", err)
+	}
+	byName := make(map[string]map[string]any, len(body.Plugins))
+	for _, entry := range body.Plugins {
+		byName[entry["name"].(string)] = entry
+	}
+
+	declaring, ok := byName["Governance Guard"]
+	if !ok {
+		t.Fatalf("no entry carries the display name %q: %s", "Governance Guard", fctx.Response.Body())
+	}
+	if got, _ := declaring["actualName"].(string); got != "governance" {
+		t.Errorf("entry actualName = %q, want the registration name %q", got, "governance")
+	}
+	if got, _ := declaring["version"].(string); got != "1.0.0" {
+		t.Errorf("version of the row displayed as %q = %q, want the declared %q (the lookup keys on the registration name, not the display name)",
+			"Governance Guard", got, "1.0.0")
+	}
+
+	silent, ok := byName["otel"]
+	if !ok {
+		t.Fatalf("no entry carries the name %q: %s", "otel", fctx.Response.Body())
+	}
+	if got, present := silent["version"]; present {
+		t.Errorf("row with no runtime entry and no declaration carries version %v, want the key omitted", got)
+	}
+
+	// The single fetch merges the same runtime status into the same row shape, so the
+	// diverging names must resolve there too.
+	var single fasthttp.RequestCtx
+	single.SetUserValue("name", "Governance Guard")
+	h.getPlugin(&single)
+
+	if single.Response.StatusCode() != fasthttp.StatusOK {
+		t.Fatalf("single fetch expected 200, got %d: %s", single.Response.StatusCode(), single.Response.Body())
+	}
+	var entry map[string]any
+	if err := json.Unmarshal(single.Response.Body(), &entry); err != nil {
+		t.Fatalf("decode the single-fetch response: %v", err)
+	}
+	if got, _ := entry["actualName"].(string); got != "governance" {
+		t.Errorf("single-fetch actualName = %q, want the registration name %q", got, "governance")
+	}
+	if got, _ := entry["version"].(string); got != "1.0.0" {
+		t.Errorf("single-fetch version = %q, want the declared %q (keyed on the registration name, not the display name)", got, "1.0.0")
 	}
 }
 
