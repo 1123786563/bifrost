@@ -282,6 +282,19 @@ func (s *BifrostHTTPServer) loadBuiltinPlugins(ctx context.Context) error {
 
 			ObjectOwnershipEnforced: s.Config.ShouldEnforceVKObjectOwnership,
 		}
+		// The builtin config above answers platform wiring only; the credit-admission block
+		// lives in the governance plugin row (config store / config.json). Without this
+		// merge every restart rebuilt the plugin from the hardcoded struct and the
+		// openbot-credit-admission extension vanished from /api/extensions until the
+		// plugins API re-pushed it — persisted-but-never-loaded.
+		if pc := s.getPluginConfig(governance.PluginName); pc != nil && pc.Config != nil {
+			parsed, err := MarshalPluginConfig[governance.Config](pc.Config)
+			if err != nil {
+				logger.Error("failed to parse governance plugin config, credit admission stays unconfigured: %v", err)
+			} else if parsed != nil {
+				config.OpenBotCreditAdmission = parsed.OpenBotCreditAdmission
+			}
+		}
 		s.registerPluginWithStatus(ctx, governance.PluginName, nil, config, false)
 	} else {
 		s.markPluginDisabled(governance.PluginName)

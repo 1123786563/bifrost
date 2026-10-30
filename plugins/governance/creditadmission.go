@@ -404,6 +404,12 @@ func optionsHavePositiveRate(options datasheet.Options) bool {
 // the caller's access does not change the deployment's posture, and a refusal here must not
 // leak which budgets exist behind a gate that was never open.
 func (p *GovernancePlugin) evaluateCreditAdmission(ctx *schemas.BifrostContext, evaluationRequest *EvaluationRequest) *EvaluationResult {
+	// Read-only metadata calls (list models, model retrieve) spend nothing, so there is
+	// nothing to afford: core marks them SkipBudgetAndRateLimits and they answer before
+	// the admission gate, the same nowhere-to-count refusal deriveBoundEvidence would give.
+	if spendingChecksSkipped(ctx) {
+		return nil
+	}
 	p.cfgMutex.RLock()
 	enabled := p.creditAdmissionEnabledLocked()
 	var reserve *CreditReserveConfig

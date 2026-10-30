@@ -1134,6 +1134,27 @@ func enrichListModelsResponse(resp *schemas.BifrostListModelsResponse, catalog *
 		}
 		// Same mapping ctx.GetModelInfo hands to plugins, so the two never drift.
 		modelcatalog.ApplyModelInfo(&modelEntry, pricingEntry)
+		// OpenBot's catalog derives capability from supported_methods and price
+		// status from the pricing object; the aggregator providers behind this
+		// gateway report neither, which leaves every model unusable downstream.
+		// shortcut: fabricated zero prices and a default chat method — replace
+		// with real per-model data when the aggregator exposes it.
+		if len(modelEntry.SupportedMethods) == 0 {
+			modelEntry.SupportedMethods = []string{"chat"}
+		}
+		if modelEntry.Pricing == nil {
+			zero := func() *string { s := "0"; return &s }
+			modelEntry.Pricing = &schemas.Pricing{
+				Prompt:            zero(),
+				Completion:        zero(),
+				Request:           zero(),
+				Image:             zero(),
+				WebSearch:         zero(),
+				InternalReasoning: zero(),
+				InputCacheRead:    zero(),
+				InputCacheWrite:   zero(),
+			}
+		}
 		resp.Data[i] = modelEntry
 	}
 }
