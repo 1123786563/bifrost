@@ -258,6 +258,59 @@ func deriveEmbeddingBoundEvidence(req *schemas.BifrostEmbeddingRequest, reserve 
 	return evidence, ""
 }
 
+// countRerankRequestInputTokens is the conservative count of one rerank request's complete
+// billable input: every byte the typed request serializes to — the query and EVERY document's
+// full content — plus the extra params the adapters forward verbatim, at the same ADR 0001
+// calibration the chat counter uses, with the per-document overhead charged per DOCUMENT (a
+// document is the smallest unit a rerank provider could bill separately). The count is of what
+// will be sent, as it will be sent.
+func countRerankRequestInputTokens(req *schemas.BifrostRerankRequest) int64 {
+	if req == nil || len(req.Documents) == 0 {
+		return math.MaxInt64
+	}
+	size, ok := serializedBillableBytes(req)
+	if !ok {
+		return math.MaxInt64
+	}
+	if req.Params != nil {
+		extra, ok := serializedBillableBytes(req.Params.ExtraParams)
+		if !ok {
+			return math.MaxInt64
+		}
+		size += extra
+	}
+	return conservativeTokens(size, len(req.Documents))
+}
+
+// deriveRerankBoundEvidence constructs one rerank call's reserve evidence (11.4, on 11.3's
+// boundary): the counted-in-full input under the deployment's ceiling, and NO output entry —
+// a rerank response is scores and indices over the request's own documents, with no field an
+// output-token price could multiply against, so there is no output cap to attest. Like
+// embeddings there is no truncation fitter: the documents ARE the payload — dropping one
+// changes the ranking the caller asked for — so the input bound is enforced by REFUSAL, never
+// by sending something uncounted or short of what was asked.
+func deriveRerankBoundEvidence(req *schemas.BifrostRerankRequest, reserve *CreditReserveConfig) ([]CreditReserveBoundEvidence, string) {
+	if req == nil {
+		return nil, "the request carries no rerank input to count"
+	}
+	if len(req.Documents) == 0 {
+		return nil, "the rerank request carries no documents to rank; ranking needs candidates, so the call is refused rather than sent uncounted"
+	}
+	counted := countRerankRequestInputTokens(req)
+	if counted > reserve.InputCeilingTokens {
+		return nil, "the rerank input exceeds the deployment's input ceiling; documents are the payload, so the call is refused rather than sent uncounted"
+	}
+	evidence := []CreditReserveBoundEvidence{
+		{Kind: "self_enforced_input_refusal", MaximumTokens: reserve.InputCeilingTokens},
+	}
+	for _, entry := range evidence {
+		if !creditReserveBoundEvidenceKinds[entry.Kind] || entry.MaximumTokens <= 0 {
+			return nil, "the derived bound evidence is not a closed-vocabulary mechanism with a positive ceiling"
+		}
+	}
+	return evidence, ""
+}
+
 // deriveBoundEvidence builds the reserve's bound evidence for one dispatchable request:
 // the complete serialized input, self-enforced under the deployment's input ceiling, plus
 // the output cap the request carries. problem != "" means this call method lacks provable,
@@ -265,10 +318,11 @@ func deriveEmbeddingBoundEvidence(req *schemas.BifrostEmbeddingRequest, reserve 
 // allowed to cause this refusal, never to prevent it.
 //
 // The evidence covers the call shapes this integration dispatches today: chat (truncation
-// + output cap) and embeddings (count-and-refuse input; the vector output needs no cap).
-// Every other call type - and every request whose body would go to the provider raw, which
-// the gateway can neither count in full nor truncate - stays refused until its own evidence
-// exists: interface existence is not enablement evidence (Q11/Q20).
+// + output cap), embeddings (count-and-refuse input; the vector output needs no cap), and
+// rerank (count-and-refuse input over the query and every document; the ranking output needs
+// no cap). Every other call type - and every request whose body would go to the provider
+// raw, which the gateway can neither count in full nor truncate - stays refused until its
+// own evidence exists: interface existence is not enablement evidence (Q11/Q20).
 func deriveBoundEvidence(ctx *schemas.BifrostContext, evaluationRequest *EvaluationRequest, reserve *CreditReserveConfig) ([]CreditReserveBoundEvidence, string) {
 	req := evaluationRequest.LLMRequest
 	if req == nil {
@@ -282,6 +336,8 @@ func deriveBoundEvidence(ctx *schemas.BifrostContext, evaluationRequest *Evaluat
 		return deriveChatBoundEvidence(req.ChatRequest, reserve)
 	case schemas.EmbeddingRequest:
 		return deriveEmbeddingBoundEvidence(req.EmbeddingRequest, reserve)
+	case schemas.RerankRequest:
+		return deriveRerankBoundEvidence(req.RerankRequest, reserve)
 	default:
 		return nil, "this call type has no provable cost-ceiling evidence yet"
 	}

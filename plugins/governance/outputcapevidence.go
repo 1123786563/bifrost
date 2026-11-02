@@ -143,7 +143,13 @@ func (p *GovernancePlugin) outputCapEnforcementProblem(provider schemas.ModelPro
 	// evidence of a cap that cannot exist; the input side still carries its own bound
 	// (boundevidence.go), and the cost the door is asked to hold is input tokens plus the
 	// per-request surcharge, nothing else.
-	if requestType == schemas.EmbeddingRequest {
+	//
+	// 11.4 (#299) is the same structural case on the rerank wire: a rerank response is
+	// scores and indices over the request's own documents - no generated text, no usage
+	// field an output price could multiply - so the ranking output has no cap to attest.
+	// Its input bound (query + every document, counted in full and refused over the ceiling)
+	// lives in boundevidence.go; there is no output-cap record a rerank cell could carry.
+	if requestType == schemas.EmbeddingRequest || requestType == schemas.RerankRequest {
 		return ""
 	}
 	callMethod := creditCapabilityForRequestType(requestType)

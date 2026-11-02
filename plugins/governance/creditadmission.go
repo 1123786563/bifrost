@@ -265,6 +265,13 @@ func creditCapabilityForRequestType(requestType schemas.RequestType) string {
 		// so even a fully priced OCR model was unadmittable — honest, but not the
 		// capability's name; unknown PRICING stays the door's refusal, never a mapping.
 		return "ocr"
+	case schemas.RerankRequest:
+		// 11.4 (#299): a rerank dispatch names the rerank capability cell its hold locks,
+		// the same cell 03.x's price snapshots price. Without this case a rerank mapped
+		// "unknown", a cell no open scope can hold, so a fully priced rerank model was
+		// refused as cap_not_provable before the door was ever asked — unknown PRICING
+		// stays the door's refusal, never a mapping.
+		return "rerank"
 	default:
 		return "unknown"
 	}
@@ -649,12 +656,23 @@ func (p *GovernancePlugin) reserveBeforeDispatch(ctx *schemas.BifrostContext, ev
 		if refused.Code == "" {
 			refused.Code = "unspecified"
 		}
+		// 11.4 (#299): the door's refusal carries its own basis (which dimensions are
+		// unpriced, and why). Naming them here is what lets an administrator price exactly
+		// the missing dimension instead of guessing at the whole basis.
+		reason := fmt.Sprintf("the credit reserve was refused (%s): model %q is dispatched to no provider",
+			refused.Code, evaluationRequest.Model)
+		if missing := refused.Detail.MissingDimensions; len(missing) > 0 {
+			named := make([]string, 0, len(missing))
+			for _, entry := range missing {
+				named = append(named, fmt.Sprintf("%s (%s)", entry.Dimension, entry.Reason))
+			}
+			reason += "; missing priced dimensions: " + strings.Join(named, ", ")
+		}
 		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", creditRefusalReasonForDoorCode(refused.Code))
 		return &EvaluationResult{
 			Decision:   DecisionCreditReserveNotHeld,
 			ReasonCode: creditRefusalReasonForDoorCode(refused.Code),
-			Reason: fmt.Sprintf("the credit reserve was refused (%s): model %q is dispatched to no provider",
-				refused.Code, evaluationRequest.Model),
+			Reason:     reason,
 		}
 	default:
 		finishRealtimeTurnUnit(ctx, realtimeUnitID, "", CreditRefusalAdmissionUnreachable)
@@ -678,9 +696,25 @@ type creditReserveAnswer struct {
 	RateVersion     int    `json:"rateVersion"`
 }
 
-// creditReserveRefusal is the wire shape of a refusal: one closed reason code, displayable.
+// creditReserveRefusalDimension is one unpriced dimension the refused basis carries: the
+// dimension's name and the per-dimension reason it could not be priced.
+type creditReserveRefusalDimension struct {
+	Dimension string `json:"dimension"`
+	Reason    string `json:"reason"`
+}
+
+// creditReserveRefusalDetail is the refusal's own basis. Only the missing-dimension worklist
+// is read here - the other fields stay the door's business - so an administrator can be told
+// exactly which dimensions to re-price.
+type creditReserveRefusalDetail struct {
+	MissingDimensions []creditReserveRefusalDimension `json:"missingDimensions"`
+}
+
+// creditReserveRefusal is the wire shape of a refusal: one closed reason code, displayable,
+// plus its basis.
 type creditReserveRefusal struct {
-	Code string `json:"code"`
+	Code   string                     `json:"code"`
+	Detail creditReserveRefusalDetail `json:"detail"`
 }
 
 // callReserveDoor asks the deployment's reserve door, following the transports' outbound
