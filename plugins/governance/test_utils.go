@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
@@ -613,3 +614,34 @@ func checkGrantBudgets(gs *LocalGovernanceStore, bifrostCtx *schemas.BifrostCont
 	providerBudgets, _ := gs.PermitProviderLimits(bifrostCtx, permit, provider)
 	return gs.CheckBudgets(bifrostCtx, append(heldBudgets, providerBudgets...), baselines)
 }
+
+// admittingIdentityDoor is the identity admission door (T06.12 / #584) the pre-existing
+// admission fixtures arm: one shared server, started on first use, that admits every ask the
+// way a healthy upstream T06.11 door answers a live personal key. The fixtures that test the
+// gates DOWNSTREAM of the identity gate (pricing classification, audio capability, bound
+// evidence, reserve, settlement) ride this door so their subjects stay observable; the
+// identity gate's own behavior is tested in identityadmission_test.go against a door the
+// test controls.
+//
+// The server never shuts down: it is one httptest listener per test binary, shared by every
+// fixture, sized by nothing (it answers a fixed body).
+var admittingIdentityDoor = func() func() *IdentityAdmissionConfig {
+	var (
+		once     sync.Once
+		endpoint string
+	)
+	return func() *IdentityAdmissionConfig {
+		once.Do(func() {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{"allowed":true,"requestId":"fixture","admissionId":"adm-fixture"}`))
+			}))
+			endpoint = server.URL + "/api/gateway/identity-admission"
+		})
+		return &IdentityAdmissionConfig{
+			Endpoint:      endpoint,
+			ServiceSecret: reserveServiceSecret,
+		}
+	}
+}()

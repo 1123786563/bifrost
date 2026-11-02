@@ -56,6 +56,8 @@ func admissionWithInputBound(endpoint string, inputCeiling int64) *CreditAdmissi
 	return &CreditAdmissionConfig{
 		Enabled:           &enabled,
 		OutputCapEvidence: verifiedOutputCapEvidence(),
+		// The identity door every pre-existing admission fixture arms (T06.12).
+		Identity: admittingIdentityDoor(),
 		Reserve: &CreditReserveConfig{
 			Endpoint:           endpoint,
 			ServiceSecret:      reserveServiceSecret,

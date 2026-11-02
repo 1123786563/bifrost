@@ -1075,6 +1075,15 @@ func (p *GovernancePlugin) decide(ctx *schemas.BifrostContext, result *Evaluatio
 		// provider sees the request, on this attempt or any fallback after it.
 		return result, creditRefusal(result, 503)
 
+	case DecisionCreditIdentityNotAdmitted:
+		// The online identity admission (T06.11's door, asked by T06.12) did not admit the
+		// key's identity: the identity behind the authenticated key may not dispatch, or the
+		// admission machinery could not prove it either way. The same posture shape as the
+		// other credit refusals - 503, because a deployment whose identity door answers
+		// admissions stops refusing these - and the same hard rule: no provider sees this
+		// request, on this attempt or any fallback after it.
+		return result, creditRefusal(result, 503)
+
 	case DecisionDispatchAlreadyClaimed:
 		// The attempt was already dispatched and its result is not yet known: a second
 		// provider call under the same attemptId is how double billing is born (07.4). The

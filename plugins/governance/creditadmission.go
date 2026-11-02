@@ -94,6 +94,12 @@ type CreditAdmissionConfig struct {
 	// Nil or miswired, dispatch is unaffected - settlements persist undelivered and wait
 	// for the wiring; a settlement that cannot be sent is never a dropped one.
 	Settle *CreditSettleConfig `json:"settle"`
+	// The identity admission door (T06.12 / #584): where every new model dispatch first
+	// asks T06.11's online identity admission over the credit_service credential. Nil
+	// inside an ENABLED extension means no door is wired - dispatchable work (free work
+	// included) is refused rather than dispatched on an identity that cannot be proved.
+	// The gate is inert when the extension itself is off.
+	Identity *IdentityAdmissionConfig `json:"identity"`
 }
 
 // The bound-evidence kinds the Reserve contract accepts (ADR 0003: only a call whose cost
@@ -412,6 +418,15 @@ func (p *GovernancePlugin) evaluateCreditAdmission(ctx *schemas.BifrostContext, 
 	}
 	p.cfgMutex.RUnlock()
 	if enabled {
+		// The identity admission gate (T06.12 / #584): every new model request, retry and
+		// stream start asks T06.11's online identity admission FIRST — before the pricing
+		// classification, before the reserve door — so free models are covered too: free
+		// work still answers who is calling, and the identity check must not ride the
+		// charging branch. Only a personal-key request is this gate's to answer; a keyless
+		// request passes through to the answer the funnel's identity step already owns.
+		if identity := p.identityAdmissionFor(ctx, evaluationRequest); identity != nil {
+			return identity
+		}
 		// The audio path capability gate (14.4): an unverified audio entrance is not
 		// callable at all, so it refuses BEFORE the free/unknown pricing classification —
 		// a free model does not make an unverifiable path verifiable — and before the

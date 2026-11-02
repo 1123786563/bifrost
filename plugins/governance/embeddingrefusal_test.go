@@ -82,7 +82,8 @@ func newEmbeddingRefusalPlugin(t *testing.T, admission *CreditAdmissionConfig) *
 func embeddingRefusalAdmission(endpoint string, inputCeiling int64) *CreditAdmissionConfig {
 	enabled := true
 	return &CreditAdmissionConfig{
-		Enabled: &enabled,
+		Enabled:  &enabled,
+		Identity: admittingIdentityDoor(),
 		Reserve: &CreditReserveConfig{
 			Endpoint:           endpoint,
 			ServiceSecret:      reserveServiceSecret,

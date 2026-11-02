@@ -51,6 +51,14 @@ const (
 	// miswired, unreachable, unanswered, answered with something that holds no reservation,
 	// or answered with a refusal this vocabulary has never carried.
 	CreditRefusalAdmissionUnreachable = "admission_unreachable"
+	// CreditRefusalIdentityInvalid (身份无效): the online identity admission (T06.11 /
+	// #583) refused the key's identity for this dispatch — the identity behind the
+	// authenticated key is disabled, revoked, stale-generation, or from the wrong source.
+	// The sixth category of the vocabulary, added by T06.12 (#584): it is the caller's own
+	// key that cannot dispatch, which no balance top-up or price fix changes, and it must
+	// not share a code with the authorization answers of the reserve seam, because those
+	// name the billing relationship while this names the person behind the key.
+	CreditRefusalIdentityInvalid = "identity_invalid"
 )
 
 // creditRefusalReasonForDoorCode maps the credit protocol's closed refusal vocabulary onto the

@@ -246,7 +246,9 @@ func TestPreLLMHookLeavesUnknownPricingToThePriceLockGateWhenAdmissionIsDisabled
 // The success path - a held reservation continuing the request - is the reserve seam's own
 // contract, asserted against a fake billing service in creditreserve_test.go.
 func TestPreLLMHookRefusesAPaidModelWhenEnabledWithoutAReserveDoor(t *testing.T) {
-	plugin := newAdmissionTestPlugin(t, &CreditAdmissionConfig{Enabled: boolPtr(true)}, admissionTestPricingRows())
+	// The identity door is armed (T06.12): this fixture is about the MISSING RESERVE door,
+	// not the identity wiring, so the identity half must not answer first.
+	plugin := newAdmissionTestPlugin(t, &CreditAdmissionConfig{Enabled: boolPtr(true), Identity: admittingIdentityDoor()}, admissionTestPricingRows())
 	ctx := presentCtx(admissionTestVKValue)
 
 	bifrostErr := admissionRefusalFor(t, plugin, ctx, admissionChatRequest(admissionPaidModel))

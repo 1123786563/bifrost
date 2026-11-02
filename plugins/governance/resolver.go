@@ -46,6 +46,14 @@ const (
 	// caller's mistake, and it is the same short-circuit path every other gate answer takes:
 	// the request is marked refused and no provider is called. See creditadmission.go.
 	DecisionCreditReserveNotHeld Decision = "credit_reserve_not_held"
+	// DecisionCreditIdentityNotAdmitted refuses a dispatch whose online identity admission
+	// (T06.11's door, asked by T06.12) did not admit the key's identity: the identity is
+	// refused, the door is unavailable, or the identity wiring is incomplete. It is the
+	// caller's own key that cannot dispatch — a refusal no balance or price changes — and
+	// it takes the same short-circuit path every other gate answer takes: the request is
+	// marked refused, no provider is called, and no fallback is tried. See
+	// identityadmission.go.
+	DecisionCreditIdentityNotAdmitted Decision = "credit_identity_not_admitted"
 	// DecisionDispatchAlreadyClaimed refuses a dispatch whose attempt identity is already
 	// claimed by an outstanding dispatch whose result is not yet known: the gateway never
 	// sends a second provider call under one attemptId, whatever asked for it. The

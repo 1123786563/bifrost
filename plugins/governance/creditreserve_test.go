@@ -135,6 +135,9 @@ func admissionWithReserve(endpoint string, timeoutMs int) *CreditAdmissionConfig
 	return &CreditAdmissionConfig{
 		Enabled:           &enabled,
 		OutputCapEvidence: verifiedOutputCapEvidence(),
+		// The identity door every pre-existing admission fixture arms (T06.12): these
+		// fixtures test the gates downstream of the identity gate, so the door admits.
+		Identity: admittingIdentityDoor(),
 		Reserve: &CreditReserveConfig{
 			Endpoint:           endpoint,
 			ServiceSecret:      reserveServiceSecret,
@@ -154,7 +157,7 @@ func admissionWithReserve(endpoint string, timeoutMs int) *CreditAdmissionConfig
 // dispatchable work rather than pass it unreserved.
 func enabledAdmission() *CreditAdmissionConfig {
 	enabled := true
-	return &CreditAdmissionConfig{Enabled: &enabled}
+	return &CreditAdmissionConfig{Enabled: &enabled, Identity: admittingIdentityDoor()}
 }
 
 // fakeCreditService stands in for OpenBot's credit protocol surface: one door, POST /reserve,
