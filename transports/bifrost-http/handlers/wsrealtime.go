@@ -100,9 +100,10 @@ func (h *WSRealtimeHandler) handleUpgrade(ctx *fasthttp.RequestCtx) {
 	// The pre-request context is built first because the admission gate below reads the
 	// credentials it records. Realtime bypasses handleRequest (per-turn pipelines instead), so
 	// the routing phase is invoked explicitly further down. Mutations to provider/model are
-	// read back into the local vars and copied to fasthttp user values so
-	// snapshotRealtimeMiddlewareValues picks up any ctx changes (governance team/customer IDs,
-	// routing engine logs).
+	// read back into the local vars, and every user value the phase leaves on this ctx — the
+	// realtime audio input gate handle (15.3/#316), governance team/customer IDs, routing
+	// engine logs — is carried onto the long-lived session below through
+	// snapshotRealtimeMiddlewareValuesWithContext.
 	preReqCtx, preReqCancel := createBifrostContextFromAuth(h.handlerStore, auth)
 	if preReqCtx == nil {
 		preReqCancel()
@@ -233,6 +234,13 @@ func (h *WSRealtimeHandler) handleUpgrade(ctx *fasthttp.RequestCtx) {
 	if routedModel != "" {
 		model = routedModel
 	}
+
+	// Capture governance/routing values from the transport middleware and from the pre-request
+	// pipeline, which has just attached this session's audio input gate handle (15.3/#316).
+	// The gate lives on the pre-request context, so the snapshot must read that context before
+	// it is cancelled — the transcription entrance below uses the same call. The fasthttp
+	// RequestCtx is recycled after the handler returns, while the WebSocket session outlives it.
+	middlewareContextValues := snapshotRealtimeMiddlewareValuesWithContext(ctx, preReqCtx)
 	preReqCancel()
 
 	provider := h.client.GetProviderByKey(providerKey)
@@ -250,13 +258,6 @@ func (h *WSRealtimeHandler) handleUpgrade(ctx *fasthttp.RequestCtx) {
 		}
 		return
 	}
-
-	// Capture governance/routing values set by the transport middleware.
-	// TransportInterceptorMiddleware copies BifrostContext user values to individual
-	// fasthttp UserValue slots after HTTPTransportPreHook runs. We snapshot them now
-	// because the fasthttp RequestCtx is recycled after the handler returns — the
-	// WebSocket session outlives it.
-	middlewareContextValues := snapshotRealtimeMiddlewareValues(ctx)
 
 	upgrader := h.websocketUpgrader(rtProvider.RealtimeWebSocketSubprotocol())
 	err = upgrader.Upgrade(ctx, func(conn *ws.Conn) {
