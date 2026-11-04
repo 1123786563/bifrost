@@ -2,9 +2,6 @@ import "@/lib/i18n";
 import { mapAgentCard } from "@/lib/utils/agentCard";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { mockI18n } from "@/lib/i18n/testI18n";
-
-mockI18n();
 import { A2AConversationMessage, A2APayloadView } from "./a2aPayloadView";
 
 const statusMessage = { messageId: "agent-message", role: "ROLE_AGENT", parts: [{ text: "Finished researching" }] };

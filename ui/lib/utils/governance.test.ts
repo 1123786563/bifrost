@@ -1,7 +1,4 @@
-import { mockI18n, translate } from "@/lib/i18n/testI18n";
 import { describe, expect, it } from "vitest";
-
-mockI18n();
 import { periodRank, shortPeriod } from "@/lib/budgetOutline";
 import {
 	budgetResetDurationOptions,
@@ -10,7 +7,7 @@ import {
 	formatQuarterPreview,
 	nextQuarterReset,
 	quarterRanges,
-	resetDurationLabel,
+	resetDurationLabels,
 	resetDurationOptions,
 	supportsCalendarAlignment,
 } from "@/lib/constants/governance";
@@ -84,7 +81,7 @@ describe("quarterly budgets", () => {
 	it("keeps the budget list ordered with Quarterly after Monthly", () => {
 		const values = budgetResetDurationOptions.map((o) => o.value);
 		expect(values.indexOf("1Q")).toBeGreaterThan(values.indexOf("1M"));
-		expect(resetDurationLabel(translate, "1Q")).toBe("Quarterly");
+		expect(resetDurationLabels["1Q"]).toBe("Quarterly");
 	});
 
 	it("treats a quarter as calendar-alignable", () => {
@@ -142,27 +139,27 @@ describe("fiscal quarter preview", () => {
 });
 describe("fiscalQuarterNote", () => {
 	it("names the fiscal start only for a non-January quarterly budget", () => {
-		expect(fiscalQuarterNote(translate, "1Q", { quarter_start_month: 4 })).toBe(" · FY starts Apr");
-		expect(fiscalQuarterNote(translate, "1Q", { quarter_start_month: 10 })).toBe(" · FY starts Oct");
+		expect(fiscalQuarterNote("1Q", { quarter_start_month: 4 })).toBe(" · FY starts Apr");
+		expect(fiscalQuarterNote("1Q", { quarter_start_month: 10 })).toBe(" · FY starts Oct");
 	});
 
 	it("is empty for a January or unset start (the default)", () => {
-		expect(fiscalQuarterNote(translate, "1Q", { quarter_start_month: 1 })).toBe("");
-		expect(fiscalQuarterNote(translate, "1Q", {})).toBe("");
-		expect(fiscalQuarterNote(translate, "1Q", undefined)).toBe("");
+		expect(fiscalQuarterNote("1Q", { quarter_start_month: 1 })).toBe("");
+		expect(fiscalQuarterNote("1Q", {})).toBe("");
+		expect(fiscalQuarterNote("1Q", undefined)).toBe("");
 	});
 
 	it("is empty for a non-quarterly duration regardless of config", () => {
-		expect(fiscalQuarterNote(translate, "1M", { quarter_start_month: 4 })).toBe("");
-		expect(fiscalQuarterNote(translate, undefined, { quarter_start_month: 4 })).toBe("");
+		expect(fiscalQuarterNote("1M", { quarter_start_month: 4 })).toBe("");
+		expect(fiscalQuarterNote(undefined, { quarter_start_month: 4 })).toBe("");
 	});
 
 	it("is empty for an out-of-range or non-integer month", () => {
-		expect(fiscalQuarterNote(translate, "1Q", { quarter_start_month: 0 })).toBe("");
-		expect(fiscalQuarterNote(translate, "1Q", { quarter_start_month: 13 })).toBe("");
+		expect(fiscalQuarterNote("1Q", { quarter_start_month: 0 })).toBe("");
+		expect(fiscalQuarterNote("1Q", { quarter_start_month: 13 })).toBe("");
 		// A fractional month sits in range but indexes MONTH_ABBREVIATIONS between
 		// slots, which would render "FY starts undefined" without the integer guard.
-		expect(fiscalQuarterNote(translate, "1Q", { quarter_start_month: 2.5 })).toBe("");
+		expect(fiscalQuarterNote("1Q", { quarter_start_month: 2.5 })).toBe("");
 	});
 });
 describe("quarter map helpers", () => {
@@ -270,13 +267,13 @@ describe("actionDisabledReason", () => {
 
 	it("names the action and the entity when permission is missing", () => {
 		expect(actionDisabledReason(false, "delete", "teams")).toBe("You don't have permission to delete teams.");
-		expect(actionDisabledReason(false, "create", "virtualKeys")).toBe("You don't have permission to create virtual keys.");
+		expect(actionDisabledReason(false, "create", "virtual keys")).toBe("You don't have permission to create virtual keys.");
 	});
 
 	it("prefers a non-permission reason, even when the permission is also missing", () => {
 		const managed = "This virtual key is managed by an access profile and can't be deleted here.";
-		expect(actionDisabledReason(false, "delete", "virtualKeys", managed)).toBe(managed);
-		expect(actionDisabledReason(true, "delete", "virtualKeys", managed)).toBe(managed);
+		expect(actionDisabledReason(false, "delete", "virtual keys", managed)).toBe(managed);
+		expect(actionDisabledReason(true, "delete", "virtual keys", managed)).toBe(managed);
 	});
 });
 // Multi-unit overrides must preview the rolling schedule used by the backend.

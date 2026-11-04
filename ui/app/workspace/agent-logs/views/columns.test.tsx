@@ -4,12 +4,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { createAgentColumns } from "./columns";
-import { mockI18n, translate } from "@/lib/i18n/testI18n";
-
-mockI18n();
-// The shared mock resolves real en copy ("3 ops", "operation 2") for the keys
-// the cell assertions rely on.
-const t = translate as unknown as Parameters<typeof createAgentColumns>[0];
 
 const root: AgentLogSummary = {
 	id: "root",
@@ -23,10 +17,10 @@ const root: AgentLogSummary = {
 	session_child_count: 2,
 };
 
-function renderCell(sessions?: Parameters<typeof createAgentColumns>[2], log: DisplayAgentLogSummary = root, columnId = "expand") {
+function renderCell(sessions?: Parameters<typeof createAgentColumns>[1], log: DisplayAgentLogSummary = root, columnId = "expand") {
 	const table = createTable({
 		data: [log],
-		columns: createAgentColumns(t, undefined, sessions),
+		columns: createAgentColumns(undefined, sessions),
 		getCoreRowModel: getCoreRowModel(),
 		state: {},
 		onStateChange: () => {},
@@ -52,7 +46,7 @@ describe("agent context grouping cells", () => {
 		expect(html).toContain('aria-expanded="true"');
 		expect(html).toContain("agent-logs-session-expand-btn");
 		expect(renderCell(sessions, root, "context")).not.toContain("agent-logs-session-expand-btn");
-		expect(createAgentColumns(t, undefined, sessions)[0].id).toBe("expand");
+		expect(createAgentColumns(undefined, sessions)[0].id).toBe("expand");
 	});
 	it("indents members and leaves single-operation contexts unexpandable", () => {
 		const member = { ...root, id: "member", session_child_count: 0, __sessionTurn: 2, __isLast: true };
