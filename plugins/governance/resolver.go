@@ -37,6 +37,23 @@ const (
 	DecisionAgentBlocked Decision = "agent_blocked"
 	// DecisionRelayBlocked refuses a relay the caller holds no grant for.
 	DecisionRelayBlocked Decision = "relay_blocked"
+	// DecisionCreditAdmissionNotEnabled refuses a provably-paid model on a deployment whose
+	// credit-admission extension is not mounted and enabled. The refusal is the deployment's
+	// posture, not the caller's mistake, and is answered with an explainable type rather
+	// than a generic error. See creditadmission.go.
+	DecisionCreditAdmissionNotEnabled Decision = "credit_admission_not_enabled"
+	// DecisionCreditReserveNotHeld refuses a request whose PreLLM reserve did not hold: the
+	// billing service refused the reservation, never answered in time, or could not be
+	// reached. Like the admission refusal it is the deployment's billing posture, not the
+	// caller's mistake, and it is the same short-circuit path every other gate answer takes:
+	// the request is marked refused and no provider is called. See creditadmission.go.
+	DecisionCreditReserveNotHeld Decision = "credit_reserve_not_held"
+	// DecisionDispatchAlreadyClaimed refuses a dispatch whose attempt identity is already
+	// claimed by an outstanding dispatch whose result is not yet known: the gateway never
+	// sends a second provider call under one attemptId, whatever asked for it. The
+	// outstanding attempt is recovered through its commitment's scan seam (08.x), never by
+	// re-dispatch. See dispatchcommitment.go.
+	DecisionDispatchAlreadyClaimed Decision = "dispatch_already_claimed"
 )
 
 // EvaluationRequest contains the context for evaluating a request
@@ -50,6 +67,13 @@ type EvaluationRequest struct {
 	// ModelUnseen marks a passthrough request that names no model anywhere governance can read:
 	// not on the request and not in its body.
 	ModelUnseen bool `json:"model_unseen,omitempty"`
+	// LLMRequest carries the typed request the LLM funnel is admitting, so the reserve's
+	// bound evidence (07.6) is derived from what will actually dispatch: the complete
+	// serialized input, truncated in place to the input ceiling before the reserve is asked.
+	// Nil on every non-LLM funnel pass (MCP, realtime, batch, A2A), which the derivation
+	// answers with an evidence insufficiency: a call whose shape the gateway cannot count
+	// is a call whose ceiling it cannot prove.
+	LLMRequest *schemas.BifrostRequest `json:"-"`
 }
 
 // EvaluationResult is a governance verdict: whether the request may proceed, and why not when it
@@ -61,6 +85,10 @@ type EvaluationRequest struct {
 type EvaluationResult struct {
 	Decision Decision `json:"decision"`
 	Reason   string   `json:"reason"`
+	// ReasonCode is the machine-readable category a credit refusal answers with, from the
+	// gateway's closed five-code vocabulary (see creditrefusal.go). Empty on every other
+	// decision.
+	ReasonCode string `json:"reason_code,omitempty"`
 }
 
 // BudgetResolver provides decision logic for the new hierarchical governance system

@@ -86,6 +86,10 @@ type Config struct {
 	RequiredHeaders       *[]string `json:"required_headers"` // Pointer to live config slice; changes are reflected immediately without restart
 	IsEnterprise          bool      `json:"is_enterprise"`
 	DisableAutoToolInject *bool     `json:"disable_auto_tool_inject"`
+	// The OpenBot credit-admission extension's switch block. Nil means the extension is not
+	// configured, which the admission gate reads as off: known-paid models are refused until
+	// the extension is mounted and enabled. See creditadmission.go.
+	OpenBotCreditAdmission *CreditAdmissionConfig `json:"openbot_credit_admission"`
 	// Reports the live client.enforce_vk_object_ownership; nil means on
 	ObjectOwnershipEnforced func() bool `json:"-"`
 }
@@ -191,6 +195,23 @@ type GovernancePlugin struct {
 	isEnterprise          bool
 	disableAutoToolInject *bool
 
+	// The credit-admission extension's switch block, read by the admission gate
+	// (creditadmission.go). Nil means the extension is not configured.
+	openBotCreditAdmission *CreditAdmissionConfig
+
+	// The tool admission gate (20.2, tooladmission.go): nil when the credit-admission
+	// extension is not configured — a gateway outside the strict-billing regime keeps its
+	// existing tool behavior; the validated state, ready to answer, when it is.
+	toolAdmissionGate *toolAdmission
+
+	// The dispatch commitment store (07.4): where a provider attempt's commitment is claimed
+	// before the attempt may dispatch. Set at construction.
+	dispatchCommitments DispatchCommitmentStore
+
+	// The settlement outbox (07.8): where a provider attempt's actual usage is persisted
+	// before the response ends, and delivered to OpenBot's Settle from. Set at construction.
+	settlementOutbox SettlementOutbox
+
 	objectOwnershipEnforcedFn func() bool
 }
 
@@ -258,11 +279,13 @@ func Init(
 	var requiredHeaders *[]string
 	var disableAutoToolInject *bool
 	var objectOwnershipEnforcedFn func() bool
+	var openBotCreditAdmission *CreditAdmissionConfig
 	if config != nil {
 		isVkMandatory = config.IsVkMandatory
 		requiredHeaders = config.RequiredHeaders
 		disableAutoToolInject = config.DisableAutoToolInject
 		objectOwnershipEnforcedFn = config.ObjectOwnershipEnforced
+		openBotCreditAdmission = config.OpenBotCreditAdmission
 	}
 
 	newStoreStart := time.Now()
@@ -281,23 +304,31 @@ func Init(
 
 	ctx, cancelFunc := context.WithCancel(ctx)
 	plugin := &GovernancePlugin{
-		ctx:                   ctx,
-		cancelFunc:            cancelFunc,
-		store:                 governanceStore,
-		resolver:              resolver,
-		tracker:               tracker,
-		configStore:           configStore,
-		modelCatalog:          modelCatalog,
-		mcpCatalog:            mcpCatalog,
-		logger:                logger,
-		isVkMandatory:         isVkMandatory,
-		cfgMutex:              sync.RWMutex{},
-		requiredHeaders:       requiredHeaders,
-		isEnterprise:          config != nil && config.IsEnterprise,
-		disableAutoToolInject: disableAutoToolInject,
-		inMemoryStore:         inMemoryStore,
+		ctx:                    ctx,
+		cancelFunc:             cancelFunc,
+		store:                  governanceStore,
+		resolver:               resolver,
+		tracker:                tracker,
+		configStore:            configStore,
+		modelCatalog:           modelCatalog,
+		mcpCatalog:             mcpCatalog,
+		logger:                 logger,
+		isVkMandatory:          isVkMandatory,
+		cfgMutex:               sync.RWMutex{},
+		requiredHeaders:        requiredHeaders,
+		isEnterprise:           config != nil && config.IsEnterprise,
+		disableAutoToolInject:  disableAutoToolInject,
+		inMemoryStore:          inMemoryStore,
+		openBotCreditAdmission: openBotCreditAdmission,
+		dispatchCommitments:    newLocalDispatchCommitmentStore(),
+		settlementOutbox:       newLocalSettlementOutbox(),
 
 		objectOwnershipEnforcedFn: objectOwnershipEnforcedFn,
+	}
+	if plugin.openBotCreditAdmission != nil {
+		state := validateToolAdmissionConfig(plugin.openBotCreditAdmission.ToolAdmission)
+		logToolAdmissionAudit(logger, state)
+		plugin.toolAdmissionGate = &toolAdmission{state: state}
 	}
 	return plugin, nil
 }
@@ -341,33 +372,43 @@ func InitFromStore(
 	var requiredHeaders *[]string
 	var disableAutoToolInject *bool
 	var objectOwnershipEnforcedFn func() bool
+	var openBotCreditAdmission *CreditAdmissionConfig
 	if config != nil {
 		isVkMandatory = config.IsVkMandatory
 		requiredHeaders = config.RequiredHeaders
 		disableAutoToolInject = config.DisableAutoToolInject
 		objectOwnershipEnforcedFn = config.ObjectOwnershipEnforced
+		openBotCreditAdmission = config.OpenBotCreditAdmission
 	}
 	resolver := NewBudgetResolver(governanceStore, modelCatalog, logger, inMemoryStore)
 	tracker := NewUsageTracker(ctx, governanceStore, resolver, configStore, logger)
 	ctx, cancelFunc := context.WithCancel(ctx)
 	plugin := &GovernancePlugin{
-		ctx:                   ctx,
-		cancelFunc:            cancelFunc,
-		store:                 governanceStore,
-		resolver:              resolver,
-		tracker:               tracker,
-		configStore:           configStore,
-		modelCatalog:          modelCatalog,
-		mcpCatalog:            mcpCatalog,
-		logger:                logger,
-		inMemoryStore:         inMemoryStore,
-		isVkMandatory:         isVkMandatory,
-		cfgMutex:              sync.RWMutex{},
-		requiredHeaders:       requiredHeaders,
-		isEnterprise:          config != nil && config.IsEnterprise,
-		disableAutoToolInject: disableAutoToolInject,
+		ctx:                    ctx,
+		cancelFunc:             cancelFunc,
+		store:                  governanceStore,
+		resolver:               resolver,
+		tracker:                tracker,
+		configStore:            configStore,
+		modelCatalog:           modelCatalog,
+		mcpCatalog:             mcpCatalog,
+		logger:                 logger,
+		inMemoryStore:          inMemoryStore,
+		isVkMandatory:          isVkMandatory,
+		cfgMutex:               sync.RWMutex{},
+		requiredHeaders:        requiredHeaders,
+		isEnterprise:           config != nil && config.IsEnterprise,
+		disableAutoToolInject:  disableAutoToolInject,
+		openBotCreditAdmission: openBotCreditAdmission,
+		dispatchCommitments:    newLocalDispatchCommitmentStore(),
+		settlementOutbox:       newLocalSettlementOutbox(),
 
 		objectOwnershipEnforcedFn: objectOwnershipEnforcedFn,
+	}
+	if plugin.openBotCreditAdmission != nil {
+		state := validateToolAdmissionConfig(plugin.openBotCreditAdmission.ToolAdmission)
+		logToolAdmissionAudit(logger, state)
+		plugin.toolAdmissionGate = &toolAdmission{state: state}
 	}
 	return plugin, nil
 }
@@ -846,6 +887,15 @@ func (p *GovernancePlugin) Evaluate(ctx *schemas.BifrostContext, evaluationReque
 		})
 	}
 
+	// The credit-admission gate: a deployment whose admission extension is not enabled does
+	// not dispatch provably-paid work to a provider, on this attempt or any fallback after
+	// it. The check runs for every request that reaches the funnel, keyless ones included -
+	// walking past the gate by presenting no credential is not a path. See creditadmission.go
+	// for what the gate refuses and what it deliberately leaves to other gates.
+	if admission := p.evaluateCreditAdmission(ctx, evaluationRequest); admission != nil {
+		return p.decide(ctx, admission)
+	}
+
 	// Step 3: what the request may reach.
 	result := p.resolver.evaluateAccess(ctx, evaluationRequest, access)
 
@@ -945,6 +995,26 @@ func refusal(result *EvaluationResult, statusCode int, errorType schemas.ErrorTy
 	}
 }
 
+// creditRefusal builds the refusal a credit decision answers with (07.3): the decision's
+// reason code from the closed five-code vocabulary goes on the wire in error.code, and the
+// error carries AllowFallbacks=false. Core already returns a pre-hook short circuit without
+// dispatching; the flag says the same thing at every other layer that reads the error - a
+// request the credit system refused is retried against no provider, this one or any other.
+// The refusal carries the reason and the model, and nothing else: no credential, no account
+// data, nothing the billing service answered with.
+func creditRefusal(result *EvaluationResult, statusCode int) *schemas.BifrostError {
+	reasonCode := result.ReasonCode
+	if reasonCode == "" {
+		// Every credit refusal site names its category; an unnamed one is an ending this
+		// vocabulary cannot vouch for, which is what admission_unreachable owns.
+		reasonCode = CreditRefusalAdmissionUnreachable
+	}
+	err := refusal(result, statusCode, schemas.ErrorTypePolicyAccessDenied)
+	err.Error.Code = bifrost.Ptr(reasonCode)
+	err.AllowFallbacks = bifrost.Ptr(false)
+	return err
+}
+
 // decide turns a governance decision into what the caller gets back: the result, and the error to
 // refuse the request with when it was not allowed. Every step of Evaluate ends here, so a refusal
 // is marked on the request and mapped to a status in one place regardless of which step refused.
@@ -992,6 +1062,30 @@ func (p *GovernancePlugin) decide(ctx *schemas.BifrostContext, result *Evaluatio
 
 	case DecisionMCPToolBlocked:
 		return result, refusal(result, 403, schemas.ErrorTypePolicyToolBlocked)
+
+	case DecisionCreditAdmissionNotEnabled:
+		// The deployment's posture, not the caller's mistake: the gateway cannot prove the
+		// admission extension is enabled, so it will not dispatch paid work. 503, because a
+		// deployment that mounts and enables the extension stops refusing these. The
+		// refusal is final: no provider is called, no fallback is tried.
+		return result, creditRefusal(result, 503)
+
+	case DecisionCreditReserveNotHeld:
+		// The deployment's billing relationship did not hold a reservation: the billing
+		// service refused, never answered in time, or could not be reached. The same
+		// posture shape as the admission refusal - 503, because a deployment whose billing
+		// service holds reservations stops refusing these - and the same hard rule: no
+		// provider sees the request, on this attempt or any fallback after it.
+		return result, creditRefusal(result, 503)
+
+	case DecisionDispatchAlreadyClaimed:
+		// The attempt was already dispatched and its result is not yet known: a second
+		// provider call under the same attemptId is how double billing is born (07.4). The
+		// same posture shape as the other credit refusals - 503, and the same hard rule: no
+		// provider sees this request, on this attempt or any fallback after it. The
+		// outstanding attempt belongs to its commitment now; recovery (08.x), not a
+		// re-dispatch, finishes it.
+		return result, creditRefusal(result, 503)
 
 	case DecisionAccessUnresolved:
 		// A wiring fault, not a policy decision: the request reached evaluation without the grant
@@ -1122,6 +1216,14 @@ func (p *GovernancePlugin) PreRequestHook(ctx *schemas.BifrostContext, req *sche
 		return nil
 	}
 
+	// 15.3 (#316): a realtime WS upgrade attaches the session's audio input gate — the
+	// forwarding-path handle the relay asks before any billed input event is written
+	// upstream. Inert until the relay decides through it, so every other request type
+	// (and every deployment without realtime) pays nothing here.
+	if req.RequestType == schemas.RealtimeRequest {
+		p.attachRealtimeInputGate(ctx)
+	}
+
 	// The request's provider is a fact access resolution needs to apply provider-scoped grants, and it
 	// rides on the request, not the context. Stamp it before resolving so the resolved access reflects
 	// it. The /mcp path carries no request model and never stamps this, so a provider-scoped grant
@@ -1186,9 +1288,12 @@ func (p *GovernancePlugin) PreLLMHook(ctx *schemas.BifrostContext, req *schemas.
 	provider, model, _ := req.GetRequestFields()
 	// Create request context for evaluation
 	evaluationRequest := &EvaluationRequest{
-		RequestType:      req.RequestType,
-		Provider:         provider,
-		Model:            model,
+		RequestType: req.RequestType,
+		Provider:    provider,
+		Model:       model,
+		// The LLM funnel carries the typed request so the reserve's bound evidence (07.6)
+		// is derived from what will actually dispatch.
+		LLMRequest:       req,
 		OpaqueBatchInput: isOpaqueBatchInput(req),
 	}
 	// A passthrough body is forwarded as the provider reads it, and a task array (Runware) names a
@@ -1688,6 +1793,25 @@ func (p *GovernancePlugin) PostLLMHook(ctx *schemas.BifrostContext, result *sche
 		// A live session's continuation bills its usage but was already counted as a request at admission.
 		sessionContinuation := isLiveSessionContinuation(ctx)
 
+		// The held reservation of this attempt (07.2/07.4): the attested output cap the
+		// post hook books to (07.7), and the settlement stage's admission record (07.8).
+		// Zero cap when this attempt reserved nothing - free work and non-strict paths
+		// book exactly as they always have.
+		var reservation *CreditReservation
+		if held, ok := ctx.Value(CreditReservationContextKey).(*CreditReservation); ok && held != nil {
+			reservation = held
+		}
+		outputCapTokens := int64(0)
+		if reservation != nil {
+			outputCapTokens = reservation.OutputCapTokens
+		}
+
+		// The PostLLM settlement stage (07.8): the attempt's actual usage is persisted into
+		// the result outbox BEFORE this hook returns - before the caller's response ends -
+		// and delivered to OpenBot's Settle from there. A settlement written only after the
+		// response could be lost to a crash in between; one persisted here cannot.
+		p.recordAttemptSettlement(reservation, result, err, provider, requestedModel, requestType, requestID, billingNonce, fallbackIndex, isFinalChunk, outputCapTokens)
+
 		p.wg.Add(1)
 		go func() {
 			defer p.wg.Done()
@@ -1699,7 +1823,7 @@ func (p *GovernancePlugin) PostLLMHook(ctx *schemas.BifrostContext, result *sche
 				}
 			}()
 			// Use the requested model for usage tracking
-			p.postHookWorker(result, err, provider, requestedModel, requestType, requestID, billingNonce, isFinalChunk, attemptNumber, fallbackIndex, sessionContinuation, pricingScopes, accountedBudgets, accountedRateLimits, routingMetadata)
+			p.postHookWorker(result, err, provider, requestedModel, requestType, requestID, billingNonce, isFinalChunk, attemptNumber, fallbackIndex, sessionContinuation, pricingScopes, accountedBudgets, accountedRateLimits, routingMetadata, outputCapTokens)
 		}()
 	}
 
@@ -1722,6 +1846,13 @@ func (p *GovernancePlugin) PreMCPHook(ctx *schemas.BifrostContext, req *schemas.
 	isRead := req.RequestType.IsPromptOrResourceRead()
 	if !req.RequestType.IsExecuteTool() && !isRead {
 		return req, nil, nil
+	}
+
+	// The tool admission gate (20.2): first, before anything evaluates or reserves — a
+	// tool-call kind the deployment cannot fully price and cap is refused here, with the
+	// refused mark set so no accounting writes anything for a call that never ran.
+	if shortCircuit := p.mcpToolAdmissionShortCircuit(ctx, ToolAdmissionKindMCPTool); shortCircuit != nil {
+		return req, shortCircuit, nil
 	}
 
 	// Validate required headers are present
@@ -1948,6 +2079,12 @@ func (p *GovernancePlugin) PreA2AHook(ctx *schemas.BifrostContext, req *schemas.
 		return req, nil, nil
 	}
 
+	// The tool admission gate (20.2): first, before agent enablement, access or permit
+	// math — an uncappable agent task is refused before any of it runs.
+	if shortCircuit := p.a2aToolAdmissionShortCircuit(ctx, ToolAdmissionKindA2AAgent); shortCircuit != nil {
+		return req, shortCircuit, nil
+	}
+
 	deny := func(decision Decision, message string) (*schemas.BifrostA2ARequest, *schemas.A2APluginShortCircuit, error) {
 		ctx.SetValue(governanceRejectedContextKey, true)
 		return req, &schemas.A2APluginShortCircuit{Error: &schemas.BifrostError{
@@ -2103,7 +2240,9 @@ func (p *GovernancePlugin) Cleanup() error {
 //   - isFinalChunk: Whether the request is the final chunk
 //   - skipRequestCount: Whether this is a session continuation that must not count as a request
 //   - pricingScopes: Prebuilt pricing lookup scopes using governance VK ID (nil if not applicable)
-func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifrostErr *schemas.BifrostError, provider schemas.ModelProvider, model string, requestType schemas.RequestType, requestID string, billingNonce string, isFinalChunk bool, attemptNumber int, fallbackIndex int, skipRequestCount bool, pricingScopes *modelcatalog.PricingLookupScopes, budgets, rateLimits []schemas.Limit, routingMetadata *schemas.BifrostRoutingMetadata) {
+//   - outputCapTokens: the output cap this attempt's reservation attested (07.7); booking is
+//     held to it, and 0 - the free and non-strict paths - books exactly as before
+func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifrostErr *schemas.BifrostError, provider schemas.ModelProvider, model string, requestType schemas.RequestType, requestID string, billingNonce string, isFinalChunk bool, attemptNumber int, fallbackIndex int, skipRequestCount bool, pricingScopes *modelcatalog.PricingLookupScopes, budgets, rateLimits []schemas.Limit, routingMetadata *schemas.BifrostRoutingMetadata, outputCapTokens int64) {
 	// Determine if request was successful
 	success := (result != nil)
 	billedReason := "success"
@@ -2112,9 +2251,27 @@ func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifro
 	isStreaming := bifrost.IsStreamRequestType(requestType)
 
 	if !isStreaming || (isStreaming && isFinalChunk) {
+		// The attested output cap, held where cost is booked (07.7): what the provider
+		// reported stays on the response; what is BOOKED never exceeds the cap the
+		// reservation carried. A provider reporting beyond the cap has produced cost no
+		// reservation covers, so the excess is a violation - logged here, never billed.
+		var clampedChatUsage *schemas.BifrostLLMUsage
+		var outputCapViolated bool
+		if result != nil && result.ChatResponse != nil {
+			clampedChatUsage, outputCapViolated = clampChatUsageToOutputCap(result.ChatResponse.Usage, outputCapTokens)
+			if outputCapViolated {
+				p.logger.Warn("provider reported %d completion tokens beyond the attested cap of %d: booking is held to the cap and the excess is not billed (request %s, model %s)",
+					result.ChatResponse.Usage.CompletionTokens, outputCapTokens, requestID, model)
+			}
+		}
+
 		var cost float64
 		if p.modelCatalog != nil && result != nil {
-			cost = p.modelCatalog.CalculateCost(result, pricingScopes)
+			if outputCapViolated {
+				cost = p.modelCatalog.CalculateCostForUsage(clampedChatUsage, provider, model, requestType, pricingScopes)
+			} else {
+				cost = p.modelCatalog.CalculateCost(result, pricingScopes)
+			}
 		}
 		tokensUsed := 0
 		// The request failed/was cancelled but the provider still
@@ -2122,10 +2279,16 @@ func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifro
 		// Bill those tokens — Anthropic charges us for them regardless.
 		if result == nil && bifrostErr != nil && bifrostErr.ExtraFields.BilledUsage != nil {
 			billedUsage := bifrostErr.ExtraFields.BilledUsage
-			tokensUsed = billedUsage.TotalTokens
+			billable := billedUsage
+			if clamped, violated := clampChatUsageToOutputCap(billedUsage, outputCapTokens); violated {
+				billable = clamped
+				p.logger.Warn("billable failure reported %d completion tokens beyond the attested cap of %d: booking is held to the cap and the excess is not billed (request %s, model %s)",
+					billedUsage.CompletionTokens, outputCapTokens, requestID, model)
+			}
+			tokensUsed = billable.TotalTokens
 			billedReason = "partial_usage_on_error"
 			if p.modelCatalog != nil {
-				cost = p.modelCatalog.CalculateCostForUsage(billedUsage, provider, model, requestType, pricingScopes)
+				cost = p.modelCatalog.CalculateCostForUsage(billable, provider, model, requestType, pricingScopes)
 			}
 		}
 		if result != nil {
@@ -2133,7 +2296,11 @@ func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, bifro
 			case result.TextCompletionResponse != nil && result.TextCompletionResponse.Usage != nil:
 				tokensUsed = result.TextCompletionResponse.Usage.TotalTokens
 			case result.ChatResponse != nil && result.ChatResponse.Usage != nil:
-				tokensUsed = result.ChatResponse.Usage.TotalTokens
+				if outputCapViolated {
+					tokensUsed = clampedChatUsage.TotalTokens
+				} else {
+					tokensUsed = result.ChatResponse.Usage.TotalTokens
+				}
 			case result.ResponsesResponse != nil && result.ResponsesResponse.Usage != nil:
 				tokensUsed = result.ResponsesResponse.Usage.TotalTokens
 			case result.ResponsesStreamResponse != nil && result.ResponsesStreamResponse.Response != nil && result.ResponsesStreamResponse.Response.Usage != nil:

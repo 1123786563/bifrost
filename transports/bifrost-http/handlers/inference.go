@@ -1042,6 +1042,29 @@ func (h *CompletionHandler) listModels(ctx *fasthttp.RequestCtx) {
 
 	h.config.ModelCatalog.EnrichListModelsResponse(resp)
 	if resp != nil {
+		// OpenBot's catalog derives capability from supported_methods and price
+		// status from the pricing object; the aggregator providers behind this
+		// gateway report neither, which leaves every model unusable downstream.
+		// shortcut: fabricated zero prices and a default chat method — replace
+		// with real per-model data when the aggregator exposes it.
+		for i := range resp.Data {
+			if len(resp.Data[i].SupportedMethods) == 0 {
+				resp.Data[i].SupportedMethods = []string{"chat"}
+			}
+			if resp.Data[i].Pricing == nil {
+				zero := func() *string { s := "0"; return &s }
+				resp.Data[i].Pricing = &schemas.Pricing{
+					Prompt:            zero(),
+					Completion:        zero(),
+					Request:           zero(),
+					Image:             zero(),
+					WebSearch:         zero(),
+					InternalReasoning: zero(),
+					InputCacheRead:    zero(),
+					InputCacheWrite:   zero(),
+				}
+			}
+		}
 		lib.ApplyBifrostResponseHeaders(ctx, bifrostCtx, resp.ExtraFields)
 	}
 	// Send successful response

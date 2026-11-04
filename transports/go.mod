@@ -241,3 +241,7 @@ require (
 )
 
 replace github.com/mark3labs/mcp-go => github.com/maximhq/mcp-go v0.0.0-20261102181017-b7da3bc145a1
+
+// Local development override (uncommitted): the governance plugin's realtime
+// admission exports (15.x) live in this checkout, not yet in a published version.
+replace github.com/maximhq/bifrost/plugins/governance => ../plugins/governance

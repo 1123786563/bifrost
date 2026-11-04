@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"time"
+
 	"github.com/maximhq/bifrost/core/schemas"
 	"github.com/maximhq/bifrost/plugins/governance"
 )
@@ -95,4 +97,85 @@ func refuseUnresolvedRealtimeCredential(
 		return nil
 	}
 	return newRealtimeWireBifrostError(401, "invalid_request_error", realtimeUnresolvedCredentialMessage)
+}
+
+// realtimeEphemeralTokenSpentPrefix is where a gateway-minted token's single-use binding
+// lives: one establishment per token, ever, in the same store the token's mapping rides.
+const realtimeEphemeralTokenSpentPrefix = "realtime:ephemeral-key:spent:"
+
+// realtimeEphemeralTokenSpentTTL outlives any secret a provider mints (ephemeral realtime
+// secrets live minutes), so a spent marker never lapses before the token it binds.
+const realtimeEphemeralTokenSpentTTL = 24 * time.Hour
+
+func buildRealtimeEphemeralTokenSpentKey(token string) string {
+	return realtimeEphemeralTokenSpentPrefix + token
+}
+
+// lookupRealtimeEphemeralTokenSpend answers the establishment a token already bound, if any.
+func lookupRealtimeEphemeralTokenSpend(kv schemas.KVStore, token string) (string, bool) {
+	if kv == nil {
+		return "", false
+	}
+	raw, err := kv.Get(buildRealtimeEphemeralTokenSpentKey(token))
+	if err != nil || raw == nil {
+		return "", false
+	}
+	switch value := raw.(type) {
+	case string:
+		if value == "" {
+			return "", false
+		}
+		return value, true
+	default:
+		return "", false
+	}
+}
+
+func markRealtimeEphemeralTokenSpent(kv schemas.KVStore, token string, entrance string) {
+	if kv == nil {
+		return
+	}
+	_ = kv.SetWithTTL(buildRealtimeEphemeralTokenSpentKey(token), entrance, realtimeEphemeralTokenSpentTTL)
+}
+
+// refuseRealtimeEphemeralTokenBypass is 16.3's (#324) own admission question, asked by EVERY
+// realtime establishment (the WebSocket upgrade, its transcription variant, and both WebRTC
+// SDP routes) right after the ephemeral-token mapping resolves — 防临时 provider 会话绕开:
+//
+//   - a provider-shaped ephemeral token this gateway did NOT mint (unmapped ek_*) is refused:
+//     the provider stays authoritative about the token upstream, but the session it would
+//     stand up here would select the operator's provider key with the OpenBot admission
+//     bypassed entirely (no minting, no grant, no reservation identity) — exactly the second
+//     road the ticket says must not exist. On deployments that do not enforce inference auth
+//     the operator has chosen the open posture and nothing changes;
+//   - a gateway-minted token that has already established a session is refused: the token is
+//     single-use for establishment (bound at first use), so one minted secret cannot stand
+//     two concurrent sessions on the account it was minted under. A reconnect after a drop
+//     recovers server-side (the session's durable identity), never by re-spending the token.
+//
+// Both refusals are recorded in the governance bypass registry for the 全入口 enumeration.
+func refuseRealtimeEphemeralTokenBypass(
+	enforceAuth bool,
+	kv schemas.KVStore,
+	token string,
+	mapped bool,
+	entrance string,
+) *schemas.BifrostError {
+	if !enforceAuth || !isRealtimeEphemeralToken(token) {
+		return nil
+	}
+	if !mapped {
+		governance.RecordRealtimeBypassAttempt(governance.RealtimeBypassUnmappedEphemeralToken,
+			entrance+" establishment presented an ephemeral token this gateway did not mint")
+		return newRealtimeWireBifrostError(401, "invalid_request_error",
+			"the ephemeral token was not minted by this gateway; realtime sessions cannot be established with provider credentials directly — mint one via POST /v1/realtime/client_secrets")
+	}
+	if spentAt, spent := lookupRealtimeEphemeralTokenSpend(kv, token); spent {
+		governance.RecordRealtimeBypassAttempt(governance.RealtimeBypassEphemeralTokenReuse,
+			entrance+" establishment reuses an ephemeral token already bound to a session ("+spentAt+")")
+		return newRealtimeWireBifrostError(401, "invalid_request_error",
+			"this ephemeral client secret has already established a realtime session and cannot establish a second one; mint a new secret")
+	}
+	markRealtimeEphemeralTokenSpent(kv, token, entrance)
+	return nil
 }

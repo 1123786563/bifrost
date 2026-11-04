@@ -34,6 +34,10 @@ type PluginsLoader interface {
 	// using the loaded plugin instance if it implements ConfigMarshallerPlugin.
 	// Returns nil, nil when the plugin is not loaded or does not implement the interface.
 	ExpandPluginConfigForAPI(name string, config map[string]any) (map[string]any, error)
+	// GetDeclaredExtensions returns the extension identity every loaded plugin declares
+	// through its optional extension descriptor (the governance plugin's credit-admission
+	// descriptor). Plugins that implement no descriptor contribute nothing.
+	GetDeclaredExtensions() []lib.ExtensionDeclaration
 }
 
 // PluginsHandler is the handler for the plugins API
@@ -115,6 +119,7 @@ func (h *PluginsHandler) RegisterRoutes(r *router.Router, middlewares ...schemas
 	r.GET("/api/plugins/builtins", lib.ChainMiddlewares(h.getBuiltinPlugins, middlewares...))
 	r.GET("/api/plugins/loaded", lib.ChainMiddlewares(h.getLoadedPlugins, middlewares...))
 	r.GET("/api/plugins/{name}", lib.ChainMiddlewares(h.getPlugin, middlewares...))
+	r.GET("/api/extensions", lib.ChainMiddlewares(h.getExtensionManifest, middlewares...))
 	r.POST("/api/plugins", lib.ChainMiddlewares(h.createPlugin, middlewares...))
 	r.PUT("/api/plugins/{name}", lib.ChainMiddlewares(h.updatePlugin, middlewares...))
 	r.DELETE("/api/plugins/{name}", lib.ChainMiddlewares(h.deletePlugin, middlewares...))
@@ -130,16 +135,48 @@ type PluginResponse struct {
 	Placement  *schemas.PluginPlacement `json:"placement,omitempty"`
 	Order      *int                     `json:"order,omitempty"`
 	Status     schemas.PluginStatus     `json:"status"`
+	// Version is the version of the extension the plugin's loaded instance declares through
+	// its optional descriptor (e.g. the OpenBot credit-admission extension's 1.0.0). It is
+	// omitted for a plugin that declares none.
+	Version string `json:"version,omitempty"`
+}
+
+func declaredVersions(declarations []lib.ExtensionDeclaration) map[string]string {
+	versions := make(map[string]string, len(declarations))
+	for _, declaration := range declarations {
+		versions[declaration.PluginName] = declaration.Version
+	}
+	return versions
+}
+
+// declaredExtensions reads the loaded plugins' declared extensions as one snapshot. It is not
+// free (the loader walks every plugin and a descriptor takes its config lock), so list
+// handlers take it once per request and hand the same snapshot to every row: rows built from
+// separate snapshots could disagree when a reload lands mid-request. A handler without a
+// loader (tests build bare ones) declares nothing.
+func (h *PluginsHandler) declaredExtensions() []lib.ExtensionDeclaration {
+	if h.pluginsLoader == nil {
+		return nil
+	}
+	return h.pluginsLoader.GetDeclaredExtensions()
+}
+
+// declaredVersions indexes one declarations snapshot by plugin name, so building a response
+// costs one map lookup per plugin rather than a scan.
+func (h *PluginsHandler) declaredVersions() map[string]string {
+	return declaredVersions(h.declaredExtensions())
 }
 
 // buildPluginResponse constructs a PluginResponse, fetching plugin statuses once.
 func (h *PluginsHandler) buildPluginResponse(ctx context.Context, plugin *configstoreTables.TablePlugin) PluginResponse {
-	return h.buildPluginResponseWithStatuses(plugin, h.pluginsLoader.GetPluginStatus(ctx))
+	return h.buildPluginResponseWith(plugin, h.pluginsLoader.GetPluginStatus(ctx), h.declaredVersions())
 }
 
-// buildPluginResponseWithStatuses constructs a PluginResponse using pre-fetched statuses.
-// Use this in list endpoints to avoid calling GetPluginStatus once per plugin.
-func (h *PluginsHandler) buildPluginResponseWithStatuses(plugin *configstoreTables.TablePlugin, pluginStatuses map[string]schemas.PluginStatus) PluginResponse {
+// buildPluginResponseWith constructs a PluginResponse from pre-fetched statuses and declared
+// extension versions, both keyed by the registration name the plugin loaded under. List
+// endpoints pass the one status read and one declared-versions snapshot they already took,
+// so every row shares the caller's snapshot instead of re-reading either once per plugin.
+func (h *PluginsHandler) buildPluginResponseWith(plugin *configstoreTables.TablePlugin, pluginStatuses map[string]schemas.PluginStatus, versions map[string]string) PluginResponse {
 	pluginStatus := schemas.PluginStatus{
 		Name:   plugin.Name,
 		Status: schemas.PluginStatusUninitialized,
@@ -148,10 +185,16 @@ func (h *PluginsHandler) buildPluginResponseWithStatuses(plugin *configstoreTabl
 	// Report the runtime status even when the row says disabled, so a plugin that
 	// loaded against its row shows as enabled=false/status=active instead of being
 	// masked as disabled. Absent from the runtime set means it really is not loaded.
+	// The entry is matched on the display name the status carries, but it sits under
+	// the map's registration-name key - a custom plugin's binary registers under its
+	// own name, which may differ from the row's - and both the identity and the
+	// version lookup below key on that registration name.
 	loaded := false
-	for _, status := range pluginStatuses {
+	registeredName := plugin.Name
+	for name, status := range pluginStatuses {
 		if plugin.Name == status.Name {
 			pluginStatus = status
+			registeredName = name
 			loaded = true
 			break
 		}
@@ -171,7 +214,7 @@ func (h *PluginsHandler) buildPluginResponseWithStatuses(plugin *configstoreTabl
 	}
 	return PluginResponse{
 		Name:       plugin.Name,
-		ActualName: pluginStatus.Name,
+		ActualName: registeredName,
 		Enabled:    plugin.Enabled,
 		Config:     config,
 		IsCustom:   plugin.IsCustom,
@@ -179,6 +222,7 @@ func (h *PluginsHandler) buildPluginResponseWithStatuses(plugin *configstoreTabl
 		Placement:  plugin.Placement,
 		Order:      plugin.Order,
 		Status:     pluginStatus,
+		Version:    versions[registeredName],
 	}
 }
 
@@ -197,10 +241,57 @@ func (h *PluginsHandler) getLoadedPlugins(ctx *fasthttp.RequestCtx) {
 	})
 }
 
+// extensionManifestEntry is one identity pair of the extension manifest: exactly the fields
+// the OpenBot capability negotiation parses, and nothing else - an entry that carries more is
+// still parsed, but the manifest's contract is the identity pairs, so the entry carries those.
+type extensionManifestEntry struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+// getExtensionManifest serves the extension manifest OpenBot's capability negotiation reads
+// (GET /api/extensions): every enabled, loaded plugin's declared extension as a {name, version}
+// identity pair, sorted by name so the manifest is stable across reloads. A plugin that
+// declares no extension, or whose declared extension is not enabled, contributes no entry -
+// an extension the gateway would not honor must never negotiate the deployment ready.
+//
+// The shape is guaranteed at this boundary, not by the plugins behind it: an entry missing
+// either half of the identity pair names nothing a consumer can match or version-classify, and
+// two entries under one name are one identity declared twice. Both are dropped here - the
+// first-seen entry for a name is the one kept, so the retained version is deterministic and
+// follows declaration order - and count reports what survived, so a consumer can trust
+// len(plugins) == count without re-deriving the filters.
+func (h *PluginsHandler) getExtensionManifest(ctx *fasthttp.RequestCtx) {
+	declarations := h.declaredExtensions()
+	entries := []extensionManifestEntry{}
+	declared := make(map[string]struct{}, len(declarations))
+	for _, declaration := range declarations {
+		if !declaration.Enabled {
+			continue
+		}
+		if declaration.Name == "" || declaration.Version == "" {
+			continue
+		}
+		if _, duplicate := declared[declaration.Name]; duplicate {
+			continue
+		}
+		declared[declaration.Name] = struct{}{}
+		entries = append(entries, extensionManifestEntry{Name: declaration.Name, Version: declaration.Version})
+	}
+	slices.SortFunc(entries, func(a, b extensionManifestEntry) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+	SendJSON(ctx, map[string]any{
+		"plugins": entries,
+		"count":   len(entries),
+	})
+}
+
 // getPlugins gets all plugins
 func (h *PluginsHandler) getPlugins(ctx *fasthttp.RequestCtx) {
 	if h.configStore == nil {
 		pluginStatus := h.pluginsLoader.GetPluginStatus(ctx)
+		versions := h.declaredVersions()
 		finalPlugins := []PluginResponse{}
 		for name, pluginStatus := range pluginStatus {
 			finalPlugins = append(finalPlugins, PluginResponse{
@@ -211,6 +302,7 @@ func (h *PluginsHandler) getPlugins(ctx *fasthttp.RequestCtx) {
 				IsCustom:   true,
 				Path:       nil,
 				Status:     pluginStatus,
+				Version:    versions[name],
 			})
 		}
 		SendJSON(ctx, map[string]any{
@@ -225,10 +317,14 @@ func (h *PluginsHandler) getPlugins(ctx *fasthttp.RequestCtx) {
 		SendError(ctx, 500, "Failed to retrieve plugins")
 		return
 	}
+	// One status read and one declared-versions snapshot serve every row: building each
+	// response from those snapshots, rather than re-reading per plugin, keeps the list
+	// internally consistent when a reload lands mid-request.
 	pluginStatuses := h.pluginsLoader.GetPluginStatus(ctx)
+	versions := h.declaredVersions()
 	finalPlugins := []PluginResponse{}
 	for _, plugin := range plugins {
-		finalPlugins = append(finalPlugins, h.buildPluginResponseWithStatuses(plugin, pluginStatuses))
+		finalPlugins = append(finalPlugins, h.buildPluginResponseWith(plugin, pluginStatuses, versions))
 	}
 	// Creating ephemeral struct
 	SendJSON(ctx, map[string]any{
@@ -241,6 +337,7 @@ func (h *PluginsHandler) getPlugins(ctx *fasthttp.RequestCtx) {
 func (h *PluginsHandler) getPlugin(ctx *fasthttp.RequestCtx) {
 	if h.configStore == nil {
 		pluginStatus := h.pluginsLoader.GetPluginStatus(ctx)
+		versions := h.declaredVersions()
 		pluginInfo := PluginResponse{}
 		for name, pluginStatus := range pluginStatus {
 			if pluginStatus.Name == ctx.UserValue("name") {
@@ -252,6 +349,7 @@ func (h *PluginsHandler) getPlugin(ctx *fasthttp.RequestCtx) {
 					IsCustom:   true,
 					Path:       nil,
 					Status:     pluginStatus,
+					Version:    versions[name],
 				}
 				break
 			}
