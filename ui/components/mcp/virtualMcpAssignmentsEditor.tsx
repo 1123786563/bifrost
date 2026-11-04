@@ -6,28 +6,23 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useGetVirtualMCPQuery } from "@/lib/store";
 import { Info, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import i18n from "@/lib/i18n";
-
-const DEFAULT_TOOLTIP = (
-	<p>
-		{i18n.t("workspaces:virtualMcps.assignHint1")} <span className="font-medium">/mcp/&lt;slug&gt;</span>{" "}
-		{i18n.t("workspaces:virtualMcps.assignHint2")}
-	</p>
-);
+import { Trans, useTranslation } from "react-i18next";
+import { withBasePath } from "@/lib/utils/basePath";
 
 // One assigned Virtual MCP: resolves its name/slug by id, then renders a removable row.
 function AssignedVirtualMcpRow({ id, onRemove }: { id: number; onRemove: () => void }) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("governance");
 	const { data } = useGetVirtualMCPQuery(id);
-	const name = data?.name || t("mcp:editors.vmcpFallbackName", { id });
+	const name = data?.name || t("virtualMcp.fallbackName", { id });
 	return (
 		<div className="flex items-center justify-between gap-2 px-3 py-2">
 			<div className="flex min-w-0 flex-col">
 				<span className="truncate text-sm font-medium">{name}</span>
-				{data?.endpoint_slug && <span className="text-muted-foreground truncate text-xs">/mcp/{data.endpoint_slug}</span>}
+				{data?.endpoint_slug && (
+					<span className="text-muted-foreground truncate text-xs">{withBasePath(`/mcp/${data.endpoint_slug}`)}</span>
+				)}
 			</div>
-			<Button type="button" variant="ghost" size="sm" aria-label={t("mcp:editors.removeAria", { name })} onClick={onRemove}>
+			<Button type="button" variant="ghost" size="sm" aria-label={t("virtualMcp.removeAria", { name })} onClick={onRemove}>
 				<Trash2 className="h-4 w-4" />
 			</Button>
 		</div>
@@ -43,9 +38,14 @@ interface VirtualMcpAssignmentsEditorProps {
 
 // Assign a virtual key to Virtual MCPs. The picker is server-backed; assignments commit as
 // attach/detach on Save (the parent owns that), mirroring the MCP-server config editor above it.
-export function VirtualMcpAssignmentsEditor({ value, onChange, label, tooltip = DEFAULT_TOOLTIP }: VirtualMcpAssignmentsEditorProps) {
-	const { t } = useTranslation(["common", "mcp", "workspaces"]);
-	const resolvedLabel = label ?? t("mcp:editors.vmcpLabel");
+export function VirtualMcpAssignmentsEditor({ value, onChange, label, tooltip }: VirtualMcpAssignmentsEditorProps) {
+	const { t } = useTranslation("governance");
+	const resolvedLabel = label ?? t("virtualMcp.title");
+	const resolvedTooltip = tooltip ?? (
+		<p>
+			<Trans t={t} i18nKey="virtualMcp.tooltip" values={{ slug: "<slug>" }} components={{ medium0: <span className="font-medium" /> }} />
+		</p>
+	);
 	const add = (option: EntitySelectorOption) => {
 		const id = Number(option.value);
 		if (value.includes(id)) return;
@@ -64,18 +64,12 @@ export function VirtualMcpAssignmentsEditor({ value, onChange, label, tooltip = 
 								<Info className="text-muted-foreground h-3 w-3" />
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>{tooltip}</TooltipContent>
+						<TooltipContent>{resolvedTooltip}</TooltipContent>
 					</Tooltip>
 				</TooltipProvider>
 			</div>
 
-			<VirtualMCPSelector
-				mode="add"
-				fullWidth
-				placeholder={t("workspaces:editors.selectVirtualMcp")}
-				onSelect={add}
-				excludeIds={value.map(String)}
-			/>
+			<VirtualMCPSelector mode="add" fullWidth placeholder={t("virtualMcp.selectToAdd")} onSelect={add} excludeIds={value.map(String)} />
 
 			{value.length > 0 && (
 				<div className="divide-y overflow-hidden rounded-md border">

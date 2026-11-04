@@ -7,30 +7,15 @@ import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 import { toIntervalHours } from "./mcpLibrarySettingsSheet.utils";
 
-const mcpLibrarySettingsSchema = z.object({
-	// file:// is a config.json-only value for air-gapped deployments; the API
-	// rejects it, so the form does too, matching the pricing datasheet URLs in
-	// modelSettingsView.
-	mcp_library_url: z
-		.string()
-		.trim()
-		.refine((value) => value === "" || value.startsWith("http://") || value.startsWith("https://"), "URL_SCHEME_ERROR"),
-	// 0 disables background syncing entirely. Force Sync Now still works.
-	// Anything else has to be at least an hour: transports/config.schema.json
-	// declares mcp_library_sync_interval as `anyOf: [{const: 0}, {minimum:
-	// 3600}]`, so a fractional value below 1h would be rejected server-side.
-	mcp_library_sync_interval_hours: z
-		.number({ message: "SYNC_INTERVAL_REQUIRED" })
-		.max(8760, "SYNC_INTERVAL_MAX")
-		.refine((hours) => hours === 0 || hours >= 1, "SYNC_INTERVAL_MIN"),
-});
-
-type MCPLibrarySettingsFormData = z.infer<typeof mcpLibrarySettingsSchema>;
+type MCPLibrarySettingsFormData = {
+	mcp_library_url: string;
+	mcp_library_sync_interval_hours: number;
+};
 
 interface MCPLibrarySettingsSheetProps {
 	open: boolean;
@@ -38,12 +23,35 @@ interface MCPLibrarySettingsSheetProps {
 }
 
 export function MCPLibrarySettingsSheet({ open, onClose }: MCPLibrarySettingsSheetProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
+	const { t: tc } = useTranslation("common");
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
 	const { data: bifrostConfig, isLoading: isConfigLoading, isError: isConfigError } = useGetCoreConfigQuery({ fromDB: true });
 	const config = bifrostConfig?.framework_config;
 	const [updateCoreConfig, { isLoading }] = useUpdateCoreConfigMutation();
 	const [forceSyncMCPLibrary, { isLoading: isForceSyncing }] = useForceSyncMCPLibraryMutation();
+
+	const mcpLibrarySettingsSchema = useMemo(
+		() =>
+			z.object({
+				// file:// is a config.json-only value for air-gapped deployments; the API
+				// rejects it, so the form does too, matching the pricing datasheet URLs in
+				// modelSettingsView.
+				mcp_library_url: z
+					.string()
+					.trim()
+					.refine((value) => value === "" || value.startsWith("http://") || value.startsWith("https://"), t("library.settings.urlInvalid")),
+				// 0 disables background syncing entirely. Force Sync Now still works.
+				// Anything else has to be at least an hour: transports/config.schema.json
+				// declares mcp_library_sync_interval as `anyOf: [{const: 0}, {minimum:
+				// 3600}]`, so a fractional value below 1h would be rejected server-side.
+				mcp_library_sync_interval_hours: z
+					.number({ message: t("library.settings.intervalRequired") })
+					.max(8760, t("library.settings.intervalMax"))
+					.refine((hours) => hours === 0 || hours >= 1, t("library.settings.intervalRange")),
+			}),
+		[t],
+	);
 
 	const {
 		register,
@@ -78,7 +86,7 @@ export function MCPLibrarySettingsSheet({ open, onClose }: MCPLibrarySettingsShe
 
 	const onSubmit = async (data: MCPLibrarySettingsFormData) => {
 		if (!bifrostConfig) {
-			toast.error(t("mcp:library.settings.loadFailed"));
+			toast.error(t("library.settings.loadFailed"));
 			return;
 		}
 		try {
@@ -90,7 +98,7 @@ export function MCPLibrarySettingsSheet({ open, onClose }: MCPLibrarySettingsShe
 					mcp_library_sync_interval: data.mcp_library_sync_interval_hours * 3600,
 				},
 			}).unwrap();
-			toast.success(t("mcp:library.settings.updatedToast"));
+			toast.success(t("library.settings.updated"));
 			reset(data);
 		} catch (error) {
 			toast.error(getErrorMessage(error));
@@ -100,7 +108,7 @@ export function MCPLibrarySettingsSheet({ open, onClose }: MCPLibrarySettingsShe
 	const handleForceSync = async () => {
 		try {
 			await forceSyncMCPLibrary().unwrap();
-			toast.success(t("mcp:library.settings.syncTriggeredToast"));
+			toast.success(t("library.settings.syncTriggered"));
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		}
@@ -110,43 +118,34 @@ export function MCPLibrarySettingsSheet({ open, onClose }: MCPLibrarySettingsShe
 		<Sheet open={open} onOpenChange={(sheetOpen) => !sheetOpen && onClose()}>
 			<SheetContent className="flex w-full flex-col overflow-x-hidden px-0">
 				<SheetHeader className="flex flex-col items-start pt-8" headerClassName="px-4 md:px-6">
-					<SheetTitle>{t("mcp:library.settings.title")}</SheetTitle>
-					<SheetDescription>{t("mcp:library.settings.desc")}</SheetDescription>
+					<SheetTitle>{t("library.settings.title")}</SheetTitle>
+					<SheetDescription>{t("library.settings.description")}</SheetDescription>
 				</SheetHeader>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
 					<div className="flex-1 space-y-4 overflow-y-auto px-4 md:px-8">
 						<div className="space-y-2 rounded-sm border p-4">
 							<div className="space-y-0.5">
-								<Label htmlFor="mcp-library-url">{t("mcp:library.settings.urlLabel")}</Label>
+								<Label htmlFor="mcp-library-url">{t("library.settings.urlLabel")}</Label>
 								<p className="text-muted-foreground text-sm">
-									<Trans t={t} i18nKey="mcp:library.settings.urlHint" components={{ code: <code /> }}>
-										URL to a custom MCP server catalog. Leave empty to use the default Bifrost catalog. For air-gapped deployments, set a{" "}
-										<code>file://</code> URL in <code>config.json</code>.
-									</Trans>
+									<Trans t={t} i18nKey="library.settings.urlHelp" components={{ code: <code /> }} />
 								</p>
 							</div>
 							<Input
 								id="mcp-library-url"
 								type="text"
-								placeholder="https://getbifrost.ai/mcp-library"
+								placeholder={t("library.settings.urlPlaceholder")}
 								data-testid="mcp-library-url-input"
 								{...register("mcp_library_url")}
 								className={errors.mcp_library_url ? "border-destructive" : ""}
 							/>
-							{errors.mcp_library_url && (
-								<p className="text-destructive text-sm">
-									{errors.mcp_library_url.message === "URL_SCHEME_ERROR"
-										? t("mcp:library.settings.urlSchemeError")
-										: errors.mcp_library_url.message}
-								</p>
-							)}
+							{errors.mcp_library_url && <p className="text-destructive text-sm">{errors.mcp_library_url.message}</p>}
 						</div>
 
 						<div className="space-y-2 rounded-sm border p-4">
 							<div className="space-y-0.5">
-								<Label htmlFor="mcp-library-sync-interval">{t("mcp:library.settings.intervalLabel")}</Label>
-								<p className="text-muted-foreground text-sm">{t("mcp:library.settings.intervalHint")}</p>
+								<Label htmlFor="mcp-library-sync-interval">{t("library.settings.intervalLabel")}</Label>
+								<p className="text-muted-foreground text-sm">{t("library.settings.intervalHelp")}</p>
 							</div>
 							<Input
 								id="mcp-library-sync-interval"
@@ -161,15 +160,7 @@ export function MCPLibrarySettingsSheet({ open, onClose }: MCPLibrarySettingsShe
 								{...register("mcp_library_sync_interval_hours", { valueAsNumber: true })}
 							/>
 							{errors.mcp_library_sync_interval_hours && (
-								<p className="text-destructive text-sm">
-									{errors.mcp_library_sync_interval_hours.message === "SYNC_INTERVAL_REQUIRED"
-										? t("mcp:library.settings.intervalRequired")
-										: errors.mcp_library_sync_interval_hours.message === "SYNC_INTERVAL_MAX"
-											? t("mcp:library.settings.intervalMax")
-											: errors.mcp_library_sync_interval_hours.message === "SYNC_INTERVAL_MIN"
-												? t("mcp:library.settings.intervalMin")
-												: errors.mcp_library_sync_interval_hours.message}
-								</p>
+								<p className="text-destructive text-sm">{errors.mcp_library_sync_interval_hours.message}</p>
 							)}
 						</div>
 					</div>
@@ -183,17 +174,17 @@ export function MCPLibrarySettingsSheet({ open, onClose }: MCPLibrarySettingsShe
 								disabled={isForceSyncing || !hasSettingsUpdateAccess}
 								data-testid="mcp-library-force-sync-btn"
 							>
-								{isForceSyncing ? t("mcp:library.settings.syncing") : t("mcp:library.settings.forceSync")}
+								{isForceSyncing ? t("library.settings.syncing") : t("library.settings.forceSync")}
 							</Button>
 							<Button type="button" variant="outline" onClick={onClose} disabled={isLoading} data-testid="mcp-library-settings-cancel-btn">
-								{t("common:actions.cancel")}
+								{tc("cancel")}
 							</Button>
 							<Button
 								type="submit"
 								disabled={!hasChanges || isLoading || isConfigLoading || isConfigError || !hasSettingsUpdateAccess}
 								data-testid="mcp-library-settings-save-btn"
 							>
-								{isLoading ? t("common:state.saving") : t("mcp:agents.sheet.saveChanges")}
+								{isLoading ? t("common.saving") : t("common.saveChanges")}
 							</Button>
 						</div>
 					</div>

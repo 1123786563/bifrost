@@ -12,17 +12,16 @@ import { usePromptContext } from "../context";
 import { useTranslation } from "react-i18next";
 
 export function DeleteFolderDialog() {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("config");
+	const { t: tc } = useTranslation("common");
 	const { deleteFolderDialog, setDeleteFolderDialog, isDeletingFolder, handleDeleteFolder } = usePromptContext();
 
 	return (
 		<AlertDialog open={deleteFolderDialog.open}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{t("workspaces:promptsRepo.alerts.deleteFolderTitle")}</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t("workspaces:promptsRepo.alerts.deleteFolderBody", { name: deleteFolderDialog.folder?.name ?? "" })}
-					</AlertDialogDescription>
+					<AlertDialogTitle>{t("promptRepo.deleteFolder")}</AlertDialogTitle>
+					<AlertDialogDescription>{t("promptRepo.deleteFolderConfirm", { name: deleteFolderDialog.folder?.name })}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel
@@ -30,10 +29,10 @@ export function DeleteFolderDialog() {
 						onClick={() => setDeleteFolderDialog({ open: false })}
 						disabled={isDeletingFolder}
 					>
-						{t("common:actions.cancel")}
+						{tc("cancel")}
 					</AlertDialogCancel>
 					<AlertDialogAction data-testid="delete-folder-confirm" onClick={handleDeleteFolder} disabled={isDeletingFolder}>
-						{isDeletingFolder ? t("workspaces:promptsRepo.alerts.deleting") : t("common:actions.delete")}
+						{isDeletingFolder ? t("promptRepo.deletingDots") : tc("delete")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
@@ -42,17 +41,16 @@ export function DeleteFolderDialog() {
 }
 
 export function DeletePromptDialog() {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("config");
+	const { t: tc } = useTranslation("common");
 	const { deletePromptDialog, setDeletePromptDialog, isDeletingPrompt, handleDeletePrompt } = usePromptContext();
 
 	return (
 		<AlertDialog open={deletePromptDialog.open}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{t("workspaces:promptsRepo.alerts.deletePromptTitle")}</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t("workspaces:promptsRepo.alerts.deletePromptBody", { name: deletePromptDialog.prompt?.name ?? "" })}
-					</AlertDialogDescription>
+					<AlertDialogTitle>{t("promptRepo.deletePrompt")}</AlertDialogTitle>
+					<AlertDialogDescription>{t("promptRepo.deletePromptConfirm", { name: deletePromptDialog.prompt?.name })}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel
@@ -60,10 +58,10 @@ export function DeletePromptDialog() {
 						onClick={() => setDeletePromptDialog({ open: false })}
 						disabled={isDeletingPrompt}
 					>
-						{t("common:actions.cancel")}
+						{tc("cancel")}
 					</AlertDialogCancel>
 					<AlertDialogAction data-testid="delete-prompt-confirm" onClick={handleDeletePrompt} disabled={isDeletingPrompt}>
-						{isDeletingPrompt ? t("workspaces:promptsRepo.alerts.deleting") : t("common:actions.delete")}
+						{isDeletingPrompt ? t("promptRepo.deletingDots") : tc("delete")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { useTranslation } from "react-i18next";
 import { getErrorMessage, useAppSelector, useUpdatePluginMutation } from "@/lib/store";
 import { OtelFormSchema } from "@/lib/types/schemas";
 import { toHeaderStringMap } from "@/lib/utils/secretVarForm";
@@ -9,6 +8,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { OtelFormFragment } from "../../fragments/otelFormFragment";
 import PluginTracingSheet from "../../sheets/pluginTracingSheet";
+import { useTranslation } from "react-i18next";
 
 interface OtelViewProps {
 	onDelete?: () => void;
@@ -16,7 +16,7 @@ interface OtelViewProps {
 }
 
 export default function OtelView({ onDelete, isDeleting }: OtelViewProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const selectedPlugin = useAppSelector((state) => state.plugin.selectedPlugin);
 	const currentConfig = useMemo(() => ({ config: selectedPlugin?.config, enabled: selectedPlugin?.enabled }), [selectedPlugin]);
 	const [updatePlugin] = useUpdatePluginMutation();
@@ -44,10 +44,10 @@ export default function OtelView({ onDelete, isDeleting }: OtelViewProps) {
 				.unwrap()
 				.then(() => {
 					resolve();
-					toast.success(t("logs:otel.updatedSuccess"));
+					toast.success(t("connectors.toast.otelUpdated"));
 				})
 				.catch((err) => {
-					toast.error(t("logs:otel.updateFailed"), {
+					toast.error(t("connectors.toast.otelFailed"), {
 						description: getErrorMessage(err),
 					});
 					reject(err);
@@ -68,7 +68,7 @@ export default function OtelView({ onDelete, isDeleting }: OtelViewProps) {
 							data-testid="otel-configure-tracing-button"
 						>
 							<Activity className="h-4 w-4" />
-							{t("logs:observability.configureTracing")}
+							{t("connectors.configurePluginTracing")}
 						</Button>
 					</div>
 				)}
@@ -78,7 +78,7 @@ export default function OtelView({ onDelete, isDeleting }: OtelViewProps) {
 				open={isTracingSheetOpen}
 				onClose={() => setIsTracingSheetOpen(false)}
 				pluginName="otel"
-				destination="the OTEL collector"
+				destination={t("connectors.tracing.destinationOtel")}
 			/>
 		</div>
 	);

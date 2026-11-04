@@ -19,8 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { resetDurationLabel } from "@/lib/constants/governance";
-import i18n from "@/lib/i18n";
+import { resetDurationLabels } from "@/lib/constants/governance";
 import { getErrorMessage, useDeleteCustomerMutation } from "@/lib/store";
 import { Customer } from "@/lib/types/governance";
 import { cn } from "@/lib/utils";
@@ -35,9 +34,13 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { CustomersEmptyState } from "./customersEmptyState";
 import CustomerSheet from "./customerSheet";
+import { useActionParam } from "@/hooks/useActionParam";
+import { getLocale } from "@/lib/i18n";
 
 // Helper to format reset duration for display
-const formatResetDuration = (duration: string) => resetDurationLabel(i18n.t, duration);
+const formatResetDuration = (duration: string) => {
+	return resetDurationLabels[duration] || duration;
+};
 
 const ACTIONS_COLUMN_CLASS = `sticky right-0 z-10 w-[56px] min-w-[56px] text-right ${PIN_SHADOW_RIGHT}`;
 
@@ -50,7 +53,7 @@ interface CustomerActionsMenuProps {
 }
 
 function CustomerActionsMenu({ customer, canUpdate, canDelete, onEdit, onDelete }: CustomerActionsMenuProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("governance");
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
@@ -60,7 +63,7 @@ function CustomerActionsMenu({ customer, canUpdate, canDelete, onEdit, onDelete 
 					variant="ghost"
 					size="icon"
 					className="h-8 w-8"
-					aria-label={t("governance:org.customers.actionsAria", { name: customer.name })}
+					aria-label={t("customers.actionsAria", { name: customer.name })}
 					data-testid={`customer-actions-btn-${customer.id}`}
 					onClick={(e) => e.stopPropagation()}
 					onPointerDown={(e) => e.stopPropagation()}
@@ -82,8 +85,8 @@ function CustomerActionsMenu({ customer, canUpdate, canDelete, onEdit, onDelete 
 					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<Edit className="h-4 w-4" />
-					{t("common:actions.edit")}
-				</DisabledReasonMenuItem>
+					{t("customers.actions.edit")}
+				</DisabledReasonMenuItem>{" "}
 				<DropdownMenuItem asChild className="cursor-pointer" data-testid={`customer-button-view-logs-${customer.id}`}>
 					<Link
 						to="/workspace/logs"
@@ -95,7 +98,7 @@ function CustomerActionsMenu({ customer, canUpdate, canDelete, onEdit, onDelete 
 						onPointerDown={(e) => e.stopPropagation()}
 					>
 						<ScrollText className="h-4 w-4" />
-						{t("governance:org.customers.viewLogs")}
+						{t("customers.actions.viewLogs")}
 					</Link>
 				</DropdownMenuItem>
 				<DisabledReasonMenuItem
@@ -111,8 +114,8 @@ function CustomerActionsMenu({ customer, canUpdate, canDelete, onEdit, onDelete 
 					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<Trash2 className="h-4 w-4" />
-					{t("common:actions.delete")}
-				</DisabledReasonMenuItem>
+					{t("customers.actions.delete")}
+				</DisabledReasonMenuItem>{" "}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -142,7 +145,8 @@ export default function CustomersTable({
 	onOffsetChange,
 	onSheetOpenChange,
 }: CustomersTableProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("governance");
+	const { t: tCommon } = useTranslation("common");
 	const [showCustomerSheet, setShowCustomerSheet] = useState(false);
 	const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 	const [confirmDeleteCustomer, setConfirmDeleteCustomer] = useState<Customer | null>(null);
@@ -165,7 +169,7 @@ export default function CustomersTable({
 	const handleDelete = async (customerId: string) => {
 		try {
 			await deleteCustomer(customerId).unwrap();
-			toast.success(t("governance:org.customers.toastDeleted"));
+			toast.success(t("customers.deleted"));
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		} finally {
@@ -177,6 +181,7 @@ export default function CustomersTable({
 		setEditingCustomer(null);
 		setShowCustomerSheet(true);
 	};
+	useActionParam("create", handleAddCustomer, { isOpen: showCustomerSheet, enabled: hasCreateAccess });
 
 	const handleEditCustomer = (customer: Customer) => {
 		setEditingCustomer(customer);
@@ -198,7 +203,7 @@ export default function CustomersTable({
 	// Hoisted above the empty/populated branch: PageTitle draws nothing inline,
 	// and leaving it out of either branch drops the topbar to the route-derived
 	// fallback.
-	const pageTitle = <PageTitle title={t("governance:org.customers.title")}>{t("governance:org.customers.pageTitleDescription")}</PageTitle>;
+	const pageTitle = <PageTitle title={t("customers.title")}>{t("customers.description")}</PageTitle>;
 
 	// True empty state: no customers at all (not just filtered to zero). Rendered
 	// as a branch *inside* the tree rather than an early return with a different
@@ -239,8 +244,8 @@ export default function CustomersTable({
 							<div className="relative max-w-sm flex-1">
 								<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 								<Input
-									aria-label={t("governance:org.customers.searchAria")}
-									placeholder={t("governance:org.table.searchPlaceholder")}
+									aria-label={t("customers.searchAria")}
+									placeholder={t("customers.searchPlaceholder")}
 									value={search}
 									onChange={(e) => onSearchChange(e.target.value)}
 									className="pl-9"
@@ -255,7 +260,7 @@ export default function CustomersTable({
 									disabled={!hasCreateAccess}
 								>
 									<Plus className="h-4 w-4" />
-									{t("governance:org.customers.add")}
+									{t("customers.add")}
 								</Button>
 							</DisabledReason>
 						</div>
@@ -264,11 +269,11 @@ export default function CustomersTable({
 							<Table className="min-w-[1100px]">
 								<TableHeader>
 									<TableRow>
-										<TableHead>{t("governance:org.table.name")}</TableHead>
-										<TableHead>{t("governance:org.table.teams")}</TableHead>
-										<TableHead>{t("governance:org.table.budget")}</TableHead>
-										<TableHead>{t("governance:org.table.rateLimit")}</TableHead>
-										<TableHead>{t("governance:org.table.virtualKeys")}</TableHead>
+										<TableHead>{t("customers.columns.name")}</TableHead>
+										<TableHead>{t("customers.columns.teams")}</TableHead>
+										<TableHead>{t("customers.columns.budget")}</TableHead>
+										<TableHead>{t("customers.columns.rateLimit")}</TableHead>
+										<TableHead>{t("customers.columns.virtualKeys")}</TableHead>
 										<TableHead className={`bg-muted ${ACTIONS_COLUMN_CLASS}`}></TableHead>
 									</TableRow>
 								</TableHeader>
@@ -276,7 +281,7 @@ export default function CustomersTable({
 									{customers.length === 0 ? (
 										<TableRow>
 											<TableCell colSpan={6} className="h-24 text-center">
-												<span className="text-muted-foreground text-sm">{t("governance:org.table.noCustomersMatch")}</span>
+												<span className="text-muted-foreground text-sm">{t("customers.noMatch")}</span>
 											</TableCell>
 										</TableRow>
 									) : (
@@ -338,7 +343,7 @@ export default function CustomersTable({
 															<span className="truncate font-medium">{customer.name}</span>
 															{isExhausted && (
 																<Badge variant="destructive" className="w-fit text-xs">
-																	{t("governance:org.table.limitReached")}
+																	{t("customers.limitReached")}
 																</Badge>
 															)}
 														</div>
@@ -346,7 +351,7 @@ export default function CustomersTable({
 													<TableCell>
 														{teamCount > 0 ? (
 															<Badge variant="outline" className="text-xs">
-																{t("governance:org.table.teamCount", { count: teamCount })}
+																{t("customers.teamCount", { count: teamCount })}
 															</Badge>
 														) : (
 															<span className="text-muted-foreground text-sm">-</span>
@@ -369,7 +374,7 @@ export default function CustomersTable({
 																						</span>
 																					</div>
 																					<Progress
-																						aria-label={t("governance:org.table.budgetUsageAria")}
+																						aria-label={t("usage.budgetAria")}
 																						value={pct}
 																						className={cn(
 																							"bg-muted/70 dark:bg-muted/30 h-1.5",
@@ -387,7 +392,7 @@ export default function CustomersTable({
 																					{formatCurrency(budget.current_usage)} / {formatCurrency(budget.max_limit)}
 																				</p>
 																				<p className="text-primary-foreground/80 text-xs">
-																					{t("governance:org.table.resets", { duration: formatResetDuration(budget.reset_duration) })}
+																					{t("usage.resets", { period: formatResetDuration(budget.reset_duration) })}
 																				</p>
 																			</TooltipContent>
 																		</Tooltip>
@@ -407,14 +412,14 @@ export default function CustomersTable({
 																			<div className="space-y-1.5">
 																				<div className="flex items-center justify-between gap-4 text-xs">
 																					<span className="font-medium">
-																						{t("governance:org.table.tokensCount", { count: rateLimit.token_max_limit.toLocaleString() })}
+																						{t("usage.tokens", { value: rateLimit.token_max_limit.toLocaleString(getLocale()) })}
 																					</span>
 																					<span className="text-muted-foreground">
 																						{formatResetDuration(rateLimit.token_reset_duration || "1h")}
 																					</span>
 																				</div>
 																				<Progress
-																					aria-label={t("governance:org.table.tokenUsageAria")}
+																					aria-label={t("usage.tokenAria")}
 																					value={tokenPercentage}
 																					className={cn(
 																						"bg-muted/70 dark:bg-muted/30 h-1",
@@ -429,13 +434,13 @@ export default function CustomersTable({
 																		</TooltipTrigger>
 																		<TooltipContent>
 																			<p className="font-medium">
-																				{rateLimit.token_current_usage.toLocaleString()} /{" "}
-																				{t("governance:org.table.tokensCount", { count: rateLimit.token_max_limit.toLocaleString() })}
+																				{t("usage.tokenTooltip", {
+																					used: rateLimit.token_current_usage.toLocaleString(getLocale()),
+																					max: rateLimit.token_max_limit.toLocaleString(getLocale()),
+																				})}
 																			</p>
 																			<p className="text-primary-foreground/80 text-xs">
-																				{t("governance:org.table.resets", {
-																					duration: formatResetDuration(rateLimit.token_reset_duration || "1h"),
-																				})}
+																				{t("usage.resets", { period: formatResetDuration(rateLimit.token_reset_duration || "1h") })}
 																			</p>
 																		</TooltipContent>
 																	</Tooltip>
@@ -446,14 +451,14 @@ export default function CustomersTable({
 																			<div className="space-y-1.5">
 																				<div className="flex items-center justify-between gap-4 text-xs">
 																					<span className="font-medium">
-																						{t("governance:org.table.reqCount", { count: rateLimit.request_max_limit.toLocaleString() })}
+																						{t("usage.req", { value: rateLimit.request_max_limit.toLocaleString(getLocale()) })}
 																					</span>
 																					<span className="text-muted-foreground">
 																						{formatResetDuration(rateLimit.request_reset_duration || "1h")}
 																					</span>
 																				</div>
 																				<Progress
-																					aria-label={t("governance:org.table.requestUsageAria")}
+																					aria-label={t("usage.requestAria")}
 																					value={requestPercentage}
 																					className={cn(
 																						"bg-muted/70 dark:bg-muted/30 h-1",
@@ -468,13 +473,13 @@ export default function CustomersTable({
 																		</TooltipTrigger>
 																		<TooltipContent>
 																			<p className="font-medium">
-																				{rateLimit.request_current_usage.toLocaleString()} /{" "}
-																				{t("governance:org.table.requestsCount", { count: rateLimit.request_max_limit.toLocaleString() })}
+																				{t("usage.requestTooltip", {
+																					used: rateLimit.request_current_usage.toLocaleString(getLocale()),
+																					max: rateLimit.request_max_limit.toLocaleString(getLocale()),
+																				})}
 																			</p>
 																			<p className="text-primary-foreground/80 text-xs">
-																				{t("governance:org.table.resets", {
-																					duration: formatResetDuration(rateLimit.request_reset_duration || "1h"),
-																				})}
+																				{t("usage.resets", { period: formatResetDuration(rateLimit.request_reset_duration || "1h") })}
 																			</p>
 																		</TooltipContent>
 																	</Tooltip>
@@ -487,7 +492,7 @@ export default function CustomersTable({
 													<TableCell>
 														{vkCount > 0 ? (
 															<Badge variant="outline" className="text-xs">
-																{t("governance:org.table.keyCount", { count: vkCount })}
+																{t("usage.keyCount", { count: vkCount })}
 															</Badge>
 														) : (
 															<span className="text-muted-foreground text-sm">-</span>
@@ -520,9 +525,10 @@ export default function CustomersTable({
 						{totalCount > 0 && (
 							<div className="flex shrink-0 items-center justify-between text-xs" data-testid="pagination">
 								<div className="text-muted-foreground flex items-center gap-2">
-									{t("governance:org.table.entries", {
-										from: `${(offset + 1).toLocaleString()}-${Math.min(offset + limit, totalCount).toLocaleString()}`,
-										total: totalCount.toLocaleString(),
+									{t("webhooks.pagination.entries", {
+										from: (offset + 1).toLocaleString(getLocale()),
+										to: Math.min(offset + limit, totalCount).toLocaleString(getLocale()),
+										total: totalCount.toLocaleString(getLocale()),
 									})}
 								</div>
 
@@ -533,15 +539,15 @@ export default function CustomersTable({
 										onClick={() => onOffsetChange(Math.max(0, offset - limit))}
 										disabled={offset === 0}
 										data-testid="customers-pagination-prev-btn"
-										aria-label={t("governance:org.table.previousPageAria")}
+										aria-label={t("webhooks.pagination.previousPage")}
 									>
 										<ChevronLeft className="size-3" />
 									</Button>
 
 									<div className="flex items-center gap-1">
-										<span>{t("governance:org.table.page")}</span>
+										<span>{t("webhooks.pagination.page")}</span>
 										<span>{Math.floor(offset / limit) + 1}</span>
-										<span>{t("governance:org.table.pageOf", { count: Math.ceil(totalCount / limit) })}</span>
+										<span>{t("webhooks.pagination.ofPages", { total: Math.ceil(totalCount / limit) })}</span>
 									</div>
 
 									<Button
@@ -550,7 +556,7 @@ export default function CustomersTable({
 										onClick={() => onOffsetChange(offset + limit)}
 										disabled={offset + limit >= totalCount}
 										data-testid="customers-pagination-next-btn"
-										aria-label={t("governance:org.table.nextPageAria")}
+										aria-label={t("webhooks.pagination.nextPage")}
 									>
 										<ChevronRight className="size-3" />
 									</Button>
@@ -563,20 +569,18 @@ export default function CustomersTable({
 				<AlertDialog open={!!confirmDeleteCustomer} onOpenChange={(open) => !open && setConfirmDeleteCustomer(null)}>
 					<AlertDialogContent>
 						<AlertDialogHeader>
-							<AlertDialogTitle>{t("governance:org.customers.deleteTitle")}</AlertDialogTitle>
-							<AlertDialogDescription>
-								{t("governance:org.customers.deleteDescription", { name: confirmDeleteCustomer?.name })}
-							</AlertDialogDescription>
+							<AlertDialogTitle>{t("customers.deleteTitle")}</AlertDialogTitle>
+							<AlertDialogDescription>{t("customers.deleteDescription", { name: confirmDeleteCustomer?.name })}</AlertDialogDescription>
 						</AlertDialogHeader>
 						<AlertDialogFooter>
-							<AlertDialogCancel data-testid="customer-button-delete-cancel">{t("common:actions.cancel")}</AlertDialogCancel>
+							<AlertDialogCancel data-testid="customer-button-delete-cancel">{tCommon("cancel")}</AlertDialogCancel>
 							<AlertDialogAction
 								data-testid="customer-button-delete-confirm"
 								onClick={() => confirmDeleteCustomer && handleDelete(confirmDeleteCustomer.id)}
 								disabled={isDeleting}
 								className="bg-red-600 hover:bg-red-700"
 							>
-								{isDeleting ? t("governance:org.table.deleting") : t("common:actions.delete")}
+								{isDeleting ? t("customers.deleting") : t("customers.actions.delete")}
 							</AlertDialogAction>
 						</AlertDialogFooter>
 					</AlertDialogContent>

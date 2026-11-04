@@ -1,11 +1,13 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
-import { buildVSCodeConfig, buildVSCodeDeeplink } from "../commandBuilders";
 import { useTranslation } from "react-i18next";
+import { buildVSCodeConfig, buildVSCodeDeeplink } from "../commandBuilders";
 import { HarnessCommandSection } from "../harnessCommandSection";
 import type { HarnessInstallProps, VSCodeConfigScope } from "../types";
 import { getRegistrationLabel } from "../utils";
+import { withBasePath } from "@/lib/utils/basePath";
 
+/** Install panel for VS Code: the generated config or command for the selected MCP servers. */
 export function VSCodeHarnessInstall({
 	canGenerateCommand,
 	clientConfig,
@@ -15,7 +17,7 @@ export function VSCodeHarnessInstall({
 	selectedServers,
 	serverScope,
 }: HarnessInstallProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	const [configScope, setConfigScope] = useState<VSCodeConfigScope>("workspace");
 
 	const serverArgs = useMemo(
@@ -48,18 +50,18 @@ export function VSCodeHarnessInstall({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="workspace">{t("mcp:usageGuide.scope.workspace")}</SelectItem>
-						<SelectItem value="user">{t("mcp:usageGuide.scope.user")}</SelectItem>
+						<SelectItem value="workspace">{t("usageGuide.scopeWorkspace")}</SelectItem>
+						<SelectItem value="user">{t("usageGuide.scopeUser")}</SelectItem>
 					</SelectContent>
 				</Select>
 			}
-			copySuccessMessage={t("mcp:usageGuide.configCopied")}
+			copySuccessMessage={t("common.configCopied")}
 			deeplink={deeplink}
 			emptyMessage={emptyMessage}
 			harnessName="VS Code"
-			label={t("mcp:usageGuide.configLabel")}
-			logoSrc="/images/harness/vscode.svg"
-			registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers, t)}`}
+			label={t("common.config")}
+			logoSrc={withBasePath("/images/harness/vscode.svg")}
+			registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers)}`}
 		/>
 	);
 }

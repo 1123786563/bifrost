@@ -6,32 +6,25 @@ interface ModelFilterSelectProps {
 	models: string[];
 	selectedModel: string;
 	onModelChange: (model: string) => void;
-	/** i18n key for the "no filter" option; defaults to all models. */
-	placeholderKey?: string;
+	placeholder?: string;
 	"data-testid"?: string;
 }
 
-export function ModelFilterSelect({
-	models,
-	selectedModel,
-	onModelChange,
-	placeholderKey = "dashboard:filters.allModels",
-	"data-testid": testId,
-}: ModelFilterSelectProps) {
-	const { t } = useTranslation("dashboard");
-	const placeholder = t(placeholderKey);
+export function ModelFilterSelect({ models, selectedModel, onModelChange, placeholder, "data-testid": testId }: ModelFilterSelectProps) {
+	const { t } = useTranslation("observability");
+	const resolvedPlaceholder = placeholder ?? t("labels.allModels");
 	return (
 		<Select value={selectedModel} onValueChange={onModelChange}>
 			<SelectTrigger
-				aria-label={t("filters.filterByModel")}
+				aria-label={t("labels.filterByModel")}
 				className="!h-7.5 w-[110px] text-xs sm:w-[130px]"
 				data-testid={testId}
 				size="sm"
 			>
-				<SelectValue placeholder={placeholder} />
+				<SelectValue placeholder={resolvedPlaceholder} />
 			</SelectTrigger>
 			<SelectContent className="w-[300px] max-w-[var(--radix-popper-available-width)]">
-				<SelectItem value="all">{placeholder}</SelectItem>
+				<SelectItem value="all">{resolvedPlaceholder}</SelectItem>
 				{models.filter(Boolean).map((model) => (
 					<SelectItem key={model} value={model} className="text-xs [&>span:last-child]:min-w-0">
 						<StartTruncatedLabel>{model}</StartTruncatedLabel>

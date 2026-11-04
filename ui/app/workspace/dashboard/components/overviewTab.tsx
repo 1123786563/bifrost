@@ -11,15 +11,14 @@ import type {
 } from "@/lib/types/logs";
 import { COMPACT_NUMBER_FORMAT } from "@/lib/utils/numbers";
 import NumberFlow from "@number-flow/react";
-import { memo, useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { type ReactNode, memo, useMemo } from "react";
 import {
 	CHART_COLORS,
 	CHART_HEADER_LEGEND_CLASS,
 	LATENCY_COLORS,
 	OTHER_SERIES_COLOR,
 	OTHER_SERIES_KEY,
-	OTHER_SERIES_LABEL_KEY,
+	getOtherSeriesLabel,
 	THROUGHPUT_COLOR,
 	formatTokensPerSecond,
 	getModelColor,
@@ -36,6 +35,8 @@ import { LogVolumeChart } from "./charts/logVolumeChart";
 import { ModelFilterSelect } from "./charts/modelFilterSelect";
 import { ModelUsageChart } from "./charts/modelUsageChart";
 import { TokenUsageChart } from "./charts/tokenUsageChart";
+import { useTranslation } from "react-i18next";
+import { getLocale } from "@/lib/i18n";
 
 export interface OverviewTabProps {
 	// Data
@@ -90,6 +91,9 @@ export interface OverviewTabProps {
 	// Filter callbacks
 	onCostModelChange: (model: string) => void;
 	onUsageModelChange: (model: string) => void;
+
+	// Charts registered by a downstream build, drawn at the end of the chart grid
+	extraCharts?: ReactNode;
 }
 
 function OverviewTabImpl({
@@ -130,8 +134,9 @@ function OverviewTabImpl({
 	onThroughputChartToggle,
 	onCostModelChange,
 	onUsageModelChange,
+	extraCharts,
 }: OverviewTabProps) {
-	const { t } = useTranslation("dashboard");
+	const { t } = useTranslation("observability");
 	const volumeTotal = useMemo(() => {
 		if (!histogramData?.buckets) return null;
 		return histogramData.buckets.reduce((sum, b) => sum + (b.count ?? 0), 0);
@@ -211,10 +216,10 @@ function OverviewTabImpl({
 			<div className="grid grid-cols-1 gap-2 lg:grid-cols-2 2xl:grid-cols-3">
 				{/* Cost Chart: first so spend is the first thing the page answers. */}
 				<ChartCard
-					title={t("charts.cost")}
+					title={t("dashboard.charts.cost")}
 					loading={loadingCost}
 					testId="chart-cost-total"
-					totalLabel={t("terms.total")}
+					totalLabel={t("labels.total")}
 					total={
 						costTotal !== null ? (
 							<NumberFlow value={costTotal} format={{ ...COMPACT_NUMBER_FORMAT, style: "currency", currency: "USD" }} />
@@ -222,7 +227,7 @@ function OverviewTabImpl({
 					}
 					totalTooltip={
 						costTotal !== null
-							? costTotal.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 6 })
+							? costTotal.toLocaleString(getLocale(), { style: "currency", currency: "USD", maximumFractionDigits: 6 })
 							: undefined
 					}
 					legend={
@@ -243,7 +248,7 @@ function OverviewTabImpl({
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<span tabIndex={0} data-testid="cost-legend-more-trigger" className="text-muted-foreground cursor-default">
-														{t("terms.moreSeries", { count: costModels.length - 1 })}
+														{t("dashboard.charts.moreCount", { count: costModels.length - 1 })}
 													</span>
 												</TooltipTrigger>
 												<TooltipContent>
@@ -256,7 +261,7 @@ function OverviewTabImpl({
 																		backgroundColor: model === OTHER_SERIES_KEY ? OTHER_SERIES_COLOR : getModelColor(idx + 1),
 																	}}
 																/>
-																{model === OTHER_SERIES_KEY ? t(OTHER_SERIES_LABEL_KEY) : model}
+																{model === OTHER_SERIES_KEY ? getOtherSeriesLabel() : model}
 															</span>
 														))}
 													</div>
@@ -295,25 +300,25 @@ function OverviewTabImpl({
 
 				{/* Log Volume Chart */}
 				<ChartCard
-					title={t("charts.requestVolume")}
+					title={t("dashboard.charts.requestVolume")}
 					loading={loadingHistogram}
 					testId="chart-log-volume"
-					totalLabel={t("terms.total")}
+					totalLabel={t("labels.total")}
 					total={volumeTotal !== null ? <NumberFlow value={volumeTotal} format={COMPACT_NUMBER_FORMAT} /> : undefined}
-					totalTooltip={volumeTotal !== null ? volumeTotal.toLocaleString("en-US") : undefined}
+					totalTooltip={volumeTotal !== null ? volumeTotal.toLocaleString(getLocale()) : undefined}
 					legend={
 						<div className={CHART_HEADER_LEGEND_CLASS}>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.success }} />
-								<span className="text-muted-foreground">{t("terms.success")}</span>
+								<span className="text-muted-foreground">{t("labels.success")}</span>
 							</span>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.error }} />
-								<span className="text-muted-foreground">{t("terms.error")}</span>
+								<span className="text-muted-foreground">{t("labels.error")}</span>
 							</span>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.cancelled }} />
-								<span className="text-muted-foreground">{t("terms.cancelled")}</span>
+								<span className="text-muted-foreground">{t("labels.cancelled")}</span>
 							</span>
 						</div>
 					}
@@ -326,25 +331,25 @@ function OverviewTabImpl({
 
 				{/* Token Usage Chart */}
 				<ChartCard
-					title={t("charts.tokenUsage")}
+					title={t("dashboard.charts.tokenUsage")}
 					loading={loadingTokens}
 					testId="chart-token-usage"
-					totalLabel={t("terms.total")}
+					totalLabel={t("labels.total")}
 					total={tokenTotal !== null ? <NumberFlow value={tokenTotal} format={COMPACT_NUMBER_FORMAT} /> : undefined}
-					totalTooltip={tokenTotal !== null ? tokenTotal.toLocaleString("en-US") : undefined}
+					totalTooltip={tokenTotal !== null ? tokenTotal.toLocaleString(getLocale()) : undefined}
 					legend={
 						<div className={CHART_HEADER_LEGEND_CLASS}>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.promptTokens }} />
-								<span className="text-muted-foreground">{t("terms.input")}</span>
+								<span className="text-muted-foreground">{t("labels.input")}</span>
 							</span>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.completionTokens }} />
-								<span className="text-muted-foreground">{t("terms.output")}</span>
+								<span className="text-muted-foreground">{t("labels.output")}</span>
 							</span>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.cachedReadTokens }} />
-								<span className="text-muted-foreground">{t("terms.cached")}</span>
+								<span className="text-muted-foreground">{t("labels.cached")}</span>
 							</span>
 						</div>
 					}
@@ -354,23 +359,23 @@ function OverviewTabImpl({
 				</ChartCard>
 
 				{/* External Cache Hit Rate Meter */}
-				<ChartCard title={t("charts.externalCacheHitRate")} loading={loadingTokens} testId="chart-cache-external">
+				<ChartCard title={t("dashboard.charts.externalCacheHitRate")} loading={loadingTokens} testId="chart-cache-external">
 					<ExternalCacheTokenMeterChart data={tokenData} />
 				</ChartCard>
 
 				{/* Local Cache Hit Rate Meter */}
-				<ChartCard title={t("charts.localCacheHitRate")} loading={loadingStats} testId="chart-cache-local">
+				<ChartCard title={t("dashboard.charts.localCacheHitRate")} loading={loadingStats} testId="chart-cache-local">
 					<LocalCacheTokenMeterChart data={logsStats} />
 				</ChartCard>
 
 				{/* Model Usage Chart */}
 				<ChartCard
-					title={t("charts.modelUsage")}
+					title={t("dashboard.charts.modelUsage")}
 					loading={loadingModels}
 					testId="chart-model-usage"
-					totalLabel={t("terms.total")}
+					totalLabel={t("labels.total")}
 					total={modelUsageTotal !== null ? <NumberFlow value={modelUsageTotal} format={COMPACT_NUMBER_FORMAT} /> : undefined}
-					totalTooltip={modelUsageTotal !== null ? modelUsageTotal.toLocaleString("en-US") : undefined}
+					totalTooltip={modelUsageTotal !== null ? modelUsageTotal.toLocaleString(getLocale()) : undefined}
 					legend={
 						<div className={CHART_HEADER_LEGEND_CLASS}>
 							{usageModel === "all" ? (
@@ -389,7 +394,7 @@ function OverviewTabImpl({
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<span tabIndex={0} data-testid="usage-legend-more-trigger" className="text-muted-foreground cursor-default">
-														{t("terms.moreSeries", { count: usageModels.length - 1 })}
+														{t("dashboard.charts.moreCount", { count: usageModels.length - 1 })}
 													</span>
 												</TooltipTrigger>
 												<TooltipContent>
@@ -402,7 +407,7 @@ function OverviewTabImpl({
 																		backgroundColor: model === OTHER_SERIES_KEY ? OTHER_SERIES_COLOR : getModelColor(idx + 1),
 																	}}
 																/>
-																{model === OTHER_SERIES_KEY ? t(OTHER_SERIES_LABEL_KEY) : model}
+																{model === OTHER_SERIES_KEY ? getOtherSeriesLabel() : model}
 															</span>
 														))}
 													</div>
@@ -415,15 +420,15 @@ function OverviewTabImpl({
 								<>
 									<span className="flex items-center gap-1">
 										<span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: CHART_COLORS.success }} />
-										<span className="text-muted-foreground">{t("terms.success")}</span>
+										<span className="text-muted-foreground">{t("labels.success")}</span>
 									</span>
 									<span className="flex items-center gap-1">
 										<span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: CHART_COLORS.error }} />
-										<span className="text-muted-foreground">{t("terms.error")}</span>
+										<span className="text-muted-foreground">{t("labels.error")}</span>
 									</span>
 									<span className="flex items-center gap-1">
 										<span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: CHART_COLORS.cancelled }} />
-										<span className="text-muted-foreground">{t("terms.cancelled")}</span>
+										<span className="text-muted-foreground">{t("labels.cancelled")}</span>
 									</span>
 								</>
 							)}
@@ -446,21 +451,21 @@ function OverviewTabImpl({
 
 				{/* Latency Chart */}
 				<ChartCard
-					title={t("charts.latency")}
+					title={t("dashboard.charts.latency")}
 					loading={loadingLatency}
 					testId="chart-latency"
-					totalLabel={t("terms.avg")}
+					totalLabel="Avg"
 					total={
 						latencyAvg !== null ? (
 							<NumberFlow value={latencyAvg} format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }} suffix="ms" />
 						) : undefined
 					}
-					totalTooltip={latencyAvg !== null ? `${latencyAvg.toLocaleString("en-US", { maximumFractionDigits: 6 })}ms` : undefined}
+					totalTooltip={latencyAvg !== null ? `${latencyAvg.toLocaleString(getLocale(), { maximumFractionDigits: 6 })}ms` : undefined}
 					legend={
 						<div className={CHART_HEADER_LEGEND_CLASS}>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: LATENCY_COLORS.avg }} />
-								<span className="text-muted-foreground">{t("terms.avg")}</span>
+								<span className="text-muted-foreground">{t("labels.avg")}</span>
 							</span>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: LATENCY_COLORS.p90 }} />
@@ -485,21 +490,21 @@ function OverviewTabImpl({
 
 				{/* Bifrost Overhead Chart */}
 				<ChartCard
-					title={t("charts.bifrostOverhead")}
+					title={t("dashboard.charts.bifrostOverhead")}
 					loading={loadingLatency}
 					testId="chart-overhead"
-					totalLabel={t("terms.avg")}
+					totalLabel="Avg"
 					total={
 						overheadAvg !== null ? (
 							<NumberFlow value={overheadAvg} format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }} suffix="ms" />
 						) : undefined
 					}
-					totalTooltip={overheadAvg !== null ? `${overheadAvg.toLocaleString("en-US", { maximumFractionDigits: 6 })}ms` : undefined}
+					totalTooltip={overheadAvg !== null ? `${overheadAvg.toLocaleString(getLocale(), { maximumFractionDigits: 6 })}ms` : undefined}
 					legend={
 						<div className={CHART_HEADER_LEGEND_CLASS}>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: LATENCY_COLORS.avg }} />
-								<span className="text-muted-foreground">{t("terms.avg")}</span>
+								<span className="text-muted-foreground">{t("labels.avg")}</span>
 							</span>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: LATENCY_COLORS.p90 }} />
@@ -524,21 +529,23 @@ function OverviewTabImpl({
 
 				{/* Throughput (tokens/sec) Chart */}
 				<ChartCard
-					title={t("charts.throughput")}
+					title={t("dashboard.charts.throughput")}
 					loading={loadingThroughput}
 					testId="chart-throughput"
-					totalLabel={t("terms.avg")}
+					totalLabel="Avg"
 					total={
 						throughputAvg !== null ? <span className="truncate whitespace-nowrap">{formatTokensPerSecond(throughputAvg)}</span> : undefined
 					}
 					totalTooltip={
-						throughputAvg !== null ? `${throughputAvg.toLocaleString("en-US", { maximumFractionDigits: 2 })} tokens/sec` : undefined
+						throughputAvg !== null
+							? t("dashboard.charts.tokensPerSecValue", { value: throughputAvg.toLocaleString(getLocale(), { maximumFractionDigits: 2 }) })
+							: undefined
 					}
 					legend={
 						<div className={CHART_HEADER_LEGEND_CLASS}>
 							<span className="flex items-center gap-1">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: THROUGHPUT_COLOR }} />
-								<span className="text-muted-foreground">{t("terms.tokensPerSec")}</span>
+								<span className="text-muted-foreground">{t("labels.tokensPerSec")}</span>
 							</span>
 						</div>
 					}
@@ -552,6 +559,8 @@ function OverviewTabImpl({
 				>
 					<ThroughputChart data={throughputData} chartType={throughputChartType} startTime={startTime} endTime={endTime} />
 				</ChartCard>
+
+				{extraCharts}
 			</div>
 		</>
 	);

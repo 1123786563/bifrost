@@ -13,7 +13,7 @@ interface VirtualKeysEmptyStateProps {
 }
 
 export function VirtualKeysEmptyState({ onAddClick, canCreate = true }: VirtualKeysEmptyStateProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("models");
 	return (
 		<div
 			className="flex min-h-[80vh] w-full flex-col items-center justify-center gap-4 py-16 text-center"
@@ -23,24 +23,24 @@ export function VirtualKeysEmptyState({ onAddClick, canCreate = true }: VirtualK
 				<KeyRound className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />
 			</div>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-muted-foreground text-xl font-medium">{t("governance:virtualKeys.empty.title")}</h1>
+				<h1 className="text-muted-foreground text-xl font-medium">{t("virtualKeys.emptyTitle")}</h1>
 				<div className="text-muted-foreground mx-auto mt-2 w-full max-w-[600px] text-sm font-normal">
-					{t("governance:virtualKeys.empty.description")}
+					{t("virtualKeys.emptyDescription")}
 				</div>
 				<div className="mx-auto mt-6 flex flex-row flex-wrap items-center justify-center gap-2">
 					<Button
 						variant="outline"
-						aria-label={t("governance:virtualKeys.empty.readMoreAria")}
+						aria-label={t("virtualKeys.readMoreAria")}
 						data-testid="virtual-keys-button-read-more"
 						onClick={() => {
 							window.open(`${VIRTUAL_KEYS_DOCS_URL}?utm_source=bfd`, "_blank", "noopener,noreferrer");
 						}}
 					>
-						{t("governance:virtualKeys.empty.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
+						{t("virtualKeys.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
-					<DisabledReason reason={actionDisabledReason(canCreate, "create", "virtualKeys")}>
+					<DisabledReason reason={actionDisabledReason(canCreate, "create", "virtual keys")}>
 						<Button onClick={onAddClick} disabled={!canCreate} data-testid="create-vk-btn">
-							{t("governance:virtualKeys.empty.add")}
+							{t("virtualKeys.addVirtualKey")}
 						</Button>
 					</DisabledReason>
 				</div>

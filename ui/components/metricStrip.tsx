@@ -68,7 +68,7 @@ export function MetricSegment({
 	onMouseLeave?: (event: MouseEvent<HTMLDivElement>) => void;
 	testId?: string;
 }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("observability");
 	// The footer is derived from the same figures as the value, so it goes with them
 	// rather than rendering a flat line beside an "N/A".
 	const ready = state === "ready";
@@ -112,7 +112,7 @@ export function MetricSegment({
 					"[--number-flow-mask-height:0.15em]",
 					ready ? "text-foreground" : "text-muted-foreground",
 				)}
-				title={state === "unavailable" ? t("workspaces:metricStrip.unavailableTitle") : undefined}
+				title={state === "unavailable" ? t("logs.stats.unavailable") : undefined}
 			>
 				{ready ? children : placeholder[state]}
 			</div>

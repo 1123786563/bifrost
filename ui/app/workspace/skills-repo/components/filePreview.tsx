@@ -112,7 +112,7 @@ export function FilePreview({
 	// Explicit download target; falls back to the resolved media URL.
 	downloadUrl?: string;
 }) {
-	const { t } = useTranslation(["common", "playground"]);
+	const { t } = useTranslation("config");
 	const kind = detectKind(file);
 	const source = resolveSource(file, skillName);
 	const fileName = file.path.split("/").filter(Boolean).pop() || file.path;
@@ -157,7 +157,7 @@ export function FilePreview({
 	if (source.unavailable && kind !== "text") {
 		return (
 			<FallbackBlock fileName={fileName} file={file} downloadUrl={resolvedDownloadUrl}>
-				{t("playground:skills.files.previewAfterSaving")}
+				{t("skillsRepo.previewAfterSaving")}
 			</FallbackBlock>
 		);
 	}
@@ -201,14 +201,14 @@ export function FilePreview({
 			return (
 				<div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
 					<Loader2 className="h-4 w-4 animate-spin" />
-					{t("common:state.loading")}
+					{t("skillsRepo.loadingEllipsis")}
 				</div>
 			);
 		}
 		if (fetchState === "error") {
 			return (
 				<FallbackBlock fileName={fileName} file={file} downloadUrl={resolvedDownloadUrl}>
-					{t("playground:skills.files.loadFailed")}
+					{t("skillsRepo.couldNotLoad")}
 				</FallbackBlock>
 			);
 		}
@@ -217,7 +217,7 @@ export function FilePreview({
 
 		return (
 			<ScrollArea className="h-full" bidirectionalScroll>
-				<pre className="p-4 font-mono text-xs leading-5 whitespace-pre-wrap">{textContent || t("playground:skills.shared.emptyBody")}</pre>
+				<pre className="p-4 font-mono text-xs leading-5 whitespace-pre-wrap">{textContent || t("skillsRepo.emptyParens")}</pre>
 			</ScrollArea>
 		);
 	}
@@ -247,7 +247,7 @@ export function FilePreviewPane({
 	// Lets the parent commit a pending buffer (e.g. before a version save).
 	registerFlush?: (flush: (() => void) | null) => void;
 }) {
-	const { t } = useTranslation(["common", "playground"]);
+	const { t } = useTranslation("config");
 	const resolved = mode === "view" ? (downloadUrl ?? resolveSource(file, skillName).url) : undefined;
 	const fileName = file.path.split("/").filter(Boolean).pop() || file.path;
 
@@ -285,12 +285,7 @@ export function FilePreviewPane({
 			<div className="bg-muted/30 flex h-9 shrink-0 items-center justify-between gap-2 border-b px-3">
 				<span className="flex min-w-0 items-center gap-1.5 truncate font-mono text-xs" title={file.path}>
 					{file.path}
-					{dirty && (
-						<span
-							className="bg-primary inline-block size-1.5 shrink-0 rounded-full"
-							aria-label={t("playground:skills.files.unsavedChangesAriaLabel")}
-						/>
-					)}
+					{dirty && <span className="bg-primary inline-block size-1.5 shrink-0 rounded-full" aria-label={t("skillsRepo.unsavedChanges")} />}
 				</span>
 				<div className="flex shrink-0 items-center gap-1">
 					{isEditable && (
@@ -303,12 +298,12 @@ export function FilePreviewPane({
 							onClick={saveFile}
 						>
 							<Save className="h-3.5 w-3.5" />
-							{t("playground:skills.files.saveFile")}
+							{t("skillsRepo.saveFile")}
 						</Button>
 					)}
 					{resolved && (
 						<Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-7 px-2" asChild>
-							<a href={resolved} download={fileName} aria-label={t("playground:skills.files.downloadAriaLabel", { name: fileName })}>
+							<a href={resolved} download={fileName} aria-label={t("skillsRepo.downloadFileAria", { name: fileName })}>
 								<Download className="h-3.5 w-3.5" />
 							</a>
 						</Button>
@@ -340,7 +335,7 @@ function FileSourceEditor({
 	skillName: string;
 	onFileUpdate?: (updates: Partial<SkillFileEntry>) => void;
 }) {
-	const { t } = useTranslation(["common", "playground"]);
+	const { t } = useTranslation("config");
 	const fileName = file.path.split("/").filter(Boolean).pop() || file.path;
 	const source = resolveSource(file, skillName);
 	const kind = detectKind(file);
@@ -385,11 +380,11 @@ function FileSourceEditor({
 				<div className="flex flex-col gap-0.5">
 					<p className="max-w-full truncate font-mono text-sm">{fileName}</p>
 					<p className="text-muted-foreground text-xs">
-						{file.mime_type || t("playground:skills.files.uploadedFile")}
+						{file.mime_type || t("skillsRepo.uploadedFile")}
 						{file.file_size_bytes ? ` · ${formatFileSize(file.file_size_bytes)}` : ""}
 					</p>
 				</div>
-				<p className="text-muted-foreground max-w-md text-xs">{t("playground:skills.files.uploadedNoEdit")}</p>
+				<p className="text-muted-foreground max-w-md text-xs">{t("skillsRepo.uploadCannotEdit")}</p>
 			</div>
 		);
 	}
@@ -398,18 +393,18 @@ function FileSourceEditor({
 		return (
 			<div className="flex h-full flex-col gap-4 p-4">
 				<div className="flex flex-col gap-1.5">
-					<Label className="text-muted-foreground text-xs">{t("playground:skills.files.sourceUrlLabel")}</Label>
+					<Label className="text-muted-foreground text-xs">{t("skillsRepo.sourceUrl")}</Label>
 					<Input
 						data-testid="skill-file-url-input"
 						value={file.source_url ?? ""}
 						onChange={(e) => onFileUpdate?.({ source_url: e.target.value })}
-						placeholder="https://example.com/file.py"
+						placeholder={t("skillsRepo.sourceUrlPlaceholder")}
 						className="font-mono text-xs"
 					/>
 				</div>
 				<div className="flex items-start gap-2 rounded-sm border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-200">
 					<Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-					<span>{t("playground:skills.files.liveReferenceHintShort")}</span>
+					<span>{t("skillsRepo.liveReference")}</span>
 				</div>
 			</div>
 		);
@@ -420,15 +415,13 @@ function FileSourceEditor({
 		return (
 			<div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
 				<Loader2 className="h-4 w-4 animate-spin" />
-				{t("common:state.loading")}
+				{t("skillsRepo.loadingEllipsis")}
 			</div>
 		);
 	}
 	if (needsFetch && fetchState === "error") {
 		return (
-			<div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
-				{t("playground:skills.files.loadFailed")}
-			</div>
+			<div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">{t("skillsRepo.couldNotLoad")}</div>
 		);
 	}
 
@@ -439,7 +432,7 @@ function FileSourceEditor({
 		if (!file.dataurl && kind !== "text") {
 			return (
 				<FallbackBlock fileName={fileName} file={file} downloadUrl={source.url}>
-					{t("playground:skills.files.binaryNoEdit")}
+					{t("skillsRepo.binaryDataUrl")}
 				</FallbackBlock>
 			);
 		}
@@ -450,12 +443,12 @@ function FileSourceEditor({
 			(fetchedContent != null ? `data:${file.mime_type || "text/plain"};base64,${btoa(unescape(encodeURIComponent(fetchedContent)))}` : "");
 		return (
 			<div className="flex h-full min-h-0 flex-col gap-2 p-4">
-				<Label className="text-muted-foreground text-xs">{t("playground:skills.files.dataUrlLabel")}</Label>
+				<Label className="text-muted-foreground text-xs">{t("skillsRepo.dataUrl")}</Label>
 				<Textarea
 					data-testid="skill-file-dataurl-textarea"
 					value={currentValue}
 					onChange={(e) => onFileUpdate?.({ dataurl: e.target.value, blob_id: undefined, storage_key: undefined })}
-					placeholder="data:text/plain;base64,..."
+					placeholder={t("skillsRepo.dataUrlPlaceholder")}
 					className="min-h-0 flex-1 resize-none font-mono text-xs"
 				/>
 			</div>
@@ -469,7 +462,7 @@ function FileSourceEditor({
 			data-testid="skill-file-content-textarea"
 			value={currentContent}
 			onChange={(e) => onFileUpdate?.({ content: e.target.value, blob_id: undefined, storage_key: undefined })}
-			placeholder={t("playground:skills.files.fileContentPlaceholder")}
+			placeholder={t("skillsRepo.fileContentPlaceholder")}
 			className="h-full w-full resize-none rounded-none border-0 font-mono text-xs focus-visible:ring-0"
 		/>
 	);
@@ -486,14 +479,14 @@ function FallbackBlock({
 	downloadUrl?: string;
 	children?: React.ReactNode;
 }) {
-	const { t } = useTranslation(["common", "playground"]);
+	const { t } = useTranslation("config");
 	return (
 		<div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
 			<FileIcon className="text-muted-foreground h-12 w-12" />
 			<div className="flex flex-col gap-0.5">
 				<p className="max-w-full truncate font-mono text-sm">{fileName}</p>
 				<p className="text-muted-foreground text-xs">
-					{file.mime_type || t("playground:skills.files.unknownType")}
+					{file.mime_type || t("skillsRepo.unknownType")}
 					{file.file_size_bytes ? ` · ${formatFileSize(file.file_size_bytes)}` : ""}
 				</p>
 			</div>
@@ -502,7 +495,7 @@ function FallbackBlock({
 				<Button variant="outline" size="sm" asChild>
 					<a href={downloadUrl} download={fileName}>
 						<Download className="h-3.5 w-3.5" />
-						{t("common:actions.download")}
+						{t("skillsRepo.download")}
 					</a>
 				</Button>
 			)}

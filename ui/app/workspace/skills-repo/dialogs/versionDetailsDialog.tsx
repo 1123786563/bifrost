@@ -29,7 +29,8 @@ export function VersionDetailDialog({
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }) {
-	const { t } = useTranslation(["common", "playground"]);
+	const { t } = useTranslation("config");
+	const { t: tc } = useTranslation("common");
 	const { data: versionData, isLoading, isError } = useGetSkillQuery({ id: skillId, version }, { skip: !open });
 	const [shiftVersion, { isLoading: isShifting }] = useShiftSkillVersionMutation();
 	const hasEditAccess = useRbac(RbacResource.SkillsRepository, RbacOperation.Update);
@@ -75,10 +76,10 @@ export function VersionDetailDialog({
 	const handleShiftVersion = async () => {
 		try {
 			await shiftVersion({ id: skillId, version }).unwrap();
-			toast.success(t("playground:skills.versions.shiftedToast", { version }));
+			toast.success(t("skillsRepo.toastShifted", { version }));
 			onOpenChange(false);
 		} catch (err: unknown) {
-			toast.error(t("playground:skills.versions.shiftFailed"), {
+			toast.error(t("skillsRepo.toastShiftFailed"), {
 				description: getErrorMessage(err),
 			});
 		}
@@ -92,7 +93,7 @@ export function VersionDetailDialog({
 			>
 				<div className="flex items-center justify-between border-b pr-2 pl-6">
 					<DialogHeader className="p-0">
-						<DialogTitle>{t("playground:skills.versions.detailTitle", { version })}</DialogTitle>
+						<DialogTitle>{t("skillsRepo.versionTitle", { version })}</DialogTitle>
 					</DialogHeader>
 					<div className="flex items-center gap-1.5">
 						{downloadUrl && (
@@ -102,24 +103,18 @@ export function VersionDetailDialog({
 								className="h-8 w-8"
 								asChild
 								data-testid="skill-version-download-zip"
-								aria-label={t("playground:skills.downloadZipAriaLabel")}
+								aria-label={t("skillsRepo.downloadZip")}
 							>
 								<a href={downloadUrl} download>
 									<Download className="h-4 w-4" />
-									<span className="sr-only">{t("playground:skills.downloadZipAriaLabel")}</span>
+									<span className="sr-only">{t("skillsRepo.downloadZip")}</span>
 								</a>
 							</Button>
 						)}
 						<DialogClose asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								data-testid="skill-version-dialog-close"
-								aria-label={t("common:actions.close")}
-							>
+							<Button variant="ghost" size="icon" className="h-8 w-8" data-testid="skill-version-dialog-close" aria-label={tc("close")}>
 								<X className="h-4 w-4" />
-								<span className="sr-only">{t("common:actions.close")}</span>
+								<span className="sr-only">{tc("close")}</span>
 							</Button>
 						</DialogClose>
 					</div>
@@ -148,7 +143,7 @@ export function VersionDetailDialog({
 													variant="secondary"
 													className="bg-emerald-100 text-xs text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
 												>
-													{t("playground:skills.versions.serving")}
+													{t("skillsRepo.serving")}
 												</Badge>
 											)}
 										</>
@@ -159,12 +154,12 @@ export function VersionDetailDialog({
 												{isShifting ? (
 													<>
 														<Loader2 className="h-3.5 w-3.5 animate-spin" />
-														{t("playground:skills.versions.shifting")}
+														{t("skillsRepo.shifting")}
 													</>
 												) : (
 													<>
 														<RefreshCw className="h-3.5 w-3.5" />
-														{t("playground:skills.versions.shiftToVersion")}
+														{t("skillsRepo.shiftToThisVersion")}
 													</>
 												)}
 											</Button>
@@ -185,13 +180,9 @@ export function VersionDetailDialog({
 							</div>
 						</>
 					) : isError ? (
-						<p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
-							{t("playground:skills.versions.loadVersionFailed")}
-						</p>
+						<p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">{t("skillsRepo.failedToLoadVersion")}</p>
 					) : (
-						<p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
-							{t("playground:skills.versions.versionDataNotFound")}
-						</p>
+						<p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">{t("skillsRepo.versionDataNotFound")}</p>
 					)}
 				</div>
 			</DialogContent>

@@ -3,20 +3,11 @@
  * Full-canvas read-only routing rules decision tree visualizer.
  */
 
-import i18n from "@/lib/i18n";
 import { RoutingTreeView } from "./views/routingTreeView";
 
-// Labels resolve at access time through the governance ns the tree route already loads;
-// defaultValue keeps the export readable before i18n initializes (pricingFields.ts pattern).
 export const metadata = {
-	get title() {
-		return i18n.t("governance:routingRules.tree.title", { defaultValue: "Routing Tree | Bifrost" });
-	},
-	get description() {
-		return i18n.t("governance:routingRules.tree.description", {
-			defaultValue: "Read-only decision tree visualization of routing rules",
-		});
-	},
+	title: "Routing Tree | Bifrost", // i18n-ignore: unused page metadata, not rendered in the SPA
+	description: "Read-only decision tree visualization of routing rules", // i18n-ignore: unused page metadata, not rendered in the SPA
 };
 
 export default function RoutingTreePage() {

@@ -12,15 +12,7 @@ interface VirtualMcpToolsEditorProps {
 // Adapts id-native Virtual MCP specs to the shared editor, which resolves names and tools.
 // A deleted server keeps its id (name falls back to it), so edits don't drop it.
 export default function VirtualMcpToolsEditor({ value, onChange }: VirtualMcpToolsEditorProps) {
-	const { t } = useTranslation(["common", "mcp", "workspaces"]);
-	const toolsTooltip = (
-		<p>
-			<Trans t={t} i18nKey="mcp:virtualMcps.tools.tooltip" components={{ em: <span className="font-medium" /> }}>
-				Pick which of your MCP servers this Virtual MCP exposes and, for each, which tools. After adding a server, select specific tools or
-				choose <em>{t("workspaces:virtualMcps.allowAllTools")}</em> to expose all of them.
-			</Trans>
-		</p>
-	);
+	const { t } = useTranslation("mcp");
 	const editorValue: MCPClientConfigEntry[] = value.map((spec) => ({
 		mcp_client_id: spec.mcp_client_id,
 		mcp_client_name: spec.mcp_client_id,
@@ -40,13 +32,15 @@ export default function VirtualMcpToolsEditor({ value, onChange }: VirtualMcpToo
 		<MCPClientConfigsEditor
 			value={editorValue}
 			onChange={handleChange}
-			label={t("mcp:virtualMcps.tab.tools")}
-			tooltip={toolsTooltip}
+			label={t("virtualMcps.wizard.tools")}
+			tooltip={
+				<p>
+					<Trans t={t} i18nKey="virtualMcps.tools.tooltip" components={{ strong: <span className="font-medium" /> }} />
+				</p>
+			}
 			allClientTools
 			emptyState={
-				<div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
-					{t("mcp:virtualMcps.tools.empty")}
-				</div>
+				<div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">{t("virtualMcps.tools.empty")}</div>
 			}
 		/>
 	);

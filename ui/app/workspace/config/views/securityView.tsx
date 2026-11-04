@@ -17,19 +17,25 @@ import { authProofOfControlSchema, SecretVar } from "@/lib/types/schemas";
 import { parseArrayFromText } from "@/lib/utils/array";
 import { formatCooldown } from "@/lib/utils/duration";
 import { getApiBaseUrl } from "@/lib/utils/port";
-import { getPasswordPolicyFailures, validateOrigins } from "@/lib/utils/validation";
+import { isSecretVarSet } from "@/lib/utils/secretVarForm";
+import { getPasswordPolicyFailures, type PasswordRequirementKey, validateOrigins } from "@/lib/utils/validation";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { useGetAuthTypeQuery } from "@enterprise/lib/store/apis/scimApi";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { withBasePath } from "@/lib/utils/basePath";
 
 // Go duration string: one or more <number><unit> segments, e.g. "5m", "1h30m".
 const COOLDOWN_PATTERN = /^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$/;
 
+const secretVarEquals = (a?: SecretVar, b?: SecretVar) =>
+	(a?.value ?? "") === (b?.value ?? "") && (a?.ref ?? "") === (b?.ref ?? "") && (a?.type ?? "plain_text") === (b?.type ?? "plain_text");
+
+/** Security settings page: dashboard authentication, admin credentials and related security options. */
 export default function SecurityView() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
 	const { data: bifrostConfig } = useGetCoreConfigQuery({ fromDB: true });
 	const { data: authType, isLoading: authTypeLoading, error: authTypeError } = useGetAuthTypeQuery(undefined, { skip: !IS_ENTERPRISE });
@@ -150,9 +156,18 @@ export default function SecurityView() {
 		const deleteExpiredVirtualKeysChanged = localConfig.delete_expired_virtual_keys !== config.delete_expired_virtual_keys;
 		const enforceVKObjectOwnershipChanged =
 			(localConfig.enforce_vk_object_ownership ?? true) !== (config.enforce_vk_object_ownership ?? true);
+		const skipAccessProfileUserVirtualKeyCreationChanged =
+			IS_ENTERPRISE &&
+			(localConfig.skip_access_profile_user_virtual_key_creation ?? false) !==
+				(config.skip_access_profile_user_virtual_key_creation ?? false);
+		const skipAccessProfileUserVirtualKeyDeletionChanged =
+			IS_ENTERPRISE &&
+			(localConfig.skip_access_profile_user_virtual_key_deletion ?? false) !==
+				(config.skip_access_profile_user_virtual_key_deletion ?? false);
 		const dualCredentialConflictBehaviorChanged =
 			(localConfig.dual_credential_conflict_behavior || "prefer_idp") !== (config.dual_credential_conflict_behavior || "prefer_idp");
 		const vkRotationCooldownChanged = formatCooldown(localConfig.vk_rotation_cooldown) !== formatCooldown(config.vk_rotation_cooldown);
+		const issuerURLChanged = !secretVarEquals(localConfig.oauth2_server_config?.issuer_url, config.oauth2_server_config?.issuer_url);
 
 		return (
 			originsChanged ||
@@ -164,8 +179,11 @@ export default function SecurityView() {
 			allowDirectKeysChanged ||
 			deleteExpiredVirtualKeysChanged ||
 			enforceVKObjectOwnershipChanged ||
+			skipAccessProfileUserVirtualKeyCreationChanged ||
+			skipAccessProfileUserVirtualKeyDeletionChanged ||
 			dualCredentialConflictBehaviorChanged ||
-			vkRotationCooldownChanged
+			vkRotationCooldownChanged ||
+			issuerURLChanged
 		);
 	}, [config, localConfig, authConfig, bifrostConfig, showPasswordSection, credentialsChanged]);
 
@@ -239,18 +257,26 @@ export default function SecurityView() {
 		setProofError("");
 	}, []);
 
+	const formatPasswordPolicyError = useCallback(
+		(failures: PasswordRequirementKey[]) => {
+			if (failures.length === 0) return "";
+			return t("security.passwordMustInclude", {
+				requirements: failures.map((key) => t(`security.passwordRequirement.${key}`)).join(t("security.requirementSeparator")),
+			});
+		},
+		[t],
+	);
+
 	const handleAuthFieldChange = useCallback(
 		(field: "admin_username" | "admin_password", value: SecretVar) => {
 			if (field === "admin_password") {
 				passwordUnchangedRef.current = false;
 				const passwordPolicyFailures = !value.ref && value.value ? getPasswordPolicyFailures(value.value, false) : [];
-				setPasswordError(
-					passwordPolicyFailures.length > 0 ? t("settings:security.passwordMustInclude", { items: passwordPolicyFailures.join(", ") }) : "",
-				);
+				setPasswordError(formatPasswordPolicyError(passwordPolicyFailures));
 			}
 			setAuthConfig((prev) => ({ ...prev, [field]: value }));
 		},
-		[t],
+		[formatPasswordPolicyError],
 	);
 
 	const handleSave = useCallback(async () => {
@@ -258,12 +284,17 @@ export default function SecurityView() {
 			const validation = validateOrigins(localConfig.allowed_origins);
 
 			if (!validation.isValid && localConfig.allowed_origins.length > 0) {
-				toast.error(t("settings:security.invalidOrigins", { origins: validation.invalidOrigins.join(", ") }));
+				toast.error(t("security.toastInvalidOrigins", { origins: validation.invalidOrigins.join(", ") }));
+				return;
+			}
+			const oauthModeActive = localConfig.mcp_server_auth_mode === "both" || localConfig.mcp_server_auth_mode === "oauth";
+			if (oauthModeActive && !isSecretVarSet(localConfig.oauth2_server_config?.issuer_url)) {
+				toast.error(t("security.toastIssuerUrlRequired"));
 				return;
 			}
 			const cooldownInput = localValues.vk_rotation_cooldown.trim();
 			if (cooldownInput !== "" && cooldownInput !== "0" && !COOLDOWN_PATTERN.test(cooldownInput)) {
-				toast.error(t("settings:security.cooldownInvalid"));
+				toast.error(t("security.toastInvalidCooldown"));
 				return;
 			}
 			const hasUsername = authConfig.admin_username?.value || authConfig.admin_username?.ref;
@@ -274,20 +305,20 @@ export default function SecurityView() {
 					: [];
 
 			if (passwordPolicyFailures.length > 0) {
-				setPasswordError(t("settings:security.passwordMustInclude", { items: passwordPolicyFailures.join(", ") }));
+				setPasswordError(formatPasswordPolicyError(passwordPolicyFailures));
 				passwordInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
 				passwordInputRef.current?.focus({ preventScroll: true });
 				return;
 			}
 			if (isFirstTimeSetup && authConfig.is_enabled && !authorizedBySetupToken && !setupToken.trim()) {
-				setSetupTokenErrorMessage(t("settings:security.setupTokenRequired"));
+				setSetupTokenErrorMessage(t("security.setupTokenHelp"));
 				return;
 			}
 			const proof = requiresProofOfControl
 				? authProofOfControlSchema.safeParse({ current_password: currentPassword, setup_token: setupToken })
 				: null;
 			if (proof && !proof.success) {
-				setProofError(proof.error.issues[0]?.message ?? t("settings:security.proofFallback"));
+				setProofError(t("security.proofRequired"));
 				currentPasswordInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
 				currentPasswordInputRef.current?.focus({ preventScroll: true });
 				return;
@@ -312,12 +343,12 @@ export default function SecurityView() {
 			setSetupToken("");
 			setCurrentPassword("");
 			setSetupTokenOpen(false);
-			toast.success(t("settings:security.saved"));
+			toast.success(t("security.toastSaved"));
 			// Dashboard auth is now on, so the OSS setup lock is lifted. Expire the setup
 			// session cookie (logout clears it) and sign in with the new admin account.
 			if (showPasswordSection && authConfig.is_enabled && hasUsername && hasPassword && authorizedBySetupToken) {
 				await fetch(`${getApiBaseUrl()}/session/logout`, { method: "POST", credentials: "include" }).catch(() => undefined);
-				window.location.href = "/login";
+				window.location.href = withBasePath("/login");
 			}
 		} catch (error) {
 			const message = getErrorMessage(error);
@@ -334,7 +365,6 @@ export default function SecurityView() {
 			}
 		}
 	}, [
-		t,
 		bifrostConfig,
 		localConfig,
 		localValues.vk_rotation_cooldown,
@@ -350,20 +380,22 @@ export default function SecurityView() {
 
 	return (
 		<div className="mx-auto w-full max-w-4xl space-y-4">
-			<PageTitle title={t("settings:security.title")}>{t("settings:security.subtitle")}</PageTitle>
+			<PageTitle title={t("security.title")}>{t("security.description")}</PageTitle>
 
 			<div className="space-y-4">
 				{/* Password Protect the Dashboard */}
 				{IS_ENTERPRISE && authTypeLoading ? (
 					<div className="flex items-center justify-center rounded-sm border p-8" data-testid="security-auth-type-loading">
 						<Loader2 className="text-muted-foreground h-5 w-5 animate-spin" aria-hidden />
-						<span className="sr-only">{t("settings:security.loadingAuth")}</span>
+						<span className="sr-only">{t("security.loadingAuth")}</span>
 					</div>
 				) : null}
 				{IS_ENTERPRISE && !authTypeLoading && authTypeError ? (
 					<Alert variant="destructive" data-testid="security-auth-type-error">
 						<AlertTriangle className="h-4 w-4" />
-						<AlertDescription>{t("settings:security.authTypeError", { message: getErrorMessage(authTypeError) })}</AlertDescription>
+						<AlertDescription>
+							{t("security.authTypeUnavailable")} {getErrorMessage(authTypeError)}
+						</AlertDescription>
 					</Alert>
 				) : null}
 				{showPasswordSection && (
@@ -372,27 +404,27 @@ export default function SecurityView() {
 							<div className="flex items-center justify-between">
 								<div className="space-y-0.5">
 									<Label htmlFor="auth-enabled" className="text-sm font-medium">
-										{t("settings:security.passwordProtect")} <Badge variant="secondary">{t("settings:security.beta")}</Badge>
+										{t("security.passwordProtect")} <Badge variant="secondary">BETA</Badge>
 									</Label>
-									<p className="text-muted-foreground text-sm">{t("settings:security.passwordProtectDesc")}</p>
+									<p className="text-muted-foreground text-sm">{t("security.passwordProtectHelp")}</p>
 								</div>
 								<Switch id="auth-enabled" checked={authConfig.is_enabled} disabled={isConfigLoading} onCheckedChange={handleAuthToggle} />
 							</div>
 							<div className="space-y-4">
 								<div className="space-y-2">
-									<Label htmlFor="admin-username">{t("settings:security.username")}</Label>
+									<Label htmlFor="admin-username">{t("security.username")}</Label>
 									<SecretVarInput
 										id="admin-username"
 										autoComplete="username"
 										type="text"
-										placeholder={t("settings:security.usernamePlaceholder")}
+										placeholder={t("security.usernamePlaceholder")}
 										value={authConfig.admin_username}
 										disabled={!authConfig.is_enabled}
 										onChange={(value) => handleAuthFieldChange("admin_username", value)}
 									/>
 								</div>
 								<div className="space-y-2">
-									<Label htmlFor="admin-password">{t("settings:security.password")}</Label>
+									<Label htmlFor="admin-password">{t("security.password")}</Label>
 									<SecretVarInput
 										ref={passwordInputRef}
 										id="admin-password"
@@ -403,12 +435,12 @@ export default function SecurityView() {
 										aria-invalid={!!passwordError}
 										aria-describedby={passwordError ? "admin-password-error" : undefined}
 										type="password"
-										placeholder={t("settings:security.passwordPlaceholder")}
+										placeholder={t("security.passwordPlaceholder")}
 										value={authConfig.admin_password}
 										disabled={!authConfig.is_enabled}
 										onChange={(value) => handleAuthFieldChange("admin_password", value)}
 									/>
-									<p className="text-muted-foreground text-xs">{t("settings:security.passwordHint")}</p>
+									<p className="text-muted-foreground text-xs">{t("security.passwordPolicyHelp")}</p>
 									{passwordError ? (
 										<p id="admin-password-error" className="text-destructive text-xs" role="alert">
 											{passwordError}
@@ -417,7 +449,7 @@ export default function SecurityView() {
 								</div>
 								{requiresProofOfControl ? (
 									<div className="space-y-2 rounded-sm border border-dashed p-3" data-testid="security-proof-of-control">
-										<Label htmlFor="current-password">{t("settings:security.confirmWithPassword")}</Label>
+										<Label htmlFor="current-password">{t("security.confirmWithPassword")}</Label>
 										<Input
 											ref={currentPasswordInputRef}
 											id="current-password"
@@ -426,11 +458,11 @@ export default function SecurityView() {
 											autoComplete="current-password"
 											aria-invalid={!!proofError}
 											aria-describedby={proofError ? "current-password-error" : undefined}
-											placeholder={t("settings:security.currentPasswordPlaceholder")}
+											placeholder={t("security.currentPasswordPlaceholder")}
 											value={currentPassword}
 											onChange={(e) => handleCurrentPasswordChange(e.target.value)}
 										/>
-										<p className="text-muted-foreground text-xs">{t("settings:security.confirmHint")}</p>
+										<p className="text-muted-foreground text-xs">{t("security.proofHelp")}</p>
 										<Collapsible open={setupTokenOpen} onOpenChange={setSetupTokenOpen}>
 											<CollapsibleTrigger asChild>
 												<Button
@@ -440,22 +472,26 @@ export default function SecurityView() {
 													className="h-auto p-0 text-xs"
 													data-testid="security-setup-token-toggle"
 												>
-													{setupTokenOpen ? t("settings:security.hideSetupToken") : t("settings:security.confirmWithSetupToken")}
+													{setupTokenOpen ? t("security.hideSetupToken") : t("security.useSetupTokenInstead")}
 												</Button>
 											</CollapsibleTrigger>
 											<CollapsibleContent className="space-y-2 pt-2">
-												<Label htmlFor="setup-token">{t("settings:security.setupToken")}</Label>
+												<Label htmlFor="setup-token">{t("security.setupToken")}</Label>
 												<Input
 													id="setup-token"
 													data-testid="security-setup-token-input"
 													type="password"
 													autoComplete="off"
-													placeholder={t("settings:security.setupTokenPlaceholder")}
+													placeholder={t("security.setupTokenPlaceholder")}
 													value={setupToken}
 													onChange={(e) => handleSetupTokenChange(e.target.value)}
 												/>
 												<p className="text-muted-foreground text-xs">
-													<Trans i18nKey="settings:security.setupTokenAltHint" t={t} components={{ code: <code /> }} />
+													<Trans
+														t={t}
+														i18nKey="security.setupTokenAlternativeHelp"
+														components={{ code0: <code />, code1: <code />, code2: <code /> }}
+													/>
 												</p>
 											</CollapsibleContent>
 										</Collapsible>
@@ -473,22 +509,22 @@ export default function SecurityView() {
 								) : null}
 								{isFirstTimeSetup && authConfig.is_enabled && authorizedBySetupToken ? (
 									<p className="text-muted-foreground text-xs" data-testid="security-setup-token-authorized">
-										{t("settings:security.setupAuthorized")}
+										{t("security.authorizedBySetupToken")}
 									</p>
 								) : isFirstTimeSetup && authConfig.is_enabled ? (
 									<div className="space-y-2">
-										<Label htmlFor="setup-token">{t("settings:security.setupToken")}</Label>
+										<Label htmlFor="setup-token">{t("security.setupToken")}</Label>
 										<Input
 											id="setup-token"
 											data-testid="security-setup-token-input"
 											type="password"
 											autoComplete="off"
-											placeholder={t("settings:security.setupTokenPlaceholder")}
+											placeholder={t("security.setupTokenPlaceholder")}
 											value={setupToken}
 											onChange={(e) => handleSetupTokenChange(e.target.value)}
 										/>
 										<p className="text-muted-foreground text-xs">
-											<Trans i18nKey="settings:security.setupTokenHint" t={t} components={{ code: <code /> }} />
+											<Trans t={t} i18nKey="security.firstSetupHelp" components={{ code0: <code />, code1: <code />, code2: <code /> }} />
 										</p>
 									</div>
 								) : null}
@@ -500,11 +536,10 @@ export default function SecurityView() {
 				<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 					<div className="space-y-0.5">
 						<label htmlFor="enforce-auth-on-inference" className="text-sm font-medium">
-							{IS_ENTERPRISE ? t("settings:security.enforceInferenceEnt") : t("settings:security.enforceInferenceOss")}
+							{IS_ENTERPRISE ? t("security.enableAuthOnInference") : t("security.enforceVirtualKeys")}
 						</label>
 						<p className="text-muted-foreground text-sm">
-							{IS_ENTERPRISE ? t("settings:security.enforceInferenceDescEnt") : t("settings:security.enforceInferenceDescOss")}{" "}
-							{t("settings:shared.see")}{" "}
+							{IS_ENTERPRISE ? t("security.enableAuthHelp") : t("security.enforceVkHelp")} {t("security.see")}{" "}
 							<a
 								href="https://docs.getbifrost.ai/features/governance/virtual-keys"
 								target="_blank"
@@ -512,9 +547,9 @@ export default function SecurityView() {
 								className="text-primary underline"
 								data-testid="security-virtual-keys-docs-link"
 							>
-								{t("settings:security.docsLink")}
+								{t("security.documentation")}
 							</a>{" "}
-							{t("settings:security.enforceInferenceTail")}
+							{t("security.setupVirtualKeyHelp")}
 						</p>
 					</div>
 					<Switch
@@ -528,7 +563,7 @@ export default function SecurityView() {
 				{(authConfig.is_enabled || authType?.type === "sso") && !config?.enforce_auth_on_inference && (
 					<Alert variant="destructive" data-testid="inference-auth-off-warning">
 						<AlertTriangle className="h-4 w-4" />
-						<AlertDescription>{t("settings:security.inferenceWarning")}</AlertDescription>
+						<AlertDescription>{t("security.inferenceAuthOffWarning")}</AlertDescription>
 					</Alert>
 				)}
 				{/* Dual Credential Conflict Behavior */}
@@ -536,10 +571,10 @@ export default function SecurityView() {
 					<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
 							<label htmlFor="dual-credential-conflict-behavior" className="text-sm font-medium">
-								{t("settings:security.dualCredential")}
+								{t("security.dualCredential")}
 							</label>
 							<p className="text-muted-foreground text-sm">
-								<Trans i18nKey="settings:security.dualCredentialDesc" t={t} components={{ b: <b /> }} />
+								<Trans t={t} i18nKey="security.dualCredentialHelp" components={{ b0: <b />, b1: <b />, b2: <b />, b3: <b />, b4: <b /> }} />
 							</p>
 						</div>
 						<Select
@@ -559,21 +594,20 @@ export default function SecurityView() {
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="prefer_idp">{t("settings:security.preferIdp")}</SelectItem>
-								<SelectItem value="prefer_vk">{t("settings:security.preferVk")}</SelectItem>
-								<SelectItem value="error">{t("settings:security.rejectRequest")}</SelectItem>
+								<SelectItem value="prefer_idp">{t("security.preferIdp")}</SelectItem>
+								<SelectItem value="prefer_vk">{t("security.preferVk")}</SelectItem>
+								<SelectItem value="error">{t("security.rejectRequest")}</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
 				)}
-				{/* Allow Direct API Keys */}
 				<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 					<div className="space-y-0.5">
 						<label htmlFor="allow-direct-keys" className="text-sm font-medium">
-							{t("settings:security.allowDirectKeys")}
+							{t("security.allowDirectKeys")}
 						</label>
 						<p className="text-muted-foreground text-sm">
-							<Trans i18nKey="settings:security.allowDirectKeysDesc" t={t} components={{ b: <b /> }} />
+							<Trans t={t} i18nKey="security.directKeysHelp" components={{ b0: <b />, b1: <b />, b2: <b />, b3: <b /> }} />
 						</p>
 					</div>
 					<Switch
@@ -587,11 +621,9 @@ export default function SecurityView() {
 				<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 					<div className="space-y-0.5">
 						<label htmlFor="vk-rotation-cooldown" className="text-sm font-medium">
-							{t("settings:security.rotationCooldown")}
+							{t("security.vkRotationCooldown")}
 						</label>
-						<p className="text-muted-foreground text-sm">
-							<Trans i18nKey="settings:security.rotationCooldownDesc" t={t} components={{ b: <b /> }} />
-						</p>
+						<p className="text-muted-foreground text-sm">{t("security.vkRotationCooldownDesc")}</p>
 					</div>
 					<Input
 						id="vk-rotation-cooldown"
@@ -606,10 +638,10 @@ export default function SecurityView() {
 				<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 					<div className="space-y-0.5">
 						<label htmlFor="delete-expired-virtual-keys" className="text-sm font-medium">
-							{t("settings:security.deleteExpired")}
+							{t("security.deleteExpiredVirtualKeys")}
 						</label>
 						<p className="text-muted-foreground text-sm">
-							<Trans i18nKey="settings:security.deleteExpiredDesc" t={t} components={{ b: <b /> }} />
+							<Trans t={t} i18nKey="security.deleteExpiredVirtualKeysHelp" components={{ b0: <b /> }} />
 						</p>
 					</div>
 					<Switch
@@ -623,9 +655,9 @@ export default function SecurityView() {
 				<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 					<div className="space-y-0.5">
 						<label htmlFor="enforce-vk-object-ownership" className="text-sm font-medium">
-							{t("settings:security.vkObjectOwnership")}
+							{t("security.enforceVkObjectOwnership")}
 						</label>
-						<p className="text-muted-foreground text-sm">{t("settings:security.vkObjectOwnershipDesc")}</p>
+						<p className="text-muted-foreground text-sm">{t("security.enforceVkObjectOwnershipHelp")}</p>
 					</div>
 					<Switch
 						id="enforce-vk-object-ownership"
@@ -634,78 +666,146 @@ export default function SecurityView() {
 						onCheckedChange={(checked) => handleConfigChange("enforce_vk_object_ownership", checked)}
 					/>
 				</div>
+				{/* Access profiles creating and deleting users' virtual keys, each switched separately */}
+				{IS_ENTERPRISE && (
+					<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
+						<div className="space-y-0.5">
+							<label htmlFor="skip-access-profile-user-virtual-key-creation" className="text-sm font-medium">
+								{t("security.skipAccessProfileKeyCreation")}
+							</label>
+							<p className="text-muted-foreground text-sm">{t("security.skipAccessProfileKeyCreationHelp")}</p>
+						</div>
+						<Switch
+							id="skip-access-profile-user-virtual-key-creation"
+							data-testid="security-skip-access-profile-user-virtual-key-creation-switch"
+							checked={localConfig.skip_access_profile_user_virtual_key_creation ?? false}
+							onCheckedChange={(checked) => handleConfigChange("skip_access_profile_user_virtual_key_creation", checked)}
+						/>
+					</div>
+				)}
+				{IS_ENTERPRISE && (
+					<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
+						<div className="space-y-0.5">
+							<label htmlFor="skip-access-profile-user-virtual-key-deletion" className="text-sm font-medium">
+								{t("security.skipAccessProfileKeyDeletion")}
+							</label>
+							<p className="text-muted-foreground text-sm">{t("security.skipAccessProfileKeyDeletionHelp")}</p>
+						</div>
+						<Switch
+							id="skip-access-profile-user-virtual-key-deletion"
+							data-testid="security-skip-access-profile-user-virtual-key-deletion-switch"
+							checked={localConfig.skip_access_profile_user_virtual_key_deletion ?? false}
+							onCheckedChange={(checked) => handleConfigChange("skip_access_profile_user_virtual_key_deletion", checked)}
+						/>
+					</div>
+				)}
+				{/* OAuth issuer URL: shared by MCP OAuth and Cross App Access */}
+				<div className="space-y-2 rounded-sm border p-4" data-testid="oauth2-issuer-url-section">
+					<div className="space-y-0.5">
+						<label htmlFor="oauth2-issuer-url" className="text-sm font-medium">
+							{t("security.oauthIssuerUrl")}
+						</label>
+						<p className="text-muted-foreground text-sm">
+							<Trans
+								t={t}
+								i18nKey="security.oauthIssuerUrlHelp"
+								components={{
+									code0: <code className="text-xs" />,
+									code1: <code className="text-xs" />,
+									code2: <code className="text-xs" />,
+								}}
+							/>
+						</p>
+					</div>
+					<SecretVarInput
+						id="oauth2-issuer-url"
+						data-testid="oauth2-issuer-url-input"
+						placeholder={t("mcpSettings.issuerUrlPlaceholder")}
+						value={localConfig.oauth2_server_config?.issuer_url}
+						onChange={(value: SecretVar) =>
+							setLocalConfig((prev) => ({ ...prev, oauth2_server_config: { ...prev.oauth2_server_config, issuer_url: value } }))
+						}
+						disabled={!hasSettingsUpdateAccess}
+					/>
+					{isSecretVarSet(config?.oauth2_server_config?.issuer_url) &&
+						!secretVarEquals(localConfig.oauth2_server_config?.issuer_url, config?.oauth2_server_config?.issuer_url) && (
+							<Alert variant="warning" data-testid="oauth2-issuer-url-change-warning">
+								<AlertTriangle className="size-4" />
+								<AlertDescription>
+									{t("security.issuerChangeWarning")}
+								</AlertDescription>
+							</Alert>
+						)}
+				</div>
 				{/* Allowed Origins */}
 				{needsRestart && <RestartWarning />}
 				<div>
 					<div className="space-y-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
 							<label htmlFor="allowed-origins" className="text-sm font-medium">
-								{t("settings:security.allowedOrigins")}
+								{t("security.allowedOrigins")}
 							</label>
-							<p className="text-muted-foreground text-sm">{t("settings:security.allowedOriginsDesc")}</p>
+							<p className="text-muted-foreground text-sm">{t("security.originsHelp")}</p>
 						</div>
 						<Textarea
 							id="allowed-origins"
 							className="h-24"
-							placeholder={t("settings:security.allowedOriginsPlaceholder")}
+							placeholder={t("security.originsPlaceholder")}
 							value={localValues.allowed_origins}
 							onChange={(e) => handleAllowedOriginsChange(e.target.value)}
 						/>
 					</div>
 				</div>
-				{/* Allowed Headers */}
 				<div>
 					<div className="space-y-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
 							<label htmlFor="allowed-headers" className="text-sm font-medium">
-								{t("settings:security.allowedHeaders")}
+								{t("security.allowedHeaders")}
 							</label>
-							<p className="text-muted-foreground text-sm">{t("settings:security.allowedHeadersDesc")}</p>
+							<p className="text-muted-foreground text-sm">{t("security.allowedHeadersHelp")}</p>
 						</div>
 						<Textarea
 							id="allowed-headers"
 							className="h-24"
-							placeholder={t("settings:security.allowedHeadersPlaceholder")}
+							placeholder={t("security.headersPlaceholder")}
 							value={localValues.allowed_headers}
 							onChange={(e) => handleAllowedHeadersChange(e.target.value)}
 						/>
 					</div>
 				</div>
-				{/* Required Headers */}
 				<div>
 					<div className="space-y-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
 							<label htmlFor="required-headers" className="text-sm font-medium">
-								{t("settings:security.requiredHeaders")}
+								{t("security.requiredHeaders")}
 							</label>
-							<p className="text-muted-foreground text-sm">{t("settings:security.requiredHeadersDesc")}</p>
+							<p className="text-muted-foreground text-sm">{t("security.requiredHeadersHelp")}</p>
 						</div>
 						<Textarea
 							id="required-headers"
 							data-testid="required-headers-textarea"
 							className="h-24"
-							placeholder={t("settings:security.requiredHeadersPlaceholder")}
+							placeholder={t("security.requiredHeadersPlaceholder")}
 							value={localValues.required_headers}
 							onChange={(e) => handleRequiredHeadersChange(e.target.value)}
 						/>
 					</div>
 				</div>
-				{/* Whitelisted Routes */}
 				<div>
 					<div className="space-y-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
 							<label htmlFor="whitelisted-routes" className="text-sm font-medium">
-								{t("settings:security.whitelistedRoutes")}
+								{t("security.whitelistedRoutes")}
 							</label>
 							<p className="text-muted-foreground text-sm">
-								<Trans i18nKey="settings:security.whitelistedRoutesDesc" t={t} components={{ b: <b /> }} />
+								<Trans t={t} i18nKey="security.routesHelp" components={{ b0: <b />, b1: <b />, b2: <b /> }} />
 							</p>
 						</div>
 						<Textarea
 							id="whitelisted-routes"
 							data-testid="whitelisted-routes-textarea"
 							className="h-24"
-							placeholder={t("settings:security.whitelistedRoutesPlaceholder")}
+							placeholder={t("security.routesPlaceholder")}
 							value={localValues.whitelisted_routes}
 							onChange={(e) => handleWhitelistedRoutesChange(e.target.value)}
 						/>
@@ -713,23 +813,23 @@ export default function SecurityView() {
 				</div>
 			</div>
 			<div className="bg-card sticky bottom-0 flex justify-end py-2">
-				<Button onClick={handleSave} disabled={!hasChanges || isLoading || !hasSettingsUpdateAccess}>
-					{isLoading ? t("common:state.saving") : t("settings:shared.saveChanges")}
+				<Button onClick={handleSave} disabled={!hasChanges || isLoading || !hasSettingsUpdateAccess} data-testid="security-save-btn">
+					{isLoading ? t("saving") : t("saveChanges")}
 				</Button>
 			</div>
 			<Dialog open={!!setupTokenErrorMessage} onOpenChange={(open) => !open && setSetupTokenErrorMessage(null)}>
 				<DialogContent data-testid="setup-token-error-dialog">
 					<DialogHeader>
-						<DialogTitle>{t("settings:security.setupTokenDialogTitle")}</DialogTitle>
+						<DialogTitle>{t("security.setupTokenRequired")}</DialogTitle>
 						<DialogDescription>{setupTokenErrorMessage}</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => setSetupTokenErrorMessage(null)} data-testid="setup-token-error-close">
-							{t("common:actions.close")}
+							{t("security.close")}
 						</Button>
 						<Button asChild data-testid="setup-token-error-view-docs">
 							<a href="https://docs.getbifrost.ai/quickstart/gateway/setting-up-auth" target="_blank" rel="noopener noreferrer">
-								{t("settings:security.viewDocs")}
+								{t("security.viewDocs")}
 							</a>
 						</Button>
 					</DialogFooter>
@@ -740,11 +840,11 @@ export default function SecurityView() {
 }
 
 const RestartWarning = () => {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	return (
 		<Alert variant="destructive" className="mt-2">
 			<AlertTriangle className="h-4 w-4" />
-			<AlertDescription>{t("settings:shared.restartWarning")}</AlertDescription>
+			<AlertDescription>{t("restartWarning")}</AlertDescription>
 		</Alert>
 	);
 };

@@ -9,7 +9,7 @@ interface AudioPlayerProps {
 }
 
 const AudioPlayer = ({ src, format }: AudioPlayerProps) => {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [audio] = useState<HTMLAudioElement | null>(typeof window !== "undefined" ? new Audio() : null);
 	const [error, setError] = useState<string | null>(null);
@@ -88,7 +88,7 @@ const AudioPlayer = ({ src, format }: AudioPlayerProps) => {
 			});
 		} catch (err) {
 			console.error("Failed to decode audio data:", err);
-			setError(t("logs:audio.decodeError"));
+			setError(t("logs.media.decodeAudioFailed"));
 			return null;
 		}
 	};
@@ -107,7 +107,7 @@ const AudioPlayer = ({ src, format }: AudioPlayerProps) => {
 			audio.src = audioUrl;
 			audio.play().catch((err) => {
 				console.error("Failed to play audio:", err);
-				setError(t("logs:audio.playError"));
+				setError(t("logs.media.playAudioFailed"));
 				setIsPlaying(false);
 			});
 			setIsPlaying(true);
@@ -153,12 +153,12 @@ const AudioPlayer = ({ src, format }: AudioPlayerProps) => {
 			<div className="flex items-center gap-2">
 				<Button onClick={handlePlayPause} variant="outline" size="sm" className="flex items-center gap-2" disabled={!!error}>
 					{isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-					{isPlaying ? t("logs:audio.pause") : t("logs:audio.play")}
+					{isPlaying ? t("logs.media.pause") : t("logs.media.play")}
 				</Button>
 
 				<Button onClick={handleDownload} variant="outline" size="sm" className="flex items-center gap-2" disabled={!!error}>
 					<Download className="h-4 w-4" />
-					{t("common:actions.download")}
+					{t("logs.detail.download")}
 				</Button>
 			</div>
 			{error && <div className="text-sm text-red-500">{error}</div>}

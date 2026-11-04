@@ -16,7 +16,7 @@ interface ScopeChipsProps {
 }
 
 export function ScopeChips({ scopes, max = 2, className }: ScopeChipsProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	if (scopes.length === 0) {
 		return <span className="text-muted-foreground text-sm">-</span>;
 	}
@@ -36,15 +36,13 @@ export function ScopeChips({ scopes, max = 2, className }: ScopeChipsProps) {
 						<button
 							type="button"
 							className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 cursor-default rounded-sm px-1 text-xs focus-visible:ring-[3px] focus-visible:outline-none"
-							aria-label={t("workspaces:scopeChips.showAllAria", { count: scopes.length })}
+							aria-label={t("scopeChips.showAll", { count: scopes.length })}
 						>
 							+{hidden}
 						</button>
 					</HoverCardTrigger>
 					<HoverCardContent align="start" className="w-auto max-w-sm p-3">
-						<div className="text-muted-foreground mb-2 font-mono text-[10px] tracking-wider uppercase">
-							{t("workspaces:scopeChips.granted")}
-						</div>
+						<div className="text-muted-foreground mb-2 font-mono text-[10px] tracking-wider uppercase">{t("scopeChips.grantedScopes")}</div>
 						<div className="flex flex-col items-start gap-1">
 							{scopes.map((scope) => (
 								<Badge key={scope} variant="outline" className="max-w-full font-mono text-xs font-normal break-all whitespace-normal">

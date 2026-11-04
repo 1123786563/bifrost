@@ -16,90 +16,83 @@ import { useForm, type Resolver } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-// Known beta headers with their prefixes, descriptions, and default support per provider.
+// Known beta headers with their prefixes and default support per provider. Labels and
+// descriptions live in the models catalog under providers.betaHeaders.known.<prefix>.
 // This mirrors the Go ProviderFeatures map in core/providers/anthropic/types.go.
 const KNOWN_BETA_HEADERS = [
 	{
 		prefix: "computer-use-",
-		labelKey: "providers:betaHeaders.known.computerUse",
-		descriptionKey: "providers:betaHeaders.known.computerUse",
 		defaults: { anthropic: true, vertex: true, bedrock: true, bedrock_mantle: true, azure: true },
 	},
 	{
 		prefix: "structured-outputs-",
-		labelKey: "providers:betaHeaders.known.structuredOutputs",
-		descriptionKey: "providers:betaHeaders.known.structuredOutputs",
 		defaults: { anthropic: true, vertex: false, bedrock: true, bedrock_mantle: true, azure: true },
 	},
 	{
 		prefix: "advanced-tool-use-",
-		labelKey: "providers:betaHeaders.known.advancedToolUse",
-		descriptionKey: "providers:betaHeaders.known.advancedToolUse",
 		defaults: { anthropic: true, vertex: false, bedrock: false, bedrock_mantle: false, azure: true },
 	},
 	{
 		prefix: "mcp-client-",
-		labelKey: "providers:betaHeaders.known.mcpClient",
-		descriptionKey: "providers:betaHeaders.known.mcpClient",
 		defaults: { anthropic: true, vertex: false, bedrock: false, bedrock_mantle: false, azure: true },
 	},
 	{
 		prefix: "prompt-caching-scope-",
-		labelKey: "providers:betaHeaders.known.promptCachingScope",
-		descriptionKey: "providers:betaHeaders.known.promptCachingScope",
 		defaults: { anthropic: true, vertex: false, bedrock: false, bedrock_mantle: false, azure: true },
 	},
 	{
 		prefix: "compact-",
-		labelKey: "providers:betaHeaders.known.compaction",
-		descriptionKey: "providers:betaHeaders.known.compaction",
 		defaults: { anthropic: true, vertex: true, bedrock: true, bedrock_mantle: true, azure: true },
 	},
 	{
 		prefix: "context-management-",
-		labelKey: "providers:betaHeaders.known.contextManagement",
-		descriptionKey: "providers:betaHeaders.known.contextManagement",
 		defaults: { anthropic: true, vertex: true, bedrock: true, bedrock_mantle: true, azure: true },
 	},
 	{
 		prefix: "files-api-",
-		labelKey: "providers:betaHeaders.known.filesApi",
-		descriptionKey: "providers:betaHeaders.known.filesApi",
 		defaults: { anthropic: true, vertex: false, bedrock: false, bedrock_mantle: false, azure: true },
 	},
 	{
 		prefix: "interleaved-thinking-",
-		labelKey: "providers:betaHeaders.known.interleavedThinking",
-		descriptionKey: "providers:betaHeaders.known.interleavedThinking",
 		defaults: { anthropic: true, vertex: true, bedrock: true, bedrock_mantle: true, azure: true },
 	},
 	{
 		prefix: "skills-",
-		labelKey: "providers:betaHeaders.known.skills",
-		descriptionKey: "providers:betaHeaders.known.skills",
 		defaults: { anthropic: true, vertex: false, bedrock: false, bedrock_mantle: false, azure: true },
 	},
 	{
 		prefix: "context-1m-",
-		labelKey: "providers:betaHeaders.known.context1m",
-		descriptionKey: "providers:betaHeaders.known.context1m",
 		defaults: { anthropic: true, vertex: true, bedrock: true, bedrock_mantle: true, azure: true },
 	},
 	{
 		prefix: "fast-mode-",
-		labelKey: "providers:betaHeaders.known.fastMode",
-		descriptionKey: "providers:betaHeaders.known.fastMode",
 		defaults: { anthropic: true, vertex: false, bedrock: false, bedrock_mantle: false, azure: false },
 	},
 	{
 		prefix: "redact-thinking-",
-		labelKey: "providers:betaHeaders.known.redactThinking",
-		descriptionKey: "providers:betaHeaders.known.redactThinking",
 		defaults: { anthropic: true, vertex: false, bedrock: false, bedrock_mantle: false, azure: true },
 	},
 ] as const;
 
 const KNOWN_PREFIXES = new Set<string>(KNOWN_BETA_HEADERS.map((h) => h.prefix));
+
+// Headers Bifrost sends to TypeSafe models, keyed as in beta_header_overrides. Each is
+// added only to requests that need it. The key is the header's lowercased name, as
+// typesafeImagesHeaderAllowed in core/providers/typesafe/utils.go reads it.
+const TYPESAFE_BETA_HEADERS = [
+	{
+		prefix: "typesafe-danger-zone-images",
+		header: "TypeSafe-Danger-Zone-Images",
+	},
+] as const;
+
+// sendsTypesafeHeaders reports whether Bifrost sends TypeSafe's headers for the provider:
+// TypeSafe or a custom provider built on it, or Databricks, whose Unity Gateway serves
+// TypeSafe's System One models.
+export function sendsTypesafeHeaders(provider: ModelProvider): boolean {
+	const name = provider.name.toLowerCase();
+	return name === "typesafe" || name === "databricks" || provider.custom_provider_config?.base_provider_type === "typesafe";
+}
 
 type ProviderKey = "anthropic" | "vertex" | "bedrock" | "bedrock_mantle" | "azure";
 
@@ -118,11 +111,12 @@ interface BetaHeadersFormFragmentProps {
 }
 
 export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentProps) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
 	const dispatch = useAppDispatch();
 	const hasUpdateProviderAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Update);
 	const [updateProvider, { isLoading: isUpdatingProvider }] = useUpdateProviderMutation();
 	const providerKey = getProviderKey(provider.name);
+	const typesafeHeaders = sendsTypesafeHeaders(provider);
 	const [newPrefix, setNewPrefix] = useState("");
 	const [newPrefixError, setNewPrefixError] = useState<string | null>(null);
 
@@ -156,19 +150,19 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 		dispatch(setProviderFormDirtyState(isManuallyDirty));
 	}, [isManuallyDirty, dispatch]);
 
-	// Custom prefixes are overrides that don't match any known prefix
+	// Custom prefixes are anthropic-beta overrides that don't match any known prefix
 	const customPrefixes = useMemo(() => {
+		if (typesafeHeaders) return [];
 		return Object.keys(overrides).filter((prefix) => !KNOWN_PREFIXES.has(prefix));
-	}, [overrides]);
+	}, [typesafeHeaders, overrides]);
 
 	const headerRows = useMemo(() => {
+		if (typesafeHeaders) {
+			return TYPESAFE_BETA_HEADERS.map((header) => ({ ...header, name: header.header, defaultSupported: true }));
+		}
 		if (!providerKey) return [];
-		return KNOWN_BETA_HEADERS.map((header) => {
-			const defaultSupported = header.defaults[providerKey];
-			const override = overrides[header.prefix];
-			return { ...header, defaultSupported, override };
-		});
-	}, [providerKey, overrides]);
+		return KNOWN_BETA_HEADERS.map((header) => ({ ...header, name: `${header.prefix}*`, defaultSupported: header.defaults[providerKey] }));
+	}, [typesafeHeaders, providerKey]);
 
 	const onSubmit = (data: BetaHeadersFormSchema) => {
 		const cleanedOverrides: Record<string, boolean> = {};
@@ -188,11 +182,11 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 		)
 			.unwrap()
 			.then(() => {
-				toast.success(t("providers:betaHeaders.updatedSuccess"));
+				toast.success(t("providers.betaHeadersUpdated"));
 				form.reset(data);
 			})
 			.catch((err) => {
-				toast.error(t("providers:betaHeaders.updateFailed"), {
+				toast.error(t("providers.failedUpdateBetaHeaders"), {
 					description: getErrorMessage(err),
 				});
 			});
@@ -233,15 +227,15 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 
 		// Validate
 		if (KNOWN_PREFIXES.has(prefix)) {
-			setNewPrefixError(t("providers:betaHeaders.knownHeaderError"));
+			setNewPrefixError(t("providers.betaHeaders.knownHeaderError"));
 			return;
 		}
 		if (overrides[prefix] !== undefined) {
-			setNewPrefixError(t("providers:betaHeaders.existsError"));
+			setNewPrefixError(t("providers.betaHeaders.prefixExists"));
 			return;
 		}
 		if (!/^[a-z0-9-]+$/.test(prefix)) {
-			setNewPrefixError(t("providers:betaHeaders.invalidPrefixError"));
+			setNewPrefixError(t("providers.betaHeaders.prefixCharset"));
 			return;
 		}
 
@@ -249,7 +243,7 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 		form.setValue("beta_header_overrides", { ...current, [prefix]: true }, { shouldDirty: true });
 		setNewPrefix("");
 		setNewPrefixError(null);
-	}, [newPrefix, overrides, form]);
+	}, [newPrefix, overrides, form, t]);
 
 	const getSelectValue = (prefix: string): string => {
 		const override = overrides[prefix];
@@ -257,20 +251,22 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 		return override ? "enabled" : "disabled";
 	};
 
-	if (!providerKey) return null;
+	if (!providerKey && !typesafeHeaders) return null;
 
 	return (
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)} data-testid="provider-config-beta-headers-content">
 				<div className="space-y-2 px-4 pb-6 md:px-6">
-					<p className="text-muted-foreground text-xs">{t("providers:betaHeaders.description")}</p>
+					<p className="text-muted-foreground text-xs">
+						{typesafeHeaders ? t("providers.betaHeaders.introTypesafe") : t("providers.betaHeaders.intro")}
+					</p>
 					<div className="rounded-md border">
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="border-b">
-									<th className="px-3 py-2 text-left font-medium">{t("providers:betaHeaders.headerColumn")}</th>
-									<th className="px-3 py-2 text-left font-medium">{t("providers:betaHeaders.defaultColumn")}</th>
-									<th className="w-[180px] px-3 py-2 text-left font-medium">{t("providers:betaHeaders.overrideColumn")}</th>
+									<th className="px-3 py-2 text-left font-medium">{t("providers.betaHeaders.colHeader")}</th>
+									<th className="px-3 py-2 text-left font-medium">{t("providers.betaHeaders.colDefault")}</th>
+									<th className="w-[180px] px-3 py-2 text-left font-medium">{t("providers.betaHeaders.colOverride")}</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -278,13 +274,17 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 									<tr key={row.prefix} className="border-b last:border-b-0">
 										<td className="px-3 py-2">
 											<div className="flex flex-col gap-0.5">
-												<span className="font-mono text-xs">{row.prefix}*</span>
-												<span className="text-muted-foreground text-xs">{t(row.descriptionKey)}</span>
+												<span className="font-mono text-xs">{row.name}</span>
+												<span className="text-muted-foreground text-xs">
+													{row.prefix === "typesafe-danger-zone-images"
+														? t("providers.betaHeaders.typesafeDangerZoneImages")
+														: t(`providers.betaHeaders.known.${row.prefix}.description`)}
+												</span>
 											</div>
 										</td>
 										<td className="px-3 py-2">
 											<Badge variant={row.defaultSupported ? "default" : "secondary"} className="text-xs">
-												{row.defaultSupported ? t("providers:betaHeaders.supported") : t("providers:betaHeaders.unsupported")}
+												{row.defaultSupported ? t("providers.betaHeaders.supported") : t("providers.betaHeaders.unsupported")}
 											</Badge>
 										</td>
 										<td className="w-[180px] px-3 py-2">
@@ -300,9 +300,9 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 													<SelectValue />
 												</SelectTrigger>
 												<SelectContent>
-													<SelectItem value="default">{t("providers:betaHeaders.defaultOption")}</SelectItem>
-													<SelectItem value="enabled">{t("providers:betaHeaders.supported")}</SelectItem>
-													<SelectItem value="disabled">{t("providers:betaHeaders.unsupported")}</SelectItem>
+													<SelectItem value="default">{t("providers.betaHeaders.colDefault")}</SelectItem>
+													<SelectItem value="enabled">{t("providers.betaHeaders.supported")}</SelectItem>
+													<SelectItem value="disabled">{t("providers.betaHeaders.unsupported")}</SelectItem>
 												</SelectContent>
 											</Select>
 										</td>
@@ -313,12 +313,12 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 										<td className="px-3 py-2">
 											<div className="flex flex-col gap-0.5">
 												<span className="font-mono text-xs">{prefix}*</span>
-												<span className="text-muted-foreground text-xs">{t("providers:betaHeaders.customHeader")}</span>
+												<span className="text-muted-foreground text-xs">{t("providers.betaHeaders.customHeader")}</span>
 											</div>
 										</td>
 										<td className="px-3 py-2">
 											<Badge variant="outline" className="text-xs">
-												{t("providers:betaHeaders.customBadge")}
+												{t("providers.betaHeaders.customBadge")}
 											</Badge>
 										</td>
 										<td className="w-[180px] px-3 py-2">
@@ -335,8 +335,8 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 														<SelectValue />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value="enabled">{t("providers:betaHeaders.supported")}</SelectItem>
-														<SelectItem value="disabled">{t("providers:betaHeaders.unsupported")}</SelectItem>
+														<SelectItem value="enabled">{t("providers.betaHeaders.supported")}</SelectItem>
+														<SelectItem value="disabled">{t("providers.betaHeaders.unsupported")}</SelectItem>
 													</SelectContent>
 												</Select>
 												<Button
@@ -347,7 +347,7 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 													disabled={!hasUpdateProviderAccess}
 													onClick={() => removeCustomPrefix(prefix)}
 													data-testid={`provider-beta-remove-prefix-btn-${prefix.replace(/-/g, "")}`}
-													aria-label={t("providers:betaHeaders.removePrefixAria", { prefix })}
+													aria-label={t("providers.betaHeaders.removeCustomPrefix", { prefix })}
 												>
 													<Trash2 className="h-3.5 w-3.5" />
 												</Button>
@@ -359,46 +359,48 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 						</table>
 					</div>
 
-					<div className="flex items-start gap-2 pt-2">
-						<div className="flex-1">
-							<Input
-								placeholder={t("providers:betaHeaders.addPlaceholder")}
-								value={newPrefix}
-								onChange={(e) => {
-									setNewPrefix(e.target.value);
-									setNewPrefixError(null);
-								}}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										e.preventDefault();
-										addCustomPrefix();
-									}
-								}}
-								disabled={!hasUpdateProviderAccess}
-								className="h-8 text-xs"
-								data-testid="provider-beta-custom-prefix-input"
-								aria-label={t("providers:betaHeaders.customPrefixAria")}
-								aria-describedby={newPrefixError ? "custom-prefix-error" : undefined}
-							/>
-							{newPrefixError && (
-								<p className="text-destructive mt-1 text-xs" id="custom-prefix-error">
-									{newPrefixError}
-								</p>
-							)}
+					{!typesafeHeaders && (
+						<div className="flex items-start gap-2 pt-2">
+							<div className="flex-1">
+								<Input
+									placeholder={t("providers.betaHeaders.customPrefixPlaceholder")}
+									value={newPrefix}
+									onChange={(e) => {
+										setNewPrefix(e.target.value);
+										setNewPrefixError(null);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											e.preventDefault();
+											addCustomPrefix();
+										}
+									}}
+									disabled={!hasUpdateProviderAccess}
+									className="h-8 text-xs"
+									data-testid="provider-beta-custom-prefix-input"
+									aria-label={t("providers.betaHeaders.customPrefixAria")}
+									aria-describedby={newPrefixError ? "custom-prefix-error" : undefined}
+								/>
+								{newPrefixError && (
+									<p className="text-destructive mt-1 text-xs" id="custom-prefix-error">
+										{newPrefixError}
+									</p>
+								)}
+							</div>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="h-8"
+								disabled={!hasUpdateProviderAccess || !newPrefix.trim()}
+								onClick={addCustomPrefix}
+								data-testid="provider-beta-add-prefix-btn"
+							>
+								<Plus className="mr-1 h-3.5 w-3.5" />
+								{t("providers.betaHeaders.add")}
+							</Button>
 						</div>
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							className="h-8"
-							disabled={!hasUpdateProviderAccess || !newPrefix.trim()}
-							onClick={addCustomPrefix}
-							data-testid="provider-beta-add-prefix-btn"
-						>
-							<Plus className="mr-1 h-3.5 w-3.5" />
-							{t("common:actions.add")}
-						</Button>
-					</div>
+					)}
 				</div>
 
 				<div className="bg-card sticky bottom-0 flex justify-end gap-2 rounded-b-sm border-t px-4 py-4 md:px-6">
@@ -408,7 +410,7 @@ export function BetaHeadersFormFragment({ provider }: BetaHeadersFormFragmentPro
 						isLoading={isUpdatingProvider}
 						data-testid="provider-beta-save-btn"
 					>
-						{t("providers:betaHeaders.save")}
+						{t("providers.saveBetaHeaderConfig")}
 					</Button>
 				</div>
 			</form>

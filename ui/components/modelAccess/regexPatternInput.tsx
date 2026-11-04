@@ -3,8 +3,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { useId, useState } from "react";
-import { validateModelRegex } from "./utils";
 import { useTranslation } from "react-i18next";
+import { validateModelRegex } from "./utils";
 
 interface RegexPatternInputProps {
 	/** Called with the raw pattern (no prefix) once it passes validation. */
@@ -34,7 +34,7 @@ export function RegexPatternInput({
 	className,
 	...rest
 }: RegexPatternInputProps) {
-	const { t } = useTranslation(["common", "models"]);
+	const { t } = useTranslation();
 	const [pattern, setPattern] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const testId = rest["data-testid"];
@@ -89,7 +89,7 @@ export function RegexPatternInput({
 					data-testid={testId ? `${testId}-add` : undefined}
 				>
 					<Plus className="h-3.5 w-3.5" />
-					Add
+					{t("modelAccess.add")}
 				</Button>
 			</div>
 			{error ? (
@@ -98,7 +98,7 @@ export function RegexPatternInput({
 				</p>
 			) : (
 				<p id={hintId} className="text-muted-foreground text-xs">
-					{t("models:access.regexHint")}
+					{t("modelAccess.regexHint")}
 				</p>
 			)}
 		</div>

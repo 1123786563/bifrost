@@ -48,19 +48,12 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
 }
 
 export function FieldLabel({ htmlFor, children, tooltip }: { htmlFor?: string; children: ReactNode; tooltip?: ReactNode }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("common");
+	const fieldName = typeof children === "string" ? children : t("thisField");
 	return (
 		<div className="flex items-center gap-1.5">
 			<Label htmlFor={htmlFor}>{children}</Label>
-			{tooltip && (
-				<InfoTip
-					label={t("governance:complexityRouter.decisionGuidance.infoTip", {
-						field: typeof children === "string" ? children : t("governance:complexityRouter.form.infoTipFallback"),
-					})}
-				>
-					{tooltip}
-				</InfoTip>
-			)}
+			{tooltip && <InfoTip label={t("aboutField", { field: fieldName })}>{tooltip}</InfoTip>}
 		</div>
 	);
 }

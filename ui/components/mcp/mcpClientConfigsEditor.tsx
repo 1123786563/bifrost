@@ -7,10 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useGetMCPClientsQuery } from "@/lib/store";
 import { MCPClient } from "@/lib/types/mcp";
+import { toolSubtitle } from "@/lib/utils/mcpPerUserDiscovery";
 import { Info, Trash2 } from "lucide-react";
 import { ReactNode, useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { Trans, useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 // One server's tool grant. tools_to_execute: ["*"] = all, [] = none, list = specific.
 // Keyed by name (VK shape); mcp_client_id rides along when known, for by-id resolution.
@@ -67,16 +68,11 @@ export function MCPClientConfigsEditor({
 	emptyState,
 	allClientTools = false,
 }: MCPClientConfigsEditorProps) {
-	const { t } = useTranslation(["common", "mcp", "workspaces"]);
-	const resolvedLabel = label ?? t("mcp:editors.configsLabel");
+	const { t } = useTranslation("governance");
+	const resolvedLabel = label ?? t("mcpConfigs.title");
 	const resolvedTooltip = tooltip ?? (
 		<p>
-			<Trans
-				t={t}
-				i18nKey="mcp:editors.configsTooltip"
-				values={{ allowAll: t("workspaces:mcpConfigs.allowAllTools") }}
-				components={{ em: <span className="font-medium" /> }}
-			/>
+			<Trans t={t} i18nKey="mcpConfigs.tooltip" components={{ medium0: <span className="font-medium" /> }} />
 		</p>
 	);
 	// Resolved server records, filled in by the resolvers below.
@@ -90,7 +86,7 @@ export function MCPClientConfigsEditor({
 
 	const handleAddMCPClient = (option: EntitySelectorOption) => {
 		if (value.some((config) => (option.value && config.mcp_client_id === option.value) || config.mcp_client_name === option.label)) {
-			toast.error(t("workspaces:mcpConfigs.duplicate"));
+			toast.error(t("mcpConfigs.alreadyConfigured"));
 			return;
 		}
 		onChange([...value, { mcp_client_name: option.label, mcp_client_id: option.value, tools_to_execute: ["*"] }]);
@@ -149,9 +145,9 @@ export function MCPClientConfigsEditor({
 								<span>
 									<Trans
 										t={t}
-										i18nKey="mcp:editors.defaultsNote"
-										values={{ servers: defaultMCPClients.map((c) => c.config.name).join(", ") }}
-										components={{ em: <span className="text-foreground font-medium" /> }}
+										i18nKey="mcpConfigs.defaultsNote"
+										values={{ names: defaultMCPClients.map((c) => c.config.name).join(", ") }}
+										components={{ medium0: <span className="text-foreground font-medium" /> }}
 									/>
 								</span>
 							</div>
@@ -163,7 +159,7 @@ export function MCPClientConfigsEditor({
 			<MCPClientSelector
 				mode="add"
 				fullWidth
-				placeholder={t("workspaces:mcpConfigs.selectServer")}
+				placeholder={t("mcpConfigs.selectServer")}
 				onSelect={handleAddMCPClient}
 				excludeIds={excludeIds}
 			/>
@@ -176,8 +172,8 @@ export function MCPClientConfigsEditor({
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("mcp:editors.serverCol")}</TableHead>
-								<TableHead>{t("workspaces:mcpConfigs.allowedTools")}</TableHead>
+								<TableHead>{t("mcpConfigs.server")}</TableHead>
+								<TableHead>{t("mcpConfigs.allowedTools")}</TableHead>
 								<TableHead className="w-[50px]"></TableHead>
 							</TableRow>
 						</TableHeader>
@@ -215,16 +211,16 @@ export function MCPClientConfigsEditor({
 												hideSelectAll
 												options={[
 													{
-														label: t("workspaces:mcpConfigs.allowAllTools"),
+														label: t("mcpConfigs.allowAllTools"),
 														value: "*",
-														description: t("mcp:editors.allowAllToolsDesc"),
+														description: t("mcpConfigs.allowAllToolsDescription"),
 													},
 													...[...availableTools, ...enabledToolsByConfig]
 														.filter((tool, index, arr) => arr.findIndex((t) => t.name === tool.name) === index)
 														.map((tool) => ({
 															label: tool.name,
 															value: tool.name,
-															description: tool.description,
+															description: mcpClient ? toolSubtitle(mcpClient, tool) : tool.description,
 														})),
 												]}
 												defaultValue={selectedTools}
@@ -247,10 +243,10 @@ export function MCPClientConfigsEditor({
 												}}
 												placeholder={
 													selectedTools.length === 0
-														? t("mcp:registry.sheet.noToolsAllowed")
+														? t("mcpConfigs.noToolsSelected")
 														: selectedTools.includes("*")
-															? t("mcp:registry.sheet.allToolsAllowed")
-															: t("mcp:registry.sheet.selectTools")
+															? t("mcpConfigs.allToolsAllowed")
+															: t("mcpConfigs.selectTools")
 												}
 												variant="inverted"
 												className="hover:bg-accent w-full bg-white dark:bg-zinc-800"
@@ -264,7 +260,7 @@ export function MCPClientConfigsEditor({
 												type="button"
 												variant="ghost"
 												size="sm"
-												aria-label={t("mcp:editors.removeAria", { name: displayName })}
+												aria-label={t("mcpConfigs.removeAria", { name: displayName })}
 												onClick={() => handleRemoveMCPClient(index)}
 												data-testid={`vk-delete-mcp-${index}`}
 											>

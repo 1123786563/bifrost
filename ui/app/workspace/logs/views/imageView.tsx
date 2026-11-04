@@ -3,7 +3,8 @@ import { BifrostImageGenerationOutput, ImageEditInput, ImageVariationInput } fro
 import { Image, ChevronLeft, ChevronRight } from "lucide-react";
 import { ImageMessage } from "@/components/chat/ImageMessage";
 import { Button } from "@/components/ui/button";
-import { RequestTypeLabels } from "@/lib/constants/logs";
+import { getRequestTypeLabel, RequestTypeLabels } from "@/lib/constants/logs";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 interface ImageGenerationInput {
@@ -28,22 +29,18 @@ function getImageSrc(b64: string): string {
 }
 
 // Helper function to get method type label from request type
-function useMethodTypeLabel(requestType?: string): string {
-	const { t } = useTranslation(["logs"]);
-	if (!requestType) return t("logs:media.methodType.imageGeneration");
+function getMethodTypeLabel(requestType: string | undefined, t: TFunction<"observability">): string {
+	if (!requestType) return t("logs.media.imageGeneration");
 
 	const normalizedType = requestType.toLowerCase();
-	if (normalizedType.includes("image_edit")) {
-		return RequestTypeLabels[normalizedType as keyof typeof RequestTypeLabels] || t("logs:media.methodType.imageEdit");
-	}
-	if (normalizedType.includes("image_variation")) {
-		return RequestTypeLabels[normalizedType as keyof typeof RequestTypeLabels] || t("logs:media.methodType.imageVariation");
-	}
-	return RequestTypeLabels[normalizedType as keyof typeof RequestTypeLabels] || t("logs:media.methodType.imageGeneration");
+	if (Object.hasOwn(RequestTypeLabels, normalizedType)) return getRequestTypeLabel(normalizedType, t);
+	if (normalizedType.includes("image_edit")) return t("logs.media.imageEdit");
+	if (normalizedType.includes("image_variation")) return t("logs.media.imageVariation");
+	return t("logs.media.imageGeneration");
 }
 
 export default function ImageView({ imageInput, imageEditInput, imageVariationInput, imageOutput, requestType }: ImageViewProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const [currentIndex, setCurrentIndex] = useState(0);
 
 	// Get all valid images
@@ -52,7 +49,7 @@ export default function ImageView({ imageInput, imageEditInput, imageVariationIn
 	const currentImage = images[currentIndex] ?? null;
 
 	// Get method type label
-	const methodTypeLabel = useMethodTypeLabel(requestType);
+	const methodTypeLabel = getMethodTypeLabel(requestType, t);
 
 	// Clamp currentIndex when images array changes to ensure it's always valid
 	useEffect(() => {
@@ -74,10 +71,10 @@ export default function ImageView({ imageInput, imageEditInput, imageVariationIn
 				<div className="w-full rounded-sm border">
 					<div className="flex items-center gap-2 border-b px-6 py-2 text-sm font-medium">
 						<Image className="h-4 w-4" />
-						{t("logs:media.inputLabel", { label: methodTypeLabel })}
+						{t("logs.media.methodInput", { method: methodTypeLabel })}
 					</div>
 					<div className="space-y-4 p-6">
-						<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs:media.fields.prompt")}</div>
+						<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs.video.prompt")}</div>
 						<div className="font-mono text-xs">{imageInput.prompt}</div>
 					</div>
 				</div>
@@ -88,19 +85,19 @@ export default function ImageView({ imageInput, imageEditInput, imageVariationIn
 				<div className="w-full rounded-sm border">
 					<div className="flex items-center gap-2 border-b px-6 py-2 text-sm font-medium">
 						<Image className="h-4 w-4" />
-						{t("logs:media.inputLabel", { label: methodTypeLabel })}
+						{t("logs.media.methodInput", { method: methodTypeLabel })}
 					</div>
 					<div className="space-y-4 p-6">
 						{imageEditInput.images && imageEditInput.images.length > 0 && (
 							<div>
-								<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs:media.fields.inputImages")}</div>
+								<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs.media.inputImagesHeading")}</div>
 								<div className="flex flex-wrap gap-2">
 									{imageEditInput.images.map((img, i) =>
 										img.image ? (
 											<img
 												key={i}
 												src={getImageSrc(img.image)}
-												alt={`${t("logs:media.fields.inputImage")} ${i + 1}`}
+												alt={t("logs.media.inputImageNumbered", { number: i + 1 })}
 												className="max-h-48 max-w-48 rounded border object-contain"
 											/>
 										) : null,
@@ -109,7 +106,7 @@ export default function ImageView({ imageInput, imageEditInput, imageVariationIn
 							</div>
 						)}
 						<div>
-							<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs:media.fields.prompt")}</div>
+							<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs.video.prompt")}</div>
 							<div className="font-mono text-xs">{imageEditInput.prompt}</div>
 						</div>
 					</div>
@@ -121,13 +118,13 @@ export default function ImageView({ imageInput, imageEditInput, imageVariationIn
 				<div className="w-full rounded-sm border">
 					<div className="flex items-center gap-2 border-b px-6 py-2 text-sm font-medium">
 						<Image className="h-4 w-4" />
-						{t("logs:media.inputLabel", { label: methodTypeLabel })}
+						{t("logs.media.methodInput", { method: methodTypeLabel })}
 					</div>
 					<div className="space-y-4 p-6">
-						<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs:media.fields.inputImage")}</div>
+						<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs.media.inputImageHeading")}</div>
 						<img
 							src={getImageSrc(imageVariationInput.image.image)}
-							alt={t("logs:media.fields.inputImage")}
+							alt={t("logs.media.inputImage")}
 							className="max-h-48 max-w-48 rounded border object-contain"
 						/>
 					</div>
@@ -139,14 +136,14 @@ export default function ImageView({ imageInput, imageEditInput, imageVariationIn
 				<div className="w-full rounded-sm border">
 					<div className="flex items-center gap-2 border-b px-6 py-2 text-sm font-medium">
 						<Image className="h-4 w-4" />
-						{t("logs:media.outputLabel", { label: methodTypeLabel })}
+						{t("logs.media.methodOutput", { method: methodTypeLabel })}
 					</div>
 					<div className="space-y-4 p-6">
 						{currentImage && (
 							<>
 								{currentImage.revised_prompt && (
 									<div className="mb-4">
-										<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs:media.fields.revisedPrompt")}</div>
+										<div className="text-muted-foreground mb-2 text-xs font-medium">{t("logs.media.revisedPromptHeading")}</div>
 										<div className="font-mono text-xs">{currentImage.revised_prompt}</div>
 									</div>
 								)}
@@ -163,8 +160,8 @@ export default function ImageView({ imageInput, imageEditInput, imageVariationIn
 											variant="outline"
 											size="sm"
 											onClick={goToPrevious}
-											aria-label={t("logs:media.fields.previousImage")}
-											title={t("logs:media.fields.previousImage")}
+											aria-label={t("logs.media.previousImage")}
+											title={t("logs.media.previousImage")}
 										>
 											<ChevronLeft className="h-4 w-4" />
 										</Button>
@@ -175,8 +172,8 @@ export default function ImageView({ imageInput, imageEditInput, imageVariationIn
 											variant="outline"
 											size="sm"
 											onClick={goToNext}
-											aria-label={t("logs:media.fields.nextImage")}
-											title={t("logs:media.fields.nextImage")}
+											aria-label={t("logs.media.nextImage")}
+											title={t("logs.media.nextImage")}
 										>
 											<ChevronRight className="h-4 w-4" />
 										</Button>

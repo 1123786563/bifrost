@@ -6,17 +6,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ProviderIconType, RenderProviderIcon } from "@/lib/constants/icons";
 import type { ProviderName } from "@/lib/constants/logs";
-import { RequestTypeColors, RequestTypeLabels, Status, StatusBarColors } from "@/lib/constants/logs";
+import { getRequestTypeLabel, RequestTypeColors, Status, StatusBarColors } from "@/lib/constants/logs";
 import { getErrorMessage } from "@/lib/store";
 import { useGetLogSessionSummaryByIdQuery, useLazyGetLogSessionByIdQuery } from "@/lib/store/apis/logsApi";
 import { LogEntry } from "@/lib/types/logs";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { dateFnsLocale } from "@/lib/i18n/dateLocale";
 import { ArrowDown, ArrowUp, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { LogMessageCell } from "../views/columns";
+import { getLocale } from "@/lib/i18n";
 
 const SESSION_LOG_PAGE_SIZE = 500;
 
@@ -63,7 +65,8 @@ export function SessionDetailsSheet({
 	onLogClick,
 	onFilterByParentRequestId,
 }: SessionDetailsSheetProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t, i18n } = useTranslation("observability");
+	const dateLocale = dateFnsLocale(i18n.language);
 	const [triggerGetSession] = useLazyGetLogSessionByIdQuery();
 	const [sessionLogs, setSessionLogs] = useState<LogEntry[]>([]);
 	const [loadingSession, setLoadingSession] = useState(false);
@@ -82,37 +85,41 @@ export function SessionDetailsSheet({
 	const summaryCards: SummaryCard[] = useMemo(
 		() => [
 			{
-				label: t("logs:session.logs"),
-				value: (sessionSummary?.count || 0).toLocaleString(),
+				label: t("logs.session.logs"),
+				value: (sessionSummary?.count || 0).toLocaleString(getLocale()),
 				helper:
 					sessionSummary && sessionLogs.length < sessionSummary.count
-						? t("logs:session.loadedHelper", { count: sessionLogs.length.toLocaleString() })
+						? t("logs.session.loadedCount", { count: sessionLogs.length.toLocaleString(getLocale()) })
 						: undefined,
 			},
 			{
-				label: t("logs:metrics.totalCost"),
+				label: t("logs.session.totalCost"),
 				value: `$${(sessionSummary?.total_cost || 0).toFixed(4)}`,
 			},
 			{
-				label: t("logs:metrics.totalTokens"),
-				value: (sessionSummary?.total_tokens || 0).toLocaleString(),
+				label: t("logs.session.totalTokens"),
+				value: (sessionSummary?.total_tokens || 0).toLocaleString(getLocale()),
 			},
 			{
-				label: t("logs:session.started"),
-				value: sessionSummary?.started_at ? format(new Date(sessionSummary.started_at), "MMM d, yyyy hh:mm:ss aa") : t("logs:chat.na"),
+				label: t("logs.session.started"),
+				value: sessionSummary?.started_at
+					? format(new Date(sessionSummary.started_at), "MMM d, yyyy hh:mm:ss aa", { locale: dateLocale })
+					: t("labels.nA"),
 				size: "sm",
 			},
 			{
-				label: t("logs:session.latestUpdate"),
-				value: sessionSummary?.latest_at ? format(new Date(sessionSummary.latest_at), "MMM d, yyyy hh:mm:ss aa") : t("logs:chat.na"),
+				label: t("logs.session.latestUpdate"),
+				value: sessionSummary?.latest_at
+					? format(new Date(sessionSummary.latest_at), "MMM d, yyyy hh:mm:ss aa", { locale: dateLocale })
+					: t("labels.nA"),
 				size: "sm",
 			},
 			{
-				label: t("logs:media.fields.duration"),
+				label: t("logs.session.duration"),
 				value: formatDurationFromMs(sessionSummary?.duration_ms),
 			},
 		],
-		[sessionSummary, sessionLogs.length, t],
+		[sessionSummary, sessionLogs.length, t, dateLocale],
 	);
 
 	const sortSessionLogs = useCallback(
@@ -135,7 +142,7 @@ export function SessionDetailsSheet({
 					pagination: { limit: SESSION_LOG_PAGE_SIZE, offset, order: sortOrder },
 				});
 				if (result.error) {
-					toast.error(t("logs:session.loadFailed"), {
+					toast.error(t("logs.session.loadFailed"), {
 						description: getErrorMessage(result.error),
 					});
 					return;
@@ -161,7 +168,7 @@ export function SessionDetailsSheet({
 				setLoadingSession(false);
 			}
 		},
-		[onOpenChange, sessionId, sortOrder, sortSessionLogs, triggerGetSession, t],
+		[onOpenChange, sessionId, sortOrder, sortSessionLogs, triggerGetSession],
 	);
 
 	useEffect(() => {
@@ -189,7 +196,7 @@ export function SessionDetailsSheet({
 			<SheetContent className="flex w-full flex-col gap-4 overflow-x-hidden p-4 sm:max-w-[60%] md:p-8">
 				<div className="flex items-center justify-between gap-4">
 					<div>
-						<div className="text-lg font-medium">{t("logs:columns.session")}</div>
+						<div className="text-lg font-medium">{t("labels.session")}</div>
 						{sessionId && onFilterByParentRequestId ? (
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -201,7 +208,7 @@ export function SessionDetailsSheet({
 										{sessionId}
 									</button>
 								</TooltipTrigger>
-								<TooltipContent sideOffset={6}>{t("logs:session.filterThisSession")}</TooltipContent>
+								<TooltipContent sideOffset={6}>{t("logs.session.filterThis")}</TooltipContent>
 							</Tooltip>
 						) : (
 							<code className="text-sm break-all">{sessionId}</code>
@@ -215,7 +222,7 @@ export function SessionDetailsSheet({
 							onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
 						>
 							{sortOrder === "asc" ? <ArrowUp className="mr-2 h-4 w-4" /> : <ArrowDown className="mr-2 h-4 w-4" />}
-							{sortOrder === "asc" ? t("logs:session.earliestFirst") : t("logs:session.latestFirst")}
+							{sortOrder === "asc" ? t("logs.session.earliestFirst") : t("logs.session.latestFirst")}
 						</Button>
 					</div>
 				</div>
@@ -251,11 +258,11 @@ export function SessionDetailsSheet({
 						<TableHeader className="sticky top-0 z-10 bg-[#f9f9f9] dark:bg-[#27272a]">
 							<TableRow>
 								<TableHead className="w-2"></TableHead>
-								<TableHead>{t("logs:columns.time")}</TableHead>
-								<TableHead>{t("logs:columns.type")}</TableHead>
-								<TableHead>{t("logs:columns.message")}</TableHead>
-								<TableHead>{t("logs:columns.provider")}</TableHead>
-								<TableHead>{t("logs:columns.model")}</TableHead>
+								<TableHead>{t("labels.time")}</TableHead>
+								<TableHead>{t("labels.type")}</TableHead>
+								<TableHead>{t("labels.message")}</TableHead>
+								<TableHead>{t("labels.provider")}</TableHead>
+								<TableHead>{t("labels.model")}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -264,7 +271,7 @@ export function SessionDetailsSheet({
 									<TableCell colSpan={6} className="h-24 text-center">
 										<div className="flex items-center justify-center gap-2">
 											<Loader2 className="h-4 w-4 animate-spin" />
-											{t("logs:session.loading")}
+											{t("logs.session.loading")}
 										</div>
 									</TableCell>
 								</TableRow>
@@ -281,14 +288,14 @@ export function SessionDetailsSheet({
 										<TableCell className="relative text-xs">
 											{log.id === highlightedLogId ? (
 												<div className="bg-background pointer-events-none absolute -top-1.5 left-1 z-10 rounded-full border border-sky-400/45 px-1.5 py-0 text-[9px] leading-tight font-semibold tracking-wide text-sky-600 uppercase dark:text-sky-300">
-													{t("logs:session.current")}
+													{t("logs.session.current")}
 												</div>
 											) : null}
-											{format(new Date(log.timestamp), "yyyy-MM-dd hh:mm:ss aa (XXX)")}
+											{format(new Date(log.timestamp), "yyyy-MM-dd hh:mm:ss aa (XXX)", { locale: dateLocale })}
 										</TableCell>
 										<TableCell>
 											<Badge variant="outline" className={`${RequestTypeColors[log.object as keyof typeof RequestTypeColors]} text-xs`}>
-												{RequestTypeLabels[log.object as keyof typeof RequestTypeLabels]}
+												{getRequestTypeLabel(log.object, t)}
 											</Badge>
 										</TableCell>
 										<TableCell className="max-w-[360px]">
@@ -300,13 +307,13 @@ export function SessionDetailsSheet({
 												{log.provider as ProviderName}
 											</Badge>
 										</TableCell>
-										<TableCell className="max-w-[140px] truncate font-mono text-xs">{log.model || t("logs:chat.na")}</TableCell>
+										<TableCell className="max-w-[140px] truncate font-mono text-xs">{log.model || t("labels.nA")}</TableCell>
 									</TableRow>
 								))
 							) : (
 								<TableRow>
 									<TableCell colSpan={6} className="text-muted-foreground h-24 text-center">
-										{t("logs:session.noLogs")}
+										{t("logs.session.empty")}
 									</TableCell>
 								</TableRow>
 							)}
@@ -323,7 +330,7 @@ export function SessionDetailsSheet({
 							disabled={loadingSession}
 						>
 							{loadingSession ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-							{t("logs:session.loadMore")}
+							{t("logs.session.loadMore")}
 						</Button>
 					</div>
 				) : null}

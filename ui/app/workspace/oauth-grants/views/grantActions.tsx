@@ -18,7 +18,7 @@ interface GrantActionsProps {
 }
 
 export default function GrantActions({ row, revoking, isPendingRow, onRevoke }: GrantActionsProps) {
-	const { t } = useTranslation(["common", "auth"]);
+	const { t } = useTranslation("mcp");
 	const busy = revoking;
 	// Link to Auth Sessions pre-filtered to this grant's exact identity: the
 	// mode plus the identity filter, which exact-matches bf_sub against the
@@ -34,7 +34,7 @@ export default function GrantActions({ row, revoking, isPendingRow, onRevoke }: 
 					variant="ghost"
 					size="icon"
 					className="h-8 w-8"
-					aria-label={t("auth:grants.actions.menuLabel")}
+					aria-label={t("oauthGrants.grantActions")}
 					disabled={busy}
 				>
 					{busy && isPendingRow ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
@@ -45,7 +45,7 @@ export default function GrantActions({ row, revoking, isPendingRow, onRevoke }: 
 					<DropdownMenuItem asChild className="cursor-pointer">
 						<Link to={authSessionsUrl} data-testid="oauth-grants-view-sessions-link">
 							<ExternalLink className="h-4 w-4" />
-							{t("auth:grants.actions.viewSessions")}
+							{t("oauthGrants.viewAuthSessions")}
 						</Link>
 					</DropdownMenuItem>
 				)}
@@ -60,7 +60,7 @@ export default function GrantActions({ row, revoking, isPendingRow, onRevoke }: 
 					}}
 				>
 					<Trash2 className="h-4 w-4" />
-					{t("auth:grants.actions.revoke")}
+					{t("common.revoke")}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

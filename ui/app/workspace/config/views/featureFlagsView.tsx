@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 export default function FeatureFlagsView() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	const hasUpdateAccess = useRbac(RbacResource.FeatureFlags, RbacOperation.Update);
 	const { data, isLoading, isError, error } = useListFeatureFlagsQuery();
 	const [updateFeatureFlag] = useUpdateFeatureFlagMutation();
@@ -23,9 +23,10 @@ export default function FeatureFlagsView() {
 		try {
 			await updateFeatureFlag({ id: flag.id, enabled: checked }).unwrap();
 			toast.success(
-				checked
-					? t("settings:featureFlags.toggledEnabled", { name: flag.display_name || flag.id })
-					: t("settings:featureFlags.toggledDisabled", { name: flag.display_name || flag.id }),
+				t("featureFlags.toastToggled", {
+					name: flag.display_name || flag.id,
+					state: checked ? t("featureFlags.enabledState") : t("featureFlags.disabledState"),
+				}),
 			);
 		} catch (err) {
 			toast.error(getErrorMessage(err));
@@ -34,28 +35,25 @@ export default function FeatureFlagsView() {
 
 	return (
 		<div className="w-full space-y-4">
-			<PageTitle title={t("settings:featureFlags.title")}>
-				{t("settings:featureFlags.descriptionBefore")} <code className="text-xs">config.json</code>{" "}
-				{t("settings:featureFlags.descriptionAfter")}
-			</PageTitle>
+			<PageTitle title={t("featureFlags.title")}>{t("featureFlags.description")}</PageTitle>
 
-			{isLoading && <p className="text-muted-foreground text-sm">{t("settings:featureFlags.loading")}</p>}
-			{isError && <p className="text-sm text-red-500">{t("settings:featureFlags.loadFailed", { message: getErrorMessage(error) })}</p>}
+			{isLoading && <p className="text-muted-foreground text-sm">{t("featureFlags.loading")}</p>}
+			{isError && <p className="text-sm text-red-500">{t("featureFlags.loadFailed", { error: getErrorMessage(error) })}</p>}
 
 			{!isLoading && !isError && (
 				<div className="overflow-auto rounded-sm border">
 					<Table data-testid="feature-flags-table">
 						<TableHeader>
 							<TableRow className="bg-muted/50">
-								<TableHead className="font-semibold">{t("settings:featureFlags.columnFlag")}</TableHead>
-								<TableHead className="w-px text-right font-semibold">{t("settings:featureFlags.columnEnabled")}</TableHead>
+								<TableHead className="font-semibold">{t("featureFlags.flag")}</TableHead>
+								<TableHead className="w-px text-right font-semibold">{t("featureFlags.enabled")}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{flags.length === 0 ? (
 								<TableRow data-testid="feature-flags-table-empty-state">
 									<TableCell colSpan={2} className="h-24 text-center">
-										<span className="text-muted-foreground text-sm">{t("settings:featureFlags.empty")}</span>
+										<span className="text-muted-foreground text-sm">{t("featureFlags.empty")}</span>
 									</TableCell>
 								</TableRow>
 							) : (
@@ -76,10 +74,8 @@ interface FeatureFlagRowProps {
 }
 
 function FeatureFlagRow({ flag, canUpdate, onToggle }: FeatureFlagRowProps) {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	const disabled = flag.locked || !flag.registered || !canUpdate;
-	// Fall back to id when display_name is empty so unregistered orphans
-	// still render something readable in the primary slot.
 	const primaryLabel = flag.display_name || flag.id;
 
 	return (
@@ -95,12 +91,12 @@ function FeatureFlagRow({ flag, canUpdate, onToggle }: FeatureFlagRowProps) {
 						{!flag.registered && <UnregisteredBadge />}
 					</div>
 					{flag.description && <p className="text-muted-foreground text-sm break-words">{flag.description}</p>}
-					{!flag.registered && <p className="text-muted-foreground text-xs">{t("settings:featureFlags.unregisteredNote")}</p>}
+					{!flag.registered && <p className="text-muted-foreground text-xs">{t("featureFlags.unregisteredNote")}</p>}
 				</div>
 			</TableCell>
 			<TableCell className="w-px text-right align-top">
 				<Switch
-					aria-label={t("settings:featureFlags.enableFlag", { name: primaryLabel })}
+					aria-label={t("featureFlags.enableAria", { name: primaryLabel })}
 					data-testid={`feature-flag-toggle-${flag.id}`}
 					size="md"
 					checked={flag.enabled}
@@ -121,45 +117,45 @@ function SourceBadge({ source }: { source: FeatureFlagStatus["source"] }) {
 }
 
 function LockedBadge() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
 				<Badge variant="secondary" className="flex items-center gap-1 text-xs">
 					<Lock className="size-3" />
-					{t("settings:featureFlags.lockedBadge")}
+					{t("featureFlags.locked")}
 				</Badge>
 			</TooltipTrigger>
-			<TooltipContent>{t("settings:featureFlags.lockedTooltip")}</TooltipContent>
+			<TooltipContent>{t("featureFlags.lockedHelp")}</TooltipContent>
 		</Tooltip>
 	);
 }
 
 function EnterpriseBadge() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
 				<Badge variant="secondary" className="flex items-center gap-1 text-xs">
 					<Crown className="size-3" />
-					{t("settings:featureFlags.enterpriseBadge")}
+					{t("featureFlags.enterpriseOnly")}
 				</Badge>
 			</TooltipTrigger>
-			<TooltipContent>{t("settings:featureFlags.enterpriseTooltip")}</TooltipContent>
+			<TooltipContent>{t("featureFlags.enterpriseHelp")}</TooltipContent>
 		</Tooltip>
 	);
 }
 
 function UnregisteredBadge() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
 				<Badge variant="destructive" className="text-xs">
-					{t("settings:featureFlags.unregisteredBadge")}
+					{t("featureFlags.unregistered")}
 				</Badge>
 			</TooltipTrigger>
-			<TooltipContent>{t("settings:featureFlags.unregisteredTooltip")}</TooltipContent>
+			<TooltipContent>{t("featureFlags.unregisteredHelp")}</TooltipContent>
 		</Tooltip>
 	);
 }

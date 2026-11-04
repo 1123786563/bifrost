@@ -16,6 +16,7 @@ import { ColumnDef, flexRender, getCoreRowModel, SortingState, useReactTable } f
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Fragment, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getLocale } from "@/lib/i18n";
 
 interface DataTableProps {
 	columns: ColumnDef<AgentLogSummary>[];
@@ -67,7 +68,7 @@ export function AgentLogsDataTable({
 	onTogglePin,
 	onReorderColumns,
 }: DataTableProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const [sorting, setSorting] = useState<SortingState>([
 		{ id: pagination.sort_by === "latency" ? "duration" : pagination.sort_by, desc: pagination.order === "desc" },
 	]);
@@ -182,12 +183,12 @@ export function AgentLogsDataTable({
 										{polling ? (
 											<>
 												<RefreshCw className="h-4 w-4 animate-spin" />
-												{t("logs:agent.waiting")}
+												{t("agentLogs.table.waitingForNew")}
 											</>
 										) : (
 											<Button variant="ghost" size="sm" onClick={onRefresh} disabled={loading} data-testid="agent-logs-table-refresh-btn">
 												<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-												{t("common:actions.refresh")}
+												{t("labels.refresh")}
 											</Button>
 										)}
 									</div>
@@ -245,7 +246,7 @@ export function AgentLogsDataTable({
 																onClick={() => sessionExpansion.onLoadMore(id)}
 																data-testid="agent-logs-session-load-more-btn"
 															>
-																{sessionExpansion.loadingIds.has(id) ? "Loading..." : "Load more operations"}
+																{sessionExpansion.loadingIds.has(id) ? t("agentLogs.table.loadingMore") : t("agentLogs.table.loadMore")}
 															</Button>
 														</TableCell>
 													</TableRow>
@@ -255,7 +256,7 @@ export function AgentLogsDataTable({
 							) : loading ? null : (
 								<TableRow>
 									<TableCell colSpan={columns.length} className="h-24 text-center">
-										No results found. Try adjusting your filters and/or time range.
+										{t("mcpLogs.noResults")}
 									</TableCell>
 								</TableRow>
 							)}
@@ -265,12 +266,11 @@ export function AgentLogsDataTable({
 				{/* Pagination Footer */}
 				<div className="flex items-center justify-between text-xs" data-testid="pagination">
 					<div className="text-muted-foreground flex items-center gap-2">
-						{t("logs:table.range", {
-							from: startItemDisplay.toLocaleString(),
-							to: endItemDisplay.toLocaleString(),
-							total: totalItems.toLocaleString(),
-						})}{" "}
-						{sessionExpansion ? t("logs:table.groups") : t("logs:table.entries")}
+						{t(sessionExpansion ? "agentLogs.table.groupRange" : "logs.entryRange", {
+							start: startItemDisplay.toLocaleString(getLocale()),
+							end: endItemDisplay.toLocaleString(getLocale()),
+							total: totalItems.toLocaleString(getLocale()),
+						})}
 					</div>
 
 					<div className="flex items-center gap-2">
@@ -280,13 +280,13 @@ export function AgentLogsDataTable({
 							onClick={() => goToPage(currentPage - 1)}
 							disabled={currentPage <= 1}
 							data-testid="prev-page"
-							aria-label={t("logs:table.previousPage")}
+							aria-label={t("labels.previousPage")}
 						>
 							<ChevronLeft className="size-3" />
 						</Button>
 
 						<div className="flex items-center gap-1">
-							<span>{t("logs:table.pageOf", { current: currentPage, total: totalPages })}</span>
+							<span>{t("logs.pageRange", { page: currentPage, total: totalPages })}</span>
 						</div>
 
 						<Button
@@ -295,7 +295,7 @@ export function AgentLogsDataTable({
 							onClick={() => goToPage(currentPage + 1)}
 							disabled={totalPages === 0 || currentPage >= totalPages}
 							data-testid="next-page"
-							aria-label={t("logs:table.nextPage")}
+							aria-label={t("labels.nextPage")}
 						>
 							<ChevronRight className="size-3" />
 						</Button>

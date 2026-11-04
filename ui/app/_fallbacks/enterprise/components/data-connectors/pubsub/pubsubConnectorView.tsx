@@ -1,6 +1,6 @@
 import { Radio } from "lucide-react";
-import ContactUsView from "../../views/contactUsView";
 import { useTranslation } from "react-i18next";
+import ContactUsView from "../../views/contactUsView";
 
 interface EnableToggleProps {
 	enabled: boolean;
@@ -15,7 +15,8 @@ interface PubSubConnectorViewProps {
 }
 
 export default function PubSubConnectorView(_props: PubSubConnectorViewProps) {
-	const { t } = useTranslation(["errors"]);
+	const { t } = useTranslation("governance");
+
 	return (
 		<div className="space-y-6">
 			<div className="space-y-4">
@@ -24,8 +25,7 @@ export default function PubSubConnectorView(_props: PubSubConnectorViewProps) {
 						align="middle"
 						className="mx-auto w-full max-w-lg"
 						icon={<Radio className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />}
-						title={t("errors:upsell.pubsub.title")}
-						description={t("errors:upsell.pubsub.description")}
+						title={t("connectorsUnlock.pubsub")}
 						readmeLink="https://docs.getbifrost.ai/enterprise/pubsub-connector"
 						testIdPrefix="pubsub-connector"
 					/>

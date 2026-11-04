@@ -41,11 +41,11 @@ import {
 	planNeedsInput,
 	runCloudflareMigration,
 } from "@/lib/utils/cloudflareMigration";
-import { getErrorStatus, maskSecret, MigrationResult, MigrationStep } from "@/lib/utils/databricksMigration";
+import { formatMigrationMessage, getErrorStatus, maskSecret, MigrationResult, MigrationStep } from "@/lib/utils/databricksMigration";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { AlertTriangle, Check, CircleDashed, Loader2, X } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 interface Props {
 	show: boolean;
@@ -63,7 +63,8 @@ const wrapError = (err: unknown): Error =>
 	});
 
 export default function CloudflareMigrationDialog({ show, provider, onDeferred, onMigrated }: Props) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
+	const { t: tc } = useTranslation("common");
 	const dispatch = useAppDispatch();
 	const providerFormIsDirty = useAppSelector((state) => state.provider.isDirty);
 	const canCreate = useRbac(RbacResource.ModelProvider, RbacOperation.Create);
@@ -153,9 +154,9 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 	};
 
 	const migrateDisabledReason = !hasAccess
-		? t("providers:cloudflareMigration.noAccess")
+		? t("providers.cloudflareMigration.needAccess")
 		: providerFormIsDirty
-			? t("providers:cloudflareMigration.dirtyForm")
+			? t("providers.databricksMigration.saveFirst")
 			: undefined;
 
 	const canMigrate = !!plan && !migrateDisabledReason && !planNeedsInput(plan);
@@ -168,21 +169,28 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 						<RenderProviderIcon provider={CLOUDFLARE_PROVIDER as ProviderIconType} size="sm" className="h-5 w-5 shrink-0" />
 						{stage === "finished" && result
 							? result.ok
-								? t("providers:cloudflareMigration.completeTitle")
-								: t("providers:cloudflareMigration.failedTitle")
-							: t("providers:cloudflareMigration.title")}
+								? t("providers.databricksMigration.complete")
+								: t("providers.databricksMigration.failed")
+							: t("providers.cloudflareMigration.title")}
 					</AlertDialogTitle>
 					<AlertDialogDescription asChild>
 						<div className="space-y-2">
 							{(stage === "intro" || stage === "loading") && (
 								<>
-									<p>{t("providers:cloudflareMigration.intro1", { name: provider.name })}</p>
-									<p>{t("providers:cloudflareMigration.intro2")}</p>
+									<p>
+										<Trans
+											i18nKey="providers.cloudflareMigration.introP1"
+											ns="models"
+											values={{ name: provider.name }}
+											components={{ name: <span className="text-foreground font-medium" /> }}
+										/>
+									</p>
+									<p>{t("providers.cloudflareMigration.introP2")}</p>
 								</>
 							)}
-							{stage === "preview" && <p>{t("providers:cloudflareMigration.reviewNote")}</p>}
-							{stage === "running" && <p>{t("providers:cloudflareMigration.running")}</p>}
-							{stage === "finished" && result && <p>{result.message}</p>}
+							{stage === "preview" && <p>{t("providers.cloudflareMigration.previewHint")}</p>}
+							{stage === "running" && <p>{t("providers.databricksMigration.runningHint")}</p>}
+							{stage === "finished" && result && <p>{formatMigrationMessage(result.message, t)}</p>}
 						</div>
 					</AlertDialogDescription>
 				</AlertDialogHeader>
@@ -190,7 +198,7 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 				{loadError && (
 					<Alert variant="destructive">
 						<AlertTriangle className="h-4 w-4" />
-						<AlertTitle>{t("providers:cloudflareMigration.loadErrorTitle")}</AlertTitle>
+						<AlertTitle>{t("providers.databricksMigration.loadErrorTitle")}</AlertTitle>
 						<AlertDescription>{loadError}</AlertDescription>
 					</Alert>
 				)}
@@ -209,7 +217,7 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 					{(stage === "intro" || stage === "loading") && (
 						<>
 							<AlertDialogCancel onClick={onDeferred} disabled={stage === "loading"} data-testid="cloudflare-migration-not-now">
-								{t("providers:cloudflareMigration.notNow")}
+								{t("providers.databricksMigration.notNow")}
 							</AlertDialogCancel>
 							<DisabledTooltip reason={migrateDisabledReason}>
 								<Button
@@ -218,7 +226,7 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 									data-testid="cloudflare-migration-start"
 								>
 									{stage === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-									{t("providers:cloudflareMigration.letsMigrate")}
+									{t("providers.databricksMigration.letsMigrate")}
 								</Button>
 							</DisabledTooltip>
 						</>
@@ -226,16 +234,16 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 					{stage === "preview" && (
 						<>
 							<Button variant="ghost" onClick={() => setStage("intro")}>
-								{t("common:actions.back")}
+								{tc("back")}
 							</Button>
-							<AlertDialogCancel onClick={onDeferred}>{t("providers:cloudflareMigration.notNow")}</AlertDialogCancel>
+							<AlertDialogCancel onClick={onDeferred}>{t("providers.databricksMigration.notNow")}</AlertDialogCancel>
 							<DisabledTooltip
 								reason={
-									migrateDisabledReason ?? (plan && planNeedsInput(plan) ? t("providers:cloudflareMigration.fillMissing") : undefined)
+									migrateDisabledReason ?? (plan && planNeedsInput(plan) ? t("providers.databricksMigration.fillMissing") : undefined)
 								}
 							>
 								<Button onClick={runMigration} disabled={!canMigrate} data-testid="cloudflare-migration-confirm">
-									{t("providers:cloudflareMigration.migrate")}
+									{t("providers.databricksMigration.migrate")}
 								</Button>
 							</DisabledTooltip>
 						</>
@@ -244,12 +252,12 @@ export default function CloudflareMigrationDialog({ show, provider, onDeferred, 
 						<>
 							{!result.ok && (
 								<AlertDialogCancel onClick={onDeferred} data-testid="cloudflare-migration-close">
-									{t("common:actions.close")}
+									{tc("close")}
 								</AlertDialogCancel>
 							)}
 							{result.ok && (
 								<AlertDialogAction onClick={onMigrated} data-testid="cloudflare-migration-done">
-									{t("providers:cloudflareMigration.goTo")}
+									{t("providers.cloudflareMigration.goToCloudflare")}
 								</AlertDialogAction>
 							)}
 						</>
@@ -279,7 +287,7 @@ interface PreviewProps {
 }
 
 function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: PreviewProps) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
+	const { t } = useTranslation("models");
 	const net = plan.providerSettings.network_config;
 	const perf = plan.providerSettings.concurrency_and_buffer_size;
 	const otherHeaders = Object.keys(net.extra_headers ?? {});
@@ -287,9 +295,9 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 	return (
 		<div className="space-y-4 text-sm" data-testid="cloudflare-migration-preview">
 			<section className="space-y-2">
-				<SectionTitle>{t("providers:cloudflareMigration.account")}</SectionTitle>
+				<SectionTitle>{t("providers.cloudflareMigration.account")}</SectionTitle>
 				<div className="space-y-1">
-					<Label htmlFor="cloudflare-migration-account-id">{t("providers:cloudflareMigration.accountId")}</Label>
+					<Label htmlFor="cloudflare-migration-account-id">{t("providers.cloudflareMigration.accountId")}</Label>
 					<Input
 						id="cloudflare-migration-account-id"
 						data-testid="cloudflare-migration-account-id"
@@ -297,15 +305,15 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 						placeholder="023e105f4ecef8ad9ca31a8372d0c353"
 						onChange={(e) => onAccountIdChange(e.target.value)}
 					/>
-					<p className="text-muted-foreground text-xs">{t("providers:cloudflareMigration.accountIdHint")}</p>
+					<p className="text-muted-foreground text-xs">{t("providers.cloudflareMigration.accountIdHint")}</p>
 				</div>
 			</section>
 
 			<section className="space-y-2">
 				<SectionTitle>
 					{plan.headerToken
-						? t("providers:cloudflareMigration.authentication")
-						: t("providers:cloudflareMigration.keysCount", { count: plan.keys.length })}
+						? t("providers.databricksMigration.authentication")
+						: t("providers.databricksMigration.keysCount", { count: plan.keys.length })}
 				</SectionTitle>
 				<div className="divide-y rounded-md border">
 					{plan.keys.map((key) => (
@@ -313,14 +321,16 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 							<span className="font-medium">{key.name}</span>
 							<div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
 								<span>
-									{t("providers:cloudflareMigration.models", {
-										models:
-											!key.models?.length || key.models.includes("*") ? t("providers:cloudflareMigration.all") : key.models.join(", "),
+									{t("providers.databricksMigration.modelsLabel", {
+										value:
+											!key.models?.length || key.models.includes("*")
+												? t("providers.databricksMigration.modelsAll")
+												: key.models.join(", "),
 									})}
 								</span>
-								<span>{t("providers:cloudflareMigration.aliases", { count: Object.keys(key.aliases ?? {}).length })}</span>
-								<span>{t("providers:cloudflareMigration.tokenKept")}</span>
-								{!key.enabled && <span>{t("common:state.disabled")}</span>}
+								<span>{t("providers.databricksMigration.aliases", { value: Object.keys(key.aliases ?? {}).length })}</span>
+								<span>{t("providers.cloudflareMigration.tokenKept")}</span>
+								{!key.enabled && <span>{t("providers.databricksMigration.disabled")}</span>}
 							</div>
 						</div>
 					))}
@@ -329,26 +339,26 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 							<div className="flex flex-wrap items-center gap-2">
 								<span className="font-medium">{plan.headerToken.name}</span>
 								<Badge variant="outline" className="text-muted-foreground">
-									{t("providers:cloudflareMigration.fromAuthHeader")}
+									{t("providers.databricksMigration.fromAuthHeader")}
 								</Badge>
 							</div>
 							{/* needsValue is fixed when the plan is built, so the input stays up while the token is typed. */}
 							{!plan.headerToken.needsValue ? (
 								<div className="text-xs">
-									<span className="text-muted-foreground">{t("providers:cloudflareMigration.apiTokenColon")}</span>
+									<span className="text-muted-foreground">{t("providers.cloudflareMigration.apiTokenLabel")}</span>
 									<code className="bg-muted rounded px-1 py-0.5 font-mono">{maskSecret(plan.headerToken.value)}</code>
 								</div>
 							) : (
 								<div className="space-y-1">
 									<Label htmlFor="cloudflare-migration-token">
-										{t("providers:cloudflareMigration.apiToken")} <span className="text-destructive">*</span>
+										{t("providers.cloudflareMigration.apiToken")} <span className="text-destructive">*</span>
 									</Label>
 									<SecretVarInput
 										id="cloudflare-migration-token"
 										data-testid="cloudflare-migration-token"
 										value={plan.headerToken.value ?? { value: "", ref: "" }}
 										onChange={onHeaderTokenChange}
-										placeholder={t("providers:cloudflareMigration.apiTokenPlaceholder")}
+										placeholder={t("providers.cloudflareMigration.tokenPlaceholder")}
 									/>
 								</div>
 							)}
@@ -358,38 +368,31 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 			</section>
 
 			<section className="space-y-2">
-				<SectionTitle>{t("providers:cloudflareMigration.providerSettings")}</SectionTitle>
+				<SectionTitle>{t("providers.databricksMigration.providerSettings")}</SectionTitle>
 				<dl className="text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3">
-					<Stat label={t("providers:cloudflareMigration.statTimeout")} value={`${net.default_request_timeout_in_seconds}s`} />
-					<Stat label={t("providers:cloudflareMigration.statRetries")} value={String(net.max_retries)} />
+					<Stat label={t("providers.databricksMigration.timeout")} value={`${net.default_request_timeout_in_seconds}s`} />
+					<Stat label={t("providers.databricksMigration.retries")} value={String(net.max_retries)} />
+					<Stat label={t("providers.databricksMigration.backoff")} value={`${net.retry_backoff_initial}ms → ${net.retry_backoff_max}ms`} />
+					<Stat label={t("providers.databricksMigration.concurrency")} value={String(perf.concurrency)} />
+					<Stat label={t("providers.databricksMigration.bufferSize")} value={String(perf.buffer_size)} />
 					<Stat
-						label={t("providers:cloudflareMigration.statBackoff")}
-						value={`${net.retry_backoff_initial}ms → ${net.retry_backoff_max}ms`}
-					/>
-					<Stat label={t("providers:cloudflareMigration.statConcurrency")} value={String(perf.concurrency)} />
-					<Stat label={t("providers:cloudflareMigration.statBufferSize")} value={String(perf.buffer_size)} />
-					<Stat
-						label={t("providers:cloudflareMigration.statProxy")}
-						value={plan.providerSettings.proxy_config?.type ?? t("providers:cloudflareMigration.statValues.none")}
+						label={t("providers.databricksMigration.proxy")}
+						value={plan.providerSettings.proxy_config?.type ?? t("providers.databricksMigration.none")}
 					/>
 					<Stat
-						label={t("providers:cloudflareMigration.statExtraHeaders")}
-						value={otherHeaders.length > 0 ? otherHeaders.join(", ") : t("providers:cloudflareMigration.statValues.none")}
+						label={t("providers.databricksMigration.extraHeaders")}
+						value={otherHeaders.length > 0 ? otherHeaders.join(", ") : t("providers.databricksMigration.none")}
 					/>
 					<Stat
-						label={t("providers:cloudflareMigration.statPrivateNetwork")}
-						value={
-							net.allow_private_network
-								? t("providers:cloudflareMigration.statValues.allowed")
-								: t("providers:cloudflareMigration.statValues.blocked")
-						}
+						label={t("providers.databricksMigration.privateNetwork")}
+						value={net.allow_private_network ? t("providers.databricksMigration.allowed") : t("providers.databricksMigration.blocked")}
 					/>
 					<Stat
-						label={t("providers:cloudflareMigration.statRaw")}
+						label={t("providers.databricksMigration.rawReqRes")}
 						value={
 							plan.providerSettings.send_back_raw_request || plan.providerSettings.send_back_raw_response
-								? t("providers:cloudflareMigration.statValues.on")
-								: t("providers:cloudflareMigration.statValues.off")
+								? t("providers.databricksMigration.on")
+								: t("providers.databricksMigration.off")
 						}
 					/>
 				</dl>
@@ -398,11 +401,11 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 			{plan.warnings.length > 0 && (
 				<Alert data-testid="cloudflare-migration-warnings">
 					<AlertTriangle className="h-4 w-4" />
-					<AlertTitle>{t("providers:cloudflareMigration.beforeYouContinue")}</AlertTitle>
+					<AlertTitle>{t("providers.databricksMigration.beforeContinue")}</AlertTitle>
 					<AlertDescription>
 						<ul className="list-disc space-y-1 pl-4">
 							{plan.warnings.map((warning) => (
-								<li key={warning}>{warning}</li>
+								<li key={JSON.stringify(warning)}>{formatMigrationMessage(warning, t)}</li>
 							))}
 						</ul>
 					</AlertDescription>
@@ -413,18 +416,19 @@ function MigrationPreview({ plan, onAccountIdChange, onHeaderTokenChange }: Prev
 }
 
 function MigrationProgress({ steps }: { steps: MigrationStep[] }) {
+	const { t } = useTranslation("models");
 	return (
 		<ol className="space-y-2 text-sm" data-testid="cloudflare-migration-progress">
 			{steps.map((step) => (
 				<li key={step.id} className="flex items-start gap-2" data-testid={`cloudflare-migration-step-${step.id}`} data-status={step.status}>
 					<StepIcon status={step.status} />
 					<div className="min-w-0 flex-1">
-						<div className={step.status === "pending" ? "text-muted-foreground" : ""}>{step.label}</div>
+						<div className={step.status === "pending" ? "text-muted-foreground" : ""}>{formatMigrationMessage(step.label, t)}</div>
 						{step.detail && (
 							<div
 								className={`mt-0.5 text-xs whitespace-pre-line ${step.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}
 							>
-								{step.detail}
+								{formatMigrationMessage(step.detail, t)}
 							</div>
 						)}
 					</div>

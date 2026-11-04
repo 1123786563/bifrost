@@ -5,6 +5,9 @@ import {
   createSSEClientData,
   createSTDIOClientData,
 } from "./mcp-registry.data";
+import { expectListLoadError } from "../../core/utils/test-helpers";
+import { coreConfigApi } from "../../core/actions/api";
+import type { MCPRegistryPage } from "./pages/mcp-registry.page";
 
 const hasSSEHeaders = Boolean(process.env.MCP_SSE_HEADERS);
 
@@ -49,6 +52,10 @@ test.describe("MCP Registry", () => {
         expect(isEmptyStateVisible).toBe(false);
       }
     });
+
+    test("should show the load error instead of the empty state when clients fail to load", async ({ page }) => {
+      await expectListLoadError(page, "/api/mcp/clients", "mcp-servers-load-error", "mcp-registry-button-read-more");
+    });
   });
 
   test.describe("MCP Client Creation", () => {
@@ -76,6 +83,62 @@ test.describe("MCP Registry", () => {
         clientData.name,
       );
       expect(connectionType).toBe("HTTP");
+    });
+
+    test("should open a client's view sheet from its actions menu with the keyboard", async ({
+      mcpRegistryPage,
+    }) => {
+      const clientData = createHTTPClientData();
+      expect(await mcpRegistryPage.createClient(clientData)).toBe(true);
+      createdClients.push(clientData.name);
+
+      await mcpRegistryPage.viewClientDetailsFromKeyboard(clientData.name);
+      await expect(mcpRegistryPage.viewSheet.getByTestId("mcpclient-view-title")).toContainText(
+        clientData.name,
+      );
+    });
+
+    test("should hold the Access figure until the Virtual MCPs load, and say when they fail", async ({
+      mcpRegistryPage,
+    }) => {
+      const clientData = createHTTPClientData();
+      expect(await mcpRegistryPage.createClient(clientData)).toBe(true);
+      createdClients.push(clientData.name);
+
+      // A Virtual MCP can grant access, so until they are known the figure draws no conclusion.
+      const virtualMcpsRoute = "**/api/mcp/virtual-mcps**";
+      let release = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await mcpRegistryPage.page.route(virtualMcpsRoute, async (route) => {
+        await held;
+        await route.fulfill({ status: 500, contentType: "application/json", body: '{"error":{"message":"virtual MCPs unavailable"}}' });
+      });
+      await mcpRegistryPage.viewClientDetails(clientData.name);
+      const stat = mcpRegistryPage.viewSheet.getByTestId("mcpclient-view-stat-access");
+      await expect(stat).toContainText("Loading virtual MCPs…");
+      release();
+      await expect(stat).toContainText("Couldn't load virtual MCPs.");
+      await mcpRegistryPage.page.unroute(virtualMcpsRoute);
+    });
+
+    test("should keep each stat's full text on hover when a narrow cell truncates it", async ({ mcpRegistryPage }) => {
+      const clientData = createHTTPClientData();
+      expect(await mcpRegistryPage.createClient(clientData)).toBe(true);
+      createdClients.push(clientData.name);
+
+      await mcpRegistryPage.viewClientDetails(clientData.name);
+      // The Access figure settles once the Virtual MCPs are known; read it after that.
+      await expect(mcpRegistryPage.viewSheet.getByTestId("mcpclient-view-stat-access")).not.toContainText("Loading virtual MCPs…");
+      // The stat lines truncate to one line, so a long figure (several counts joined) is clipped in a
+      // narrow cell; the title carries the whole text.
+      for (const key of ["tools", "access"]) {
+        for (const line of ["value", "sub"]) {
+          const el = mcpRegistryPage.viewSheet.getByTestId(`mcpclient-view-stat-${key}-${line}`);
+          await expect(el).toHaveAttribute("title", (await el.textContent()) ?? "");
+        }
+      }
     });
 
     test("should create SSE client", async ({ mcpRegistryPage }) => {
@@ -147,6 +210,86 @@ test.describe("MCP Registry", () => {
     });
   });
 
+  test.describe("Max Protocol Version", () => {
+    test("should create a client with a max protocol version and switch it to the global setting", async ({
+      mcpRegistryPage,
+      request,
+    }) => {
+      const clientData = createHTTPClientData({
+        name: `capped_${Date.now()}`,
+        maxProtocolVersion: "2025-06-18",
+      });
+      const stored = () => mcpRegistryPage.storedMaxProtocolVersion(request, clientData.name);
+
+      const created = await mcpRegistryPage.createClient(clientData);
+      expect(created).toBe(true);
+      createdClients.push(clientData.name);
+      expect(await stored()).toBe("2025-06-18");
+
+      await mcpRegistryPage.editClient(clientData.name, { maxProtocolVersion: "global" });
+      expect(await stored()).toBe("");
+    });
+
+    test("should default a new client to the global setting", async ({ mcpRegistryPage }) => {
+      await mcpRegistryPage.createBtn.click();
+      await expect(mcpRegistryPage.sheet).toBeVisible();
+      await expect(mcpRegistryPage.sheet.getByTestId("mcp-client-max-protocol-version-select")).toContainText("Use global setting");
+      // The form label must target the select, not the wrapper.
+      await expect(mcpRegistryPage.sheet.getByLabel("Max Protocol Version", { exact: true })).toHaveAttribute(
+        "data-testid",
+        "mcp-client-max-protocol-version-select",
+      );
+      await mcpRegistryPage.closeSheet();
+    });
+
+    test.describe("following the global setting", () => {
+      // Rewrites the shared global cap, so these must not interleave with each other.
+      test.describe.configure({ mode: "serial" });
+      let originalGlobal: string;
+
+      test.beforeEach(async ({ request, mcpRegistryPage }) => {
+        originalGlobal =
+          ((await coreConfigApi.get(request)).client_config.mcp_max_protocol_version as string | undefined) || "auto";
+        await coreConfigApi.updateClientConfig(request, { mcp_max_protocol_version: "2025-11-25" });
+        // The outer beforeEach loaded the page with the previous global.
+        await mcpRegistryPage.goto();
+      });
+
+      test.afterEach(async ({ request }) => {
+        await coreConfigApi.updateClientConfig(request, { mcp_max_protocol_version: originalGlobal });
+      });
+
+      test("should create a client that follows the global setting when none is picked", async ({
+        mcpRegistryPage,
+        request,
+      }) => {
+        const clientData = createHTTPClientData({ name: `follows_global_${Date.now()}` });
+
+        const created = await mcpRegistryPage.createClient(clientData);
+        expect(created).toBe(true);
+        createdClients.push(clientData.name);
+
+        expect(
+          await mcpRegistryPage.storedMaxProtocolVersion(request, clientData.name),
+          "a new client has no cap of its own",
+        ).toBe("");
+
+        // The view states the global value it falls back to; the edit form offers the same.
+        await mcpRegistryPage.viewClientDetails(clientData.name);
+        await expect(mcpRegistryPage.viewSheet.getByTestId("mcpclient-view-row-max_protocol_version")).toHaveText(
+          "2025-11-25 · global default",
+        );
+        await mcpRegistryPage.closeDetailSheet();
+
+        await mcpRegistryPage.openClientEditor(clientData.name);
+        await expect(mcpRegistryPage.editSheet.getByTestId("mcp-client-max-protocol-version-select")).toContainText(
+          "Use global setting (2025-11-25)",
+        );
+        await mcpRegistryPage.closeDetailSheet();
+      });
+    });
+  });
+
   test.describe("MCP Server Connection Validation", () => {
     test("should connect to HTTP server and list tools", async ({
       mcpRegistryPage,
@@ -171,6 +314,28 @@ test.describe("MCP Registry", () => {
       const toolsCount = await mcpRegistryPage.getToolsCount();
       expect(toolsCount).toBeGreaterThanOrEqual(3);
 
+      await mcpRegistryPage.closeDetailSheet();
+    });
+
+    test("should show a tool's title and output schema", async ({ mcpRegistryPage }) => {
+      const clientData = createHTTPClientData({ name: `tool_metadata_${Date.now()}` });
+      const created = await mcpRegistryPage.createClient(clientData);
+      expect(created).toBe(true);
+      createdClients.push(clientData.name);
+
+      await expect
+        .poll(() => mcpRegistryPage.getClientStatus(clientData.name), { timeout: 30_000 })
+        .toBe("healthy");
+
+      // http-no-ping-server's chart tool is titled "Chart" and declares an output schema.
+      await mcpRegistryPage.viewClientDetails(clientData.name);
+      const sheet = mcpRegistryPage.viewSheet;
+      await sheet.getByTestId("mcpclient-view-tab-tools").click();
+      await expect(sheet.getByTestId("mcp-tool-title-chart")).toHaveText("Chart");
+      await expect(sheet.getByTestId("mcpclient-view-tool-chart")).toContainText("Read-only");
+      await expect(sheet.getByTestId("mcp-tool-output-schema-chart")).toHaveCount(0);
+      await sheet.getByTestId("mcp-tool-expand-chart").click();
+      await expect(sheet.getByTestId("mcp-tool-output-schema-chart")).toContainText("points: integer");
       await mcpRegistryPage.closeDetailSheet();
     });
 
@@ -217,6 +382,232 @@ test.describe("MCP Registry", () => {
     });
   });
 
+  // http-no-ping-server lists one prompt (review) and one resource (file:///fixture/handbook.md).
+  test.describe("MCP Client Prompts and Resources", () => {
+    const PROMPT = "review";
+    const RESOURCE = "file:///fixture/handbook.md";
+
+    async function createServedClient(mcpRegistryPage: MCPRegistryPage, prefix: string): Promise<string> {
+      const clientData = createHTTPClientData({ name: `${prefix}_${Date.now()}` });
+      expect(await mcpRegistryPage.createClient(clientData)).toBe(true);
+      createdClients.push(clientData.name);
+      await expect
+        .poll(() => mcpRegistryPage.getClientStatus(clientData.name), { timeout: 30_000 })
+        .toBe("healthy");
+      return clientData.name;
+    }
+
+    test("should list the server's prompts and resources, all served by default", async ({ mcpRegistryPage, request }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_default");
+      await mcpRegistryPage.openExposeList(name, "prompts");
+
+      const sheet = mcpRegistryPage.editSheet;
+      await expect(sheet.getByTestId(`mcp-expose-prompts-row-${PROMPT}`)).toContainText(PROMPT);
+      await expect(mcpRegistryPage.exposeStatus("prompts")).toHaveText("All served");
+      await expect(mcpRegistryPage.exposeToggle("prompts", PROMPT)).toHaveAttribute("aria-checked", "true");
+      await mcpRegistryPage.showEditorTab("resources");
+      await expect(sheet.getByTestId(`mcp-expose-resources-row-${RESOURCE}`)).toContainText(RESOURCE);
+      await expect(mcpRegistryPage.exposeStatus("resources")).toHaveText("All served");
+      await expect(mcpRegistryPage.exposeToggle("resources", RESOURCE)).toHaveAttribute("aria-checked", "true");
+      await mcpRegistryPage.closeDetailSheet();
+
+      const stored = await mcpRegistryPage.storedClientConfig(request, name);
+      expect(stored.prompts_to_expose ?? null, "a new client stores no list, which serves everything").toBeNull();
+      expect(stored.resources_to_expose ?? null).toBeNull();
+    });
+
+    test("should save a prompt turned off and leave the untouched list unset", async ({ mcpRegistryPage, request }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_prompt_off");
+      await mcpRegistryPage.openExposeList(name, "prompts");
+      await mcpRegistryPage.exposeToggle("prompts", PROMPT).click();
+      await expect(mcpRegistryPage.exposeStatus("prompts")).toHaveText("None served");
+      await mcpRegistryPage.saveDetailSheet();
+
+      const stored = await mcpRegistryPage.storedClientConfig(request, name);
+      expect(stored.prompts_to_expose).toEqual([]);
+      expect(stored.resources_to_expose ?? null, "an untouched list keeps serving everything").toBeNull();
+    });
+
+    test("should show the saved lists when the sheet is reopened", async ({ mcpRegistryPage }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_reopen");
+      await mcpRegistryPage.openExposeList(name, "resources");
+      await mcpRegistryPage.exposeToggle("resources", RESOURCE).click();
+      await mcpRegistryPage.saveDetailSheet();
+
+      await mcpRegistryPage.openExposeList(name, "resources");
+      await expect(mcpRegistryPage.exposeToggle("resources", RESOURCE)).toHaveAttribute("aria-checked", "false");
+      await expect(mcpRegistryPage.exposeStatus("resources")).toHaveText("None served");
+      await mcpRegistryPage.showEditorTab("prompts");
+      await expect(mcpRegistryPage.exposeToggle("prompts", PROMPT)).toHaveAttribute("aria-checked", "true");
+      await mcpRegistryPage.closeDetailSheet();
+    });
+
+    test("should collapse back to serving everything when the last item is turned on again", async ({ mcpRegistryPage, request }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_back_on");
+      await mcpRegistryPage.setExposeLists(request, name, { prompts_to_expose: [] });
+      // The page cached the client list before this API write; reload to read it back.
+      await mcpRegistryPage.goto();
+
+      await mcpRegistryPage.openExposeList(name, "prompts");
+      await expect(mcpRegistryPage.exposeToggle("prompts", PROMPT)).toHaveAttribute("aria-checked", "false");
+      await mcpRegistryPage.exposeToggle("prompts", PROMPT).click();
+      await expect(mcpRegistryPage.exposeStatus("prompts")).toHaveText("All served");
+      await mcpRegistryPage.saveDetailSheet();
+
+      expect((await mcpRegistryPage.storedClientConfig(request, name)).prompts_to_expose).toEqual(["*"]);
+    });
+
+    test("should clear and restore a whole list with its serve-all box", async ({ mcpRegistryPage, request }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_all_box");
+      await mcpRegistryPage.openExposeList(name, "resources");
+
+      await mcpRegistryPage.exposeAll("resources").click();
+      await expect(mcpRegistryPage.exposeAll("resources")).toHaveAttribute("aria-checked", "false");
+      await expect(mcpRegistryPage.exposeToggle("resources", RESOURCE)).toHaveAttribute("aria-checked", "false");
+      await mcpRegistryPage.saveDetailSheet();
+      expect((await mcpRegistryPage.storedClientConfig(request, name)).resources_to_expose).toEqual([]);
+
+      await mcpRegistryPage.openExposeList(name, "resources");
+      await mcpRegistryPage.exposeAll("resources").click();
+      await expect(mcpRegistryPage.exposeAll("resources")).toHaveAttribute("aria-checked", "true");
+      await mcpRegistryPage.saveDetailSheet();
+      expect((await mcpRegistryPage.storedClientConfig(request, name)).resources_to_expose).toEqual(["*"]);
+    });
+
+    test("should not send the lists when another setting is edited", async ({ mcpRegistryPage, request }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_other_edit");
+      await mcpRegistryPage.setExposeLists(request, name, { resources_to_expose: [RESOURCE] });
+
+      await mcpRegistryPage.editClient(name, { maxProtocolVersion: "2025-06-18" });
+
+      const stored = await mcpRegistryPage.storedClientConfig(request, name);
+      expect(stored.max_protocol_version).toBe("2025-06-18");
+      expect(stored.prompts_to_expose ?? null, "an edit elsewhere does not pin the prompts list").toBeNull();
+      expect(stored.resources_to_expose).toEqual([RESOURCE]);
+    });
+
+    test("should keep pattern rules and undiscovered entries when a switch is toggled", async ({ mcpRegistryPage, request }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_rules");
+      const GONE = "file:///fixture/gone.md";
+      await mcpRegistryPage.setExposeLists(request, name, { prompts_to_expose: ["regex:rev.*"], resources_to_expose: [GONE] });
+      // The page cached the client list before this API write; reload to read it back.
+      await mcpRegistryPage.goto();
+
+      await mcpRegistryPage.openExposeList(name, "prompts");
+      // A prompt served by a pattern rule reads as served and cannot be switched off on its own.
+      await expect(mcpRegistryPage.exposeToggle("prompts", PROMPT)).toHaveAttribute("aria-checked", "true");
+      await expect(mcpRegistryPage.exposeToggle("prompts", PROMPT)).toBeDisabled();
+      await mcpRegistryPage.showEditorTab("resources");
+      await expect(mcpRegistryPage.exposeToggle("resources", RESOURCE)).toHaveAttribute("aria-checked", "false");
+      await mcpRegistryPage.exposeToggle("resources", RESOURCE).click();
+      await mcpRegistryPage.saveDetailSheet();
+
+      const stored = await mcpRegistryPage.storedClientConfig(request, name);
+      expect(stored.prompts_to_expose).toEqual(["regex:rev.*"]);
+      expect(stored.resources_to_expose, "the undiscovered entry stays and the list does not widen to *").toEqual([GONE, RESOURCE]);
+    });
+
+    test("should discard a toggle when the sheet is closed without saving", async ({ mcpRegistryPage, request }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_discard");
+      await mcpRegistryPage.openExposeList(name, "prompts");
+      await mcpRegistryPage.exposeToggle("prompts", PROMPT).click();
+      await mcpRegistryPage.closeDetailSheet();
+
+      expect((await mcpRegistryPage.storedClientConfig(request, name)).prompts_to_expose ?? null).toBeNull();
+      await mcpRegistryPage.openExposeList(name, "prompts");
+      await expect(mcpRegistryPage.exposeToggle("prompts", PROMPT)).toHaveAttribute("aria-checked", "true");
+      await mcpRegistryPage.closeDetailSheet();
+    });
+
+    test("should stop serving hidden prompts and resources through the MCP gateway", async ({ mcpRegistryPage, request }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_gateway");
+      const prompt = `${name}-${PROMPT}`;
+
+      const listed = await mcpRegistryPage.mcpGatewayCall(request, name, "prompts/list");
+      expect(listed.result?.prompts.map((p: { name: string }) => p.name)).toContain(prompt);
+      const read = await mcpRegistryPage.mcpGatewayCall(request, name, "resources/read", { uri: RESOURCE });
+      expect(read.error, JSON.stringify(read)).toBeUndefined();
+      expect(read.result?.contents[0].text).toBe("# Handbook");
+
+      // Both lists are saved together: the prompt toggle survives the switch to the Resources tab.
+      await mcpRegistryPage.openExposeList(name, "prompts");
+      await mcpRegistryPage.exposeToggle("prompts", PROMPT).click();
+      await mcpRegistryPage.showEditorTab("resources");
+      await mcpRegistryPage.exposeToggle("resources", RESOURCE).click();
+      await mcpRegistryPage.saveDetailSheet();
+
+      const hidden = await mcpRegistryPage.mcpGatewayCall(request, name, "prompts/list");
+      expect(hidden.result?.prompts.map((p: { name: string }) => p.name)).not.toContain(prompt);
+      const fetched = await mcpRegistryPage.mcpGatewayCall(request, name, "prompts/get", { name: prompt });
+      expect(fetched.error, "a hidden prompt cannot be fetched").toBeDefined();
+      const resources = await mcpRegistryPage.mcpGatewayCall(request, name, "resources/list");
+      expect(resources.result?.resources.map((r: { uri: string }) => r.uri)).not.toContain(RESOURCE);
+      const refused = await mcpRegistryPage.mcpGatewayCall(request, name, "resources/read", { uri: RESOURCE });
+      expect(refused.error, "a hidden resource cannot be read").toBeDefined();
+    });
+
+    test("should record a prompt read through the gateway in MCP logs as a prompt", async ({ mcpRegistryPage, mcpLogsPage, request, page }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_logged");
+      const got = await mcpRegistryPage.mcpGatewayCall(request, name, "prompts/get", { name: `${name}-${PROMPT}` });
+      expect(got.error, JSON.stringify(got)).toBeUndefined();
+
+      // The log writer flushes in batches, so wait for the row to land.
+      await expect
+        .poll(
+          async () => {
+            const res = await request.get(`/api/mcp-logs?tool_names=${PROMPT}&server_labels=${encodeURIComponent(name)}`);
+            const rows = res.ok() ? ((await res.json()).logs ?? []) : [];
+            return rows.map((row: { method?: string; status: string }) => `${row.method}:${row.status}`);
+          },
+          { timeout: 20_000 },
+        )
+        .toContain("prompts/get:success");
+
+      await page.goto(`/workspace/mcp-logs?server_labels=${encodeURIComponent(name)}`);
+      await expect(mcpLogsPage.logsTable).toBeVisible();
+      await expect(page.getByTestId("mcp-log-read-kind").first()).toHaveText("Prompt");
+      await mcpLogsPage.viewLogDetails(0);
+      await expect(mcpLogsPage.logDetailSheet.getByTestId("mcplogdetails-tool-label")).toHaveText("Prompt");
+    });
+
+    test("should show empty states for a server that lists no prompts or resources", async ({ mcpRegistryPage }) => {
+      const clientData = createSTDIOClientData({ name: `served_none_${Date.now()}` });
+      expect(await mcpRegistryPage.createClient(clientData)).toBe(true);
+      createdClients.push(clientData.name);
+
+      await mcpRegistryPage.openExposeList(clientData.name, "prompts");
+      await expect(mcpRegistryPage.editSheet.getByTestId("mcp-expose-prompts-empty")).toBeVisible();
+      await expect(mcpRegistryPage.exposeAll("prompts")).toHaveCount(0);
+      await mcpRegistryPage.showEditorTab("resources");
+      await expect(mcpRegistryPage.editSheet.getByTestId("mcp-expose-resources-empty")).toBeVisible();
+      await mcpRegistryPage.closeDetailSheet();
+    });
+
+    test("should show what is served read-only on the view sheet and follow a change made elsewhere", async ({
+      mcpRegistryPage,
+      request,
+    }) => {
+      const name = await createServedClient(mcpRegistryPage, "served_view");
+      await mcpRegistryPage.viewClientDetails(name);
+      const sheet = mcpRegistryPage.viewSheet;
+
+      await sheet.getByTestId("mcpclient-view-tab-prompts").click();
+      await expect(sheet.getByTestId(`mcp-expose-prompts-label-${PROMPT}`)).toHaveText("Served");
+      await expect(mcpRegistryPage.exposeToggle("prompts", PROMPT)).toHaveCount(0);
+      await expect(mcpRegistryPage.exposeAll("prompts")).toHaveCount(0);
+
+      await sheet.getByTestId("mcpclient-view-tab-resources").click();
+      await expect(sheet.getByTestId(`mcp-expose-resources-row-${RESOURCE}`)).toContainText("text/markdown");
+      await expect(sheet.getByTestId(`mcp-expose-resources-label-${RESOURCE}`)).toHaveText("Served");
+
+      // The open view shows the server as the polled list has it, not as it was when opened.
+      await mcpRegistryPage.setExposeLists(request, name, { resources_to_expose: [] });
+      await expect(sheet.getByTestId(`mcp-expose-resources-label-${RESOURCE}`)).toHaveText("Not served", { timeout: 15_000 });
+      await expect(mcpRegistryPage.exposeStatus("resources")).toHaveText("None served");
+      await mcpRegistryPage.closeDetailSheet();
+    });
+  });
+
   test.describe("MCP Client Management", () => {
     test("should delete MCP client", async ({ mcpRegistryPage }) => {
       // Create a client first using HTTP (most reliable)
@@ -249,14 +640,55 @@ test.describe("MCP Registry", () => {
       expect(created).toBe(true); // Client creation must succeed for this test
       createdClients.push(clientData.name);
 
-      // View details
+      // A row click opens the read-only view on its Overview tab.
       await mcpRegistryPage.viewClientDetails(clientData.name);
+      const sheet = mcpRegistryPage.viewSheet;
+      await expect(sheet.getByTestId("mcpclient-view-title")).toContainText(clientData.name);
+      await expect(sheet.getByTestId("mcpclient-view-tab-overview")).toHaveAttribute("data-state", "active");
+      await expect(sheet.getByTestId("mcpclient-view-row-ping")).toBeVisible();
+      await expect(sheet.getByRole("button", { name: /Save/i })).toHaveCount(0);
+      await expect(sheet.getByRole("textbox")).toHaveCount(0);
 
-      // Detail sheet should be visible
-      await expect(mcpRegistryPage.detailSheet).toBeVisible();
+      // Its actions menu has the server's actions, but editing starts from the table row.
+      await sheet.getByTestId("mcpclient-view-actions-btn").click();
+      const items = mcpRegistryPage.page.getByRole("menuitem");
+      await expect(items.first()).toBeVisible();
+      expect((await items.allTextContents()).map((label) => label.trim())).not.toContain("Edit");
+      await mcpRegistryPage.page.keyboard.press("Escape");
+      await expect(items).toHaveCount(0);
 
-      // Close the sheet
       await mcpRegistryPage.closeDetailSheet();
+    });
+
+    test("should open the edit sheet from the row menu and return to the table on Cancel", async ({ mcpRegistryPage }) => {
+      const clientData = createHTTPClientData({ name: `edit_sheet_test_${Date.now()}` });
+      expect(await mcpRegistryPage.createClient(clientData)).toBe(true);
+      createdClients.push(clientData.name);
+
+      await mcpRegistryPage.openClientEditor(clientData.name);
+      await expect(mcpRegistryPage.editSheet.getByTestId("mcpclient-edit-title")).toContainText(`Edit ${clientData.name}`);
+      await expect(mcpRegistryPage.viewSheet).toHaveCount(0);
+
+      await mcpRegistryPage.editSheet.getByTestId("mcpclient-cancel-btn").click();
+      await expect(mcpRegistryPage.editSheet).toHaveCount(0);
+      await expect(mcpRegistryPage.viewSheet).toHaveCount(0);
+      await expect(mcpRegistryPage.getClientRow(clientData.name)).toBeVisible();
+    });
+
+    test("should not open the view from the row's own controls", async ({ mcpRegistryPage }) => {
+      const clientData = createHTTPClientData({ name: `row_controls_test_${Date.now()}` });
+      expect(await mcpRegistryPage.createClient(clientData)).toBe(true);
+      createdClients.push(clientData.name);
+
+      const row = mcpRegistryPage.getClientRow(clientData.name);
+      await row.getByTestId(/^mcp-client-endpoint-copy-/).click();
+      // The copy toast can cover the row menu's trigger.
+      await mcpRegistryPage.dismissToasts();
+      // Opening the row menu would fail under an open sheet's overlay, so this also waits out the copy click.
+      const actions = await mcpRegistryPage.getClientActionLabels(clientData.name);
+      expect(actions).toContain("Edit");
+      await expect(mcpRegistryPage.viewSheet).toHaveCount(0);
+      await expect(mcpRegistryPage.editSheet).toHaveCount(0);
     });
 
     test("should close client details sheet", async ({ mcpRegistryPage }) => {
@@ -306,6 +738,39 @@ test.describe("MCP Registry", () => {
         "needs_reauth",
         "disabled",
       ]).toContain(status.toLowerCase());
+    });
+  });
+
+  test.describe("View Sheet Paging", () => {
+    // pagedClient is a minimal listed server; the list below holds 26 of them, so 25 on page one.
+    const pagedClient = (i: number) => ({
+      config: {
+        client_id: `pg-${i}`,
+        name: `pg_server_${String(i).padStart(2, "0")}`,
+        connection_type: "http",
+        connection_string: { value: "http://127.0.0.1:9/mcp", type: "plain_text" },
+        auth_type: "none",
+        tools_to_execute: [],
+      },
+      tools: [],
+      state: "healthy",
+      vk_configs: [],
+    });
+
+    test("Next on the last server of a page opens the first server of the next page", async ({ mcpRegistryPage }) => {
+      const clients = Array.from({ length: 26 }, (_, i) => pagedClient(i));
+      await mcpRegistryPage.page.route("**/api/mcp/clients?**", async (route) => {
+        const offset = Number(new URL(route.request().url()).searchParams.get("offset") ?? "0");
+        // The next page arrives late, so the table still holds this page while it loads.
+        if (offset >= 25) await new Promise((resolve) => setTimeout(resolve, 1500));
+        const page = clients.slice(offset, offset + 25);
+        await route.fulfill({ json: { clients: page, count: page.length, total_count: clients.length, limit: 25, offset } });
+      });
+      await mcpRegistryPage.goto();
+
+      await mcpRegistryPage.viewClientDetails("pg_server_24");
+      await mcpRegistryPage.viewSheet.getByRole("button", { name: "Next server" }).click();
+      await expect(mcpRegistryPage.viewSheet.getByTestId("mcpclient-view-title")).toContainText("pg_server_25", { timeout: 10000 });
     });
   });
 

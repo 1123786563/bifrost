@@ -22,9 +22,9 @@ export function InteractiveValue({
 	testId?: string;
 	className?: string;
 }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const canFilter = Boolean(filter && onFilter);
-	const { copy } = useCopyToClipboard({ successMessage: t("common:actions.copied") });
+	const { copy } = useCopyToClipboard({ successMessage: t("agentLogs.interactive.copied") });
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
@@ -44,13 +44,13 @@ export function InteractiveValue({
 						canFilter ? "cursor-pointer" : "cursor-context-menu",
 						className,
 					)}
-					aria-label={canFilter ? t("logs:agent.filterBy", { label }) : label}
+					aria-label={canFilter ? t("agentLogs.interactive.filterBy", { label }) : label}
 					data-testid={testId}
 				>
 					{value}
 				</button>
 			</TooltipTrigger>
-			<TooltipContent>{canFilter ? t("logs:agent.clickFilterRightCopy") : t("logs:agent.rightClickCopy")}</TooltipContent>
+			<TooltipContent>{canFilter ? t("agentLogs.interactive.clickToFilter") : t("agentLogs.interactive.rightClickToCopy")}</TooltipContent>
 		</Tooltip>
 	);
 }

@@ -1,14 +1,13 @@
 import { MonitorSmartphone } from "lucide-react";
-import EdgeControlFallbackView from "./fallbackWrapper";
 import { useTranslation } from "react-i18next";
+import EdgeControlFallbackView from "./fallbackWrapper";
 
 export default function DevicesView() {
-	const { t } = useTranslation(["errors"]);
+	const { t } = useTranslation("config");
 	return (
 		<EdgeControlFallbackView
 			icon={<MonitorSmartphone className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />}
-			title={t("errors:upsell.edgeControlDevices.title")}
-			description={t("errors:upsell.edgeControlDevices.description")}
+			title={t("enterprise.edgeDevicesTitle")}
 			readmeLink="https://docs.getbifrost.ai/edge/admin-devices"
 			testIdPrefix="edge-devices"
 		/>

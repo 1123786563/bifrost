@@ -3,6 +3,7 @@ package anthropic
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -12,6 +13,159 @@ import (
 	"github.com/maximhq/bifrost/core/providers/openai"
 	"github.com/maximhq/bifrost/core/schemas"
 )
+
+func TestWebSearchStreamQueryVariants(t *testing.T) {
+	for _, passthrough := range []bool{false, true} {
+		for _, prepopulated := range []bool{false, true} {
+			t.Run(fmt.Sprintf("passthrough=%t/prepopulated=%t", passthrough, prepopulated), func(t *testing.T) {
+				ctx := schemas.NewBifrostContext(nil, time.Time{})
+				if passthrough {
+					SetResponsesStreamPassthrough(ctx)
+				}
+				for i, query := range []string{"bbc top headline", "東京 \"news\"\nweather"} {
+					item := &schemas.ResponsesMessage{
+						ID: schemas.Ptr(fmt.Sprintf("srvtoolu_%d", i)), Type: schemas.Ptr(schemas.ResponsesMessageTypeWebSearchCall),
+						ResponsesToolMessage: &schemas.ResponsesToolMessage{Action: &schemas.ResponsesToolMessageActionStruct{
+							ResponsesWebSearchToolCallAction: &schemas.ResponsesWebSearchToolCallAction{Type: "search", Query: &query},
+						}},
+					}
+					startItem := *item
+					if !prepopulated {
+						startItem.ResponsesToolMessage = nil
+					}
+					events := ToAnthropicResponsesStreamResponse(ctx, &schemas.BifrostResponsesStreamResponse{
+						Type: schemas.ResponsesStreamResponseTypeOutputItemAdded, Item: &startItem, OutputIndex: &i,
+					})
+					events = append(events, ToAnthropicResponsesStreamResponse(ctx, &schemas.BifrostResponsesStreamResponse{
+						Type: schemas.ResponsesStreamResponseTypeOutputItemDone, Item: item, OutputIndex: &i,
+					})...)
+					var input strings.Builder
+					index, stops := -1, 0
+					for _, event := range events {
+						if stops != 0 {
+							t.Fatal("event emitted after search block closed")
+						}
+						switch event.Type {
+						case AnthropicStreamEventTypeContentBlockStart:
+							index = *event.Index
+							if string(event.ContentBlock.Input) != "{}" {
+								input.Write(event.ContentBlock.Input)
+							}
+						case AnthropicStreamEventTypeContentBlockDelta:
+							if *event.Index != index {
+								t.Fatal("delta index differs from start")
+							}
+							input.WriteString(*event.Delta.PartialJSON)
+						case AnthropicStreamEventTypeContentBlockStop:
+							if *event.Index != index {
+								t.Fatal("stop index differs from start")
+							}
+							stops++
+						}
+					}
+					var replay struct {
+						Query string `json:"query"`
+					}
+					if err := json.Unmarshal([]byte(input.String()), &replay); err != nil {
+						t.Fatalf("invalid or duplicated input %q: %v", input.String(), err)
+					}
+					if replay.Query != query || stops != 1 {
+						t.Fatalf("query=%q stops=%d, want %q and one stop", replay.Query, stops, query)
+					}
+				}
+			})
+		}
+	}
+}
+
+func BenchmarkWebSearchStreamQueryReplay(b *testing.B) {
+	for _, prepopulated := range []bool{false, true} {
+		b.Run(fmt.Sprintf("prepopulated=%t", prepopulated), func(b *testing.B) {
+			item := &schemas.ResponsesMessage{
+				ID: schemas.Ptr("srvtoolu_bench"), Type: schemas.Ptr(schemas.ResponsesMessageTypeWebSearchCall),
+				ResponsesToolMessage: &schemas.ResponsesToolMessage{Action: &schemas.ResponsesToolMessageActionStruct{
+					ResponsesWebSearchToolCallAction: &schemas.ResponsesWebSearchToolCallAction{Type: "search", Query: schemas.Ptr("bbc top headline")},
+				}},
+			}
+			startItem := *item
+			if !prepopulated {
+				startItem.ResponsesToolMessage = nil
+			}
+			start := &schemas.BifrostResponsesStreamResponse{Type: schemas.ResponsesStreamResponseTypeOutputItemAdded, Item: &startItem, OutputIndex: schemas.Ptr(0)}
+			done := &schemas.BifrostResponsesStreamResponse{Type: schemas.ResponsesStreamResponseTypeOutputItemDone, Item: item, OutputIndex: schemas.Ptr(0)}
+			b.ReportAllocs()
+			for b.Loop() {
+				ctx := schemas.NewBifrostContext(nil, time.Time{})
+				ToAnthropicResponsesStreamResponse(ctx, start)
+				ToAnthropicResponsesStreamResponse(ctx, done)
+			}
+		})
+	}
+}
+
+func BenchmarkAnthropicTextStreamQueryReplay(b *testing.B) {
+	ctx := schemas.NewBifrostContext(nil, time.Time{})
+	ToAnthropicResponsesStreamResponse(ctx, &schemas.BifrostResponsesStreamResponse{
+		Type: schemas.ResponsesStreamResponseTypeOutputItemAdded, OutputIndex: schemas.Ptr(0),
+		Item: &schemas.ResponsesMessage{ID: schemas.Ptr("msg_bench"), Type: schemas.Ptr(schemas.ResponsesMessageTypeMessage)},
+	})
+	delta := &schemas.BifrostResponsesStreamResponse{Type: schemas.ResponsesStreamResponseTypeOutputTextDelta, ItemID: schemas.Ptr("msg_bench"), OutputIndex: schemas.Ptr(0), Delta: schemas.Ptr("hello")}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		ToAnthropicResponsesStreamResponse(ctx, delta)
+	}
+}
+
+func TestWebSearchStreamQueryReplay(t *testing.T) {
+	ctx := schemas.NewBifrostContext(nil, time.Time{})
+	state := AcquireAnthropicResponsesStreamState()
+	defer ReleaseAnthropicResponsesStreamState(state)
+	var input string
+	index := -1
+	seq := 0
+	for _, raw := range webSearchStreamEvents {
+		var chunk AnthropicStreamEvent
+		if err := sonic.Unmarshal([]byte(raw), &chunk); err != nil {
+			t.Fatal(err)
+		}
+		responses, bErr, _ := chunk.ToBifrostResponsesStream(ctx, seq, state)
+		if bErr != nil {
+			t.Fatal(bErr)
+		}
+		for _, response := range responses {
+			seq++
+			for _, event := range ToAnthropicResponsesStreamResponse(ctx, response) {
+				if event.ContentBlock != nil && event.ContentBlock.Type == AnthropicContentBlockTypeServerToolUse {
+					index = *event.Index
+					if string(event.ContentBlock.Input) != "{}" {
+						input = string(event.ContentBlock.Input)
+					}
+				}
+				if event.Index == nil || *event.Index != index {
+					continue
+				}
+				if event.Delta != nil && event.Delta.Type == AnthropicStreamDeltaTypeInputJSON && event.Delta.PartialJSON != nil {
+					input += *event.Delta.PartialJSON
+				}
+				if event.Type == AnthropicStreamEventTypeContentBlockStop {
+					var replay struct {
+						Query string `json:"query"`
+					}
+					if err := json.Unmarshal([]byte(input), &replay); err != nil {
+						t.Fatalf("web_search replay input = %q; want JSON with query %q: %v", input, "bbc top headline", err)
+					}
+					if replay.Query != "bbc top headline" {
+						t.Fatalf("replay query = %q, want %q", replay.Query, "bbc top headline")
+					}
+				}
+			}
+		}
+	}
+	if index == -1 {
+		t.Fatal("missing web_search server_tool_use")
+	}
+}
 
 // makeResponsesTextFormat returns a minimal json_schema text config for the
 // Responses API structured-output request path.
@@ -1690,8 +1844,8 @@ func TestConvertBifrostToolsToAnthropicTranslatesProgrammaticCaller(t *testing.T
 		}
 	})
 
-	// Beside web search the interpreter is never sent (Anthropic injects its own code
-	// execution), so its legacy version must not block the request.
+	// Beside an auto-injecting web search version the interpreter is never sent (Anthropic
+	// injects its own code execution), so its legacy version must not block the request.
 	legacyInterpreter := func(callers ...string) schemas.ResponsesTool {
 		return schemas.ResponsesTool{
 			Type:                         schemas.ResponsesToolTypeCodeInterpreter,
@@ -1699,7 +1853,10 @@ func TestConvertBifrostToolsToAnthropicTranslatesProgrammaticCaller(t *testing.T
 			ResponsesToolCodeInterpreter: &schemas.ResponsesToolCodeInterpreter{Version: schemas.Ptr("code_execution_20250522")},
 		}
 	}
-	webSearch := schemas.ResponsesTool{Type: schemas.ResponsesToolTypeWebSearch}
+	webSearch := schemas.ResponsesTool{
+		Type:                   schemas.ResponsesToolTypeWebSearch,
+		ResponsesToolWebSearch: &schemas.ResponsesToolWebSearch{Version: schemas.Ptr(string(AnthropicToolTypeWebSearch20260209))},
+	}
 
 	t.Run("a dropped legacy interpreter with a programmatic caller does not block the request", func(t *testing.T) {
 		tools, _, err := convertBifrostToolsToAnthropic(caps, []schemas.ResponsesTool{webSearch, legacyInterpreter("programmatic")}, schemas.Anthropic)
@@ -3323,5 +3480,646 @@ func TestClaudeCodeCacheMarkersOnGPTCallerExplicitModeWins(t *testing.T) {
 	}
 	if got := strings.Count(raw, `"prompt_cache_breakpoint"`); got != 3 {
 		t.Errorf("want 3 prompt_cache_breakpoint, got %d; raw=%s", got, raw)
+	}
+}
+
+// parallelToolsResponsesReq builds a two-tool Responses request for the parallel_tool_calls tests.
+func parallelToolsResponsesReq(choice *schemas.ResponsesToolChoice, parallel *bool) *schemas.BifrostResponsesRequest {
+	tool := func(name string) schemas.ResponsesTool {
+		return schemas.ResponsesTool{
+			Type:                  schemas.ResponsesToolTypeFunction,
+			Name:                  schemas.Ptr(name),
+			ResponsesToolFunction: &schemas.ResponsesToolFunction{},
+		}
+	}
+	return &schemas.BifrostResponsesRequest{
+		Provider: schemas.Anthropic,
+		Model:    "claude-sonnet-5",
+		Input: []schemas.ResponsesMessage{{
+			Role:    schemas.Ptr(schemas.ResponsesInputMessageRoleUser),
+			Content: &schemas.ResponsesMessageContent{ContentStr: schemas.Ptr("Weather in Tokyo, Paris and Lima?")},
+		}},
+		Params: &schemas.ResponsesParameters{
+			Tools:             []schemas.ResponsesTool{tool("get_weather"), tool("get_time")},
+			ToolChoice:        choice,
+			ParallelToolCalls: parallel,
+		},
+	}
+}
+
+// parallel_tool_calls: false on /v1/responses must reach Anthropic as
+// tool_choice.disable_parallel_tool_use, as it already does on the chat path.
+func TestToAnthropicResponsesRequest_ParallelToolCalls(t *testing.T) {
+	auto := string(schemas.ResponsesToolChoiceTypeAuto)
+	required := string(schemas.ResponsesToolChoiceTypeRequired)
+	none := string(schemas.ResponsesToolChoiceTypeNone)
+
+	tests := []struct {
+		name        string
+		choice      *schemas.ResponsesToolChoice
+		parallel    *bool
+		wantType    string // "" means no tool_choice is sent
+		wantDisable bool
+	}{
+		{"false with no tool choice synthesizes auto", nil, schemas.Ptr(false), "auto", true},
+		{"false with auto", &schemas.ResponsesToolChoice{ResponsesToolChoiceStr: &auto}, schemas.Ptr(false), "auto", true},
+		{"false with required", &schemas.ResponsesToolChoice{ResponsesToolChoiceStr: &required}, schemas.Ptr(false), "any", true},
+		{"false with none is not sent", &schemas.ResponsesToolChoice{ResponsesToolChoiceStr: &none}, schemas.Ptr(false), "none", false},
+		{"true sends nothing", nil, schemas.Ptr(true), "", false},
+		{"unset sends nothing", nil, nil, "", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := schemas.NewBifrostContext(nil, time.Time{})
+			out, err := ToAnthropicResponsesRequest(ctx, parallelToolsResponsesReq(tt.choice, tt.parallel))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.wantType == "" {
+				if out.ToolChoice != nil {
+					t.Fatalf("expected no tool_choice, got %+v", out.ToolChoice)
+				}
+				return
+			}
+			if out.ToolChoice == nil {
+				t.Fatalf("expected tool_choice type %q, got nil", tt.wantType)
+			}
+			if out.ToolChoice.Type != tt.wantType {
+				t.Errorf("tool_choice.type = %q, want %q", out.ToolChoice.Type, tt.wantType)
+			}
+			gotDisable := out.ToolChoice.DisableParallelToolUse != nil && *out.ToolChoice.DisableParallelToolUse
+			if gotDisable != tt.wantDisable {
+				t.Errorf("disable_parallel_tool_use = %s, want %v", boolPtrString(out.ToolChoice.DisableParallelToolUse), tt.wantDisable)
+			}
+		})
+	}
+}
+
+// tool_choice.disable_parallel_tool_use on /anthropic/v1/messages must become
+// ParallelToolCalls so non-Anthropic targets (Bedrock Converse, OpenAI) honor it too.
+func TestAnthropicIngress_DisableParallelToolUseMapsToParallelToolCalls(t *testing.T) {
+	tests := []struct {
+		name    string
+		disable *bool
+		want    *bool
+	}{
+		{"disable true", schemas.Ptr(true), schemas.Ptr(false)},
+		{"disable false", schemas.Ptr(false), schemas.Ptr(true)},
+		{"absent", nil, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &AnthropicMessageRequest{
+				Model:      "claude-sonnet-5",
+				MaxTokens:  256,
+				Messages:   []AnthropicMessage{{Role: AnthropicMessageRoleUser, Content: AnthropicContent{ContentStr: schemas.Ptr("Weather in Tokyo and Paris?")}}},
+				Tools:      []AnthropicTool{{Name: "get_weather", InputSchema: &schemas.ToolFunctionParameters{Type: "object"}}},
+				ToolChoice: &AnthropicToolChoice{Type: "auto", DisableParallelToolUse: tt.disable},
+			}
+			ctx := schemas.NewBifrostContext(nil, time.Time{})
+			bifrostReq := req.ToBifrostResponsesRequest(ctx)
+			got := bifrostReq.Params.ParallelToolCalls
+			if (got == nil) != (tt.want == nil) || (got != nil && *got != *tt.want) {
+				t.Fatalf("ParallelToolCalls = %s, want %s", boolPtrString(got), boolPtrString(tt.want))
+			}
+
+			// Round trip back to Anthropic keeps the instruction.
+			out, err := ToAnthropicResponsesRequest(ctx, bifrostReq)
+			if err != nil {
+				t.Fatalf("egress error: %v", err)
+			}
+			if out.ToolChoice == nil || out.ToolChoice.Type != "auto" {
+				t.Fatalf("expected tool_choice auto after round trip, got %+v", out.ToolChoice)
+			}
+			gotDisable := out.ToolChoice.DisableParallelToolUse != nil && *out.ToolChoice.DisableParallelToolUse
+			wantDisable := tt.disable != nil && *tt.disable
+			if gotDisable != wantDisable {
+				t.Errorf("round-trip disable_parallel_tool_use = %s, want %v", boolPtrString(out.ToolChoice.DisableParallelToolUse), wantDisable)
+			}
+		})
+	}
+}
+
+func boolPtrString(b *bool) string {
+	if b == nil {
+		return "<nil>"
+	}
+	return fmt.Sprint(*b)
+}
+
+// BenchmarkToAnthropicResponsesRequestParallelToolCalls measures the Responses
+// conversion with parallel_tool_calls unset (the common case) and false.
+func BenchmarkToAnthropicResponsesRequestParallelToolCalls(b *testing.B) {
+	for _, bc := range []struct {
+		name     string
+		parallel *bool
+	}{
+		{"unset", nil},
+		{"false", schemas.Ptr(false)},
+	} {
+		b.Run(bc.name, func(b *testing.B) {
+			ctx := schemas.NewBifrostContext(nil, time.Time{})
+			b.ReportAllocs()
+			for b.Loop() {
+				if _, err := ToAnthropicResponsesRequest(ctx, parallelToolsResponsesReq(nil, bc.parallel)); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+// TestToAnthropicResponsesRequest_InstructionsLeadSystemInput: top-level instructions and
+// system/developer input are complementary, so both reach system with instructions first
+// (OpenAI places instructions ahead of input). Previously instructions were dropped whenever
+// the input carried any system content.
+func TestToAnthropicResponsesRequest_InstructionsLeadSystemInput(t *testing.T) {
+	user := schemas.ResponsesMessage{
+		Role:    schemas.Ptr(schemas.ResponsesInputMessageRoleUser),
+		Content: &schemas.ResponsesMessageContent{ContentStr: schemas.Ptr("hi")},
+	}
+	developer := schemas.ResponsesMessage{
+		Role:    schemas.Ptr(schemas.ResponsesInputMessageRoleDeveloper),
+		Content: &schemas.ResponsesMessageContent{ContentStr: schemas.Ptr("DEVELOPER_MUST_SURVIVE")},
+	}
+	cachedSystem := schemas.ResponsesMessage{
+		Role: schemas.Ptr(schemas.ResponsesInputMessageRoleSystem),
+		Content: &schemas.ResponsesMessageContent{ContentBlocks: []schemas.ResponsesMessageContentBlock{{
+			Type:         schemas.ResponsesInputMessageContentBlockTypeText,
+			Text:         schemas.Ptr("SYSTEM_MUST_SURVIVE"),
+			CacheControl: &schemas.CacheControl{Type: schemas.CacheControlTypeEphemeral},
+		}}},
+	}
+
+	tests := []struct {
+		name         string
+		instructions *string
+		input        []schemas.ResponsesMessage
+		want         string
+	}{
+		{
+			name:         "instructions and developer input both reach system, instructions first",
+			instructions: schemas.Ptr("BASE_MUST_SURVIVE"),
+			input:        []schemas.ResponsesMessage{developer, user},
+			want:         `[{"type":"text","text":"BASE_MUST_SURVIVE"},{"type":"text","text":"DEVELOPER_MUST_SURVIVE"}]`,
+		},
+		{
+			name:         "cache_control on a system block survives behind instructions",
+			instructions: schemas.Ptr("BASE_MUST_SURVIVE"),
+			input:        []schemas.ResponsesMessage{cachedSystem, user},
+			want:         `[{"type":"text","text":"BASE_MUST_SURVIVE"},{"type":"text","text":"SYSTEM_MUST_SURVIVE","cache_control":{"type":"ephemeral"}}]`,
+		},
+		{
+			name:         "instructions alone keep the block form",
+			instructions: schemas.Ptr("BASE_MUST_SURVIVE"),
+			input:        []schemas.ResponsesMessage{user},
+			want:         `[{"type":"text","text":"BASE_MUST_SURVIVE"}]`,
+		},
+		{
+			name:  "developer input alone keeps the string form",
+			input: []schemas.ResponsesMessage{developer, user},
+			want:  `"DEVELOPER_MUST_SURVIVE"`,
+		},
+		{
+			name:         "empty instructions add nothing",
+			instructions: schemas.Ptr(""),
+			input:        []schemas.ResponsesMessage{developer, user},
+			want:         `"DEVELOPER_MUST_SURVIVE"`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := &schemas.BifrostResponsesRequest{
+				Provider: schemas.Anthropic,
+				Model:    "claude-opus-4-6",
+				Input:    tc.input,
+				Params:   &schemas.ResponsesParameters{Instructions: tc.instructions},
+			}
+			result, err := ToAnthropicResponsesRequest(schemas.NewBifrostContext(nil, time.Time{}), req)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			got, err := sonic.Marshal(result.System)
+			if err != nil {
+				t.Fatalf("marshal system: %v", err)
+			}
+			if string(got) != tc.want {
+				t.Fatalf("system mismatch\n got: %s\nwant: %s", got, tc.want)
+			}
+			if len(result.Messages) != 1 || result.Messages[0].Role != AnthropicMessageRoleUser {
+				t.Fatalf("expected only the user turn in messages, got %+v", result.Messages)
+			}
+		})
+	}
+}
+
+// TestGroupedConversion_ClientToolNamedLikeServerTool verifies that a client
+// tool_use whose name collides with an Anthropic server tool (web_search,
+// web_fetch) stays a function_call. Converting it to a web_search_call /
+// web_fetch_call orphans the matching tool_result, and Bedrock rejects the
+// replay with "The number of toolResult blocks ... exceeds the number of
+// toolUse blocks of previous turn".
+func TestGroupedConversion_ClientToolNamedLikeServerTool(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{name: string(AnthropicToolNameWebSearch), input: `{"query":"bifrost"}`},
+		{name: string(AnthropicToolNameWebFetch), input: `{"url":"https://example.com"}`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assistant := schemas.ResponsesMessageRoleType(AnthropicMessageRoleAssistant)
+			msgs := convertAnthropicContentBlocksToResponsesMessagesGrouped([]AnthropicContentBlock{
+				{
+					Type:  AnthropicContentBlockTypeToolUse,
+					ID:    schemas.Ptr("toolu_client"),
+					Name:  schemas.Ptr(tc.name),
+					Input: json.RawMessage(tc.input),
+				},
+			}, &assistant, true)
+
+			if len(msgs) != 1 {
+				t.Fatalf("expected 1 converted message, got %d", len(msgs))
+			}
+			msg := msgs[0]
+			if msg.Type == nil || *msg.Type != schemas.ResponsesMessageTypeFunctionCall {
+				t.Fatalf("expected function_call, got %s", messageType(msg))
+			}
+			if msg.ResponsesToolMessage == nil || msg.ResponsesToolMessage.Name == nil || *msg.ResponsesToolMessage.Name != tc.name {
+				t.Fatalf("expected function name %q to be preserved", tc.name)
+			}
+			if msg.ResponsesToolMessage.Arguments == nil || *msg.ResponsesToolMessage.Arguments != tc.input {
+				t.Fatalf("expected arguments %q to be preserved, got %v", tc.input, msg.ResponsesToolMessage.Arguments)
+			}
+		})
+	}
+}
+
+// TestGroupedConversion_ServerWebSearchStillMapped guards the server tool path:
+// a server_tool_use web_search must still become a web_search_call.
+func TestGroupedConversion_ServerWebSearchStillMapped(t *testing.T) {
+	assistant := schemas.ResponsesMessageRoleType(AnthropicMessageRoleAssistant)
+	msgs := convertAnthropicContentBlocksToResponsesMessagesGrouped([]AnthropicContentBlock{
+		{
+			Type:  AnthropicContentBlockTypeServerToolUse,
+			ID:    schemas.Ptr("srvtoolu_server"),
+			Name:  schemas.Ptr(string(AnthropicToolNameWebSearch)),
+			Input: json.RawMessage(`{"query":"bifrost"}`),
+		},
+	}, &assistant, true)
+
+	if len(msgs) != 1 {
+		t.Fatalf("expected 1 converted message, got %d", len(msgs))
+	}
+	if msgs[0].Type == nil || *msgs[0].Type != schemas.ResponsesMessageTypeWebSearchCall {
+		t.Fatalf("expected web_search_call, got %s", messageType(msgs[0]))
+	}
+}
+
+func messageType(msg schemas.ResponsesMessage) string {
+	if msg.Type == nil {
+		return "<nil>"
+	}
+	return string(*msg.Type)
+}
+
+func BenchmarkGroupedConversion_ToolUseBlocks(b *testing.B) {
+	assistant := schemas.ResponsesMessageRoleType(AnthropicMessageRoleAssistant)
+	blocks := []AnthropicContentBlock{
+		{
+			Type:  AnthropicContentBlockTypeToolUse,
+			ID:    schemas.Ptr("toolu_client"),
+			Name:  schemas.Ptr(string(AnthropicToolNameWebSearch)),
+			Input: json.RawMessage(`{"query":"bifrost"}`),
+		},
+		{
+			Type:  AnthropicContentBlockTypeServerToolUse,
+			ID:    schemas.Ptr("srvtoolu_server"),
+			Name:  schemas.Ptr(string(AnthropicToolNameWebFetch)),
+			Input: json.RawMessage(`{"url":"https://example.com"}`),
+		},
+		{
+			Type:  AnthropicContentBlockTypeToolUse,
+			ID:    schemas.Ptr("toolu_other"),
+			Name:  schemas.Ptr("get_time"),
+			Input: json.RawMessage(`{"timezone":"UTC"}`),
+		},
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = convertAnthropicContentBlocksToResponsesMessagesGrouped(blocks, &assistant, true)
+	}
+}
+
+// TestToAnthropicResponsesRequest_EmptyTextBlocksAreDropped pins that an empty
+// input_text/output_text block, or an empty string content, never reaches the
+// Anthropic wire as {"type":"text","text":""}. Anthropic rejects such a block with
+// 400 "text content blocks must be non-empty" (messages) and the same for system.
+// OpenAI accepts empty text, so Responses clients such as Codex send it; the Chat
+// Completions converter already skips empty text, the Responses converter did not.
+func TestToAnthropicResponsesRequest_EmptyTextBlocksAreDropped(t *testing.T) {
+	cases := []struct {
+		name         string
+		input        string
+		wantMessages []string // "role:text|text" per emitted message
+		wantSystem   []string
+	}{
+		{
+			name:         "user input_text block",
+			input:        `[{"type":"message","role":"user","content":[{"type":"input_text","text":""}]},{"type":"message","role":"user","content":[{"type":"input_text","text":"sds"}]}]`,
+			wantMessages: []string{"user:sds"},
+		},
+		{
+			name:         "user string content",
+			input:        `[{"type":"message","role":"user","content":""},{"type":"message","role":"user","content":[{"type":"input_text","text":"sds"}]}]`,
+			wantMessages: []string{"user:sds"},
+		},
+		{
+			name:         "assistant output_text block",
+			input:        `[{"type":"message","role":"user","content":[{"type":"input_text","text":"hi"}]},{"type":"message","role":"assistant","content":[{"type":"output_text","text":""}]},{"type":"message","role":"user","content":[{"type":"input_text","text":"sds"}]}]`,
+			wantMessages: []string{"user:hi", "user:sds"},
+		},
+		{
+			name:         "empty block beside a non-empty one",
+			input:        `[{"type":"message","role":"user","content":[{"type":"input_text","text":""},{"type":"input_text","text":"sds"}]}]`,
+			wantMessages: []string{"user:sds"},
+		},
+		{
+			name:         "leading developer block",
+			input:        `[{"type":"message","role":"developer","content":[{"type":"input_text","text":"perm"},{"type":"input_text","text":""}]},{"type":"message","role":"user","content":[{"type":"input_text","text":"sds"}]}]`,
+			wantMessages: []string{"user:sds"},
+			wantSystem:   []string{"perm"},
+		},
+		{
+			name:         "leading developer string content",
+			input:        `[{"type":"message","role":"developer","content":""},{"type":"message","role":"user","content":[{"type":"input_text","text":"sds"}]}]`,
+			wantMessages: []string{"user:sds"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var input []schemas.ResponsesMessage
+			if err := sonic.Unmarshal([]byte(tc.input), &input); err != nil {
+				t.Fatalf("unmarshal input: %v", err)
+			}
+			req := &schemas.BifrostResponsesRequest{Provider: schemas.Anthropic, Model: "claude-opus-4-6", Input: input}
+			result, err := ToAnthropicResponsesRequest(schemas.NewBifrostContext(nil, time.Time{}), req)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			wire, err := sonic.Marshal(result)
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+			if strings.Contains(string(wire), `"text":""`) {
+				t.Fatalf("empty text block reached the wire: %s", wire)
+			}
+
+			var gotMessages []string
+			for _, msg := range result.Messages {
+				var texts []string
+				for _, block := range msg.Content.ContentBlocks {
+					if block.Text != nil {
+						texts = append(texts, *block.Text)
+					}
+				}
+				if msg.Content.ContentStr != nil {
+					texts = append(texts, *msg.Content.ContentStr)
+				}
+				gotMessages = append(gotMessages, string(msg.Role)+":"+strings.Join(texts, "|"))
+			}
+			if !slices.Equal(gotMessages, tc.wantMessages) {
+				t.Errorf("messages = %q, want %q (wire: %s)", gotMessages, tc.wantMessages, wire)
+			}
+
+			var gotSystem []string
+			if result.System != nil {
+				if result.System.ContentStr != nil {
+					gotSystem = append(gotSystem, *result.System.ContentStr)
+				}
+				for _, block := range result.System.ContentBlocks {
+					if block.Text != nil {
+						gotSystem = append(gotSystem, *block.Text)
+					}
+				}
+			}
+			if !slices.Equal(gotSystem, tc.wantSystem) {
+				t.Errorf("system = %q, want %q (wire: %s)", gotSystem, tc.wantSystem, wire)
+			}
+		})
+	}
+}
+
+// TestToAnthropicResponsesRequest_EmptyTextMessagesDoNotShapeTurns pins that a message
+// dropped for having only empty text does not count as a turn: neither the
+// mid-conversation system placement lookahead nor the assistant-prefill trim may
+// judge the request by a message that never reaches the wire, and pending signed
+// thinking still reaches the wire beside an empty assistant text.
+func TestToAnthropicResponsesRequest_EmptyTextMessagesDoNotShapeTurns(t *testing.T) {
+	user := schemas.ResponsesInputMessageRoleUser
+	assistant := schemas.ResponsesInputMessageRoleAssistant
+	system := schemas.ResponsesInputMessageRoleSystem
+	text := func(role schemas.ResponsesMessageRoleType, s string) schemas.ResponsesMessage {
+		return schemas.ResponsesMessage{Type: schemas.Ptr(schemas.ResponsesMessageTypeMessage), Role: &role,
+			Content: &schemas.ResponsesMessageContent{ContentStr: schemas.Ptr(s)}}
+	}
+	convert := func(t *testing.T, model string, ctx *schemas.BifrostContext, input []schemas.ResponsesMessage) *AnthropicMessageRequest {
+		t.Helper()
+		result, err := ToAnthropicResponsesRequest(ctx, &schemas.BifrostResponsesRequest{Provider: schemas.Anthropic, Model: model, Input: input})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		return result
+	}
+	roles := func(msgs []AnthropicMessage) []string {
+		var out []string
+		for _, m := range msgs {
+			out = append(out, string(m.Role))
+		}
+		return out
+	}
+
+	t.Run("system before an empty assistant is not placed natively", func(t *testing.T) {
+		ctx := schemas.NewBifrostContext(nil, time.Time{})
+		result := convert(t, "claude-opus-5-5", ctx, []schemas.ResponsesMessage{
+			text(user, "hi"), text(system, "reminder"), text(assistant, ""), text(user, "next"),
+		})
+		for i, m := range result.Messages {
+			if m.Role == AnthropicMessageRoleSystem && i+1 < len(result.Messages) && result.Messages[i+1].Role != AnthropicMessageRoleAssistant {
+				t.Fatalf("role:system at %d is followed by %s, which Anthropic rejects: %v", i, result.Messages[i+1].Role, roles(result.Messages))
+			}
+		}
+	})
+
+	t.Run("prefill trim looks past a trailing empty user", func(t *testing.T) {
+		ctx := schemas.NewBifrostContext(nil, time.Time{})
+		ctx.SetValue(schemas.BifrostContextKeySupportsAssistantPrefill, false)
+		result := convert(t, "claude-opus-4-6", ctx, []schemas.ResponsesMessage{
+			text(user, "hi"), text(assistant, "answer"), text(user, ""),
+		})
+		if got := roles(result.Messages); !slices.Equal(got, []string{"user"}) {
+			t.Fatalf("messages = %v, want only the leading user: the request must not end in an assistant prefill", got)
+		}
+	})
+
+	t.Run("pending thinking survives beside empty assistant text", func(t *testing.T) {
+		ctx := schemas.NewBifrostContext(nil, time.Time{})
+		reasoning := schemas.ResponsesMessage{
+			Type: schemas.Ptr(schemas.ResponsesMessageTypeReasoning),
+			Content: &schemas.ResponsesMessageContent{ContentBlocks: []schemas.ResponsesMessageContentBlock{
+				{Type: schemas.ResponsesOutputMessageContentTypeReasoning, Text: schemas.Ptr("Read the file."), Signature: schemas.Ptr("sig-1")},
+			}},
+		}
+		result := convert(t, "claude-opus-4-6", ctx, []schemas.ResponsesMessage{
+			text(user, "hi"), reasoning, text(assistant, ""), text(user, "next"),
+		})
+		if got := roles(result.Messages); !slices.Equal(got, []string{"user", "assistant", "user"}) {
+			t.Fatalf("messages = %v, want user, assistant, user", got)
+		}
+		blocks := result.Messages[1].Content.ContentBlocks
+		if len(blocks) != 1 || blocks[0].Type != AnthropicContentBlockTypeThinking ||
+			blocks[0].Thinking == nil || *blocks[0].Thinking != "Read the file." ||
+			blocks[0].Signature == nil || *blocks[0].Signature != "sig-1" {
+			wire, _ := sonic.Marshal(result.Messages[1])
+			t.Fatalf("assistant must carry only the signed thinking block, got %s", wire)
+		}
+	})
+}
+
+func BenchmarkToAnthropicResponsesRequest_TextMessages(b *testing.B) {
+	user := schemas.ResponsesInputMessageRoleUser
+	assistant := schemas.ResponsesInputMessageRoleAssistant
+	input := make([]schemas.ResponsesMessage, 0, 20)
+	for i := 0; i < 10; i++ {
+		input = append(input,
+			schemas.ResponsesMessage{Role: &user, Content: &schemas.ResponsesMessageContent{ContentBlocks: []schemas.ResponsesMessageContentBlock{
+				{Type: schemas.ResponsesInputMessageContentBlockTypeText, Text: schemas.Ptr("What time is it?")},
+			}}},
+			schemas.ResponsesMessage{Role: &assistant, Content: &schemas.ResponsesMessageContent{ContentStr: schemas.Ptr("It is noon.")}},
+		)
+	}
+	req := &schemas.BifrostResponsesRequest{Provider: schemas.Anthropic, Model: "claude-opus-4-6", Input: input}
+	for _, prefill := range []bool{true, false} {
+		b.Run(fmt.Sprintf("prefill=%t", prefill), func(b *testing.B) {
+			ctx := schemas.NewBifrostContext(context.Background(), time.Time{})
+			if !prefill {
+				ctx.SetValue(schemas.BifrostContextKeySupportsAssistantPrefill, false)
+			}
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				if _, err := ToAnthropicResponsesRequest(ctx, req); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+func TestSearchToolVersionRoundTrip(t *testing.T) {
+	for _, version := range []AnthropicToolType{
+		AnthropicToolTypeWebSearch20250305, AnthropicToolTypeWebSearch20260209,
+		AnthropicToolTypeWebFetch20250910, AnthropicToolTypeWebFetch20260209,
+		AnthropicToolTypeWebFetch20260309, AnthropicToolTypeWebFetch20260318,
+	} {
+		for _, stream := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/stream=%t", version, stream), func(t *testing.T) {
+				name := "web_search"
+				if strings.HasPrefix(string(version), "web_fetch_") {
+					name = "web_fetch"
+				}
+				request := &AnthropicMessageRequest{
+					Model: "claude-sonnet-4-6", MaxTokens: 32, Stream: &stream,
+					Tools: []AnthropicTool{{Type: &version, Name: name}},
+				}
+				neutral := request.ToBifrostResponsesRequest(nil)
+				neutral.Provider = schemas.Anthropic
+				out, err := ToAnthropicResponsesRequest(nil, neutral)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(out.Tools) != 1 || out.Tools[0].Type == nil {
+					t.Fatalf("tools = %+v", out.Tools)
+				}
+				if got := *out.Tools[0].Type; got != version {
+					t.Errorf("tool version = %s, want %s", got, version)
+				}
+			})
+		}
+	}
+}
+
+func BenchmarkSearchToolVersionConversion(b *testing.B) {
+	caps := schemas.ResolveModelCaps(schemas.Anthropic, "claude-sonnet-4-6")
+	b.Run("neutral", func(b *testing.B) {
+		tool := &schemas.ResponsesTool{Type: schemas.ResponsesToolTypeWebSearch}
+		b.ReportAllocs()
+		for b.Loop() {
+			_ = convertBifrostToolToAnthropic(caps, tool, schemas.Anthropic, false)
+		}
+	})
+	b.Run("roundtrip", func(b *testing.B) {
+		tool := &AnthropicTool{Type: schemas.Ptr(AnthropicToolTypeWebSearch20250305), Name: "web_search"}
+		b.ReportAllocs()
+		for b.Loop() {
+			neutral := convertAnthropicToolToBifrost(tool)
+			_ = convertBifrostToolToAnthropic(caps, neutral, schemas.Anthropic, false)
+		}
+	})
+}
+
+func TestSearchToolVersionDefaultsAndOpenAIWire(t *testing.T) {
+	caps := schemas.ResolveModelCaps(schemas.Anthropic, "claude-sonnet-4-6")
+	for _, tool := range []schemas.ResponsesTool{
+		{Type: schemas.ResponsesToolTypeWebSearch},
+		{Type: schemas.ResponsesToolTypeWebSearch, ResponsesToolWebSearch: &schemas.ResponsesToolWebSearch{Version: schemas.Ptr("")}},
+		{Type: schemas.ResponsesToolTypeWebFetch},
+		{Type: schemas.ResponsesToolTypeWebFetch, ResponsesToolWebFetch: &schemas.ResponsesToolWebFetch{Version: schemas.Ptr("")}},
+	} {
+		got := convertBifrostToolToAnthropic(caps, &tool, schemas.Anthropic, false)
+		want := AnthropicToolTypeWebSearch20260209
+		if tool.Type == schemas.ResponsesToolTypeWebFetch {
+			want = AnthropicToolTypeWebFetch20260309
+		}
+		if got == nil || got.Type == nil || *got.Type != want {
+			t.Errorf("default %s = %+v, want %s", tool.Type, got, want)
+		}
+	}
+	tool := convertAnthropicToolToBifrost(&AnthropicTool{Type: schemas.Ptr(AnthropicToolTypeWebSearch20250305), Name: "web_search"})
+	// Persisting the neutral shape must retain the version, including SDK/Responses input.
+	encoded, err := json.Marshal(tool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored schemas.ResponsesTool
+	if err := json.Unmarshal(encoded, &restored); err != nil {
+		t.Fatal(err)
+	}
+	if restored.ResponsesToolWebSearch == nil || restored.ResponsesToolWebSearch.Version == nil || *restored.ResponsesToolWebSearch.Version != string(AnthropicToolTypeWebSearch20250305) {
+		t.Fatalf("version lost: %s", encoded)
+	}
+	request := &schemas.BifrostResponsesRequest{Provider: schemas.OpenAI, Model: "gpt-4o-mini", Input: makeSimpleInput("hello"), Params: &schemas.ResponsesParameters{Tools: []schemas.ResponsesTool{restored}}}
+	for _, direct := range []bool{false, true} {
+		out := openai.ToOpenAIResponsesRequest(nil, request)
+		if direct {
+			out.Tools = request.Params.Tools
+		} // The serializer also accepts SDK-built requests directly.
+		body, err := json.Marshal(out)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(body), "web_search_version") {
+			t.Errorf("Anthropic version leaked to OpenAI: %s", body)
+		}
+		if !strings.Contains(string(body), `"type":"web_search"`) {
+			t.Errorf("web search dropped: %s", body)
+		}
+	}
+	if restored.ResponsesToolWebSearch.Version == nil {
+		t.Fatal("OpenAI conversion mutated the caller's tool")
 	}
 }

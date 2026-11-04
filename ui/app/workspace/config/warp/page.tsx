@@ -23,17 +23,18 @@ export default function WarpPage() {
 }
 
 function WarpDisabled() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	return (
 		<div className="flex w-full flex-col gap-4">
+			{/* i18n-ignore: product name */}
 			<PageTitle title="Warp" />
 			<Alert variant="warning" data-testid="warp-feature-flag-disabled">
 				<TriangleAlert className="h-4 w-4" />
 				<AlertDescription className="gap-2">
-					<span>{t("settings:warp.disabledNotice")}</span>
+					<span>{t("warp.featureFlagOff")}</span>
 					<Button asChild variant="outline" size="sm" data-testid="warp-feature-flags-link">
 						<Link to="/workspace/config/feature-flags">
-							{t("settings:warp.openFeatureFlags")}
+							{t("warp.openFeatureFlags")}
 							<ArrowRight className="size-3.5" />
 						</Link>
 					</Button>

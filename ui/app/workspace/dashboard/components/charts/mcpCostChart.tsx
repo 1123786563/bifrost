@@ -6,6 +6,8 @@ import { CHART_COLORS, formatCost, formatFullTimestamp, formatTimestamp } from "
 import { barShape } from "./barShape";
 import { ChartErrorBoundary } from "./chartErrorBoundary";
 import type { ChartType } from "./chartTypeToggle";
+import { NoChartData } from "./noChartData";
+import { useLocale } from "@/lib/i18n/useLocale";
 
 interface MCPCostChartProps {
 	data: MCPCostHistogramResponse | null;
@@ -15,7 +17,7 @@ interface MCPCostChartProps {
 }
 
 function CustomTooltip({ active, payload }: any) {
-	const { t } = useTranslation("dashboard");
+	const { t } = useTranslation("observability");
 	if (!active || !payload || !payload.length) return null;
 
 	const data = payload[0]?.payload;
@@ -28,7 +30,7 @@ function CustomTooltip({ active, payload }: any) {
 				<div className="flex items-center justify-between gap-4">
 					<span className="flex items-center gap-1.5">
 						<span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.cost }} />
-						<span className="text-zinc-600 dark:text-zinc-400">{t("terms.cost")}</span>
+						<span className="text-zinc-600 dark:text-zinc-400">{t("labels.cost")}</span>
 					</span>
 					<span className="font-medium">{formatCost(data.total_cost)}</span>
 				</div>
@@ -38,7 +40,7 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 function MCPCostChartImpl({ data, chartType, startTime, endTime }: MCPCostChartProps) {
-	const { t } = useTranslation("dashboard");
+	useLocale();
 	const chartData = useMemo(() => {
 		if (!data?.buckets || !data.bucket_size_seconds) {
 			return [];
@@ -52,7 +54,7 @@ function MCPCostChartImpl({ data, chartType, startTime, endTime }: MCPCostChartP
 	}, [data]);
 
 	if (!data?.buckets || chartData.length === 0) {
-		return <div className="text-muted-foreground flex h-full items-center justify-center text-sm">{t("empty.noData")}</div>;
+		return <NoChartData />;
 	}
 
 	const commonProps = {

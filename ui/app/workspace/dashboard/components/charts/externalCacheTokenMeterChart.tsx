@@ -7,6 +7,8 @@ import { useTranslation } from "react-i18next";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { ChartErrorBoundary } from "./chartErrorBoundary";
 import { GaugeNeedle, getGaugeGeometry, useGaugeSize } from "./gaugeUtils";
+import { NoChartData } from "./noChartData";
+import { useLocale } from "@/lib/i18n/useLocale";
 
 interface ExternalCacheTokenMeterChartProps {
 	data: TokenHistogramResponse | null;
@@ -15,7 +17,8 @@ interface ExternalCacheTokenMeterChartProps {
 const METER_COLORS = { cached: "var(--chart-seq-2)", input: "var(--chart-seq-5)" };
 
 function ExternalCacheTokenMeterChartImpl({ data }: ExternalCacheTokenMeterChartProps) {
-	const { t } = useTranslation("dashboard");
+	useLocale();
+	const { t } = useTranslation("observability");
 	const { ref, width, height } = useGaugeSize();
 
 	const { percentage, totalCachedRead, totalPromptTokens } = useMemo(() => {
@@ -45,7 +48,7 @@ function ExternalCacheTokenMeterChartImpl({ data }: ExternalCacheTokenMeterChart
 		<ChartErrorBoundary resetKey={`${data?.buckets?.length ?? 0}-${totalCachedRead}-${totalPromptTokens}`}>
 			<div className="grid h-full grid-rows-[104px_auto] items-start overflow-hidden pt-8">
 				<div ref={ref} className="relative h-full w-full grow">
-					{!hasData && <div className="text-muted-foreground flex h-full items-center justify-center text-sm">{t("empty.noData")}</div>}
+					{!hasData && <NoChartData />}
 					{hasData && gaugeGeometry && (
 						<>
 							<ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 1 }}>
@@ -79,31 +82,31 @@ function ExternalCacheTokenMeterChartImpl({ data }: ExternalCacheTokenMeterChart
 						<div className="flex shrink-0 flex-col items-center pt-1 leading-none">
 							<div className="text-muted-foreground text-3xl font-semibold tracking-tight">{percentage.toFixed(1)}%</div>
 							<div className="text-muted-foreground mt-1 flex items-center gap-1 text-[11px]">
-								<span>{t("meters.external.ofInputTokens")}</span>
+								<span>{t("dashboard.charts.externalCacheCaption")}</span>
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<button
 											type="button"
 											data-testid="external-cache-meter-info-btn"
 											className="text-muted-foreground hover:text-foreground transition-colors"
-											aria-label={t("meters.external.infoAria")}
+											aria-label={t("dashboard.charts.externalCacheInfo")}
 										>
 											<Info className="h-3 w-3" />
 										</button>
 									</TooltipTrigger>
-									<TooltipContent side="top">{t("meters.external.note")}</TooltipContent>
+									<TooltipContent side="top">{t("dashboard.charts.externalCacheNote")}</TooltipContent>
 								</Tooltip>
 							</div>
 						</div>
 						<div className="flex shrink-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-2 text-[11px] leading-none">
 							<span className="flex items-center gap-1.5">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: METER_COLORS.cached }} />
-								<span className="text-primary">{t("meters.external.cachedLabel", { count: formatCompactNumber(totalCachedRead) })}</span>
+								<span className="text-primary">{t("dashboard.charts.cachedRead", { value: formatCompactNumber(totalCachedRead) })}</span>
 							</span>
 							<span className="flex items-center gap-1.5">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: METER_COLORS.input }} />
 								<span className="text-muted-foreground">
-									{t("meters.external.inputLabel", { count: formatCompactNumber(totalPromptTokens) })}
+									{t("dashboard.charts.inputRead", { value: formatCompactNumber(totalPromptTokens) })}
 								</span>
 							</span>
 						</div>

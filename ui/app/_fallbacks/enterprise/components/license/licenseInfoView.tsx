@@ -1,16 +1,15 @@
 import { KeyRound } from "lucide-react";
-import ContactUsView from "../views/contactUsView";
 import { useTranslation } from "react-i18next";
+import ContactUsView from "../views/contactUsView";
 
 export default function LicenseSettingsView() {
-	const { t } = useTranslation(["errors"]);
+	const { t } = useTranslation("config");
 	return (
 		<div className="h-full w-full">
 			<ContactUsView
 				className="mx-auto min-h-[80vh]"
 				icon={<KeyRound className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />}
-				title={t("errors:upsell.license.title")}
-				description={t("errors:upsell.license.description")}
+				title={t("enterprise.licenseTitle")}
 				readmeLink="https://docs.getbifrost.ai/enterprise/overview"
 				testIdPrefix="license"
 			/>

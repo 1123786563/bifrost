@@ -16,6 +16,7 @@ import { useGetBaseModelsQuery, useGetModelsQuery } from "@/lib/store/apis/provi
 import { cn } from "@/lib/utils";
 import { isSentinelValue } from "@/lib/utils/strings";
 import { ChevronDownIcon, Loader2Icon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import type { ParseKeys } from "i18next";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -24,6 +25,8 @@ import { Trans, useTranslation } from "react-i18next";
 export interface ModelSelectorOption {
 	value: string;
 	label: string;
+	/** When set, rendered translated in place of `label` (for module-level constants that cannot call `t`). */
+	labelKey?: ParseKeys<"common">;
 	provider?: string;
 	isDeprecated?: boolean;
 	/** Non-selectable. The row still renders, greyed, with `disabledReason` beside it. */
@@ -114,7 +117,7 @@ export type ModelSelectorProps = ModelSelectorSingleProps | ModelSelectorMultiPr
  * The wildcard row, for the surfaces whose list accepts "*" as "every model". Ready to hand
  * to `extraOptions`; module level so its identity is stable across renders.
  */
-export const ALL_MODELS_OPTION: ModelSelectorOption[] = [{ value: "*", label: "All Models" }];
+export const ALL_MODELS_OPTION: ModelSelectorOption[] = [{ value: "*", label: "All Models", labelKey: "modelAccess.allModels" }]; // i18n-ignore: translated via labelKey
 
 /** A catalog row. Base models carry only a name, so everything past it is optional. */
 interface ListedModel {
@@ -133,7 +136,7 @@ function clientFilter(value: string, search: string): number {
 }
 
 export function ModelSelector(props: ModelSelectorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	const {
 		provider,
 		keys,
@@ -142,8 +145,8 @@ export function ModelSelector(props: ModelSelectorProps) {
 		decisions = false,
 		serverSearch = true,
 		pageSize = DEFAULT_PAGE_SIZE,
-		placeholder = t("workspaces:modelSelector.selectModel"),
-		searchPlaceholder = t("workspaces:modelSelector.searchModels"),
+		placeholder: placeholderProp,
+		searchPlaceholder: searchPlaceholderProp,
 		disabled = false,
 		className,
 		contentClassName,
@@ -153,7 +156,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 		disableDeprecated = true,
 		getOptionState,
 		emptyMessage,
-		extraOptions,
+		extraOptions: extraOptionsProp,
 		renderValueLabel,
 		hideSearchIcon = false,
 		openWithEmptySearch = false,
@@ -162,6 +165,12 @@ export function ModelSelector(props: ModelSelectorProps) {
 		ariaDescribedBy,
 		ariaInvalid,
 	} = props;
+	const extraOptions = useMemo(
+		() => extraOptionsProp?.map((o) => (o.labelKey ? { ...o, label: t(o.labelKey) } : o)),
+		[extraOptionsProp, t],
+	);
+	const placeholder = placeholderProp ?? t("modelAccess.selectModel");
+	const searchPlaceholder = searchPlaceholderProp ?? t("modelAccess.searchModels");
 
 	const isMulti = props.multiple === true;
 	const onChange = props.onChange;
@@ -230,7 +239,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 			};
 			if (disableDeprecated && model.is_deprecated) {
 				base.disabled = true;
-				base.disabledReason = t("workspaces:modelSelector.deprecated");
+				base.disabledReason = t("modelAccess.deprecated");
 			}
 			const override = getOptionState?.(base);
 			return override ? { ...base, ...override } : base;
@@ -393,9 +402,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 			}}
 			className={cn(option.disabled && "cursor-not-allowed")}
 		>
-			<span className={cn("min-w-0 grow truncate", option.disabled && "text-muted-foreground")}>
-				{option.value === "*" ? t("workspaces:selectors.allModels") : option.label}
-			</span>
+			<span className={cn("min-w-0 grow truncate", option.disabled && "text-muted-foreground")}>{option.label}</span>
 			{!provider && option.provider && <span className="text-muted-foreground shrink-0 text-xs">{getProviderLabel(option.provider)}</span>}
 			{option.disabled && option.disabledReason && (
 				<Badge variant="outline" className="shrink-0 text-[10px] font-medium tracking-wide uppercase">
@@ -407,8 +414,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 
 	// An extra row carries a label the value does not, "*" reading as "All Models", and the
 	// trigger has to say the same thing the list did.
-	const labelFor = (value: string) =>
-		value === "*" ? t("workspaces:selectors.allModels") : (extraOptions?.find((o) => o.value === value)?.label ?? value);
+	const labelFor = (value: string) => extraOptions?.find((o) => o.value === value)?.label ?? value;
 
 	return (
 		<Combobox
@@ -454,7 +460,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 									<span
 										role="button"
 										tabIndex={-1}
-										aria-label={t("workspaces:modelSelector.removeAria", { name: labelFor(value) })}
+										aria-label={t("combobox.removeAria", { label: labelFor(value) })}
 										className="text-muted-foreground hover:text-foreground flex shrink-0 cursor-pointer items-center"
 										onClick={(e) => {
 											e.preventDefault();
@@ -515,7 +521,7 @@ export function ModelSelector(props: ModelSelectorProps) {
 
 					{pinned.length > 0 && (
 						<ComboboxGroup>
-							<ComboboxLabel>{t("workspaces:selectors.selected")}</ComboboxLabel>
+							<ComboboxLabel>{t("entityAssociation.selected")}</ComboboxLabel>
 							{pinned.map(renderOption)}
 						</ComboboxGroup>
 					)}
@@ -529,9 +535,9 @@ export function ModelSelector(props: ModelSelectorProps) {
 							<span className="min-w-0 grow truncate">
 								<Trans
 									t={t}
-									i18nKey="workspaces:modelSelector.useCustom"
+									i18nKey="modelAccess.useModel"
 									values={{ name: trimmedSearch }}
-									components={{ b: <span className="font-medium" /> }}
+									components={{ name: <span className="font-medium" /> }}
 								/>
 							</span>
 						</ComboboxItem>
@@ -541,22 +547,22 @@ export function ModelSelector(props: ModelSelectorProps) {
 					{!isSearching && (
 						<ComboboxEmpty className="text-muted-foreground">
 							{isError
-								? t("workspaces:modelSelector.loadFailed")
-								: (emptyMessage ?? (search ? t("workspaces:modelSelector.noMatching") : t("workspaces:modelSelector.noneAvailable")))}
+								? t("modelAccess.couldntLoad")
+								: (emptyMessage ?? (search ? t("modelAccess.noMatching") : t("modelAccess.noneAvailable")))}
 						</ComboboxEmpty>
 					)}
 
 					{isSearching && loadedCount === 0 && (
 						<div className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm">
 							<Loader2Icon className="size-3.5 animate-spin" />
-							{t("common:state.searching")}
+							{t("modelAccess.searching")}
 						</div>
 					)}
 
 					{hasMore && isFetching && (
 						<div className="text-muted-foreground flex items-center justify-center gap-2 py-2 text-xs">
 							<Loader2Icon className="size-3 animate-spin" />
-							{t("common:state.loadingMore")}
+							{t("modelAccess.loadingMore")}
 						</div>
 					)}
 				</ComboboxList>

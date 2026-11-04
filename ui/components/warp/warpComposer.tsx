@@ -49,7 +49,7 @@ export default function WarpComposer({
 	onQueue,
 	onStop,
 }: WarpComposerProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("shell");
 	const [value, setValue] = useState("");
 	const [highlighted, setHighlighted] = useState(0);
 
@@ -99,7 +99,7 @@ export default function WarpComposer({
 							)}
 						>
 							<span className="font-mono text-xs">/{command.name}</span>
-							<span className="text-muted-foreground truncate text-xs font-normal">{command.description}</span>
+							<span className="text-muted-foreground truncate text-xs font-normal">{t(command.descriptionKey)}</span>
 						</button>
 					))}
 				</div>
@@ -138,7 +138,7 @@ export default function WarpComposer({
 							submit();
 						}
 					}}
-					placeholder={isStreaming && onQueue ? t("workspaces:warp.placeholderQueued") : t("workspaces:warp.placeholder")}
+					placeholder={isStreaming && onQueue ? t("warp.composer.followUp") : t("warp.composer.placeholder")}
 					disabled={disabled}
 					minRows={1}
 					maxRows={8}
@@ -151,8 +151,8 @@ export default function WarpComposer({
 						{canConfigure && (
 							<Link
 								to="/workspace/config/warp"
-								aria-label={t("workspaces:warp.settings")}
-								title={t("workspaces:warp.settings")}
+								aria-label={t("warp.composer.settings")}
+								title={t("warp.composer.settings")}
 								className="text-muted-foreground hover:text-foreground hover:bg-accent flex size-5 shrink-0 items-center justify-center rounded transition-colors"
 								data-testid="warp-composer-settings"
 							>
@@ -166,7 +166,7 @@ export default function WarpComposer({
 							size="icon"
 							variant="secondary"
 							onClick={onStop}
-							aria-label={t("workspaces:warp.stop")}
+							aria-label={t("warp.composer.stop")}
 							data-testid="warp-stop-btn"
 							className="size-7 shrink-0 rounded-full"
 						>
@@ -178,7 +178,7 @@ export default function WarpComposer({
 							size="icon"
 							onClick={submit}
 							disabled={!value.trim() || disabled}
-							aria-label={t("workspaces:warp.send")}
+							aria-label={t("warp.composer.send")}
 							data-testid="warp-send-btn"
 							className="size-7 shrink-0 rounded-full"
 						>
@@ -216,7 +216,7 @@ interface WarpModelSwitcherProps {
  * handful of configured provider and model pairs, not a model from the catalog.
  */
 function WarpModelSwitcher({ models, selectedModel, onSelectModel }: WarpModelSwitcherProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("shell");
 	if (!selectedModel) return null;
 	const chipClassName = "text-muted-foreground flex min-w-0 items-center gap-1.5 rounded px-1 py-0.5 text-xs";
 	if (models.length < 2) {
@@ -231,7 +231,7 @@ function WarpModelSwitcher({ models, selectedModel, onSelectModel }: WarpModelSw
 			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
-					aria-label={t("workspaces:warp.switchModel")}
+					aria-label={t("warp.composer.switchModel")}
 					className={cn(chipClassName, "hover:text-foreground hover:bg-accent cursor-pointer transition-colors")}
 					data-testid="warp-composer-model"
 				>
@@ -255,7 +255,7 @@ function WarpModelSwitcher({ models, selectedModel, onSelectModel }: WarpModelSw
 							data-testid={`warp-model-option-${model.provider}-${model.model}`}
 						>
 							<WarpModelName model={model} />
-							{index === 0 && <span className="text-muted-foreground ml-auto pl-2 text-[10px]">{t("workspaces:warp.default")}</span>}
+							{index === 0 && <span className="text-muted-foreground ml-auto pl-2 text-[10px]">{t("warp.composer.defaultModel")}</span>}
 						</DropdownMenuRadioItem>
 					))}
 				</DropdownMenuRadioGroup>

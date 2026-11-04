@@ -7,6 +7,7 @@ import {
 	useHeaderCellRefs,
 	usePinOffsets,
 } from "@/components/table";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import type { MCPToolLogEntry, Pagination } from "@/lib/types/logs";
@@ -15,7 +16,7 @@ import type { ColumnOrderState, ColumnPinningState, VisibilityState } from "@tan
 import { ColumnDef, flexRender, getCoreRowModel, SortingState, useReactTable } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { getLocale } from "@/lib/i18n";
 
 interface DataTableProps {
 	columns: ColumnDef<MCPToolLogEntry>[];
@@ -55,7 +56,7 @@ export function MCPLogsDataTable({
 	onTogglePin,
 	onReorderColumns,
 }: DataTableProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const [sorting, setSorting] = useState<SortingState>([{ id: pagination.sort_by, desc: pagination.order === "desc" }]);
 
 	const fixedColumnIds = useMemo(() => new Set<string>(["actions"]), []);
@@ -167,12 +168,12 @@ export function MCPLogsDataTable({
 										{polling ? (
 											<>
 												<RefreshCw className="h-4 w-4 animate-spin" />
-												Waiting for new MCP logs...
+												{t("mcpLogs.waitingForNew")}
 											</>
 										) : (
 											<Button variant="ghost" size="sm" onClick={onRefresh} disabled={loading} data-testid="mcp-logs-table-refresh-btn">
 												<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-												Refresh
+												{t("labels.refresh")}
 											</Button>
 										)}
 									</div>
@@ -206,7 +207,7 @@ export function MCPLogsDataTable({
 							) : loading ? null : (
 								<TableRow>
 									<TableCell colSpan={columns.length} className="h-24 text-center">
-										{t("logs:table.noResults")}
+										{t("mcpLogs.noResults")}
 									</TableCell>
 								</TableRow>
 							)}
@@ -216,10 +217,10 @@ export function MCPLogsDataTable({
 				{/* Pagination Footer */}
 				<div className="flex items-center justify-between text-xs" data-testid="pagination">
 					<div className="text-muted-foreground flex items-center gap-2">
-						{t("logs:table.range", {
-							from: startItemDisplay.toLocaleString(),
-							to: endItemDisplay.toLocaleString(),
-							total: totalItems.toLocaleString(),
+						{t("logs.entryRange", {
+							start: startItemDisplay.toLocaleString(getLocale()),
+							end: endItemDisplay.toLocaleString(getLocale()),
+							total: totalItems.toLocaleString(getLocale()),
 						})}
 					</div>
 
@@ -230,14 +231,12 @@ export function MCPLogsDataTable({
 							onClick={() => goToPage(currentPage - 1)}
 							disabled={currentPage <= 1}
 							data-testid="prev-page"
-							aria-label={t("logs:table.previousPage")}
+							aria-label={t("labels.previousPage")}
 						>
 							<ChevronLeft className="size-3" />
 						</Button>
 
-						<div className="flex items-center gap-1">
-							<span>{t("logs:table.pageOf", { current: currentPage, total: totalPages })}</span>
-						</div>
+						<div className="flex items-center gap-1">{t("logs.pageRange", { page: currentPage, total: totalPages })}</div>
 
 						<Button
 							variant="ghost"
@@ -245,7 +244,7 @@ export function MCPLogsDataTable({
 							onClick={() => goToPage(currentPage + 1)}
 							disabled={totalPages === 0 || currentPage >= totalPages}
 							data-testid="next-page"
-							aria-label={t("logs:table.nextPage")}
+							aria-label={t("labels.nextPage")}
 						>
 							<ChevronRight className="size-3" />
 						</Button>

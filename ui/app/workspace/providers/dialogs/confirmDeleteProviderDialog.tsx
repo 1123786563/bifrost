@@ -11,8 +11,8 @@ import { getErrorMessage, useDeleteProviderMutation } from "@/lib/store";
 import { ModelProvider } from "@/lib/types/config";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { AlertDialogTitle } from "@radix-ui/react-alert-dialog";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface Props {
 	show: boolean;
@@ -22,7 +22,8 @@ interface Props {
 }
 
 export default function ConfirmDeleteProviderDialog({ show, onCancel, onDelete, provider }: Props) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
+	const { t: tc } = useTranslation("common");
 	const [deleteProvider, { isLoading: isDeletingProvider }] = useDeleteProviderMutation();
 	const hasDeleteAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Delete);
 
@@ -33,7 +34,7 @@ export default function ConfirmDeleteProviderDialog({ show, onCancel, onDelete, 
 				onDelete();
 			})
 			.catch((err) => {
-				toast.error(t("providers:toasts.deleteProviderFailed"), {
+				toast.error(t("providers.failedToDelete"), {
 					description: getErrorMessage(err),
 				});
 			});
@@ -43,13 +44,13 @@ export default function ConfirmDeleteProviderDialog({ show, onCancel, onDelete, 
 		<AlertDialog open={show}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{t("providers:deleteDialog.title")}</AlertDialogTitle>
-					<AlertDialogDescription>{t("providers:deleteDialog.description")}</AlertDialogDescription>
+					<AlertDialogTitle>{t("providers.deleteTitle")}</AlertDialogTitle>
+					<AlertDialogDescription>{t("providers.deleteDescription")}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel onClick={onCancel}>{t("common:actions.cancel")}</AlertDialogCancel>
+					<AlertDialogCancel onClick={onCancel}>{tc("cancel")}</AlertDialogCancel>
 					<AlertDialogAction onClick={onDeleteHandler} disabled={isDeletingProvider || !hasDeleteAccess}>
-						{isDeletingProvider ? t("providers:deleteDialog.deleting") : t("common:actions.delete")}
+						{isDeletingProvider ? t("providers.deleting") : tc("delete")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

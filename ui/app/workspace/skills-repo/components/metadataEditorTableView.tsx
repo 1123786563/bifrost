@@ -14,8 +14,7 @@ export function MetadataTableEditor({
 	onChange: (json: string) => void;
 	error?: string;
 }) {
-	const { t } = useTranslation(["common", "playground"]);
-
+	const { t } = useTranslation("config");
 	// Parse JSON string into key-value pairs for the table
 	let parsedValue: Record<string, string> = {};
 	if (metadataJson.trim()) {
@@ -47,8 +46,8 @@ export function MetadataTableEditor({
 				label=""
 				value={parsedValue}
 				onChange={handleChange}
-				keyPlaceholder={t("playground:skills.files.metadataKeyPlaceholder")}
-				valuePlaceholder={t("playground:skills.files.metadataValuePlaceholder")}
+				keyPlaceholder={t("skillsRepo.metadataKeyPlaceholder")}
+				valuePlaceholder={t("skillsRepo.metadataValuePlaceholder")}
 			/>
 			{error && (
 				<p className="text-destructive mt-1 text-xs" role="alert">

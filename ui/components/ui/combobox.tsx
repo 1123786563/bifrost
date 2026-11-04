@@ -1,12 +1,12 @@
 import { Command as CommandPrimitive } from "cmdk";
 import { CheckIcon, ChevronDownIcon, Loader2Icon, SearchIcon, XIcon } from "lucide-react";
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useTranslation } from "react-i18next";
 
 interface ComboboxContextValue {
 	open: boolean;
@@ -125,7 +125,7 @@ function ComboboxInput({
 	readOnly?: boolean;
 	autoFocus?: boolean;
 }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	const { value, itemToStringLabel, onValueChange } = useComboboxContext();
 
 	const displayValue = React.useMemo(() => {
@@ -147,12 +147,12 @@ function ComboboxInput({
 					className,
 				)}
 			>
-				<span className="truncate">{displayValue || placeholder || t("workspaces:combobox.typeOrSelect")}</span>
+				<span className="truncate">{displayValue || placeholder || t("combobox.selectEllipsis3")}</span>
 				<div className="ml-2 flex shrink-0 items-center gap-1">
 					{showClear && value && (
 						<button
 							type="button"
-							aria-label={t("workspaces:combobox.clearSelection")}
+							aria-label={t("combobox.clearSelection")}
 							data-testid="combobox-clear-button"
 							className="rounded-sm opacity-50 hover:opacity-100"
 							onClick={(e) => {
@@ -240,7 +240,7 @@ function ComboboxContent({
 
 function ComboboxList({
 	className,
-	searchPlaceholder = "Search...",
+	searchPlaceholder,
 	showSearchIcon = false,
 	isSearching = false,
 	onInputKeyDown,
@@ -260,7 +260,7 @@ function ComboboxList({
 	 */
 	clearableSearch?: boolean;
 }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	const { inputValue, setInputValue } = useComboboxContext();
 	const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -274,7 +274,7 @@ function ComboboxList({
 						<SearchIcon className="text-muted-foreground size-3.5 shrink-0" />
 					))}
 				<CommandPrimitive.Input
-					placeholder={searchPlaceholder}
+					placeholder={searchPlaceholder ?? t("combobox.search")}
 					className="placeholder:text-muted-foreground flex h-8 w-full bg-transparent py-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					ref={inputRef}
 					value={inputValue}
@@ -284,7 +284,7 @@ function ComboboxList({
 				{clearableSearch && inputValue.length > 0 && (
 					<button
 						type="button"
-						aria-label={t("workspaces:combobox.clearSearch")}
+						aria-label={t("combobox.clearSearch")}
 						data-testid="combobox-search-clear"
 						className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
 						onClick={() => {
@@ -416,7 +416,7 @@ function ComboboxCreatable({
 	noPortal,
 	"data-testid": dataTestId,
 }: ComboboxCreatableProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	const [open, setOpen] = React.useState(false);
 	const [query, setQuery] = React.useState(value ?? "");
 
@@ -465,7 +465,7 @@ function ComboboxCreatable({
 							selectValue(createValue);
 						}
 					}}
-					placeholder={placeholder ?? t("workspaces:combobox.typeOrSelect")}
+					placeholder={placeholder ?? t("combobox.typeOrSelect")}
 					disabled={disabled}
 					data-testid={dataTestId}
 					className={cn(
@@ -503,7 +503,7 @@ function ComboboxCreatable({
 								className="data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none"
 								onSelect={() => selectValue(createValue)}
 							>
-								<span>{createLabel?.(createValue) ?? `Use "${createValue}"`}</span>
+								<span>{createLabel?.(createValue) ?? t("combobox.use", { value: createValue })}</span>
 							</CommandPrimitive.Item>
 						)}
 					</CommandPrimitive.List>
@@ -530,11 +530,11 @@ type ComboboxSelectProps = (ComboboxSelectSingleProps | ComboboxSelectMultiProps
 function ComboboxSelect(props: ComboboxSelectProps) {
 	const {
 		options,
-		placeholder,
+		placeholder: placeholderProp,
 		disabled = false,
 		disableSearch = false,
 		className,
-		emptyMessage,
+		emptyMessage: emptyMessageProp,
 		noPortal,
 		compactTrigger = false,
 		creatable = false,
@@ -545,8 +545,10 @@ function ComboboxSelect(props: ComboboxSelectProps) {
 		id,
 		"aria-label": ariaLabel,
 	} = props;
+	const { t } = useTranslation("common");
+	const placeholder = placeholderProp ?? t("combobox.select");
+	const emptyMessage = emptyMessageProp ?? t("combobox.noResults");
 
-	const { t } = useTranslation(["common", "workspaces"]);
 	const [open, setOpen] = React.useState(false);
 	const [query, setQuery] = React.useState("");
 
@@ -594,16 +596,16 @@ function ComboboxSelect(props: ComboboxSelectProps) {
 					>
 						<div className="flex flex-1 flex-wrap gap-1 overflow-hidden">
 							{selectedValues.length === 0 ? (
-								<span>{placeholder ?? t("workspaces:combobox.typeOrSelect")}</span>
+								<span>{placeholder}</span>
 							) : compactTrigger ? (
-								<span className="text-foreground truncate text-sm">{selectedValues.length} selected</span>
+								<span className="text-foreground truncate text-sm">{t("combobox.selectedCount", { count: selectedValues.length })}</span>
 							) : (
 								selectedValues.map((val) => (
 									<Badge key={val} variant="secondary" className="text-xs">
 										{getLabel(val)}
 										<button
 											type="button"
-											aria-label={`Remove ${getLabel(val)}`}
+											aria-label={t("combobox.removeAria", { label: getLabel(val) })}
 											data-testid={`combobox-remove-${val}`}
 											className="ml-1 rounded-full opacity-50 outline-none hover:opacity-100"
 											onClick={(e) => {
@@ -625,7 +627,7 @@ function ComboboxSelect(props: ComboboxSelectProps) {
 						{!disableSearch && (
 							<div className="flex items-center border-b px-3">
 								<CommandPrimitive.Input
-									placeholder={searchPlaceholder || "Search..."}
+									placeholder={searchPlaceholder || t("combobox.search")}
 									className="placeholder:text-muted-foreground flex h-8 w-full bg-transparent py-3 text-sm outline-none"
 									value={query}
 									onValueChange={setQuery}
@@ -660,11 +662,11 @@ function ComboboxSelect(props: ComboboxSelectProps) {
 									className="data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none"
 									onSelect={() => props.onValueChange?.([...selectedValues, createValue])}
 								>
-									<span>{createLabel?.(createValue) ?? `Use "${createValue}"`}</span>
+									<span>{createLabel?.(createValue) ?? t("combobox.use", { value: createValue })}</span>
 								</CommandPrimitive.Item>
 							)}
 							{!disableSearch && filtered.length === 0 && !creatable && (
-								<div className="text-muted-foreground py-6 text-center text-sm">{emptyMessage ?? t("workspaces:combobox.noResults")}</div>
+								<div className="text-muted-foreground py-6 text-center text-sm">{emptyMessage}</div>
 							)}
 						</CommandPrimitive.List>
 					</CommandPrimitive>
@@ -704,7 +706,7 @@ function ComboboxSelect(props: ComboboxSelectProps) {
 						{!props.hideClear && props.value && (
 							<button
 								type="button"
-								aria-label={t("workspaces:combobox.clearSelection")}
+								aria-label={t("combobox.clearSelection")}
 								data-testid="combobox-select-clear-button"
 								className="rounded-sm opacity-50 hover:opacity-100"
 								onClick={(e) => {
@@ -725,7 +727,7 @@ function ComboboxSelect(props: ComboboxSelectProps) {
 					{!disableSearch && (
 						<div className="flex items-center border-b px-3">
 							<CommandPrimitive.Input
-								placeholder={searchPlaceholder || "Search..."}
+								placeholder={searchPlaceholder || t("combobox.search")}
 								className="placeholder:text-muted-foreground flex h-8 w-full bg-transparent py-3 text-sm outline-none"
 								value={query}
 								onValueChange={setQuery}
@@ -759,11 +761,11 @@ function ComboboxSelect(props: ComboboxSelectProps) {
 									setOpen(false);
 								}}
 							>
-								<span>{createLabel?.(createValue) ?? `Use "${createValue}"`}</span>
+								<span>{createLabel?.(createValue) ?? t("combobox.use", { value: createValue })}</span>
 							</CommandPrimitive.Item>
 						)}
 						{!disableSearch && filtered.length === 0 && !creatable && (
-							<div className="text-muted-foreground py-6 text-center text-sm">{emptyMessage ?? t("workspaces:combobox.noResults")}</div>
+							<div className="text-muted-foreground py-6 text-center text-sm">{emptyMessage}</div>
 						)}
 					</CommandPrimitive.List>
 				</CommandPrimitive>

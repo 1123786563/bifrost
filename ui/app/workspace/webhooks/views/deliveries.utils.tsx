@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { ParseKeys } from "i18next";
 import i18n from "@/lib/i18n";
 import { WebhookDelivery, WebhookDeliveryOutcome } from "@/lib/types/webhooks";
 import { Fragment } from "react";
@@ -11,22 +12,21 @@ export const OUTCOME_COLORS: Record<WebhookDeliveryOutcome, string> = {
 	exhausted: "bg-red-100 text-red-800",
 };
 
-// Labels resolve through i18n at access time; the shared badge copy lives with
-// the other webhook status tooltips in the governance namespace.
-export const OUTCOME_LABELS: Record<WebhookDeliveryOutcome, string> = {
-	get delivered() {
-		return i18n.t("governance:webhooks.details.statusTooltipDelivered");
-	},
-	get retryable_failure() {
-		return i18n.t("governance:webhooks.details.statusTooltipRetrying");
-	},
-	get permanent_failure() {
-		return i18n.t("governance:webhooks.details.statusTooltipFailed");
-	},
-	get exhausted() {
-		return i18n.t("governance:webhooks.details.statusTooltipExhausted");
-	},
+const OUTCOME_LABEL_KEYS: Record<WebhookDeliveryOutcome, ParseKeys<"governance">> = {
+	delivered: "webhooks.outcomes.delivered",
+	retryable_failure: "webhooks.outcomes.retrying",
+	permanent_failure: "webhooks.outcomes.failed",
+	exhausted: "webhooks.outcomes.exhausted",
 };
+
+export const OUTCOME_LABELS: Record<WebhookDeliveryOutcome, string> = {
+	delivered: "delivered",
+	retryable_failure: "retrying",
+	permanent_failure: "failed",
+	exhausted: "retries exhausted",
+};
+
+const outcomeLabel = (outcome: WebhookDeliveryOutcome) => i18n.t(OUTCOME_LABEL_KEYS[outcome], { ns: "governance" });
 
 // Wraps a badge with the attempt's error text as a tooltip when present.
 export const withErrorTooltip = (badge: React.ReactNode, error?: string) => {
@@ -47,7 +47,7 @@ export const withErrorTooltip = (badge: React.ReactNode, error?: string) => {
 export const outcomeBadge = (attempt: WebhookDelivery) =>
 	withErrorTooltip(
 		<Badge variant="outline" className={OUTCOME_COLORS[attempt.outcome]}>
-			{OUTCOME_LABELS[attempt.outcome]}
+			{outcomeLabel(attempt.outcome)}
 		</Badge>,
 		attempt.error,
 	);
@@ -130,8 +130,8 @@ export const groupDeliveries = (rows: WebhookDelivery[]): DeliveryGroup[] => {
 			key: `${webhookId}:${index}`,
 			label:
 				index === 0
-					? i18n.t("governance:webhooks.deliveries.sends.original")
-					: i18n.t("governance:webhooks.deliveries.sends.redelivery", { n: index }),
+					? i18n.t("webhooks.details.original", { ns: "governance" })
+					: i18n.t("webhooks.details.redelivery", { ns: "governance", n: index }),
 			attempts: sendAttempts,
 		}));
 		return { webhookId, latest: attempts[0], latestSend: sends[sends.length - 1], sends };

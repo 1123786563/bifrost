@@ -4,8 +4,8 @@ import { isJson } from "@/lib/utils/validation";
 import { CodeEditor } from "@/components/ui/codeEditor";
 import { PencilIcon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import MessageRoleSwitcher from "./messageRoleSwitcher";
 import { useTranslation } from "react-i18next";
+import MessageRoleSwitcher from "./messageRoleSwitcher";
 
 /**
  * Renders an editable view for a tool result message that supports role switching, inline text editing, JSON-aware editing, and removal.
@@ -32,7 +32,7 @@ export default function ToolResultMessageView({
 	onChange: (serialized: SerializedMessage) => void;
 	onRemove?: () => void;
 }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("config");
 	const [editMode, setEditMode] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const messageRef = useRef(message);
@@ -98,7 +98,7 @@ export default function ToolResultMessageView({
 					{!disabled && (
 						<button
 							type="button"
-							aria-label={t("workspaces:promptsRepo.messages.editAria")}
+							aria-label={t("promptRepo.editMessageAria")}
 							data-testid="tool-result-msg-edit"
 							onClick={() => setEditMode(true)}
 							className="hover:bg-muted focus:bg-muted rounded-sm p-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
@@ -109,7 +109,7 @@ export default function ToolResultMessageView({
 					{!disabled && onRemove && (
 						<button
 							type="button"
-							aria-label={t("workspaces:promptsRepo.messages.deleteAria")}
+							aria-label={t("promptRepo.deleteMessageAria")}
 							data-testid="tool-result-msg-delete"
 							onClick={onRemove}
 							className="hover:bg-muted focus:bg-muted rounded-sm p-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
@@ -134,7 +134,7 @@ export default function ToolResultMessageView({
 						onBlur={() => setEditMode(false)}
 					/>
 				) : isEmpty ? (
-					<div className="text-muted-foreground min-h-[20px] font-mono text-sm italic">{t("workspaces:prompts.toolResultPlaceholder")}</div>
+					<div className="text-muted-foreground min-h-[20px] font-mono text-sm italic">{t("promptRepo.enterToolResult")}</div>
 				) : contentIsJson ? (
 					<CodeEditor
 						wrap

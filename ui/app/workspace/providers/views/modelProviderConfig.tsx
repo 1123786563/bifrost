@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function ModelProviderConfig({ provider, onRequestDelete }: Props) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
 	const [showConfigSheet, setShowConfigSheet] = useState(false);
 	const hasDeleteProviderAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Delete);
 	const hasUpdateProviderAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Update);
@@ -33,7 +33,7 @@ export default function ModelProviderConfig({ provider, onRequestDelete }: Props
 					variant="outline"
 					onClick={onRequestDelete}
 					className="text-destructive hover:bg-destructive/10 hover:text-destructive size-9 px-0"
-					aria-label={t("providers:providerConfig.deleteAria")}
+					aria-label={t("providers.deleteProviderAria")}
 					data-testid="provider-delete-btn"
 				>
 					<Trash className="h-4 w-4" />
@@ -45,15 +45,15 @@ export default function ModelProviderConfig({ provider, onRequestDelete }: Props
 						variant="outline"
 						className="size-9 px-0 @3xl/card-header:h-9 @3xl/card-header:w-auto @3xl/card-header:px-4"
 						onClick={() => setShowConfigSheet(true)}
-						aria-label={hasUpdateProviderAccess ? t("providers:providerConfig.editAria") : t("providers:providerConfig.viewAria")}
+						aria-label={hasUpdateProviderAccess ? t("providers.editConfigAria") : t("providers.viewConfigAria")}
 					>
 						<SettingsIcon className="h-4 w-4" />
 						<span className="hidden @3xl/card-header:inline">
-							{hasUpdateProviderAccess ? t("providers:providerConfig.edit") : t("providers:providerConfig.view")}
+							{hasUpdateProviderAccess ? t("providers.editConfig") : t("providers.viewConfig")}
 						</span>
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>{hasUpdateProviderAccess ? t("providers:providerConfig.edit") : t("providers:providerConfig.view")}</TooltipContent>
+				<TooltipContent>{hasUpdateProviderAccess ? t("providers.editConfig") : t("providers.viewConfig")}</TooltipContent>
 			</Tooltip>
 		</div>
 	);

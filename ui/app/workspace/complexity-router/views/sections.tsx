@@ -1,10 +1,8 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { DecisionModelSelector, DecisionProviderSelector } from "@/components/ui/decisionModelSelector";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
-import { ModelSelector } from "@/components/ui/modelSelector";
-import { ProviderSelector } from "@/components/ui/providerSelector";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { TagInput } from "@/components/ui/tagInput";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,14 +19,14 @@ import {
 	SELF_HOSTED_DECISION_MODELS,
 	TIER_PHRASE_LIST_DEFINITIONS,
 } from "@/lib/types/complexityRouter";
-import { useGetModelsQuery } from "@/lib/store/apis/providersApi";
 import type { ModelProvider } from "@/lib/types/config";
 import { cn } from "@/lib/utils";
-import { decisionProviderIconKey } from "@/lib/utils/decisionModelProviders";
+import { clefModelFromProvider, isDecisionProvider } from "@/lib/utils/decisionModelProviders";
 import { Link } from "@tanstack/react-router";
+import type { ParseKeys } from "i18next";
 import { ArrowRight, Check, ChevronRight, Info, LoaderCircle, Pencil, RotateCcw, Scale, TriangleAlert, Waypoints } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useCallback, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import {
 	Controller,
 	useWatch,
@@ -38,16 +36,7 @@ import {
 	type UseFormRegister,
 	type UseFormSetValue,
 } from "react-hook-form";
-import {
-	clefModelFromProvider,
-	decisionTimeoutFieldValue,
-	defaultDecisionModel,
-	isDecisionProvider,
-	isOpenAIDecisionProvider,
-	selfHostedModelGroups,
-	type AnalyzerFormValues,
-	type DecisionProviderState,
-} from "../formSchema";
+import { decisionTimeoutFieldValue, type AnalyzerFormValues, type DecisionProviderState } from "../formSchema";
 import { FieldLabel, InfoTip, SectionHeading } from "./formPrimitives";
 
 // The Complexity Router page's sections. Each binds to the page's single form.
@@ -67,11 +56,23 @@ const PHRASE_LIST_HEIGHT = 300;
 // list's height and a card stays about as tall as a phrase card.
 const DECISION_LIST_HEIGHT = 140;
 
+type ComplexityKey = ParseKeys<"models", {}, "routing.complexityUi">;
+
+const DECISION_TIER_LABEL_KEYS = {
+	SIMPLE: "tierSimple",
+	MEDIUM: "tierMedium",
+	COMPLEX: "tierComplex",
+} as const satisfies Record<DecisionTier, ComplexityKey>;
+
+const PHRASE_TIER_KEYS = {
+	simple_keywords: { label: "tierSimple", description: "tierSimpleDesc" },
+	medium_keywords: { label: "tierMedium", description: "tierMediumDesc" },
+	complex_keywords: { label: "tierComplex", description: "tierComplexDesc" },
+} as const satisfies Record<KeywordListKey, { label: ComplexityKey; description: ComplexityKey }>;
+
 function testIdPart(value: string) {
 	return value.replace(/_/g, "-");
 }
-
-const tierLabelKey = (tier: DecisionTier) => `governance:complexityRouter.phrases.tiers.${tier.toLowerCase()}.label`;
 
 interface PhraseTierGridProps {
 	control: Control<AnalyzerFormValues>;
@@ -81,12 +82,12 @@ interface PhraseTierGridProps {
 // PhraseTierGrid is the semantic classifier's work surface: one editable list
 // of reference phrases per tier.
 export function PhraseTierGrid({ control, errors }: PhraseTierGridProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
 	return (
 		<div className="space-y-3">
 			<Alert variant="info" data-testid="complexity-router-phrase-defaults-callout">
 				<Info className="h-4 w-4" />
-				<AlertDescription>{t("governance:complexityRouter.phrases.callout")}</AlertDescription>
+				<AlertDescription>{tcpx("phraseDefaultsCallout")}</AlertDescription>
 			</Alert>
 
 			{/* Root-level phrase issues such as cross-tier duplicates have no single
@@ -102,7 +103,8 @@ export function PhraseTierGrid({ control, errors }: PhraseTierGridProps) {
 			    from its position. */}
 			<div className="grid items-stretch gap-3 md:grid-cols-3">
 				{TIER_PHRASE_LIST_DEFINITIONS.map(({ key }) => {
-					const tier = key.replace("_keywords", "");
+					const label = tcpx(PHRASE_TIER_KEYS[key].label);
+					const description = tcpx(PHRASE_TIER_KEYS[key].description);
 					const fieldError = errors?.[key as KeywordListKey];
 					const errorId = `keywords-${key}-error`;
 					return (
@@ -111,31 +113,24 @@ export function PhraseTierGrid({ control, errors }: PhraseTierGridProps) {
 								control={control}
 								name={`keywords.${key}` as const}
 								rules={{
-									validate: (value) =>
-										value.length > 0
-											? true
-											: t("governance:complexityRouter.phrases.emptyListError", {
-													tier: t(`governance:complexityRouter.phrases.tiers.${tier}.label`),
-												}),
+									validate: (value) => (value.length > 0 ? true : tcpx("phrasesEmpty", { tier: label })),
 								}}
 								render={({ field }) => (
 									<div className="flex flex-1 flex-col space-y-2 p-4 pl-5">
 										<div className="flex items-center justify-between">
-											<span className="text-xs font-medium">{t(`governance:complexityRouter.phrases.tiers.${tier}.label`)}</span>
+											<span className="text-xs font-medium">{label}</span>
 											<span className="text-muted-foreground font-mono text-[11px] tabular-nums">
-												{t("governance:complexityRouter.phrases.count", { count: field.value.length })}
+												{tcpx("phraseCount", { count: field.value.length })}
 											</span>
 										</div>
-										<p className="text-muted-foreground grow text-xs leading-relaxed">
-											{t(`governance:complexityRouter.phrases.tiers.${tier}.description`)}
-										</p>
+										<p className="text-muted-foreground grow text-xs leading-relaxed">{description}</p>
 										<TagInput
 											data-testid={`complexity-router-keywords-${testIdPart(key)}-input`}
 											value={field.value}
 											onValueChange={field.onChange}
 											listHeight={PHRASE_LIST_HEIGHT}
 											submitOnComma={false}
-											placeholder={t("governance:complexityRouter.phrases.placeholder")}
+											placeholder={tcpx("phrasePlaceholder")}
 											aria-invalid={fieldError ? true : undefined}
 											aria-describedby={fieldError ? errorId : undefined}
 											className={cn(fieldError && "border-destructive")}
@@ -173,12 +168,12 @@ interface LLMPromptSectionProps {
 // rather than in the sheet with the fallback's other settings, and only shows
 // while the llm fallback is on, because that is the only time it runs.
 export function LLMPromptSection({ control, error, canUpdate, defaultPrompt, livePrompt, onEdit, onReset }: LLMPromptSectionProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
 	return (
 		<div className="space-y-3">
 			<SectionHeading
-				title={t("governance:complexityRouter.llmPrompt.title")}
-				description={t("governance:complexityRouter.llmPrompt.description")}
+				title={tcpx("fallbackPromptTitle")}
+				description={tcpx("fallbackPromptDescription")}
 				aside={
 					<Button
 						type="button"
@@ -189,7 +184,7 @@ export function LLMPromptSection({ control, error, canUpdate, defaultPrompt, liv
 						data-testid="complexity-router-llm-prompt-reset-button"
 					>
 						<RotateCcw className="h-3.5 w-3.5" />
-						{t("governance:shared.actions.resetToDefault")}
+						{tcpx("resetToDefault")}
 					</Button>
 				}
 			/>
@@ -218,7 +213,7 @@ export function LLMPromptSection({ control, error, canUpdate, defaultPrompt, liv
 				<p className="text-destructive text-xs">{error.message}</p>
 			) : (
 				<p className="text-muted-foreground text-xs leading-relaxed">
-					{t("governance:complexityRouter.llmPrompt.helper")}{" "}
+					{tcpx("fallbackPromptHelp")}{" "}
 					<span className="font-mono tabular-nums">
 						{livePrompt.length}/{MAX_LLM_PROMPT_CHARACTERS}
 					</span>
@@ -237,14 +232,12 @@ interface SessionRoutingCardProps {
 // SessionRoutingCard toggles session-aware routing, which works the same on
 // top of either classifier.
 export function SessionRoutingCard({ control, errors, canUpdate }: SessionRoutingCardProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
 	return (
 		<div className="bg-card flex items-center justify-between gap-6 rounded-sm border p-4">
 			<div className="space-y-1">
-				<FieldLabel htmlFor="complexity-router-session-enabled">{t("governance:complexityRouter.sessionCard.label")}</FieldLabel>
-				<p className="text-muted-foreground max-w-3xl text-xs leading-relaxed">
-					{t("governance:complexityRouter.sessionCard.description")}
-				</p>
+				<FieldLabel htmlFor="complexity-router-session-enabled">{tcpx("sessionTitle")}</FieldLabel>
+				<p className="text-muted-foreground max-w-3xl text-xs leading-relaxed">{tcpx("sessionHelp")}</p>
 				{errors?.enabled && (
 					<p id="complexity-router-session-enabled-error" className="text-destructive text-xs">
 						{errors.enabled.message}
@@ -288,59 +281,39 @@ interface DecisionFieldsProps {
 // DecisionFields holds the decision model's settings: which model answers, and
 // how much conversation it sees and for how long. They apply wherever the
 // decision model runs, as the primary classifier or as the semantic fallback, so
-// both places render this. The model control follows the provider: Typesafe lists
-// Jev releases, OpenAI and OpenRouter list the models the datasheet marks as decision
-// models, a Cloudflare provider's URL fixes its Clef model,
-// and a self-hosted provider offers the models it lists, or the known Laya and
-// Nimble checkpoints when it lists none.
+// both places render this. The provider and model controls are the shared
+// decision-model pickers, which decide what each provider offers.
 export function DecisionFields({ control, register, setValue, errors, canUpdate, providers, providerKeyIds }: DecisionFieldsProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("models");
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
 	const providerName = useWatch({ control, name: "decision.provider" });
 	const model = useWatch({ control, name: "decision.model" });
-	const provider = providers.find((candidate) => candidate.name === providerName);
-	const servesJev = providerName === "typesafe";
-	const servesOpenRouter = providerName === "openrouter";
-	const servesCloudflare = providerName === "cloudflare";
-	const servesPerplexity = providerName === "perplexity";
-	const servesOllama = providerName === "ollama";
-	const servesOpenAI = provider ? isOpenAIDecisionProvider(provider) : providerName === "openai";
-	const servesClef = clefModelFromProvider(provider) !== undefined;
-	// These providers' catalogs mix decision models with chat models, so only their decision models are listed.
-	const listsDecisionModels = servesOpenAI || servesOpenRouter || servesCloudflare || servesPerplexity || servesOllama;
-	const selfHosted = provider !== undefined && !servesJev && !listsDecisionModels && !servesClef;
-
-	const { data: listed } = useGetModelsQuery(
-		{ provider: providerName, keys: providerKeyIds.length > 0 ? providerKeyIds : undefined, limit: 50 },
-		{ skip: !selfHosted },
+	// Stable, since the model picker selects a self-hosted provider's first listed model from an effect.
+	const selectModel = useCallback(
+		(next: string) => setValue("decision.model", next, { shouldDirty: true, shouldValidate: true }),
+		[setValue],
 	);
-	const listedModels = useMemo(() => (listed?.models ?? []).map((entry) => entry.name), [listed]);
-	// A self-hosted provider that lists its models starts on the first one.
-	useEffect(() => {
-		if (selfHosted && !model && listedModels.length > 0) setValue("decision.model", listedModels[0], { shouldDirty: true });
-	}, [selfHosted, model, listedModels, setValue]);
+	const provider = providers.find((candidate) => candidate.name === providerName);
+	const servesClef = clefModelFromProvider(provider) !== undefined;
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2" data-testid="complexity-router-decision-fields">
 			<div className="space-y-2">
-				<FieldLabel htmlFor="decision-provider" tooltip={t("governance:complexityRouter.decisionFields.providerTooltip")}>
-					{t("governance:complexityRouter.decisionFields.providerLabel")}
+				<FieldLabel htmlFor="decision-provider" tooltip={tcpx("decisionProviderTip")}>
+					{t("modelCatalog.provider")}
 				</FieldLabel>
 				<Controller
 					control={control}
 					name="decision.provider"
 					render={({ field }) => (
-						<ProviderSelector
+						<DecisionProviderSelector
 							inputId="decision-provider"
 							data-testid="complexity-router-decision-provider-select"
-							filter={isDecisionProvider}
-							resolveIconKey={decisionProviderIconKey}
+							providers={providers}
 							value={field.value || ""}
-							onChange={(value: string) => {
-								if (value === field.value) return;
-								field.onChange(value);
-								// A model name only means something on its own provider.
-								const next = providers.find((candidate) => candidate.name === value);
-								setValue("decision.model", defaultDecisionModel(next), { shouldDirty: true });
+							onChange={(next, defaultModel) => {
+								field.onChange(next);
+								setValue("decision.model", defaultModel, { shouldDirty: true });
 							}}
 							disabled={!canUpdate}
 						/>
@@ -348,144 +321,45 @@ export function DecisionFields({ control, register, setValue, errors, canUpdate,
 				/>
 				{!providers.some(isDecisionProvider) && (
 					<p className="text-muted-foreground text-xs" data-testid="complexity-router-decision-no-provider">
-						{t("governance:complexityRouter.decisionFields.noProviderYet")}{" "}
-						<Link to="/workspace/providers" className="text-primary underline-offset-2 hover:underline">
-							{t("governance:complexityRouter.decisionFields.addOne")}
-						</Link>
-						.
+						<Trans
+							t={tcpx}
+							i18nKey="noDecisionProvider"
+							components={{ link: <Link to="/workspace/providers" className="text-primary underline-offset-2 hover:underline" /> }}
+						/>
 					</p>
 				)}
 				{errors?.provider && <p className="text-destructive text-xs">{errors.provider.message}</p>}
 			</div>
 			<div className="space-y-2">
-				<FieldLabel htmlFor="decision-model" tooltip={t("governance:complexityRouter.decisionFields.modelTooltip")}>
-					{t("governance:complexityRouter.decisionFields.modelLabel")}
+				<FieldLabel htmlFor="decision-model" tooltip={tcpx("decisionModelTip")}>
+					{t("modelCatalog.model")}
 				</FieldLabel>
 				<Controller
 					control={control}
 					name="decision.model"
-					render={({ field }) => {
-						if (listsDecisionModels) {
-							// OpenAI's, OpenRouter's, Cloudflare's, Perplexity's and Ollama's catalogs (and a
-							// custom OpenAI-based provider's) are mostly chat models, which the decisions
-							// endpoint rejects, so only their decision models are listed.
-							return (
-								<ModelSelector
-									inputId="decision-model"
-									data-testid="complexity-router-decision-model-select"
-									hideSearchIcon
-									openWithEmptySearch
-									provider={providerName}
-									keys={providerKeyIds}
-									decisions
-									value={field.value ?? ""}
-									onChange={(next) => field.onChange(next)}
-									placeholder={t("governance:complexityRouter.decisionFields.searchDecisionModels")}
-									emptyMessage={t("governance:complexityRouter.decisionFields.noDecisionModels")}
-									disabled={!canUpdate}
-								/>
-							);
-						}
-						if (servesJev || !provider) {
-							return (
-								<ModelSelector
-									inputId="decision-model"
-									data-testid="complexity-router-decision-model-select"
-									hideSearchIcon
-									openWithEmptySearch
-									provider={providerName || undefined}
-									keys={providerKeyIds}
-									value={field.value ?? ""}
-									onChange={(next) => field.onChange(next)}
-									allowCustomModel
-									placeholder={
-										providerName
-											? t("governance:complexityRouter.decisionFields.searchJev")
-											: t("governance:shared.actions.selectProviderFirst")
-									}
-									disabled={!canUpdate || !providerName}
-								/>
-							);
-						}
-						if (servesClef) {
-							// Cloudflare binds the model to the provider's URL, so it is shown, not
-							// chosen: selecting the provider fills it in from that URL.
-							return (
-								<Input
-									id="decision-model"
-									data-testid="complexity-router-decision-model-input"
-									value={field.value ?? ""}
-									readOnly
-									disabled
-									className="font-mono"
-								/>
-							);
-						}
-						if (listedModels.length > 0) {
-							// A listing is one page of a possibly longer catalog, so search and typed
-							// names stay available instead of a fixed list that hides later models.
-							return (
-								<ModelSelector
-									inputId="decision-model"
-									data-testid="complexity-router-decision-model-select"
-									hideSearchIcon
-									openWithEmptySearch
-									provider={providerName || undefined}
-									keys={providerKeyIds}
-									value={field.value ?? ""}
-									onChange={(next) => field.onChange(next)}
-									allowCustomModel
-									placeholder={t("governance:shared.actions.searchOrTypeModel")}
-									disabled={!canUpdate}
-								/>
-							);
-						}
-						return (
-							<Select value={field.value || undefined} onValueChange={field.onChange} disabled={!canUpdate}>
-								<SelectTrigger className="w-full" id="decision-model" data-testid="complexity-router-decision-model-select">
-									<SelectValue placeholder={t("governance:complexityRouter.decisionFields.selectModel")} />
-								</SelectTrigger>
-								<SelectContent>
-									{selfHostedModelGroups(providerName).map((group) => (
-										<SelectGroup key={group.label}>
-											<SelectLabel>{group.label}</SelectLabel>
-											{group.models.map((name) => (
-												<SelectItem key={name} value={name}>
-													{name}
-												</SelectItem>
-											))}
-										</SelectGroup>
-									))}
-								</SelectContent>
-							</Select>
-						);
-					}}
+					render={({ field }) => (
+						<DecisionModelSelector
+							inputId="decision-model"
+							data-testid="complexity-router-decision-model-select"
+							fixedModelTestId="complexity-router-decision-model-input"
+							providerName={providerName}
+							provider={provider}
+							keys={providerKeyIds}
+							value={field.value ?? ""}
+							onChange={selectModel}
+							disabled={!canUpdate}
+						/>
+					)}
 				/>
-				{servesClef && <p className="text-muted-foreground text-xs">{t("governance:complexityRouter.decisionFields.clefSetBy")}</p>}
+				{servesClef && <p className="text-muted-foreground text-xs">{tcpx("clefUrlNote")}</p>}
 				{LAYA_MODELS.includes(model) && (
-					<p className="text-muted-foreground text-xs">
-						{t("governance:complexityRouter.decisionFields.layaNote", {
-							tip:
-								model === "english"
-									? t("governance:complexityRouter.decisionFields.layaTipMultilingual")
-									: t("governance:complexityRouter.decisionFields.layaTipShort"),
-						})}
-					</p>
+					<p className="text-muted-foreground text-xs">{model === "english" ? tcpx("layaNoteEnglish") : tcpx("layaNoteOther")}</p>
 				)}
 				{errors?.model && <p className="text-destructive text-xs">{errors.model.message}</p>}
 			</div>
 			<div className="space-y-2">
-				<FieldLabel
-					htmlFor="decision-previous-message-count"
-					tooltip={
-						<>
-							User messages sent to the decision model in addition to the current request, oldest to newest. Widening this lets a short
-							follow-up like &ldquo;and make it faster&rdquo; inherit earlier intent, but sends more input tokens per request. Assistant
-							replies are never sent. Defaults to 1.
-						</>
-					}
-				>
-					{t("governance:complexityRouter.decisionFields.maxMessagesLabel")}
+				<FieldLabel htmlFor="decision-previous-message-count" tooltip={tcpx("decisionMaxMessagesTip")}>
+					{tcpx("maxMessagesSend")}
 				</FieldLabel>
 				<Input
 					id="decision-previous-message-count"
@@ -502,8 +376,8 @@ export function DecisionFields({ control, register, setValue, errors, canUpdate,
 				{errors?.previous_message_count && <p className="text-destructive text-xs">{errors.previous_message_count.message}</p>}
 			</div>
 			<div className="space-y-2">
-				<FieldLabel htmlFor="decision-timeout" tooltip={t("governance:complexityRouter.decisionFields.timeoutTooltip")}>
-					{t("governance:complexityRouter.decisionFields.timeoutLabel")}
+				<FieldLabel htmlFor="decision-timeout" tooltip={tcpx("decisionTimeoutTip")}>
+					{tcpx("classificationTimeout")}
 				</FieldLabel>
 				<Controller
 					control={control}
@@ -528,17 +402,41 @@ export function DecisionFields({ control, register, setValue, errors, canUpdate,
 				/>
 				{errors?.timeout && <p className="text-destructive text-xs">{errors.timeout.message}</p>}
 			</div>
+			<div className="space-y-2">
+				<FieldLabel htmlFor="decision-min-confidence" tooltip={tcpx("decisionMinConfidenceTip")}>
+					{tcpx("confidenceThreshold")}
+				</FieldLabel>
+				<Input
+					id="decision-min-confidence"
+					data-testid="complexity-router-decision-min-confidence-input"
+					type="number"
+					min={0}
+					max={1}
+					step={0.01}
+					{...register("decision.min_confidence", { valueAsNumber: true })}
+					disabled={!canUpdate}
+					aria-invalid={errors?.min_confidence ? true : undefined}
+					className={cn("font-mono", errors?.min_confidence && "border-destructive focus-visible:ring-destructive")}
+				/>
+				{errors?.min_confidence && <p className="text-destructive text-xs">{errors.min_confidence.message}</p>}
+			</div>
 		</div>
 	);
 }
 
-// The recommendation matches the semantic phrase callout, so both classifiers
-// open the same way. The line under it says where the cards' content goes.
 type DecisionListField = "signals" | "examples";
 
 // Signals are traits to look for; examples are requests that have them. The
 // tooltips say so because the two lists otherwise read as interchangeable.
-const DECISION_LIST_FIELDS: DecisionListField[] = ["signals", "examples"];
+const DECISION_LIST_FIELDS: Array<{
+	field: DecisionListField;
+	label: ComplexityKey;
+	placeholder: ComplexityKey;
+	tooltip: ComplexityKey;
+}> = [
+	{ field: "signals", label: "signalsLabel", placeholder: "signalsPlaceholder", tooltip: "signalsTip" },
+	{ field: "examples", label: "examplesLabel", placeholder: "examplesPlaceholder", tooltip: "examplesTip" },
+];
 
 // sameList compares lists by value and order, matching the gateway's check
 // for whether an override equals the shipped default.
@@ -560,7 +458,8 @@ interface DecisionDefinitionFieldProps {
 // semantic cards' tier descriptions, and turns into a textarea only while it
 // is being edited. An invalid definition stays open so its error is visible.
 function DecisionDefinitionField({ tier, control, error, canUpdate, edited, onReset }: DecisionDefinitionFieldProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
+	const tierLabel = tcpx(DECISION_TIER_LABEL_KEYS[tier]);
 	const [editing, setEditing] = useState(false);
 	const open = editing || Boolean(error);
 	const id = `decision-${tier.toLowerCase()}-definition`;
@@ -572,7 +471,7 @@ function DecisionDefinitionField({ tier, control, error, canUpdate, edited, onRe
 				<div className="flex flex-1 flex-col space-y-1.5">
 					<div className="flex h-6 items-center justify-between">
 						<label htmlFor={id} className="text-xs font-medium">
-							{t(tierLabelKey(tier))}
+							{tierLabel}
 						</label>
 						<div className="flex items-center gap-1">
 							{canUpdate && !open && (
@@ -583,16 +482,14 @@ function DecisionDefinitionField({ tier, control, error, canUpdate, edited, onRe
 											variant="ghost"
 											size="icon"
 											className="size-6"
-											aria-label={t("governance:complexityRouter.decisionGuidance.editAria", { tier: tier.toLowerCase() })}
+											aria-label={tcpx("definitionEditAria", { tier: tierLabel.toLowerCase() })}
 											onClick={() => setEditing(true)}
 											data-testid={`complexity-router-decision-${tier.toLowerCase()}-definition-edit-button`}
 										>
 											<Pencil className="size-3" />
 										</Button>
 									</TooltipTrigger>
-									<TooltipContent className="max-w-xs leading-relaxed">
-										{t("governance:complexityRouter.decisionGuidance.editTooltip", { tier: t(tierLabelKey(tier)) })}
-									</TooltipContent>
+									<TooltipContent className="max-w-xs leading-relaxed">{tcpx("definitionTooltip", { tier: tierLabel })}</TooltipContent>
 								</Tooltip>
 							)}
 							{edited && (
@@ -603,7 +500,7 @@ function DecisionDefinitionField({ tier, control, error, canUpdate, edited, onRe
 											variant="ghost"
 											size="icon"
 											className="size-6"
-											aria-label={t("governance:complexityRouter.decisionGuidance.resetAria", { tier: tier.toLowerCase() })}
+											aria-label={tcpx("definitionResetAria", { tier: tierLabel.toLowerCase() })}
 											onClick={onReset}
 											disabled={!canUpdate}
 											data-testid={`complexity-router-decision-${tier.toLowerCase()}-definition-reset-button`}
@@ -611,9 +508,7 @@ function DecisionDefinitionField({ tier, control, error, canUpdate, edited, onRe
 											<RotateCcw className="size-3" />
 										</Button>
 									</TooltipTrigger>
-									<TooltipContent className="max-w-xs leading-relaxed">
-										{t("governance:complexityRouter.decisionGuidance.resetTooltip")}
-									</TooltipContent>
+									<TooltipContent className="max-w-xs leading-relaxed">{tcpx("definitionResetTooltip")}</TooltipContent>
 								</Tooltip>
 							)}
 						</div>
@@ -680,7 +575,7 @@ export function DecisionGuidanceSection({
 	defaultsLoading,
 	variant,
 }: DecisionGuidanceSectionProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
 	const criteria = useWatch({ control, name: "decision.criteria" });
 	const [fallbackOpen, setFallbackOpen] = useState(false);
 
@@ -688,7 +583,7 @@ export function DecisionGuidanceSection({
 	const isDefaultList = (tier: DecisionTier, field: DecisionListField) =>
 		!!defaults && sameList(criteria?.[tier]?.[field], defaults.criteria[tier][field]);
 	const isAllDefault = COMPLEXITY_TIER_VALUES.every(
-		(tier) => isDefaultDefinition(tier) && DECISION_LIST_FIELDS.every((field) => isDefaultList(tier, field)),
+		(tier) => isDefaultDefinition(tier) && DECISION_LIST_FIELDS.every(({ field }) => isDefaultList(tier, field)),
 	);
 
 	const resetList = (tier: DecisionTier, field: DecisionListField) => {
@@ -702,7 +597,7 @@ export function DecisionGuidanceSection({
 	const resetAll = () => {
 		for (const tier of COMPLEXITY_TIER_VALUES) {
 			resetDefinition(tier);
-			for (const field of DECISION_LIST_FIELDS) resetList(tier, field);
+			for (const { field } of DECISION_LIST_FIELDS) resetList(tier, field);
 		}
 	};
 
@@ -717,9 +612,9 @@ export function DecisionGuidanceSection({
 		<>
 			<Alert variant="info" data-testid="complexity-router-decision-guidance-defaults-callout">
 				<Info className="h-4 w-4" />
-				<AlertDescription>{t("governance:complexityRouter.decisionGuidance.note")}</AlertDescription>
+				<AlertDescription>{tcpx("guidanceNote")}</AlertDescription>
 			</Alert>
-			<p className="text-muted-foreground text-xs leading-relaxed">{t("governance:complexityRouter.decisionGuidance.usage")}</p>
+			<p className="text-muted-foreground text-xs leading-relaxed">{tcpx("guidanceUsage")}</p>
 			{defaults ? (
 				<div className="grid items-stretch gap-3 md:grid-cols-3">
 					{COMPLEXITY_TIER_VALUES.map((tier) => (
@@ -737,7 +632,9 @@ export function DecisionGuidanceSection({
 									edited={!isDefaultDefinition(tier)}
 									onReset={() => resetDefinition(tier)}
 								/>
-								{DECISION_LIST_FIELDS.map((listField) => {
+								{DECISION_LIST_FIELDS.map(({ field: listField, label: labelKey, placeholder: placeholderKey, tooltip: tooltipKey }) => {
+									const label = tcpx(labelKey);
+									const tierLabel = tcpx(DECISION_TIER_LABEL_KEYS[tier]);
 									const fieldError = errors?.criteria?.[tier]?.[listField];
 									const errorId = `decision-${tier.toLowerCase()}-${listField}-error`;
 									const count = criteria?.[tier]?.[listField]?.length ?? 0;
@@ -753,16 +650,8 @@ export function DecisionGuidanceSection({
 													{/* Fixed height so a row with a reset icon lines up with one without. */}
 													<div className="flex h-6 items-center justify-between">
 														<div className="flex items-center gap-1.5">
-															<span className="text-muted-foreground text-xs">
-																{t(`governance:complexityRouter.decisionGuidance.fields.${listField}.label`)}
-															</span>
-															<InfoTip
-																label={t("governance:complexityRouter.decisionGuidance.infoTip", {
-																	field: t(`governance:complexityRouter.decisionGuidance.fields.${listField}.label`).toLowerCase(),
-																})}
-															>
-																{t(`governance:complexityRouter.decisionGuidance.fields.${listField}.tooltip`)}
-															</InfoTip>
+															<span className="text-muted-foreground text-xs">{label}</span>
+															<InfoTip label={tcpx("listAbout", { list: label.toLowerCase() })}>{tcpx(tooltipKey)}</InfoTip>
 														</div>
 														<div className="flex items-center gap-1">
 															<span
@@ -777,10 +666,7 @@ export function DecisionGuidanceSection({
 																	variant="ghost"
 																	size="icon"
 																	className="size-6"
-																	aria-label={t("governance:complexityRouter.decisionGuidance.resetListAria", {
-																		tier: tier.toLowerCase(),
-																		field: listField,
-																	})}
+																	aria-label={tcpx("listResetAria", { tier: tierLabel.toLowerCase(), list: label.toLowerCase() })}
 																	onClick={() => resetList(tier, listField)}
 																	disabled={!canUpdate}
 																	data-testid={`complexity-router-decision-${tier.toLowerCase()}-${listField}-reset-button`}
@@ -796,19 +682,10 @@ export function DecisionGuidanceSection({
 														onValueChange={field.onChange}
 														listHeight={DECISION_LIST_HEIGHT}
 														submitOnComma={false}
-														placeholder={
-															atLimit
-																? t("governance:complexityRouter.decisionGuidance.limitReached", {
-																		max: MAX_DECISION_CRITERIA_ITEMS,
-																	})
-																: t(`governance:complexityRouter.decisionGuidance.fields.${listField}.placeholder`)
-														}
+														placeholder={atLimit ? tcpx("listLimitReached", { max: MAX_DECISION_CRITERIA_ITEMS }) : tcpx(placeholderKey)}
 														readOnly={!canUpdate}
 														disabled={!canUpdate || atLimit}
-														aria-label={t("governance:complexityRouter.decisionGuidance.listAria", {
-															tier: t(tierLabelKey(tier)),
-															field: t(`governance:complexityRouter.decisionGuidance.fields.${listField}.label`).toLowerCase(),
-														})}
+														aria-label={tcpx("listAria", { tier: tierLabel, list: label.toLowerCase() })}
 														aria-invalid={fieldError ? true : undefined}
 														aria-describedby={fieldError ? errorId : undefined}
 														className={cn(fieldError && "border-destructive")}
@@ -835,12 +712,12 @@ export function DecisionGuidanceSection({
 					{defaultsLoading ? (
 						<>
 							<LoaderCircle className="size-3.5 animate-spin" />
-							{t("governance:complexityRouter.decisionGuidance.loading")}
+							{tcpx("guidanceLoading")}
 						</>
 					) : (
 						<>
 							<TriangleAlert className="size-3.5" />
-							{t("governance:complexityRouter.decisionGuidance.unavailable")}
+							{tcpx("guidanceUnavailable")}
 						</>
 					)}
 				</div>
@@ -879,10 +756,8 @@ export function DecisionGuidanceSection({
 					>
 						<ChevronRight className={cn("text-muted-foreground mt-0.5 size-4 shrink-0 transition-transform", open && "rotate-90")} />
 						<span className="space-y-1">
-							<span className="block text-sm font-semibold">{t("governance:complexityRouter.decisionGuidance.fallbackTitle")}</span>
-							<span className="text-muted-foreground block text-xs">
-								{t("governance:complexityRouter.decisionGuidance.fallbackDescription")}
-							</span>
+							<span className="block text-sm font-semibold">{tcpx("fallbackGuidanceTitle")}</span>
+							<span className="text-muted-foreground block text-xs">{tcpx("fallbackGuidanceDescription")}</span>
 						</span>
 					</button>
 				</CollapsibleTrigger>
@@ -896,7 +771,7 @@ export function DecisionGuidanceSection({
 						data-testid="complexity-router-decision-guidance-reset-button"
 					>
 						<RotateCcw className="h-3.5 w-3.5" />
-						{t("governance:complexityRouter.decisionGuidance.resetAll")}
+						{tcpx("resetAll")}
 					</Button>
 				)}
 			</div>
@@ -905,20 +780,27 @@ export function DecisionGuidanceSection({
 	);
 }
 
+const DECISION_PROVIDER_PROBLEM_KEYS = {
+	missing: { message: "providerMissing", action: "providerMissingAction" },
+	failing: { message: "providerFailing", action: "providerFailingAction" },
+	"no-enabled-key": { message: "providerNoKey", action: "providerNoKeyAction" },
+} as const satisfies Record<Exclude<DecisionProviderState, "configured">, { message: ComplexityKey; action: ComplexityKey }>;
+
 // DecisionProviderAlert explains why the decision model cannot run, and links
 // straight to its provider's page. That page opens a blank setup form when the
 // provider does not exist yet, so one click lands on the fix either way.
 export function DecisionProviderAlert({ state, provider }: { state: DecisionProviderState; provider: string }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
 	if (state === "configured" || !provider) return null;
+	const problem = DECISION_PROVIDER_PROBLEM_KEYS[state];
 	return (
 		<Alert variant="warning" data-testid="complexity-router-decision-provider-alert">
 			<TriangleAlert className="h-4 w-4" />
 			<AlertDescription className="gap-2">
-				<span>{t(`governance:complexityRouter.providerAlert.${state}.message`, { provider })}</span>
+				<span>{tcpx(problem.message, { provider })}</span>
 				<Button asChild variant="outline" size="sm" data-testid="complexity-router-decision-provider-link">
 					<Link to="/workspace/providers" search={{ provider }}>
-						{t(`governance:complexityRouter.providerAlert.${state}.action`, { provider })}
+						{tcpx(problem.action, { provider })}
 						<ArrowRight className="size-3.5" />
 					</Link>
 				</Button>
@@ -929,42 +811,47 @@ export function DecisionProviderAlert({ state, provider }: { state: DecisionProv
 
 type Classifier = AnalyzerFormValues["classifier"];
 
-const CLASSIFIER_OPTIONS: Classifier[] = ["decision", "semantic"];
+const CLASSIFIER_OPTIONS: {
+	value: Classifier;
+	title: ComplexityKey;
+	description: ComplexityKey;
+}[] = [
+	{ value: "decision", title: "classifierNameDecision", description: "classifierDecisionCardDesc" },
+	{ value: "semantic", title: "classifierNameSemantic", description: "classifierSemanticCardDesc" },
+];
 
 // ClassifierChoice is the one decision everything else depends on, so each
 // option is an explained card rather than an entry in a dropdown. Anything a
 // choice still needs is reported once, below the cards, after it is picked.
 export function ClassifierChoice({ value, onChange }: { value: Classifier | undefined; onChange: (value: Classifier) => void }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
 	return (
-		<div role="radiogroup" aria-label={t("governance:complexityRouter.classifierChoice.aria")} className="grid gap-3 sm:grid-cols-2">
+		<div role="radiogroup" aria-label={tcpx("stepClassifier")} className="grid gap-3 sm:grid-cols-2">
 			{CLASSIFIER_OPTIONS.map((option) => {
-				const selected = option === value;
+				const selected = option.value === value;
 				return (
 					<button
-						key={option}
+						key={option.value}
 						type="button"
 						role="radio"
 						aria-checked={selected}
-						onClick={() => onChange(option)}
-						data-testid={`complexity-router-classifier-option-${option}`}
+						onClick={() => onChange(option.value)}
+						data-testid={`complexity-router-classifier-option-${option.value}`}
 						className={cn(
 							"hover:bg-accent/50 flex h-full flex-col gap-2 rounded-md border p-4 text-left transition-colors",
 							selected && "border-primary bg-primary/5",
 						)}
 					>
 						<div className="flex w-full items-center gap-2">
-							{option === "decision" ? (
+							{option.value === "decision" ? (
 								<Scale className="text-muted-foreground size-4" />
 							) : (
 								<Waypoints className="text-muted-foreground size-4" />
 							)}
-							<span className="text-sm font-medium">{t(`governance:complexityRouter.classifierChoice.${option}Title`)}</span>
+							<span className="text-sm font-medium">{tcpx(option.title)}</span>
 							{selected && <Check className="ml-auto size-4 text-green-600" />}
 						</div>
-						<p className="text-muted-foreground text-xs leading-relaxed">
-							{t(`governance:complexityRouter.classifierChoice.${option}Description`)}
-						</p>
+						<p className="text-muted-foreground text-xs leading-relaxed">{tcpx(option.description)}</p>
 					</button>
 				);
 			})}
@@ -982,9 +869,9 @@ interface StepRailProps {
 // nav, and is narrower still: two short labels need little width, and every
 // pixel it gives back goes to the phrase lists.
 export function StepRail({ steps, currentIndex, onSelect }: StepRailProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
 	return (
-		<nav className="flex w-full shrink-0 gap-1 overflow-x-auto md:block md:w-44" aria-label={t("governance:complexityRouter.stepsAria")}>
+		<nav className="flex w-full shrink-0 gap-1 overflow-x-auto md:block md:w-44" aria-label={tcpx("stepsAria")}>
 			{steps.map((step, index) => {
 				const current = index === currentIndex;
 				return (

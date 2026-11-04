@@ -11,10 +11,10 @@ import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { StatusColors } from "@/lib/constants/logs";
 import { cn } from "@/lib/utils";
 import { format, isValid } from "date-fns";
+import type { TFunction } from "i18next";
 import { AlertCircle, ChevronDown, Download, ExternalLink, FileText, Webhook } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import i18n from "@/lib/i18n";
 
 /**
  * Structured renderer for A2A payload bodies.
@@ -28,12 +28,12 @@ import i18n from "@/lib/i18n";
 const TaskFilterContext = createContext<((filters: FilterTarget) => void) | undefined>(undefined);
 
 function TaskIdValue({ value }: { value: string }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const onFilter = useContext(TaskFilterContext);
 	return (
 		<InteractiveValue
 			value={value}
-			label={t("logs:agent.task")}
+			label={t("agentLogs.logSheet.task")}
 			filter={{ task_id: value }}
 			onFilter={onFilter}
 			testId="agent-log-response-task-id"
@@ -147,11 +147,11 @@ function Disclosure({ summary, meta, children }: { summary: string; meta?: strin
 }
 
 function UnclaimedFields({ source, claimed }: { source: Record<string, unknown>; claimed: string[] }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const rest = unclaimedFields(source, claimed);
 	if (!rest) return null;
 	return (
-		<Disclosure summary={t("logs:agent.otherFields")} meta={Object.keys(rest).join(", ")}>
+		<Disclosure summary={t("agentLogs.payload.otherFields")} meta={Object.keys(rest).join(", ")}>
 			<JsonBlock code={prettyPrint(rest)} maxHeight={280} />
 		</Disclosure>
 	);
@@ -159,7 +159,7 @@ function UnclaimedFields({ source, claimed }: { source: Record<string, unknown>;
 
 /** Plain text that wraps, clamped to a preview until expanded. */
 function CollapsibleText({ text, preview = 8 }: { text: string; preview?: number }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const [open, setOpen] = useState(false);
 	const lines = text.split("\n");
 	const hasMore = lines.length > preview;
@@ -173,7 +173,7 @@ function CollapsibleText({ text, preview = 8 }: { text: string; preview?: number
 					onClick={() => setOpen((value) => !value)}
 					className="text-primary mt-1.5 inline-flex items-center gap-1 text-[11.5px] font-medium hover:underline"
 				>
-					{open ? t("logs:responses.showLess") : t("logs:responses.showMoreLines", { count: lines.length - preview })}
+					{open ? t("agentLogs.payload.showLess") : t("agentLogs.payload.showMoreLines", { count: lines.length - preview })}
 					<ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
 				</button>
 			)}
@@ -235,10 +235,10 @@ function rendersMediaPreview(source: string, mediaType?: string) {
 }
 
 function FilePartView({ source, mediaType, filename }: { source: string; mediaType?: string; filename?: string }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const safeSource = safeMediaSource(source);
 	const type = (mediaType ?? "application/octet-stream").toLowerCase();
-	const label = filename ?? t("logs:agent.file");
+	const label = filename ?? t("agentLogs.payload.file");
 	const inlineSafe = rendersMediaPreview(source, mediaType);
 
 	if (safeSource && inlineSafe && type.startsWith("image/")) {
@@ -266,7 +266,7 @@ function FilePartView({ source, mediaType, filename }: { source: string; mediaTy
 					className="text-primary inline-flex shrink-0 items-center gap-1 hover:underline"
 				>
 					{source.startsWith("data:") ? <Download className="size-3.5" /> : <ExternalLink className="size-3.5" />}
-					{source.startsWith("data:") ? t("common:actions.download") : t("logs:agent.view")}
+					{source.startsWith("data:") ? t("logs.detail.download") : t("agentLogs.payload.view")}
 				</a>
 			) : (
 				<FileText className="text-muted-foreground size-4 shrink-0" />
@@ -276,7 +276,6 @@ function FilePartView({ source, mediaType, filename }: { source: string; mediaTy
 }
 
 function PartView({ part }: { part: unknown }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
 	const record = asRecord(part);
 	if (!record) return <JsonBlock code={prettyPrint(part)} maxHeight={200} />;
 
@@ -322,8 +321,8 @@ function PartView({ part }: { part: unknown }) {
 }
 
 export function A2APartsView({ parts, showMetadata = true }: { parts: unknown[]; showMetadata?: boolean }) {
-	const { t } = useTranslation(["common", "logs"]);
-	if (parts.length === 0) return <div className="text-muted-foreground text-[12.5px]">{i18n.t("logs:agent.noContent")}</div>;
+	const { t } = useTranslation("observability");
+	if (parts.length === 0) return <div className="text-muted-foreground text-[12.5px]">{t("agentLogs.payload.noContent")}</div>;
 	return (
 		<div className="space-y-2">
 			{parts.map((part, index) => {
@@ -336,7 +335,7 @@ export function A2APartsView({ parts, showMetadata = true }: { parts: unknown[];
 							<details className="group/part mt-2">
 								<summary className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer list-none items-center gap-1.5 text-[11px] [&::-webkit-details-marker]:hidden">
 									<ChevronDown className="size-3 transition-transform group-open/part:rotate-180" />
-									{t("logs:agent.partDetails")}
+									{t("agentLogs.payload.partDetails")}
 								</summary>
 								<div className="mt-2">
 									<OperationParametersView params={details} />
@@ -356,11 +355,11 @@ export function A2APartsView({ parts, showMetadata = true }: { parts: unknown[];
 
 const MESSAGE_CLAIMED = ["role", "parts", "messageId", "taskId", "contextId"];
 
-function messageRoleLabel(role: string | undefined): string {
-	if (!role) return i18n.t("logs:agent.message");
+function messageRoleLabel(role: string | undefined, t: TFunction<"observability">): string {
+	if (!role) return t("labels.message");
 	const normalized = role.replace(/^ROLE_/, "").toLowerCase();
-	if (normalized === "user") return i18n.t("logs:agent.you");
-	if (normalized === "agent" || normalized === "assistant") return i18n.t("logs:agent.agent");
+	if (normalized === "user") return t("labels.user");
+	if (normalized === "agent" || normalized === "assistant") return t("filters.agent");
 	return normalized.replace(/_/g, " ");
 }
 
@@ -374,8 +373,8 @@ function looksLikeMessage(value: Record<string, unknown>): boolean {
 
 /** One message rendered on a timeline rail, mirroring the LLM logs conversation. */
 function MessageRow({ message, last = false }: { message: Record<string, unknown>; last?: boolean }) {
-	const { t } = useTranslation(["common", "logs"]);
-	const { copy } = useCopyToClipboard({ successMessage: t("common:actions.copied") });
+	const { t } = useTranslation("observability");
+	const { copy } = useCopyToClipboard({ successMessage: t("agentLogs.payload.copied") });
 	const role = asString(message.role);
 	const user = isUserRole(role);
 	const parts = asArray(message.parts) ?? [];
@@ -394,17 +393,17 @@ function MessageRow({ message, last = false }: { message: Record<string, unknown
 							<TooltipTrigger asChild>
 								<button
 									type="button"
-									aria-label={t("logs:agent.copyMessageId")}
+									aria-label={t("agentLogs.payload.copyMessageId")}
 									className="text-foreground hover:text-primary cursor-pointer text-[11.5px] font-semibold capitalize"
 									onClick={() => copy(messageId)}
 								>
-									{messageRoleLabel(role)}
+									{messageRoleLabel(role, t)}
 								</button>
 							</TooltipTrigger>
-							<TooltipContent>{t("logs:agent.copyMessageId")}</TooltipContent>
+							<TooltipContent>{t("agentLogs.payload.copyMessageId")}</TooltipContent>
 						</Tooltip>
 					) : (
-						<span className="text-foreground text-[11.5px] font-semibold capitalize">{messageRoleLabel(role)}</span>
+						<span className="text-foreground text-[11.5px] font-semibold capitalize">{messageRoleLabel(role, t)}</span>
 					)}
 					{messageId && <span className="text-muted-foreground truncate font-mono text-[10.5px]">{messageId}</span>}
 				</div>
@@ -431,7 +430,7 @@ function MessageRow({ message, last = false }: { message: Record<string, unknown
 const ARTIFACT_CLAIMED = ["artifactId", "name", "description", "parts"];
 
 function ArtifactView({ artifact }: { artifact: unknown }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const record = asRecord(artifact);
 	if (!record) return <JsonBlock code={prettyPrint(artifact)} maxHeight={200} />;
 
@@ -442,7 +441,7 @@ function ArtifactView({ artifact }: { artifact: unknown }) {
 	return (
 		<div className="rounded-sm border">
 			<div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-				<span className="text-foreground truncate text-[12.5px] font-medium">{name ?? artifactId ?? t("logs:agent.artifact")}</span>
+				<span className="text-foreground truncate text-[12.5px] font-medium">{name ?? artifactId ?? t("agentLogs.payload.artifact")}</span>
 				{name && artifactId && <span className="text-muted-foreground shrink-0 font-mono text-[10.5px]">{artifactId}</span>}
 			</div>
 			<div className="space-y-2 p-3">
@@ -459,7 +458,7 @@ function ArtifactView({ artifact }: { artifact: unknown }) {
 // ---------------------------------------------------------------------------
 
 function PushConfigView({ config, inList = false }: { config: Record<string, unknown>; inList?: boolean }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const url = asString(config.url);
 	const id = asString(config.id);
 	const authentication = asRecord(config.authentication);
@@ -473,7 +472,7 @@ function PushConfigView({ config, inList = false }: { config: Record<string, unk
 			>
 				<Webhook className="text-muted-foreground size-4 shrink-0" />
 				<div className="min-w-0 flex-1 space-y-1">
-					<TruncatedLabel className="block font-mono text-xs">{url ?? t("logs:agent.noCallbackUrl")}</TruncatedLabel>
+					<TruncatedLabel className="block font-mono text-xs">{url ?? t("agentLogs.payload.noCallbackUrl")}</TruncatedLabel>
 					{id && <TruncatedLabel className="text-muted-foreground block font-mono text-[11px]">{id}</TruncatedLabel>}
 				</div>
 				<ChevronDown className="text-muted-foreground size-4 shrink-0 transition-transform group-open/push:rotate-180" />
@@ -482,14 +481,14 @@ function PushConfigView({ config, inList = false }: { config: Record<string, unk
 				<OperationParametersView params={{ configurationId: id, taskId: config.taskId, token: config.token }} />
 				{(schemes.length > 0 || credentials) && (
 					<div className="space-y-2">
-						<SubLabel>{t("logs:agent.authentication")}</SubLabel>
+						<SubLabel>{t("agentLogs.payload.authentication")}</SubLabel>
 						<div className="flex flex-wrap items-center gap-1.5">
 							{schemes.map((scheme) => (
 								<Badge key={scheme} variant="outline" className="rounded-sm font-normal">
 									{scheme}
 								</Badge>
 							))}
-							{credentials && <span className="text-muted-foreground text-xs">{t("logs:agent.credentialsProvided")}</span>}
+							{credentials && <span className="text-muted-foreground text-xs">{t("agentLogs.payload.credentialsProvided")}</span>}
 						</div>
 					</div>
 				)}
@@ -518,7 +517,7 @@ function ConfigurationView({ configuration }: { configuration: Record<string, un
 // ---------------------------------------------------------------------------
 
 function ErrorView({ error }: { error: Record<string, unknown> }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
+	const { t } = useTranslation("observability");
 	// Both JSON-RPC (`{code, message, data}`) and BifrostError (`{error: {...}}`)
 	// shapes reach this view.
 	const inner = asRecord(error.error) ?? error;
@@ -538,7 +537,7 @@ function ErrorView({ error }: { error: Record<string, unknown> }) {
 		<div className="border-destructive/50 rounded-sm border">
 			<div className="border-destructive/50 text-destructive flex items-center gap-2 border-b px-3 py-2">
 				<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-				<span className="text-[12.5px] font-semibold">{t("logs:agent.errorLabel")}</span>
+				<span className="text-[12.5px] font-semibold">{t("labels.error")}</span>
 				{code !== undefined && code !== null && code !== "" && (
 					<Badge variant="outline" className="border-destructive/40 text-destructive rounded-sm px-1.5 py-0 font-mono text-[11px]">
 						{String(code)}
@@ -546,7 +545,9 @@ function ErrorView({ error }: { error: Record<string, unknown> }) {
 				)}
 			</div>
 			<div className="space-y-3 p-3">
-				<div className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">{message ?? t("logs:agent.noErrorMessage")}</div>
+				<div className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">
+					{message ?? t("agentLogs.payload.noErrorMessage")}
+				</div>
 				<UnclaimedFields source={rest} claimed={[]} />
 			</div>
 		</div>
@@ -563,7 +564,7 @@ function looksLikeTask(value: Record<string, unknown>): boolean {
 	return isRecord(value.status) || Array.isArray(value.history) || Array.isArray(value.artifacts);
 }
 
-function taskTitle(task: Record<string, unknown>, index?: number): string {
+function taskTitle(task: Record<string, unknown>, t: TFunction<"observability">, index?: number): string {
 	const history = asArray(task.history) ?? [];
 	for (const entry of history) {
 		const message = asRecord(entry);
@@ -577,11 +578,12 @@ function taskTitle(task: Record<string, unknown>, index?: number): string {
 	const firstArtifact = asRecord((asArray(task.artifacts) ?? [])[0]);
 	return (
 		asString(firstArtifact?.name) ??
-		(index === undefined ? i18n.t("logs:agent.task") : i18n.t("logs:agent.taskIndex", { index: index + 1 }))
+		(index === undefined ? t("agentLogs.logSheet.task") : t("agentLogs.payload.taskNumbered", { number: index + 1 }))
 	);
 }
 
 function TaskView({ task }: { task: Record<string, unknown> }) {
+	const { t } = useTranslation("observability");
 	const state = asString(asRecord(task.status)?.state);
 	const taskId = asString(task.id);
 
@@ -589,7 +591,7 @@ function TaskView({ task }: { task: Record<string, unknown> }) {
 		<div className="overflow-hidden rounded-sm border">
 			<div className="bg-muted/20 flex items-center gap-3 border-b px-3 py-3">
 				<div className="min-w-0 flex-1 space-y-1">
-					<TruncatedLabel className="block text-sm font-medium">{taskTitle(task)}</TruncatedLabel>
+					<TruncatedLabel className="block text-sm font-medium">{taskTitle(task, t)}</TruncatedLabel>
 					{taskId && <TaskIdValue value={taskId} />}
 				</div>
 				{state && <TaskStateBadge state={state} />}
@@ -606,7 +608,7 @@ function TaskView({ task }: { task: Record<string, unknown> }) {
 // ---------------------------------------------------------------------------
 
 function StatusUpdateView({ update }: { update: Record<string, unknown> }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const status = asRecord(update.status);
 	const state = asString(status?.state);
 	const timestamp = formatTimestamp(status?.timestamp);
@@ -619,14 +621,14 @@ function StatusUpdateView({ update }: { update: Record<string, unknown> }) {
 				{state ? <TaskStateBadge state={state} /> : null}
 				{final && (
 					<Badge variant="outline" className="text-muted-foreground rounded-sm px-1.5 py-0 text-[11px] font-normal">
-						{t("logs:agent.finalBadge")}
+						{t("agentLogs.payload.final")}
 					</Badge>
 				)}
 				{timestamp && <span className="text-muted-foreground font-mono text-[11px] tabular-nums">{timestamp}</span>}
 			</div>
 			{statusMessage && (
 				<section className="space-y-2">
-					<SubLabel>{t("logs:agent.statusMessage")}</SubLabel>
+					<SubLabel>{t("agentLogs.payload.statusMessage")}</SubLabel>
 					<A2APartsView parts={asArray(statusMessage.parts) ?? []} />
 					<UnclaimedFields source={statusMessage} claimed={MESSAGE_CLAIMED} />
 				</section>
@@ -638,10 +640,10 @@ function StatusUpdateView({ update }: { update: Record<string, unknown> }) {
 }
 
 function ArtifactUpdateView({ update }: { update: Record<string, unknown> }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const flags = [
-		update.append === true ? t("logs:agent.flagAppend") : null,
-		update.lastChunk === true ? t("logs:agent.flagLastChunk") : null,
+		update.append === true ? t("agentLogs.payload.append") : null,
+		update.lastChunk === true ? t("agentLogs.payload.lastChunk") : null,
 	].filter(Boolean) as string[];
 	return (
 		<div className="space-y-3">
@@ -676,8 +678,9 @@ function AgentCardView({ card }: { card: Record<string, unknown> }) {
 }
 
 function ParameterValue({ value }: { value: unknown }) {
-	const { t } = useTranslation(["common", "logs"]);
-	if (typeof value === "boolean") return <span>{value ? t("logs:agent.yes") : t("logs:agent.no")}</span>;
+	const { t } = useTranslation("observability");
+	const { t: tCommon } = useTranslation("common");
+	if (typeof value === "boolean") return <span>{value ? tCommon("yes") : tCommon("no")}</span>;
 	if (typeof value === "string" || typeof value === "number") return <span className="font-mono break-all">{String(value)}</span>;
 	if (Array.isArray(value) && value.every((item) => typeof item === "string" || typeof item === "number")) {
 		return (
@@ -694,18 +697,18 @@ function ParameterValue({ value }: { value: unknown }) {
 }
 
 function OperationParametersView({ params }: { params: Record<string, unknown> }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const fields = Object.entries(params).filter(([, value]) => value !== null && value !== undefined && value !== "");
 	return (
 		<dl className="divide-y">
 			{fields.map(([key, value]) => {
 				const label =
 					key === "configurationId"
-						? t("logs:agent.configurationId")
+						? t("agentLogs.payload.configurationId")
 						: key === "id" || key === "taskId"
-							? t("logs:agent.taskId")
+							? t("agentLogs.filters.taskId")
 							: key === "contextId"
-								? t("logs:agent.contextId")
+								? t("agentLogs.filters.contextId")
 								: labelFromKey(key);
 				return (
 					<div key={key} className="grid gap-1 py-2.5 first:pt-0 last:pb-0 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
@@ -727,7 +730,7 @@ function OperationParametersView({ params }: { params: Record<string, unknown> }
 // ArtifactMetadata collects fields not already shown in the artifact body.
 // File cards show names and media types, while media previews need them here.
 function ArtifactMetadata({ artifact, parts }: { artifact: Record<string, unknown>; parts: unknown[] }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const fields = unclaimedFields(artifact, ["artifactId", "name", "description", "parts"]);
 	if (fields) {
 		for (const key of Object.keys(fields)) if (fields[key] === "") delete fields[key];
@@ -759,14 +762,14 @@ function ArtifactMetadata({ artifact, parts }: { artifact: Record<string, unknow
 		<details className="group/metadata mt-2" data-testid="agent-artifact-metadata">
 			<summary className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer list-none items-center gap-1.5 text-[11px] [&::-webkit-details-marker]:hidden">
 				<ChevronDown className="size-3 transition-transform group-open/metadata:rotate-180" />
-				{t("logs:agent.metadata")}
+				{t("mcpLogs.detail.metadata")}
 			</summary>
 			<div className="mt-2 space-y-3">
 				{fields && Object.keys(fields).length > 0 && <OperationParametersView params={fields} />}
 				{partFields.map(({ index, fields }) => (
 					<div key={index} className="overflow-hidden rounded-sm border">
 						<div className="bg-muted/30 text-muted-foreground border-b px-3 py-2 text-[11px] font-medium">
-							{t("logs:agent.partIndex", { index: index + 1 })}
+							{t("agentLogs.payload.partNumber", { number: index + 1 })}
 						</div>
 						<div className="py-2.5 [&>dl>div]:px-3">
 							<OperationParametersView params={fields} />
@@ -798,17 +801,17 @@ export function A2AConversationMessage({
 	context?: string;
 	last?: boolean;
 }) {
-	const { t } = useTranslation(["common", "logs"]);
-	const { copy } = useCopyToClipboard({ successMessage: t("common:actions.copied") });
-	const idLabel = item.kind === "artifact" ? "artifact" : "message";
+	const { t } = useTranslation("observability");
+	const { copy } = useCopyToClipboard({ successMessage: t("agentLogs.payload.copied") });
+	const copyIdLabel = item.kind === "artifact" ? t("agentLogs.payload.copyArtifactId") : t("agentLogs.payload.copyMessageId");
 	const user = item.role === "user";
 	const label = user
-		? t("logs:agent.you")
+		? t("agentLogs.payload.you")
 		: item.kind === "artifact"
-			? t("logs:agent.artifact")
+			? t("agentLogs.payload.artifact")
 			: item.kind === "status"
-				? t("logs:agent.agentUpdate")
-				: t("logs:agent.agentResponse");
+				? t("agentLogs.payload.agentUpdate")
+				: t("agentLogs.contextSheet.agentResponse");
 	return (
 		<div className="flex gap-3">
 			<div className="flex flex-col items-center pt-1.5">
@@ -823,7 +826,7 @@ export function A2AConversationMessage({
 								<button
 									type="button"
 									data-testid="agent-conversation-copy-id"
-									aria-label={item.kind === "artifact" ? t("logs:agent.copyArtifactId") : t("logs:agent.copyMessageId")}
+									aria-label={copyIdLabel}
 									className="hover:text-primary cursor-pointer text-xs font-semibold transition-colors"
 									onClick={() => {
 										if (item.id) copy(item.id);
@@ -832,7 +835,7 @@ export function A2AConversationMessage({
 									{label}
 								</button>
 							</TooltipTrigger>
-							<TooltipContent>{item.kind === "artifact" ? t("logs:agent.copyArtifactId") : t("logs:agent.copyMessageId")}</TooltipContent>
+							<TooltipContent>{copyIdLabel}</TooltipContent>
 						</Tooltip>
 					) : (
 						<span className="text-xs font-semibold">{label}</span>
@@ -870,7 +873,7 @@ export function A2AConversationMessage({
 // TaskConversation renders the returned task's history, final update and artifacts
 // using the same timeline as the operation conversation view.
 function TaskConversation({ task }: { task: Record<string, unknown> }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const history = asArray(task.history) ?? [];
 	const status = asRecord(task.status);
 	const statusMessage = asRecord(status?.message);
@@ -880,7 +883,7 @@ function TaskConversation({ task }: { task: Record<string, unknown> }) {
 	return (
 		<div>
 			<div className="mb-3">
-				<Disclosure summary={t("logs:agent.taskDetails")} meta={formatTimestamp(status?.timestamp)}>
+				<Disclosure summary={t("agentLogs.payload.taskDetails")} meta={formatTimestamp(status?.timestamp)}>
 					<OperationParametersView
 						params={{
 							id: task.id,
@@ -948,14 +951,14 @@ function TaskConversation({ task }: { task: Record<string, unknown> }) {
 				);
 			})}
 			{history.length === 0 && !statusMessage && artifacts.length === 0 && (
-				<div className="text-muted-foreground py-3 text-sm">{t("logs:agent.noMessagesOrArtifacts")}</div>
+				<div className="text-muted-foreground py-3 text-sm">{t("agentLogs.payload.noMessagesOrArtifacts")}</div>
 			)}
 		</div>
 	);
 }
 
 function TaskCollectionView({ response }: { response: Record<string, unknown> }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const tasks = asArray(response.tasks) ?? [];
 	const nextPageToken = asString(response.nextPageToken);
 
@@ -964,12 +967,12 @@ function TaskCollectionView({ response }: { response: Record<string, unknown> })
 			<div className="overflow-hidden rounded-sm border">
 				<div className="bg-muted/20 flex items-center justify-between gap-3 border-b px-3 py-2.5">
 					<div className="flex items-center gap-2">
-						<span className="text-sm font-medium">{t("logs:agent.tasksLabel")}</span>
+						<span className="text-sm font-medium">{t("agentLogs.payload.tasks")}</span>
 						<Badge variant="secondary" className="rounded-sm px-1.5 text-[11px] font-normal tabular-nums">
 							{tasks.length}
 						</Badge>
 					</div>
-					{nextPageToken && <span className="text-muted-foreground text-xs">{t("logs:agent.moreTasksAvailable")}</span>}
+					{nextPageToken && <span className="text-muted-foreground text-xs">{t("agentLogs.payload.moreTasks")}</span>}
 				</div>
 				{tasks.length > 0 ? (
 					<div className="divide-y">
@@ -977,8 +980,8 @@ function TaskCollectionView({ response }: { response: Record<string, unknown> })
 							const task = asRecord(entry);
 							if (!task) return <JsonBlock key={index} code={prettyPrint(entry)} maxHeight={240} />;
 							const state = asString(asRecord(task.status)?.state);
-							const taskId = asString(task.id) ?? i18n.t("logs:agent.taskIndex", { index: index + 1 });
-							const title = taskTitle(task, index);
+							const taskId = asString(task.id) ?? t("agentLogs.payload.taskNumbered", { number: index + 1 });
+							const title = taskTitle(task, t, index);
 							return (
 								<details key={taskId} className="group/task">
 									<summary
@@ -1002,10 +1005,10 @@ function TaskCollectionView({ response }: { response: Record<string, unknown> })
 						})}
 					</div>
 				) : (
-					<div className="text-muted-foreground py-6 text-center text-sm">{t("logs:agent.noTasksReturned")}</div>
+					<div className="text-muted-foreground py-6 text-center text-sm">{t("agentLogs.payload.noTasks")}</div>
 				)}
 			</div>
-			<Disclosure summary={t("logs:agent.responseDetails")}>
+			<Disclosure summary={t("agentLogs.payload.responseDetails")}>
 				<OperationParametersView params={{ totalSize: response.totalSize, pageSize: response.pageSize, nextPageToken }} />
 			</Disclosure>
 			<UnclaimedFields source={response} claimed={["tasks", "totalSize", "pageSize", "nextPageToken"]} />
@@ -1014,13 +1017,13 @@ function TaskCollectionView({ response }: { response: Record<string, unknown> })
 }
 
 function PushConfigCollectionView({ response }: { response: Record<string, unknown> }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const configs = asArray(response.configs) ?? [];
 	return (
 		<div className="space-y-4">
 			<div className="overflow-hidden rounded-sm border">
 				<div className="bg-muted/20 flex items-center gap-2 border-b px-3 py-2.5">
-					<span className="text-sm font-medium">{t("logs:agent.pushConfigurations")}</span>
+					<span className="text-sm font-medium">{t("agentLogs.payload.pushConfigurations")}</span>
 					<Badge variant="secondary" className="rounded-sm px-1.5 text-[11px] font-normal tabular-nums">
 						{configs.length}
 					</Badge>
@@ -1039,7 +1042,7 @@ function PushConfigCollectionView({ response }: { response: Record<string, unkno
 						})}
 					</div>
 				) : (
-					<div className="text-muted-foreground py-6 text-center text-sm">{t("logs:agent.noNotificationDestinations")}</div>
+					<div className="text-muted-foreground py-6 text-center text-sm">{t("agentLogs.payload.noDestinations")}</div>
 				)}
 			</div>
 			<UnclaimedFields source={response} claimed={["configs"]} />
@@ -1048,9 +1051,11 @@ function PushConfigCollectionView({ response }: { response: Record<string, unkno
 }
 
 function EmptyResultView() {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	return (
-		<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">{t("logs:agent.noResponseBody")}</div>
+		<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">
+			{t("agentLogs.payload.emptyResult")}
+		</div>
 	);
 }
 
@@ -1173,12 +1178,12 @@ interface A2APayloadViewProps {
 	showSectionTitles?: boolean;
 }
 
-function payloadSectionTitle(operation: string | undefined, kind: "request" | "response"): string {
+function payloadSectionTitle(operation: string | undefined, kind: "request" | "response", t: TFunction<"observability">): string {
 	if (operation === "push_notification")
-		return kind === "request" ? i18n.t("logs:agent.receivedUpdate") : i18n.t("logs:agent.acknowledgement");
+		return kind === "request" ? t("agentLogs.payload.receivedUpdate") : t("agentLogs.payload.acknowledgement");
 	if (operation === "push_delivery")
-		return kind === "request" ? i18n.t("logs:agent.forwardedUpdate") : i18n.t("logs:agent.deliveryResponse");
-	return kind === "request" ? i18n.t("logs:agent.request") : i18n.t("logs:agent.responseLabel");
+		return kind === "request" ? t("agentLogs.payload.forwardedUpdate") : t("agentLogs.payload.deliveryResponse");
+	return kind === "request" ? t("mcpLogs.detail.request") : t("agentLogs.payload.response");
 }
 
 function PushRelaySummary({
@@ -1190,7 +1195,7 @@ function PushRelaySummary({
 	status?: string;
 	value: unknown;
 }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const root = asRecord(value);
 	const update = asRecord(root?.statusUpdate) ?? asRecord(root?.artifactUpdate) ?? root;
 	const isDelivery = operation === "push_delivery";
@@ -1200,7 +1205,9 @@ function PushRelaySummary({
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<span className="text-sm font-medium">{isDelivery ? t("logs:agent.updateForwarded") : t("logs:agent.updateReceived")}</span>
+				<span className="text-sm font-medium">
+					{isDelivery ? t("agentLogs.payload.updateForwarded") : t("agentLogs.payload.updateReceived")}
+				</span>
 				{(succeeded || failed) && (
 					<Badge
 						variant="outline"
@@ -1209,7 +1216,7 @@ function PushRelaySummary({
 							succeeded ? "border-emerald-500/30 text-emerald-700 dark:text-emerald-400" : "border-destructive/40 text-destructive",
 						)}
 					>
-						{succeeded ? (isDelivery ? t("logs:agent.delivered") : t("logs:agent.accepted")) : t("logs:metrics.failed")}
+						{succeeded ? (isDelivery ? t("agentLogs.payload.delivered") : t("agentLogs.payload.accepted")) : t("logs.stats.failed")}
 					</Badge>
 				)}
 			</div>
@@ -1228,7 +1235,7 @@ export function A2APayloadView({
 	errorDetails,
 	showSectionTitles = true,
 }: A2APayloadViewProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const errorRecord = asRecord(errorDetails);
 	const sections: ReactNode[] = [];
 	const isPushConfigOperation = [
@@ -1256,12 +1263,12 @@ export function A2APayloadView({
 		);
 		sections.push(
 			compactSections ? (
-				<Disclosure key="request" summary={t("logs:agent.requestParameters")}>
+				<Disclosure key="request" summary={t("agentLogs.payload.requestParameters")}>
 					{requestContent}
 				</Disclosure>
 			) : (
 				<div key="request">
-					{showSectionTitles && <BlockHeader title={payloadSectionTitle(operation, "request")} />}
+					{showSectionTitles && <BlockHeader title={payloadSectionTitle(operation, "request", t)} />}
 					<div className={showSectionTitles ? "mt-3" : undefined}>{requestContent}</div>
 				</div>
 			),
@@ -1275,10 +1282,12 @@ export function A2APayloadView({
 			(parsed && response !== null && (asArray(response.tasks) !== null || looksLikeTask(response) || asRecord(response.task) !== null));
 		sections.push(
 			<div key="response">
-				{showSectionTitles && !hasOwnHeader && <BlockHeader title={payloadSectionTitle(operation, "response")} />}
+				{showSectionTitles && !hasOwnHeader && <BlockHeader title={payloadSectionTitle(operation, "response", t)} />}
 				<div className={showSectionTitles && !hasOwnHeader ? "mt-3" : undefined}>
 					{operation === "DeleteTaskPushNotificationConfig" && parsed && response !== null && Object.keys(response).length === 0 ? (
-						<div className="bg-muted/20 rounded-sm border px-3 py-3 text-sm">{t("logs:agent.pushConfigDeleted")}</div>
+						<div className="bg-muted/20 rounded-sm border px-3 py-3 text-sm">
+							{t("agentLogs.contextSheet.activity.pushConfigurationDeleted")}
+						</div>
 					) : parsed ? (
 						<PayloadBody value={value} />
 					) : (
@@ -1295,7 +1304,7 @@ export function A2APayloadView({
 	if (errorDetails !== undefined && errorDetails !== null) {
 		sections.push(
 			<div key="error" className="space-y-3">
-				{showSectionTitles && <BlockHeader title={t("logs:mcp.errorDetails")} />}
+				{showSectionTitles && <BlockHeader title={t("mcpLogs.errorDetails")} />}
 				{errorRecord ? <ErrorView error={errorRecord} /> : <JsonBlock code={prettyPrint(errorDetails)} />}
 			</div>,
 		);
@@ -1303,7 +1312,9 @@ export function A2APayloadView({
 
 	if (sections.length === 0) {
 		return (
-			<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">{t("logs:agent.noProtocolBody")}</div>
+			<div className="text-muted-foreground rounded-sm border border-dashed p-5 text-center text-sm">
+				{t("agentLogs.payload.noProtocolBody")}
+			</div>
 		);
 	}
 

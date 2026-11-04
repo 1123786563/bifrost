@@ -10,27 +10,25 @@ interface ProvidersEmptyStateProps {
 }
 
 export function ProvidersEmptyState({ addProviderDropdown }: ProvidersEmptyStateProps) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
 	return (
 		<div className="flex min-h-[80vh] w-full flex-col items-center justify-center gap-4 py-16 text-center">
 			<div className="text-muted-foreground">
 				<Server className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />
 			</div>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-muted-foreground text-xl font-medium">{t("providers:emptyState.title")}</h1>
-				<div className="text-muted-foreground mx-auto mt-2 w-full max-w-[600px] text-sm font-normal">
-					{t("providers:emptyState.description")}
-				</div>
+				<h1 className="text-muted-foreground text-xl font-medium">{t("providers.emptyTitle")}</h1>
+				<div className="text-muted-foreground mx-auto mt-2 w-full max-w-[600px] text-sm font-normal">{t("providers.emptyDescription")}</div>
 				<div className="mx-auto mt-6 flex flex-row flex-wrap items-center justify-center gap-2">
 					<Button
 						variant="outline"
-						aria-label={t("providers:emptyState.readMoreAria")}
+						aria-label={t("providers.readMoreAria")}
 						data-testid="providers-button-read-more"
 						onClick={() => {
 							window.open(`${PROVIDERS_DOCS_URL}?utm_source=bfd`, "_blank", "noopener,noreferrer");
 						}}
 					>
-						{t("providers:emptyState.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
+						{t("providers.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
 					{addProviderDropdown}
 				</div>

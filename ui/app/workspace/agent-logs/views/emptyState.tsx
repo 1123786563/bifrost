@@ -1,5 +1,4 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { CodeEditor } from "@/components/ui/codeEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +7,7 @@ import { getExampleBaseUrl } from "@/lib/utils/port";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, Copy } from "lucide-react";
 import { useMemo } from "react";
+import { Trans, useTranslation } from "react-i18next";
 
 const EDITOR_OPTIONS = {
 	scrollBeyondLastLine: false,
@@ -23,8 +23,10 @@ interface CodeBlockProps {
 	code: string;
 }
 
+const codeTag = <code className="bg-muted rounded px-1" />;
+
 function CodeBlock({ code }: CodeBlockProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const { copy } = useCopyToClipboard();
 
 	return (
@@ -34,7 +36,7 @@ function CodeBlock({ code }: CodeBlockProps) {
 				size="icon"
 				className="absolute top-4 right-4 z-10"
 				onClick={() => copy(code)}
-				aria-label={t("logs:agent.copyRequest")}
+				aria-label={t("agentLogs.empty.copyRequest")}
 			>
 				<Copy className="size-4" />
 			</Button>
@@ -48,14 +50,14 @@ interface AgentEmptyStateProps {
 }
 
 export function AgentEmptyState({ error }: AgentEmptyStateProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const examples = useMemo(() => {
 		const baseUrl = getExampleBaseUrl();
 		const headers = `-H "Content-Type: application/json" \\
   -H "x-bf-vk: <virtual-key>"`;
 		const message = `"message": {
       "role": "ROLE_USER",
-      "parts": [{"text": "${t("logs:agent.samples.helloFromBifrost")}"}],
+      "parts": [{"text": "Hello from Bifrost"}],
       "messageId": "msg-001"
     }`;
 
@@ -76,7 +78,7 @@ export function AgentEmptyState({ error }: AgentEmptyStateProps) {
     ${message}
   }'`,
 		};
-	}, [t]);
+	}, []);
 
 	const isUnexpectedError = error && error.includes("An unexpected error occurred");
 
@@ -85,19 +87,19 @@ export function AgentEmptyState({ error }: AgentEmptyStateProps) {
 			{error && (
 				<Alert>
 					<AlertTriangle className="h-4 w-4" />
-					<AlertDescription>{isUnexpectedError ? t("logs:empty.unexpectedError") : error}</AlertDescription>
+					<AlertDescription>{isUnexpectedError ? t("logs.empty.logStoreNotConfigured") : error}</AlertDescription>
 				</Alert>
 			)}
 
 			<div className="w-full space-y-6 p-4">
 				<div className="flex items-center gap-4">
 					<div>
-						<h3 className="text-lg font-semibold">{t("logs:agent.emptyTitle")}</h3>
-						<p className="text-muted-foreground text-sm">{t("logs:agent.emptyDesc")}</p>
+						<h3 className="text-lg font-semibold">{t("agentLogs.empty.title")}</h3>
+						<p className="text-muted-foreground text-sm">{t("agentLogs.empty.description")}</p>
 					</div>
 					<Button asChild variant="outline" className="ml-auto">
 						<Link to="/workspace/agent-gateway">
-							{t("logs:agent.openAgentGateway")}
+							{t("agentLogs.empty.openAgentGateway")}
 							<ArrowRight className="size-4" />
 						</Link>
 					</Button>
@@ -109,29 +111,33 @@ export function AgentEmptyState({ error }: AgentEmptyStateProps) {
 						<TabsTrigger value="http">HTTP+JSON</TabsTrigger>
 					</TabsList>
 					<TabsContent value="jsonrpc" className="px-4">
-						<p className="text-muted-foreground mb-3 text-sm">{t("logs:agent.jsonrpcHint")}</p>
+						<p className="text-muted-foreground mb-3 text-sm">{t("agentLogs.empty.jsonrpcDescription")}</p>
 						<CodeBlock code={examples.jsonrpc} />
 					</TabsContent>
 					<TabsContent value="http" className="px-4">
-						<p className="text-muted-foreground mb-3 text-sm">{t("logs:agent.httpHint")}</p>
+						<p className="text-muted-foreground mb-3 text-sm">{t("agentLogs.empty.httpDescription")}</p>
 						<CodeBlock code={examples.http} />
 					</TabsContent>
 				</Tabs>
 
 				<div className="bg-muted/50 rounded-lg border p-4">
-					<h4 className="mb-2 text-sm font-semibold">{t("logs:agent.beforeYouSend")}</h4>
+					<h4 className="mb-2 text-sm font-semibold">{t("agentLogs.empty.beforeTitle")}</h4>
 					<ol className="text-muted-foreground space-y-2 text-sm">
 						<li className="flex items-start gap-2">
 							<span className="text-primary">1.</span>
-							<span>{t("logs:agent.beforeStep1")}</span>
+							<span>{t("agentLogs.empty.stepRegister")}</span>
 						</li>
 						<li className="flex items-start gap-2">
 							<span className="text-primary">2.</span>
-							<span>{t("logs:agent.beforeStep2", { name: "<agent-name>" })}</span>
+							<span>
+								<Trans t={t} i18nKey="agentLogs.empty.stepReplace" values={{ agentName: "<agent-name>" }} components={{ code: codeTag }} />
+							</span>
 						</li>
 						<li className="flex items-start gap-2">
 							<span className="text-primary">3.</span>
-							<span>{t("logs:agent.beforeStep3", { header: "x-bf-vk" })}</span>
+							<span>
+								<Trans t={t} i18nKey="agentLogs.empty.stepVirtualKey" components={{ code: codeTag }} />
+							</span>
 						</li>
 					</ol>
 				</div>

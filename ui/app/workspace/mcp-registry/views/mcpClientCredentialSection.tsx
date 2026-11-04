@@ -1,15 +1,13 @@
 // Read-only view of the credential an MCP server holds on its own behalf,
-// rendered in the sheet's Authentication tab, plus the row that links to the
-// per-user sessions stored for it. Everything comes from MCPClient.credential
-// and the client config: nothing here is editable, and no secret material is
-// ever present (the refresh token as presence only, header values by name).
+// rendered on the server view sheet's Overview tab. Everything comes from
+// MCPClient.credential and the client config: nothing here is editable, and
+// no secret material is ever present (the refresh token as presence only,
+// header values by name).
 
 import { RefreshTokenStatus } from "@/components/refreshTokenStatus";
 import { ScopeChips } from "@/components/scopeChips";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { MCP_CREDENTIAL_STATUS_COLORS } from "@/lib/constants/config";
-import { useGetMCPSessionsQuery } from "@/lib/store";
 import { MCPClient, MCPClientCredential } from "@/lib/types/mcp";
 import {
 	formatAbsoluteDate,
@@ -20,10 +18,9 @@ import {
 	shouldSuggestReplacementClient,
 } from "@/lib/utils/mcpCredential";
 import { titleCaseFromSnakeCase } from "@/lib/utils/strings";
-import { Link } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { SectionHeader } from "./sectionHeader";
 
 interface Props {
@@ -50,21 +47,9 @@ export function MCPClientCredentialSection({ mcpClient }: Props) {
 	}
 }
 
-/**
- * MCPClientSessionsSection is the "User Sessions" / "User Submissions" row:
- * how many per-user credentials are stored for this server and a link to
- * the MCP sessions page pre-filtered to it. Only per-user auth types store
- * such rows, so it renders nothing for the others.
- */
-export function MCPClientSessionsSection({ mcpClient }: Props) {
-	const authType = mcpClient.config.auth_type;
-	if (authType !== "per_user_oauth" && authType !== "per_user_headers") return null;
-	return <SessionsRow clientId={mcpClient.config.client_id} kind={authType === "per_user_oauth" ? "token" : "header"} />;
-}
-
 function OAuthCredentialBlock({ mcpClient }: Props) {
-	const { t } = useTranslation(["common", "mcp"]);
-	const copy = oauthCredentialCopy(mcpClient.config.auth_type, t);
+	const { t } = useTranslation("mcp");
+	const copy = oauthCredentialCopy(mcpClient.config.auth_type);
 	const credential = mcpClient.credential?.kind === "oauth" ? mcpClient.credential : undefined;
 
 	return (
@@ -74,12 +59,12 @@ function OAuthCredentialBlock({ mcpClient }: Props) {
 				<EmptyCredential>{copy.empty}</EmptyCredential>
 			) : (
 				<DefinitionList>
-					<Row label={t("common:fields.status")}>
+					<DefinitionRow label={t("common.status")}>
 						<CredentialStatusBadge status={credential.status} />
 						{credential.status === "needs_reauth" && <Hint>{copy.needsReauth}</Hint>}
 						{credential.status === "needs_reauth" &&
 							shouldSuggestReplacementClient(mcpClient.config.auth_type, credential.status_reason) && (
-								<Hint>{t("mcp:registry.credential.replacementHint")}</Hint>
+								<Hint>{t("registry.credential.clientRejected")}</Hint>
 							)}
 						{credential.status_reason && (
 							<div
@@ -89,37 +74,37 @@ function OAuthCredentialBlock({ mcpClient }: Props) {
 								{credential.status_reason}
 							</div>
 						)}
-					</Row>
-					<Row label={t("mcp:sessions.col.tokenExpiry")}>
+					</DefinitionRow>
+					<DefinitionRow label={t("registry.credential.accessTokenExpires")}>
 						{credential.expires_at ? (
 							<>
 								{formatTokenExpiry(credential.expires_at, credential.status, credential.has_refresh_token)}
 								<Sub>
 									{formatAbsoluteDateTime(credential.expires_at)}
 									{credential.last_refreshed_at &&
-										` · ${t("mcp:sessions.refreshedAgo", { time: formatRelativePast(credential.last_refreshed_at) })}`}
+										` · ${t("registry.credential.refreshed", { time: formatRelativePast(credential.last_refreshed_at) })}`}
 								</Sub>
 							</>
 						) : (
 							<>
-								<span className="text-muted-foreground">{t("mcp:registry.credential.noExpiry")}</span>
+								<span className="text-muted-foreground">{t("registry.credential.noExpiryReported")}</span>
 								{credential.last_refreshed_at && (
-									<Sub>{t("mcp:sessions.refreshedAgo", { time: formatRelativePast(credential.last_refreshed_at) })}</Sub>
+									<Sub>{t("registry.credential.refreshed", { time: formatRelativePast(credential.last_refreshed_at) })}</Sub>
 								)}
 							</>
 						)}
-					</Row>
-					<Row label={t("mcp:sessions.col.refreshToken")}>
+					</DefinitionRow>
+					<DefinitionRow label={t("sessions.refreshToken")}>
 						<RefreshTokenValue credential={credential} notIssuedHint={copy.notIssued} />
-					</Row>
-					<Row label={t("mcp:registry.credential.grantedScopes")}>
+					</DefinitionRow>
+					<DefinitionRow label={t("registry.credential.grantedScopes")}>
 						{credential.scopes?.length ? (
 							<ScopeChips scopes={credential.scopes} max={credential.scopes.length} />
 						) : (
-							<span className="text-muted-foreground">{t("mcp:registry.credential.notReported")}</span>
+							<span className="text-muted-foreground">{t("registry.credential.notReported")}</span>
 						)}
-					</Row>
-					<Row label={t("mcp:registry.credential.authorized")}>{formatAbsoluteDate(credential.created_at)}</Row>
+					</DefinitionRow>
+					<DefinitionRow label={t("registry.credential.authorized")}>{formatAbsoluteDate(credential.created_at)}</DefinitionRow>
 				</DefinitionList>
 			)}
 		</div>
@@ -129,36 +114,36 @@ function OAuthCredentialBlock({ mcpClient }: Props) {
 // Copy for the three auth types that hold an OAuth credential of their own.
 // The repair action named in each string matches the label of the
 // actions-menu item that replaces that credential.
-function oauthCredentialCopy(authType: MCPClient["config"]["auth_type"], t: (key: string, opts?: Record<string, unknown>) => string) {
+function oauthCredentialCopy(authType: MCPClient["config"]["auth_type"]) {
 	switch (authType) {
 		case "per_user_oauth": {
-			const repairAction = t("mcp:registry.table.refreshAdminCred");
+			const repairAction = i18n.t("registry.actions.refreshAdminCredential", { ns: "mcp" });
 			return {
-				title: t("mcp:registry.credential.adminTitle"),
-				description: t("mcp:registry.credential.adminDesc"),
-				empty: t("mcp:registry.credential.adminEmpty", { repairAction }),
-				needsReauth: t("mcp:registry.credential.reauthRefreshRejected", { repairAction }),
-				notIssued: t("mcp:registry.credential.notIssuedUseRepair", { repairAction }),
+				title: i18n.t("registry.credential.adminTitle", { ns: "mcp" }),
+				description: i18n.t("registry.credential.adminDescPerUserOauth", { ns: "mcp" }),
+				empty: i18n.t("registry.credential.adminEmpty", { ns: "mcp", action: repairAction }),
+				needsReauth: i18n.t("registry.credential.needsReauthPerUserOauth", { ns: "mcp", action: repairAction }),
+				notIssued: i18n.t("registry.credential.notIssuedPerUserOauth", { ns: "mcp", action: repairAction }),
 			};
 		}
 		case "token_exchange": {
-			const repairAction = t("mcp:registry.exchange.reVerifyAsMe");
+			const repairAction = i18n.t("registry.actions.reverifyAsMe", { ns: "mcp" });
 			return {
-				title: t("mcp:registry.credential.adminTitle"),
-				description: t("mcp:registry.credential.tokenExchangeDesc"),
-				empty: t("mcp:registry.credential.adminEmpty", { repairAction }),
-				needsReauth: t("mcp:registry.credential.reauthIdpRejected", { repairAction }),
-				notIssued: t("mcp:registry.credential.notIssuedOfflineAccess", { repairAction }),
+				title: i18n.t("registry.credential.adminTitle", { ns: "mcp" }),
+				description: i18n.t("registry.credential.adminDescTokenExchange", { ns: "mcp" }),
+				empty: i18n.t("registry.credential.adminEmpty", { ns: "mcp", action: repairAction }),
+				needsReauth: i18n.t("registry.credential.needsReauthTokenExchange", { ns: "mcp", action: repairAction }),
+				notIssued: i18n.t("registry.credential.notIssuedTokenExchange", { ns: "mcp", action: repairAction }),
 			};
 		}
 		default: {
-			const repairAction = t("mcp:registry.table.reauthorize");
+			const repairAction = i18n.t("registry.actions.reauthorize", { ns: "mcp" });
 			return {
-				title: t("mcp:registry.credential.oauthTitle"),
-				description: t("mcp:registry.credential.oauthDesc", { repairAction }),
-				empty: t("mcp:registry.credential.oauthEmpty"),
-				needsReauth: t("mcp:registry.credential.reauthRefreshRejectedMenu", { repairAction }),
-				notIssued: t("mcp:registry.credential.notIssuedUseRepair", { repairAction }),
+				title: i18n.t("registry.credential.oauthTitle", { ns: "mcp" }),
+				description: i18n.t("registry.credential.oauthDesc", { ns: "mcp", action: repairAction }),
+				empty: i18n.t("registry.credential.oauthEmpty", { ns: "mcp" }),
+				needsReauth: i18n.t("registry.credential.needsReauthShared", { ns: "mcp", action: repairAction }),
+				notIssued: i18n.t("registry.credential.notIssuedShared", { ns: "mcp", action: repairAction }),
 			};
 		}
 	}
@@ -168,18 +153,18 @@ function oauthCredentialCopy(authType: MCPClient["config"]["auth_type"], t: (key
 // that tells the admin what it means for this server. The needs_reauth case
 // is already explained under Status, so it carries no second hint.
 function RefreshTokenValue({ credential, notIssuedHint }: { credential: MCPClientCredential; notIssuedHint: string }) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	return (
 		<>
 			<RefreshTokenStatus hasRefreshToken={credential.has_refresh_token} status={credential.status} />
 			{credential.status !== "needs_reauth" &&
-				(credential.has_refresh_token ? <Hint>{t("mcp:registry.credential.autoRenewHint")}</Hint> : <Hint>{notIssuedHint}</Hint>)}
+				(credential.has_refresh_token ? <Hint>{t("registry.credential.renewHint")}</Hint> : <Hint>{notIssuedHint}</Hint>)}
 		</>
 	);
 }
 
 function HeaderCredentialBlock({ mcpClient }: Props) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	const credential = mcpClient.credential?.kind === "headers" ? mcpClient.credential : undefined;
 	const covered = credential?.header_keys ?? [];
 	const missing = credential ? missingHeaderKeys(mcpClient.config.per_user_header_keys, covered) : [];
@@ -187,19 +172,19 @@ function HeaderCredentialBlock({ mcpClient }: Props) {
 	return (
 		<div className="space-y-4" data-testid="mcpclient-credential-section">
 			<SectionHeader
-				title={t("mcp:registry.credential.headerValuesTitle")}
-				description={t("mcp:registry.credential.headerValuesDesc")}
+				title={t("registry.credential.adminVerificationValues")}
+				description={t("registry.credential.adminVerificationDesc")}
 				testId="mcpclient-credential-heading"
 			/>
 			{!credential ? (
-				<EmptyCredential>{t("mcp:registry.credential.headerEmpty")}</EmptyCredential>
+				<EmptyCredential>{t("registry.credential.adminValuesEmpty")}</EmptyCredential>
 			) : (
 				<DefinitionList>
-					<Row label={t("common:fields.status")}>
+					<DefinitionRow label={t("common.status")}>
 						<CredentialStatusBadge status={credential.status} />
-						{credential.status === "needs_update" && <Hint>{t("mcp:registry.credential.needsUpdateHint")}</Hint>}
-					</Row>
-					<Row label={t("mcp:registry.credential.coversHeaders")}>
+						{credential.status === "needs_update" && <Hint>{t("registry.credential.needsUpdateHint")}</Hint>}
+					</DefinitionRow>
+					<DefinitionRow label={t("registry.credential.coversHeaders")}>
 						{covered.length === 0 && missing.length === 0 ? (
 							<span className="text-muted-foreground">-</span>
 						) : (
@@ -220,55 +205,16 @@ function HeaderCredentialBlock({ mcpClient }: Props) {
 								))}
 								{missing.length > 0 && (
 									<span className="text-muted-foreground rounded-sm border px-1 font-mono text-[10px] tracking-wider uppercase">
-										{t("mcp:registry.credential.missing")}
+										{t("registry.credential.missing")}
 									</span>
 								)}
 							</div>
 						)}
-					</Row>
-					<Row label={t("mcp:registry.credential.submitted")}>{formatAbsoluteDate(credential.created_at)}</Row>
-					<Row label={t("mcp:registry.credential.lastUpdated")}>{formatRelativePast(credential.updated_at)}</Row>
+					</DefinitionRow>
+					<DefinitionRow label={t("registry.credential.submitted")}>{formatAbsoluteDate(credential.created_at)}</DefinitionRow>
+					<DefinitionRow label={t("registry.credential.lastUpdated")}>{formatRelativePast(credential.updated_at)}</DefinitionRow>
 				</DefinitionList>
 			)}
-		</div>
-	);
-}
-
-function SessionsRow({ clientId, kind }: { clientId: string; kind: "token" | "header" }) {
-	const { t } = useTranslation(["common", "mcp"]);
-	// One-row page: only total_count is used. Shares the MCPSessions cache tag,
-	// so a revoke on the sessions page refreshes this count too.
-	const { data } = useGetMCPSessionsQuery({ mcp_client_id: [clientId], kind: [kind], limit: 1 });
-	const total = data?.total_count;
-	const oauth = kind === "token";
-
-	return (
-		<div className="space-y-4" data-testid="mcpclient-sessions-section">
-			<SectionHeader
-				title={oauth ? t("mcp:registry.credential.userSessionsTitle") : t("mcp:registry.credential.userSubmissionsTitle")}
-				description={oauth ? t("mcp:registry.credential.userSessionsDesc") : t("mcp:registry.credential.userSubmissionsDesc")}
-				testId="mcpclient-sessions-heading"
-				action={
-					<div className="flex shrink-0 items-center gap-3">
-						{typeof total === "number" && (
-							<span className="text-muted-foreground text-sm" data-testid="mcpclient-sessions-count">
-								<span className="text-foreground font-medium tabular-nums">{total}</span>{" "}
-								{t(oauth ? "mcp:registry.credential.sessionNoun" : "mcp:registry.credential.submissionNoun", { count: total })}
-							</span>
-						)}
-						<Button variant="outline" size="sm" asChild>
-							<Link
-								to="/workspace/mcp-sessions"
-								search={{ mcp_client_id: [clientId], kind: [kind] }}
-								data-testid="mcpclient-view-sessions-link"
-							>
-								{oauth ? t("mcp:registry.credential.viewSessions") : t("mcp:registry.credential.viewSubmissions")}
-								<ArrowUpRight className="size-3.5" />
-							</Link>
-						</Button>
-					</div>
-				}
-			/>
 		</div>
 	);
 }
@@ -276,28 +222,27 @@ function SessionsRow({ clientId, kind }: { clientId: string; kind: "token" | "he
 // Status vocabulary mirrors the sessions table's StatusBadge so a credential
 // reads the same in both places; colors come from the shared palette so the
 // badge matches the server state badge above it.
-const CREDENTIAL_STATUS_LABEL_KEYS: Record<string, string> = {
-	active: "mcp:sessions.status.active",
-	needs_reauth: "mcp:sessions.status.needs_reauth",
-	needs_update: "mcp:sessions.status.needs_update",
-	orphaned: "mcp:sessions.status.orphaned",
-};
-
 function CredentialStatusBadge({ status }: { status: MCPClientCredential["status"] }) {
-	const { t } = useTranslation(["common", "mcp"]);
-	const key = CREDENTIAL_STATUS_LABEL_KEYS[status];
+	const { t } = useTranslation("mcp");
+	const labels: Record<string, string> = {
+		active: t("sessions.status.active"),
+		needs_reauth: t("sessions.status.needsReauth"),
+		needs_update: t("sessions.status.needsUpdate"),
+		orphaned: t("sessions.status.orphaned"),
+	};
 	return (
 		<Badge className={MCP_CREDENTIAL_STATUS_COLORS[status] ?? MCP_CREDENTIAL_STATUS_COLORS.unknown}>
-			{key ? t(key) : titleCaseFromSnakeCase(status)}
+			{labels[status] ?? titleCaseFromSnakeCase(status)}
 		</Badge>
 	);
 }
 
-function DefinitionList({ children }: { children: ReactNode }) {
+// DefinitionList and DefinitionRow lay out label/value rows; the view sheet's other sections use them too.
+export function DefinitionList({ children }: { children: ReactNode }) {
 	return <dl className="grid grid-cols-1 gap-x-4 gap-y-3.5 rounded-md border p-4 text-sm sm:grid-cols-[168px_1fr]">{children}</dl>;
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+export function DefinitionRow({ label, children }: { label: string; children: ReactNode }) {
 	return (
 		<>
 			<dt className="text-muted-foreground pt-0.5">{label}</dt>

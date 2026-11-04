@@ -39,14 +39,13 @@ export function assignedToLabel(vk: {
 	business_unit?: { name: string };
 	assigned_user?: { name: string; email: string } | null;
 }): string | null {
-	if (vk.team) return i18n.t("governance:virtualKeys.assignedToLabels.team", { name: vk.team.name });
-	if (vk.customer) return i18n.t("governance:virtualKeys.assignedToLabels.customer", { name: vk.customer.name });
+	if (vk.team) return i18n.t("virtualKeys.teamNamed", { ns: "models", name: vk.team.name });
+	if (vk.customer) return i18n.t("virtualKeys.customerNamed", { ns: "models", name: vk.customer.name });
 	if (vk.business_unit_id)
 		return vk.business_unit?.name
-			? i18n.t("governance:virtualKeys.assignedToLabels.businessUnitNamed", { name: vk.business_unit.name })
-			: i18n.t("governance:virtualKeys.assignedToLabels.businessUnit");
-	if (vk.assigned_user)
-		return i18n.t("governance:virtualKeys.assignedToLabels.user", { name: vk.assigned_user.name || vk.assigned_user.email });
+			? i18n.t("virtualKeys.businessUnitNamed", { ns: "models", name: vk.business_unit.name })
+			: i18n.t("virtualKeys.businessUnit", { ns: "models" });
+	if (vk.assigned_user) return i18n.t("virtualKeys.userNamed", { ns: "models", name: vk.assigned_user.name || vk.assigned_user.email });
 	return null;
 }
 
@@ -70,6 +69,6 @@ export function csvAssignedToCell(vk: {
 	if (label) return label;
 	// Team, customer and business unit ride on the row itself, so they are never the unresolved case.
 	if (!vk.team && !vk.customer && !vk.business_unit_id && vk.assigned_user === undefined)
-		return i18n.t("governance:virtualKeys.assignedToLabels.unknownUnresolved");
+		return i18n.t("virtualKeys.unknownNotResolved", { ns: "models" });
 	return "";
 }

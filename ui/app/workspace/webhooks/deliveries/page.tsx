@@ -19,17 +19,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { AlertCircle } from "lucide-react";
 import { parseAsBoolean, parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { normalizeDeliveriesPagination } from "./deliveries.page.utils";
-import { createColumns, webhookDeliveryColumnLabels } from "./views/columns";
+import { createColumns, getWebhookDeliveryColumnLabels } from "./views/columns";
 import { DeliveriesTable, type DeliveriesPagination } from "./views/deliveriesTable";
 import { DeliveriesHeaderView } from "./views/deliveriesHeaderView";
 
 const COLUMN_IDS = ["expand", "time", "webhook", "delivery_id", "request_id", "event", "status", "responses", "actions"];
 
 export default function WebhookDeliveriesPage() {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("governance");
 	const navigate = useNavigate();
 	const canManage = useRbac(RbacResource.Governance, RbacOperation.Update);
 	const { copy } = useCopyToClipboard();
@@ -136,7 +136,7 @@ export default function WebhookDeliveriesPage() {
 			setRedeliveringIds((prev) => new Set(prev).add(deliveryId));
 			try {
 				await redeliverWebhookDelivery(deliveryId).unwrap();
-				toast.success(t("governance:webhooks.deliveries.page.toastRequeued"));
+				toast.success(t("webhooks.deliveries.redeliverQueued"));
 			} catch (err) {
 				toast.error(getErrorMessage(err));
 			} finally {
@@ -147,15 +147,15 @@ export default function WebhookDeliveriesPage() {
 				});
 			}
 		},
-		[redeliverWebhookDelivery],
+		[redeliverWebhookDelivery, t],
 	);
 
 	const handleCopy = useCallback(
 		(value: string) => {
 			copy(value);
-			toast.success(t("governance:webhooks.deliveries.page.toastCopied"));
+			toast.success(t("webhooks.deliveries.copied"));
 		},
-		[copy],
+		[copy, t],
 	);
 
 	const handleOpenRequest = useCallback(
@@ -223,6 +223,7 @@ export default function WebhookDeliveriesPage() {
 	const columns = useMemo(
 		() =>
 			createColumns({
+				t,
 				endpointNames,
 				expandedIds,
 				onToggleExpanded: toggleExpanded,
@@ -232,7 +233,7 @@ export default function WebhookDeliveriesPage() {
 				canManage,
 				onOpenRequest: handleOpenRequest,
 			}),
-		[endpointNames, expandedIds, toggleExpanded, handleCopy, handleRedeliver, redeliveringIds, canManage, handleOpenRequest],
+		[t, endpointNames, expandedIds, toggleExpanded, handleCopy, handleRedeliver, redeliveringIds, canManage, handleOpenRequest],
 	);
 
 	const displayError = error ? getErrorMessage(error) : undefined;
@@ -242,10 +243,7 @@ export default function WebhookDeliveriesPage() {
 			{/* The trail replaces the old in-page back button: navigating up is the
 			    topbar's job, and it frees the header row for the filters. */}
 			<PageTitle
-				breadcrumbs={[
-					{ label: t("governance:webhooks.deliveries.page.breadcrumbsWebhooks"), to: "/workspace/webhooks" },
-					{ label: t("governance:webhooks.deliveries.page.breadcrumbsDeliveries") },
-				]}
+				breadcrumbs={[{ label: t("webhooks.title"), to: "/workspace/webhooks" }, { label: t("webhooks.deliveries.breadcrumb") }]}
 			/>
 			<WebhookDeliveriesFilterSidebar filters={filters} onFiltersChange={setFilters} />
 
@@ -261,7 +259,7 @@ export default function WebhookDeliveriesPage() {
 						onRefresh={refetch}
 						loading={isFetching}
 						columnEntries={columnEntries}
-						columnLabels={webhookDeliveryColumnLabels(t)}
+						columnLabels={getWebhookDeliveryColumnLabels(t)}
 						onToggleColumnVisibility={toggleVisibility}
 						onResetColumns={resetColumns}
 					/>

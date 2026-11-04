@@ -1,6 +1,6 @@
 import { Database } from "lucide-react";
-import ContactUsView from "../../views/contactUsView";
 import { useTranslation } from "react-i18next";
+import ContactUsView from "../../views/contactUsView";
 
 interface EnableToggleProps {
 	enabled: boolean;
@@ -15,7 +15,8 @@ interface SplunkConnectorViewProps {
 }
 
 export default function SplunkConnectorView(_props: SplunkConnectorViewProps) {
-	const { t } = useTranslation(["errors"]);
+	const { t } = useTranslation("governance");
+
 	return (
 		<div className="space-y-6">
 			{/* Content - OSS: paywall only; no delete/save buttons */}
@@ -25,8 +26,7 @@ export default function SplunkConnectorView(_props: SplunkConnectorViewProps) {
 						align="middle"
 						className="mx-auto w-full max-w-lg"
 						icon={<Database className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />}
-						title={t("errors:upsell.splunk.title")}
-						description={t("errors:upsell.splunk.description")}
+						title={t("connectorsUnlock.splunk")}
 						readmeLink="https://docs.getbifrost.ai/features/observability/splunk"
 					/>
 				</div>

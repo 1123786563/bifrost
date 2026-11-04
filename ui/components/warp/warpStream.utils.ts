@@ -1,6 +1,6 @@
 import type { WarpTurn, WarpTurnToolCall } from "@/lib/contexts/warpContext";
+import i18n, { getLocale } from "@/lib/i18n";
 import type { WarpLogIndexStatus, WarpStoredMessage } from "@/lib/types/warp";
-import type { TFunction } from "i18next";
 /** SSE frame parsing for Warp, kept out of the hook so it is testable without a DOM or network. */
 
 export type WarpEventType = "start" | "delta" | "tool_call_start" | "tool_call_end" | "question" | "error" | "done";
@@ -119,37 +119,42 @@ export function isUsableWarpEvent(event: WarpEvent | null | undefined): event is
 	}
 }
 
-// t is optional so the pure functions stay unit-testable without i18next; callers pass the
-// hook's t and get localized labels, tests omit it and keep the English fallback.
-export function warpToolLabel(name: string, isRunning = false, t?: TFunction): string {
-	const label = WARP_TOOL_LABELS[name];
+export function warpToolLabel(name: string, isRunning = false): string {
 	// Unknown tools show their raw name, so a new server-side tool stays legible instead of mislabelled.
-	if (!label) return name;
-	return t?.(`workspaces:warp.tools.${name}.${isRunning ? "running" : "done"}`) ?? (isRunning ? label.running : label.done);
+	if (!isWarpTool(name)) return name;
+	return i18n.t(`warp.tools.${name}.${isRunning ? "running" : "done"}`, { ns: "shell" });
 }
 
 /** Screen-reader text for a tool row's status, which the icons convey only by shape and color. */
-export function warpToolStatusLabel(call: { durationMs?: number; failed?: boolean }, t?: TFunction): string {
-	if (call.durationMs === undefined) return t?.("workspaces:warp.toolStatus.inProgress") ?? "In progress";
-	return call.failed
-		? (t?.("workspaces:warp.toolStatus.failed") ?? "Failed")
-		: (t?.("workspaces:warp.toolStatus.completed") ?? "Completed");
+export function warpToolStatusLabel(call: { durationMs?: number; failed?: boolean }): string {
+	if (call.durationMs === undefined) return i18n.t("warp.toolStatus.inProgress", { ns: "shell" });
+	return call.failed ? i18n.t("warp.toolStatus.failed", { ns: "shell" }) : i18n.t("warp.toolStatus.completed", { ns: "shell" });
 }
 
-const WARP_TOOL_LABELS: Record<string, { running: string; done: string }> = {
-	semantic_search_logs: { running: "Performing vector search", done: "Performed vector search" },
-	count_logs: { running: "Checking log volume", done: "Checked log volume" },
-	query_logs: { running: "Searching request logs", done: "Searched request logs" },
-	get_log_detail: { running: "Opening a request", done: "Opened a request" },
-	get_request_trace: { running: "Tracing what happened", done: "Traced what happened" },
-	query_metrics: { running: "Querying metrics", done: "Queried metrics" },
-	query_usage_by: { running: "Ranking usage", done: "Ranked usage" },
-	query_model_performance: { running: "Comparing models and providers", done: "Compared models and providers" },
-	render_chart: { running: "Drawing a chart", done: "Drew a chart" },
-	describe_filter_space: { running: "Checking available values", done: "Checked available values" },
-	describe_virtual_key: { running: "Checking virtual key limits", done: "Checked virtual key limits" },
-	ask_user: { running: "Asking a question", done: "Asked a question" },
-};
+const WARP_TOOLS = [
+	"semantic_search_logs",
+	"count_logs",
+	"query_logs",
+	"get_log_detail",
+	"get_request_trace",
+	"query_metrics",
+	"query_usage_by",
+	"query_user_usage",
+	"query_virtual_key_usage",
+	"query_model_performance",
+	"render_chart",
+	"describe_filter_space",
+	"describe_virtual_key",
+	"describe_scope",
+	"list_topics",
+	"ask_user",
+] as const;
+
+type WarpTool = (typeof WARP_TOOLS)[number];
+
+function isWarpTool(name: string): name is WarpTool {
+	return (WARP_TOOLS as readonly string[]).includes(name);
+}
 
 /** Whether a link in an answer is a root-relative dashboard path to follow with the router. */
 export function isInternalWarpLink(href: string | undefined): boolean {
@@ -183,7 +188,10 @@ export function turnsFromStoredMessages(messages: WarpStoredMessage[]): WarpTurn
 			if (message.question) {
 				turn.question = {
 					question: message.question.question || message.content,
-					options: (message.question.options ?? []).map((option) => ({ label: option.label, hint: option.hint })),
+					options: (message.question.options ?? []).map((option) => ({
+						label: option.label,
+						hint: option.hint,
+					})),
 					allow_other: message.question.allow_other,
 					kind: message.question.kind as WarpQuestion["kind"],
 				};
@@ -242,32 +250,37 @@ export interface IndexStatusLabel {
 	detail?: string;
 }
 
-export function indexStatusLabel(status: WarpLogIndexStatus, t?: TFunction): IndexStatusLabel {
+export function indexStatusLabel(status: WarpLogIndexStatus): IndexStatusLabel {
 	// The idle response is a zeroed body; treating it as a job would render 0% progress.
 	const backfill = status.backfill?.status === "idle" ? undefined : status.backfill;
 	switch (status.state) {
 		case "unavailable":
-			return { label: t?.("workspaces:warp.index.noVectorStore") ?? "No vector store", tone: "error" };
+			return { label: i18n.t("warp.index.noVectorStore", { ns: "shell" }), tone: "error" };
 		case "not_configured":
-			return { label: t?.("workspaces:warp.index.notSetUp") ?? "Search not set up", tone: "muted" };
+			return { label: i18n.t("warp.index.searchNotSetUp", { ns: "shell" }), tone: "muted" };
 		case "failed": {
 			const detail = backfill?.last_error;
-			const label = t?.("workspaces:warp.index.indexingFailed") ?? "Indexing failed";
+			const label = i18n.t("warp.index.failed", { ns: "shell" });
 			return detail ? { label, tone: "error", detail } : { label, tone: "error" };
 		}
 		case "indexing": {
 			const total = backfill?.total ?? 0;
 			const scanned = backfill?.scanned ?? 0;
 			if (total > 0) {
-				const percent = Math.min(100, Math.floor((scanned / total) * 100));
-				return { label: t?.("workspaces:warp.index.indexingPercent", { percent }) ?? `Indexing ${percent}%`, tone: "busy" };
+				return {
+					label: i18n.t("warp.index.indexingPercent", {
+						ns: "shell",
+						percent: Math.min(100, Math.floor((scanned / total) * 100)),
+					}),
+					tone: "busy",
+				};
 			}
-			return { label: t?.("workspaces:warp.index.indexing") ?? "Indexing", tone: "busy" };
+			return { label: i18n.t("warp.index.indexing", { ns: "shell" }), tone: "busy" };
 		}
 		default:
 			return {
-				label: t?.("workspaces:warp.index.indexReady") ?? "Index ready",
-				shortLabel: t?.("workspaces:warp.index.ready") ?? "Ready",
+				label: i18n.t("warp.index.ready", { ns: "shell" }),
+				shortLabel: i18n.t("warp.index.readyShort", { ns: "shell" }),
 				tone: "ok",
 			};
 	}
@@ -275,7 +288,15 @@ export function indexStatusLabel(status: WarpLogIndexStatus, t?: TFunction): Ind
 
 /** Whether a key event is typing; an empty Warp composer is not, so question shortcuts still apply there. */
 export function isTypingInto(
-	target: { tagName: string; value?: string; isContentEditable?: boolean; dataset?: { testid?: string } } | null | undefined,
+	target:
+		| {
+				tagName: string;
+				value?: string;
+				isContentEditable?: boolean;
+				dataset?: { testid?: string };
+		  }
+		| null
+		| undefined,
 ): boolean {
 	if (!target) return false;
 	if (target.isContentEditable) return true;
@@ -297,6 +318,27 @@ export function shouldDrainQueue(
 	if (questionPending) return false;
 	if (lastTurnFailed) return false;
 	return wasStreaming && !isStreaming && queued > 0;
+}
+
+export interface WarpHandoffGate {
+	isConfigLoading: boolean;
+	isConfigFetching: boolean;
+	isConfigError: boolean;
+	isConfigured: boolean;
+	isBusy: boolean; // the render's view: an answer in flight, a stored load, or queued follow-ups
+	isStreamingNow: boolean; // the session's live state, which a replayed effect sees before the render does
+}
+
+/** The handed-over question to send now, or null. Calls `take` only once the panel can act on what it removes. */
+export function nextWarpHandoff(gate: WarpHandoffGate, take: () => string | null): string | null {
+	// Only a finished, successful fetch: a failed one keeps the question for a retry, and a cached
+	// config may name a model the opening refetch is about to drop.
+	const isConfigSettled = !gate.isConfigLoading && !gate.isConfigFetching && !gate.isConfigError;
+	if (!isConfigSettled || gate.isBusy || gate.isStreamingNow) return null;
+	if (gate.isConfigured) return take();
+	// Not set up: the panel shows how to set it up, and every question is dropped rather than sent after setup.
+	while (take() !== null);
+	return null;
 }
 
 export const WARP_FINISH_QUESTION = "question";
@@ -323,8 +365,8 @@ export function isPartialAnswer(finishReason: string | undefined): boolean {
 	return finishReason === WARP_FINISH_PARTIAL;
 }
 
-export function errorMessage(code: string | undefined, message: string | undefined, t?: TFunction): string {
-	return warpErrorDetail(code, message, t).summary;
+export function errorMessage(code: string | undefined, message: string | undefined): string {
+	return warpErrorDetail(code, message).summary;
 }
 
 export interface WarpErrorDetail {
@@ -334,140 +376,58 @@ export interface WarpErrorDetail {
 	raw?: string;
 }
 
-export function warpErrorDetail(code: string | undefined, message: string | undefined, t?: TFunction): WarpErrorDetail {
+export function warpErrorDetail(code: string | undefined, message: string | undefined): WarpErrorDetail {
 	const raw = message && message.trim() !== "" ? message : undefined;
-	// Localized field for a known error code; English fallback keeps the pure function testable without i18next.
-	const field = (code: string, suffix: string) => t?.(`workspaces:warp.errors.${code}.${suffix}`);
 
 	switch (code) {
 		case "not_configured":
-			return {
-				summary: field(code, "summary") ?? "Warp is not configured yet.",
-				cause: field(code, "cause") ?? "No provider and model are set, or Warp is switched off in settings.",
-				suggestions: [
-					field(code, "suggestions.0") ?? "Open Warp settings and choose a provider and model.",
-					field(code, "suggestions.1") ?? "Make sure Enable Warp is switched on.",
-				],
-				raw,
-			};
 		case "max_iterations":
-			return {
-				summary: field(code, "summary") ?? "Warp could not settle on an answer.",
-				cause:
-					field(code, "cause") ??
-					"Warp ran its full budget of research steps without reaching a conclusion. That usually means the question was broad enough that each query raised another, so it kept looking instead of answering.",
-				suggestions: [
-					field(code, "suggestions.0") ?? "Ask for one thing at a time: a single metric, one time range, one scope.",
-					field(code, "suggestions.1") ?? "Name the window explicitly, for example 'in the last 24 hours'.",
-					field(code, "suggestions.2") ?? "Name whose traffic you mean - a team, a customer, or all of them.",
-					field(code, "suggestions.3") ?? "Raise Max Iterations in Warp settings if the question genuinely needs more steps.",
-				],
-				raw,
-			};
 		case "timeout":
-			return {
-				summary: field(code, "summary") ?? "That took too long.",
-				cause:
-					field(code, "cause") ??
-					"The whole request passed its time budget before Warp finished. Long time ranges and wide scopes make every query slower, and Warp runs several.",
-				suggestions: [
-					field(code, "suggestions.0") ?? "Try a shorter time range.",
-					field(code, "suggestions.1") ?? "Narrow to one team, customer or virtual key.",
-					field(code, "suggestions.2") ?? "Raise Request Timeout in Warp settings if your model is simply slow.",
-				],
-				raw,
-			};
 		case "upstream_error":
-			return {
-				summary: field(code, "summary") ?? "Warp's model could not be reached.",
-				cause:
-					field(code, "cause") ??
-					"The provider rejected the request or was unreachable. This is about Warp's own model, not the traffic you asked about.",
-				suggestions: [
-					field(code, "suggestions.0") ?? "Check the provider, model and key in Warp settings.",
-					field(code, "suggestions.1") ?? "Try the same model from the playground to see whether it answers at all.",
-				],
-				raw,
-			};
 		case "access_denied":
-			return {
-				summary: field(code, "summary") ?? "Your account doesn't have access to Warp's model.",
-				cause:
-					field(code, "cause") ??
-					"This deployment's governance rules refused the request before it reached the provider. Warp's model calls count as yours, so they need the same access any of your requests would.",
-				suggestions: [
-					field(code, "suggestions.0") ??
-						"Ask an administrator to give your account model access, such as an access profile that allows Warp's model.",
-					field(code, "suggestions.1") ?? "If you do have access, the details below say which rule refused it.",
-				],
-				raw,
-			};
 		case "budget_exceeded":
-			return {
-				summary: field(code, "summary") ?? "You've used up your budget.",
-				cause:
-					field(code, "cause") ??
-					"A budget that covers your account is spent for this cycle, so governance refused Warp's model call. Warp's model calls count as yours, so they spend the same budget as any of your requests.",
-				suggestions: [
-					field(code, "suggestions.0") ?? "Wait for the budget to reset at the start of the next cycle.",
-					field(code, "suggestions.1") ?? "Ask an administrator to raise the limit if you need more this cycle.",
-					field(code, "suggestions.2") ?? "The details below say which budget refused it.",
-				],
-				raw,
-			};
 		case "rate_limited":
-			return {
-				summary: field(code, "summary") ?? "You've hit a rate limit.",
-				cause:
-					field(code, "cause") ??
-					"Your account sent more requests or tokens than a rate limit allows in its window, so governance refused Warp's model call. Warp's model calls count as yours, so they share the same limits.",
-				suggestions: [
-					field(code, "suggestions.0") ?? "Wait a moment and ask again.",
-					field(code, "suggestions.1") ?? "Ask an administrator to raise the limit if it keeps happening.",
-					field(code, "suggestions.2") ?? "The details below say which limit refused it.",
-				],
-				raw,
-			};
 		case "model_blocked":
-			return {
-				summary: field(code, "summary") ?? "Warp's model isn't allowed for your account.",
-				cause:
-					field(code, "cause") ??
-					"This deployment's governance rules block the model or provider Warp is set to use for your account, so the request was refused before it reached the provider.",
-				suggestions: [
-					field(code, "suggestions.0") ?? "Ask an administrator to allow Warp's model for your account.",
-					field(code, "suggestions.1") ?? "Or set Warp to a model your account is allowed to use in Warp settings.",
-				],
-				raw,
-			};
 		case "tool_error":
-			return {
-				summary: field(code, "summary") ?? "A query failed.",
-				cause: field(code, "cause") ?? "One of Warp's data queries returned an error, and it could not recover within its remaining steps.",
-				suggestions: [
-					field(code, "suggestions.0") ?? "Try a narrower time range.",
-					field(code, "suggestions.1") ?? "Check that the model, key or team you named actually exists.",
-				],
-				raw,
-			};
 		case "cancelled":
-			return {
-				summary: field(code, "summary") ?? "Stopped.",
-				cause: field(code, "cause") ?? "The request was cancelled before it finished.",
-				suggestions: [],
-				raw,
-			};
+			return warpErrorCopy(code, raw);
 		default:
 			return {
-				summary: raw ?? field("unknown", "summary") ?? "Something went wrong.",
-				cause: field("unknown", "cause") ?? "Warp returned an error without a recognised code.",
-				suggestions: [
-					field("unknown", "suggestions.0") ?? "Try the question again.",
-					field("unknown", "suggestions.1") ?? "If it keeps happening, report it with the details below.",
-				],
+				summary: raw ?? i18n.t("warp.errors.unknown.summary", { ns: "shell" }),
+				cause: i18n.t("warp.errors.unknown.cause", { ns: "shell" }),
+				suggestions: warpSuggestions("unknown"),
 				raw,
 			};
 	}
+}
+
+type WarpErrorCode =
+	| "not_configured"
+	| "max_iterations"
+	| "timeout"
+	| "upstream_error"
+	| "access_denied"
+	| "budget_exceeded"
+	| "rate_limited"
+	| "model_blocked"
+	| "tool_error"
+	| "cancelled"
+	| "unknown";
+
+// Suggestions are a string array in shell.json; the typed catalog treats arrays as
+// leaves (see i18next.d.ts), so check the shape here rather than cast it.
+function warpSuggestions(code: WarpErrorCode): string[] {
+	const value: unknown = i18n.t(`warp.errors.${code}.suggestions`, { ns: "shell", returnObjects: true });
+	return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function warpErrorCopy(code: Exclude<WarpErrorCode, "unknown">, raw: string | undefined): WarpErrorDetail {
+	return {
+		summary: i18n.t(`warp.errors.${code}.summary`, { ns: "shell" }),
+		cause: i18n.t(`warp.errors.${code}.cause`, { ns: "shell" }),
+		suggestions: warpSuggestions(code),
+		raw,
+	};
 }
 /** Encodes as `code:message`; the leading colon on a code-less error stops the decoder reading it as a code. */
 export function encodeTurnError(code: string | undefined, message: string): string {
@@ -541,7 +501,7 @@ export function formatWarpUsage(usage: WarpUsage | undefined): string | null {
 
 	const parts: string[] = [];
 	const total = usage.total_tokens ?? (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0);
-	if (total > 0) parts.push(`${total.toLocaleString()} tokens`);
+	if (total > 0) parts.push(i18n.t("warp.usage.tokens", { ns: "shell", count: total, formattedCount: total.toLocaleString(getLocale()) }));
 
 	const cost = usage.cost?.total_cost;
 	if (typeof cost === "number" && cost > 0) {
@@ -695,7 +655,7 @@ export function formatWarpChartValue(unit: WarpChartSpec["unit"], value: number)
 		case "percent":
 			return `${Number(value.toFixed(2))}%`;
 		default:
-			return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+			return new Intl.NumberFormat(getLocale(), { notation: "compact", maximumFractionDigits: 1 }).format(value);
 	}
 }
 
@@ -705,11 +665,14 @@ export function formatWarpChartX(spec: Pick<WarpChartSpec, "kind" | "interval">,
 	const date = new Date(point.x);
 	if (Number.isNaN(date.getTime())) return point.x;
 	if (spec.interval === "week") {
-		return `Wk of ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(date)}`;
+		return i18n.t("warp.chart.weekOf", {
+			ns: "shell",
+			date: new Intl.DateTimeFormat(getLocale(), { month: "short", day: "numeric", timeZone: "UTC" }).format(date),
+		});
 	}
 	const options: Intl.DateTimeFormatOptions =
 		spec.interval === "hour"
 			? { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" }
 			: { month: "short", day: "numeric", timeZone: "UTC" };
-	return new Intl.DateTimeFormat("en-US", options).format(date);
+	return new Intl.DateTimeFormat(getLocale(), options).format(date);
 }

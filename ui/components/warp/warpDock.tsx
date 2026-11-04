@@ -14,7 +14,7 @@ const WarpPanel = lazy(() => import("@/components/warp/warpPanel"));
 const WARP_DOCK_MIN_WIDTH = 1024;
 
 export default function WarpDock({ children }: { children: React.ReactNode }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("shell");
 	const warp = useWarp();
 	const isMobile = useIsNarrowerThan(WARP_DOCK_MIN_WIDTH);
 	const isOpen = !!warp?.isOpen;
@@ -31,7 +31,7 @@ export default function WarpDock({ children }: { children: React.ReactNode }) {
 				{isOpen && !isMobile && (
 					<>
 						<ResizableHandle
-							aria-label={t("workspaces:warp.resize")}
+							aria-label={t("warp.dock.resize")}
 							className="bg-transparent md:-translate-x-1.5"
 							data-testid="warp-dock-resize-handle"
 						/>
@@ -58,8 +58,8 @@ export default function WarpDock({ children }: { children: React.ReactNode }) {
 					{/* Override SheetContent's sm:w-3/4 so the sheet stays full width. */}
 					<SheetContent side="right" className="w-[calc(100%_-_16px)] p-0 sm:w-full sm:max-w-none" data-testid="warp-dock-sheet">
 						{/* Radix names the dialog from SheetTitle, not the panel's own heading. */}
-						<SheetTitle className="sr-only">Warp</SheetTitle>
-						<SheetDescription className="sr-only">{t("workspaces:warp.sheetDescription")}</SheetDescription>
+						<SheetTitle className="sr-only">{t("nav.warp")}</SheetTitle>
+						<SheetDescription className="sr-only">{t("warp.dock.description")}</SheetDescription>
 						<Suspense fallback={null}>
 							<WarpPanel />
 						</Suspense>

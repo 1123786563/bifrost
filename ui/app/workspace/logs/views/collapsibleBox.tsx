@@ -13,7 +13,7 @@ interface CollapsibleBoxProps {
 }
 
 export default function CollapsibleBox({ title, children, collapsedHeight = 60, expandedMaxHeight = 450, onCopy }: CollapsibleBoxProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [needsExpansion, setNeedsExpansion] = useState(false);
 	const innerContentRef = useRef<HTMLDivElement>(null);
@@ -74,12 +74,12 @@ export default function CollapsibleBox({ title, children, collapsedHeight = 60, 
 					{isExpanded ? (
 						<>
 							<ChevronUp className="h-3 w-3" />
-							{t("logs:collapsible.showLess")}
+							{t("logs.collapsibleBox.showLess")}
 						</>
 					) : (
 						<>
 							<ChevronDown className="h-3 w-3" />
-							{t("logs:collapsible.showMore")}
+							{t("logs.collapsibleBox.showMore")}
 						</>
 					)}
 				</button>

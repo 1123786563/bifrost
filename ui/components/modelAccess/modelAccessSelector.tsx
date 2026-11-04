@@ -1,8 +1,9 @@
-import { ALL_MODELS_OPTION, ModelSelector } from "@/components/ui/modelSelector";
+import { ModelSelector } from "@/components/ui/modelSelector";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ModelAccessChipLabel } from "./modelAccessChip";
 import { RegexPatternInput } from "./regexPatternInput";
 import {
@@ -15,7 +16,6 @@ import {
 	splitModelAccess,
 	toRegexEntry,
 } from "./utils";
-import { useTranslation } from "react-i18next";
 
 type EditorTab = "models" | "regex";
 
@@ -67,7 +67,8 @@ export function ModelAccessSelector({
 	className,
 	...rest
 }: ModelAccessSelectorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation();
+	const allModelsOption = useMemo(() => [{ value: "*", label: t("modelAccess.allModels") }], [t]);
 	const testId = rest["data-testid"];
 	// FormControl injects these onto its child; forward them to whichever input is showing
 	// so the label, the error message and the invalid state still point at a real element.
@@ -88,7 +89,7 @@ export function ModelAccessSelector({
 	const toggle = (
 		<Tabs value={tab} onValueChange={(next) => setPickedTab(next as EditorTab)} className="shrink-0">
 			<TabsList
-				aria-label={t("workspaces:modelAccess.entryTypeAria")}
+				aria-label={t("modelAccess.entryTypeAria")}
 				className="h-6 rounded-sm p-0.5"
 				data-testid={testId ? `${testId}-mode` : undefined}
 			>
@@ -98,7 +99,7 @@ export function ModelAccessSelector({
 					className="rounded-[3px] px-2 text-[11px] leading-5"
 					data-testid={testId ? `${testId}-mode-models` : undefined}
 				>
-					{t("workspaces:modelAccess.modelsTab")}
+					{t("modelAccess.modelsTab")}
 				</TabsTrigger>
 				<TabsTrigger
 					value="regex"
@@ -106,7 +107,7 @@ export function ModelAccessSelector({
 					className="rounded-[3px] px-2 text-[11px] leading-5"
 					data-testid={testId ? `${testId}-mode-regex` : undefined}
 				>
-					{t("workspaces:modelAccess.regexTab")}
+					{t("modelAccess.regexTab")}
 				</TabsTrigger>
 			</TabsList>
 		</Tabs>
@@ -122,7 +123,7 @@ export function ModelAccessSelector({
 			{tab === "models" ? (
 				<ModelSelector
 					multiple
-					extraOptions={allowAllOption ? ALL_MODELS_OPTION : undefined}
+					extraOptions={allowAllOption ? allModelsOption : undefined}
 					allowCustomModel
 					data-testid={testId}
 					inputId={controlId}
@@ -135,7 +136,7 @@ export function ModelAccessSelector({
 					value={hasWildcard ? [MODEL_WILDCARD] : models}
 					onChange={(next: string[]) => onChange(replaceModels(list, next))}
 					placeholder={modelAccessPlaceholder(list, mode)}
-					emptyMessage={provider ? t("workspaces:modelAccess.noModelsForProvider") : t("workspaces:modelAccess.selectProviderFirst")}
+					emptyMessage={provider ? t("modelAccess.noneForProvider") : t("modelAccess.selectProviderFirst")}
 					renderValueLabel={(entry) => <ModelAccessChipLabel entry={entry} />}
 				/>
 			) : (
@@ -158,7 +159,7 @@ export function ModelAccessSelector({
 									<ModelAccessChipLabel entry={toRegexEntry(pattern)} />
 									<button
 										type="button"
-										aria-label={`Remove ${pattern}`}
+										aria-label={t("modelAccess.removePatternAria", { pattern })}
 										disabled={disabled}
 										onClick={() => onChange(removePattern(list, pattern))}
 										className="text-muted-foreground hover:text-foreground shrink-0"
@@ -170,7 +171,7 @@ export function ModelAccessSelector({
 						</div>
 					) : (
 						<p className="text-muted-foreground text-xs">
-							{mode === "allow" ? t("workspaces:modelAccess.noPatternsAllow") : t("workspaces:modelAccess.noPatternsBlock")}
+							{mode === "allow" ? t("modelAccess.noPatternsAllow") : t("modelAccess.noPatternsBlock")}
 						</p>
 					)}
 				</div>

@@ -18,15 +18,15 @@ import { ModelParams } from "@/lib/types/prompts";
 import { cn } from "@/lib/utils";
 import { PromptDeploymentsAccordionItem } from "@enterprise/components/prompt-deployments/promptDeploymentsAccordionItem";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiKeySelectorView } from "../components/apiKeySelectorView";
 import { VariablesTableView } from "../components/variablesTableView";
 import { usePromptContext } from "../context";
-import { useTranslation } from "react-i18next";
 
 const VIRTUAL_KEY_PAGE_SIZE = 20;
 
 export function SettingsPanel() {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("config");
 	const {
 		provider,
 		setProvider,
@@ -201,7 +201,7 @@ export function SettingsPanel() {
 							data-testid="prompts-configuration-trigger"
 							className="text-muted-foreground shrink-0 pt-2 pr-1 pb-3 text-xs font-medium uppercase hover:no-underline"
 						>
-							<span className="min-w-0 flex-1 text-left font-semibold">{t("workspaces:prompts.configuration")}</span>
+							<span className="min-w-0 flex-1 text-left font-semibold">{t("promptRepo.configuration")}</span>
 						</AccordionTrigger>
 						<AccordionContent
 							containerClassName="data-[state=open]:flex data-[state=open]:min-h-0 data-[state=open]:flex-1 data-[state=open]:flex-col"
@@ -209,20 +209,20 @@ export function SettingsPanel() {
 						>
 							<div className="space-y-6">
 								<div className="flex flex-col gap-2" data-testid="settings-provider">
-									<Label className="text-muted-foreground text-xs font-medium uppercase">{t("common:fields.provider")}</Label>
+									<Label className="text-muted-foreground text-xs font-medium uppercase">{t("promptRepo.provider")}</Label>
 									<ProviderSelector
 										filter={isUsableProvider}
 										extraOptions={savedProviderOption}
 										value={provider}
 										onChange={(v: string) => v && onProviderChange(v)}
-										placeholder={t("workspaces:promptsRepo.settings.selectProvider")}
+										placeholder={t("caching.selectProvider")}
 										className="!h-9 !min-h-9"
 									/>
 								</div>
 
 								<div className="flex flex-col gap-2" data-testid="settings-model">
 									<Label id="settings-model-label" className="text-muted-foreground text-xs font-medium uppercase">
-										{t("common:fields.model")}
+										{t("promptRepo.model")}
 									</Label>
 									<ModelSelector
 										ariaLabelledBy="settings-model-label"
@@ -231,11 +231,7 @@ export function SettingsPanel() {
 										vks={filterVks}
 										value={model}
 										onChange={onModelChange}
-										placeholder={
-											!provider
-												? t("workspaces:promptsRepo.settings.selectProviderFirst")
-												: t("workspaces:promptsRepo.settings.selectModel")
-										}
+										placeholder={!provider ? t("caching.selectProviderFirst") : t("promptRepo.selectModel")}
 										disabled={!provider}
 										unfiltered
 										allowCustomModel
@@ -267,10 +263,8 @@ export function SettingsPanel() {
 									<>
 										<Separator />
 										<div className="flex flex-col gap-2" data-testid="settings-required-headers">
-											<Label className="text-muted-foreground text-xs font-medium uppercase">
-												{t("workspaces:prompts.requiredHeaders")}
-											</Label>
-											<p className="text-muted-foreground text-xs">{t("workspaces:prompts.requiredHeadersHint")}</p>
+											<Label className="text-muted-foreground text-xs font-medium uppercase">{t("promptRepo.requiredHeaders")}</Label>
+											<p className="text-muted-foreground text-xs">{t("promptRepo.requiredHeadersHelp")}</p>
 											<div className="flex flex-col gap-2">
 												{requiredHeaders.map((name) => (
 													<div key={name} className="flex items-center gap-2">
@@ -281,7 +275,7 @@ export function SettingsPanel() {
 															id={`required-header-${name}`}
 															value={customHeaders[name] ?? ""}
 															onChange={(e) => setCustomHeaders((prev) => ({ ...prev, [name]: e.target.value }))}
-															placeholder="value"
+															placeholder={t("promptRepo.valuePlaceholder")}
 															className="h-8 flex-1"
 														/>
 													</div>

@@ -16,7 +16,7 @@ interface PricingFormData {
 }
 
 export default function PricingConfigView() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
 	const { data: bifrostConfig } = useGetCoreConfigQuery({ fromDB: true });
 	const config = bifrostConfig?.framework_config;
@@ -73,7 +73,7 @@ export default function PricingConfigView() {
 					model_parameters_url: data.model_parameters_url,
 				},
 			}).unwrap();
-			toast.success(t("settings:pricing.saved"));
+			toast.success(t("pricing.toastSaved"));
 			reset(data);
 		} catch (error) {
 			toast.error(getErrorMessage(error));
@@ -83,7 +83,7 @@ export default function PricingConfigView() {
 	const handleForceSync = async () => {
 		try {
 			await forcePricingSync().unwrap();
-			toast.success(t("settings:pricing.synced"));
+			toast.success(t("pricing.toastSynced"));
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		}
@@ -92,29 +92,29 @@ export default function PricingConfigView() {
 	return (
 		<div className="mx-auto w-full max-w-7xl space-y-4" data-testid="pricing-config-view">
 			<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-				<PageTitle title={t("settings:pricing.title")}>{t("settings:pricing.subtitle")}</PageTitle>
+				<PageTitle title={t("pricing.title")}>{t("pricing.description")}</PageTitle>
 
 				<div className="space-y-4">
 					{/* Pricing Datasheet URL */}
 					<div className="space-y-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
-							<Label htmlFor="pricing-datasheet-url">{t("settings:pricing.datasheetUrl")}</Label>
-							<p className="text-muted-foreground text-sm">{t("settings:pricing.datasheetUrlDescription")}</p>
+							<Label htmlFor="pricing-datasheet-url">{t("pricing.datasheetUrl")}</Label>
+							<p className="text-muted-foreground text-sm">{t("pricing.datasheetUrlHelp")}</p>
 						</div>
 						<Input
 							id="pricing-datasheet-url"
 							type="text"
-							placeholder={t("settings:pricing.datasheetUrlPlaceholder")}
+							placeholder="https://example.com/pricing.json"
 							data-testid="pricing-datasheet-url-input"
 							{...register("pricing_datasheet_url", {
 								pattern: {
 									value: /^(https?:\/\/)?((localhost|(\d{1,3}\.){3}\d{1,3})(:\d+)?|([\da-z\.-]+)\.([a-z\.]{2,6}))([\/\w \.-]*)*\/?$/,
-									message: t("settings:pricing.urlInvalid"),
+									message: t("pricing.validUrl"),
 								},
 								validate: {
 									checkIfHttp: (value) => {
 										if (!value) return true; // Allow empty
-										return value.startsWith("http://") || value.startsWith("https://") || t("settings:pricing.urlHttpOnly");
+										return value.startsWith("http://") || value.startsWith("https://") || t("pricing.httpUrl");
 									},
 								},
 							})}
@@ -126,23 +126,23 @@ export default function PricingConfigView() {
 					{/* Model Parameters URL */}
 					<div className="space-y-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
-							<Label htmlFor="model-parameters-url">{t("settings:pricing.modelParamsUrl")}</Label>
-							<p className="text-muted-foreground text-sm">{t("settings:pricing.modelParamsUrlDescription")}</p>
+							<Label htmlFor="model-parameters-url">{t("pricing.modelParametersUrl")}</Label>
+							<p className="text-muted-foreground text-sm">{t("pricing.modelParametersUrlHelp")}</p>
 						</div>
 						<Input
 							id="model-parameters-url"
 							type="text"
-							placeholder={t("settings:pricing.modelParamsUrlPlaceholder")}
+							placeholder="https://example.com/model-parameters.json"
 							data-testid="model-parameters-url-input"
 							{...register("model_parameters_url", {
 								pattern: {
 									value: /^(https?:\/\/)?((localhost|(\d{1,3}\.){3}\d{1,3})(:\d+)?|([\da-z\.-]+)\.([a-z\.]{2,6}))([\/\w \.-]*)*\/?$/,
-									message: t("settings:pricing.urlInvalid"),
+									message: t("pricing.validUrl"),
 								},
 								validate: {
 									checkIfHttp: (value) => {
 										if (!value) return true;
-										return value.startsWith("http://") || value.startsWith("https://") || t("settings:pricing.urlHttpOnly");
+										return value.startsWith("http://") || value.startsWith("https://") || t("pricing.httpUrl");
 									},
 								},
 							})}
@@ -155,22 +155,22 @@ export default function PricingConfigView() {
 					<div className="space-y-2 rounded-sm border p-4">
 						<div className="space-y-2">
 							<div className="space-y-0.5">
-								<Label htmlFor="pricing-sync-interval">{t("settings:pricing.syncInterval")}</Label>
-								<p className="text-muted-foreground text-sm">{t("settings:pricing.syncIntervalDescription")}</p>
+								<Label htmlFor="pricing-sync-interval">{t("pricing.syncInterval")}</Label>
+								<p className="text-muted-foreground text-sm">{t("pricing.syncIntervalHelp")}</p>
 							</div>
 							<Input
 								id="pricing-sync-interval"
 								type="number"
 								className={errors.pricing_sync_interval_hours ? "border-destructive" : ""}
 								{...register("pricing_sync_interval_hours", {
-									required: t("settings:pricing.syncIntervalRequired"),
+									required: t("pricing.syncIntervalRequired"),
 									min: {
 										value: 1,
-										message: t("settings:pricing.syncIntervalMin"),
+										message: t("pricing.syncIntervalMin"),
 									},
 									max: {
 										value: 8760,
-										message: t("settings:pricing.syncIntervalMax"),
+										message: t("pricing.syncIntervalMax"),
 									},
 									valueAsNumber: true,
 								})}
@@ -189,10 +189,10 @@ export default function PricingConfigView() {
 						disabled={isForceSyncing || !hasSettingsUpdateAccess}
 						data-testid="pricing-force-sync-btn"
 					>
-						{isForceSyncing ? t("settings:pricing.syncing") : t("settings:pricing.forceSyncNow")}
+						{isForceSyncing ? t("pricing.syncing") : t("pricing.forceSync")}
 					</Button>
 					<Button type="submit" disabled={!hasChanges || isLoading || !hasSettingsUpdateAccess} data-testid="pricing-save-btn">
-						{isLoading ? t("common:state.saving") : t("settings:shared.saveChanges")}
+						{isLoading ? t("saving") : t("saveChanges")}
 					</Button>
 				</div>
 			</form>

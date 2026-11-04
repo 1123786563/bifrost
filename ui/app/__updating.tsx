@@ -1,13 +1,15 @@
 import { Button } from "@/components/ui/button";
+import { IS_ENTERPRISE } from "@/lib/constants/config";
 import { getCachedBrandingAssets } from "@/lib/hooks/useBranding";
+import i18n from "@/lib/i18n";
 import { getEndpointUrl } from "@/lib/utils/port";
 import { consumeAutoReload, startVersionPoll } from "@/lib/utils/versionSkew";
 import { Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { I18nextProvider, useTranslation } from "react-i18next";
 
-export function UpdatingBanner() {
-	const { t } = useTranslation(["common", "errors"]);
+function UpdatingBannerBody() {
+	const { t } = useTranslation("shell");
 	return (
 		<div
 			className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex justify-center px-4 sm:bottom-6"
@@ -21,8 +23,8 @@ export function UpdatingBanner() {
 					<span className="bg-primary relative size-2 rounded-full" aria-hidden="true" />
 				</div>
 				<div className="min-w-0 flex-1">
-					<p className="text-foreground text-sm font-medium">{t("errors:updating.bannerTitle")}</p>
-					<p className="text-muted-foreground truncate text-xs">{t("errors:updating.bannerDescription")}</p>
+					<p className="text-foreground text-sm font-medium">{t("updating.bannerTitle")}</p>
+					<p className="text-muted-foreground truncate text-xs">{t("updating.bannerDescription")}</p>
 				</div>
 				<Button
 					variant="outline"
@@ -32,18 +34,26 @@ export function UpdatingBanner() {
 					onClick={() => window.location.reload()}
 				>
 					<RefreshCw aria-hidden="true" />
-					<span className="hidden sm:inline">{t("errors:updating.reload")}</span>
+					<span className="hidden sm:inline">{t("updating.reload")}</span>
 				</Button>
 			</div>
 		</div>
 	);
 }
 
-export function UpdatingScreen() {
+export function UpdatingBanner() {
+	return (
+		<I18nextProvider i18n={i18n}>
+			<UpdatingBannerBody />
+		</I18nextProvider>
+	);
+}
+
+function UpdatingScreenBody() {
+	const { t } = useTranslation("shell");
 	// Rendered above <ReduxProvider> (main.tsx) and as the router error component,
 	// so branding has to come from the cache rather than a query.
 	const [{ logoSrc, logoAlt }] = useState(() => getCachedBrandingAssets(false));
-	const { t } = useTranslation(["common", "errors"]);
 	const [autoReloadExhausted, setAutoReloadExhausted] = useState(false);
 
 	useEffect(
@@ -91,10 +101,12 @@ export function UpdatingScreen() {
 						<Sparkles className="size-5" aria-hidden="true" />
 					</div>
 					<h1 id="updating-title" className="text-foreground mt-5 text-2xl font-semibold tracking-tight">
-						{t("errors:updating.screenTitle")}
+						{t(IS_ENTERPRISE ? "updating.screenTitleEnterprise" : "updating.screenTitle")}
 					</h1>
 					<p id="updating-description" className="text-muted-foreground mt-2 max-w-md text-sm leading-6">
-						{autoReloadExhausted ? t("errors:updating.stillUpgrading") : t("errors:updating.screenDescription")}
+						{autoReloadExhausted
+							? t(IS_ENTERPRISE ? "updating.descriptionStuckEnterprise" : "updating.descriptionStuck")
+							: t(IS_ENTERPRISE ? "updating.descriptionWaitingEnterprise" : "updating.descriptionWaiting")}
 					</p>
 
 					<div className="bg-muted mt-7 h-1.5 overflow-hidden rounded-full" aria-hidden="true">
@@ -108,11 +120,11 @@ export function UpdatingScreen() {
 					<div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 						<div className="text-muted-foreground flex items-center gap-2 text-xs">
 							{autoReloadExhausted ? (
-								<span>{t("errors:updating.paused")}</span>
+								<span>{t("updating.autoReloadPaused")}</span>
 							) : (
 								<>
 									<Loader2 className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
-									<span>{t("errors:updating.waiting")}</span>
+									<span>{t(IS_ENTERPRISE ? "updating.waitingEnterprise" : "updating.waiting")}</span>
 								</>
 							)}
 						</div>
@@ -124,11 +136,19 @@ export function UpdatingScreen() {
 							onClick={() => window.location.reload()}
 						>
 							<RefreshCw aria-hidden="true" />
-							{t("errors:updating.reloadNow")}
+							{t("updating.reloadNow")}
 						</Button>
 					</div>
 				</div>
 			</section>
 		</main>
+	);
+}
+
+export function UpdatingScreen() {
+	return (
+		<I18nextProvider i18n={i18n}>
+			<UpdatingScreenBody />
+		</I18nextProvider>
 	);
 }

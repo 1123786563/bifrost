@@ -8,11 +8,11 @@ import { OperatorSelectorProps } from "react-querybuilder";
 import { useTranslation } from "react-i18next";
 
 export function OperatorSelector({ value, handleOnChange, options }: OperatorSelectorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("observability");
 	return (
 		<Select value={value || ""} onValueChange={handleOnChange}>
 			<SelectTrigger className="w-[160px]">
-				<SelectValue placeholder={t("workspaces:celBuilder.selectOperator")} />
+				<SelectValue placeholder={t("celBuilder.selectOperator")} />
 			</SelectTrigger>
 			<SelectContent>
 				{options.map((option) => {

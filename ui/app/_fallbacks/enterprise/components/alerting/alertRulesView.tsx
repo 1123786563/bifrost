@@ -1,12 +1,13 @@
-import AlertingPlaceholderView from "./alertingPlaceholderView";
 import { useTranslation } from "react-i18next";
+import AlertingPlaceholderView from "./alertingPlaceholderView";
 
 export default function AlertRulesView() {
-	const { t } = useTranslation(["errors"]);
+	const { t } = useTranslation("governance");
+
 	return (
 		<AlertingPlaceholderView
-			title={t("errors:upsell.alertingRules.title")}
-			description={t("errors:upsell.alertingRules.description")}
+			title={t("alerting.rulesUnlockTitle")}
+			description={t("alerting.rulesUnlockDescription")}
 			readmeLink="https://docs.getbifrost.ai/enterprise/alerting/alert-rules"
 			testIdPrefix="alert-rules"
 		/>

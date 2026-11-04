@@ -1,50 +1,100 @@
-import i18next, { type BackendModule } from "i18next";
+import i18n, { type BackendModule } from "i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
-import { detectInitialLanguage, persistLanguage, type Language } from "./detection";
-import { loadNamespace } from "./lazyResources";
-import type { Namespace } from "./namespaces";
+import { NAMESPACES, loadCatalog, resources } from "./resources";
 
-export { SUPPORTED_LANGUAGES } from "./detection";
-export type { Language } from "./detection";
+export const LOCALE_STORAGE_KEY = "bifrost.locale";
 
-/** Language autonyms — always shown in their own language, never translated. */
-export const LANGUAGE_DISPLAY_NAMES: Record<Language, string> = {
-	en: "English",
-	"zh-CN": "中文",
-};
+export const SUPPORTED_LOCALES = [
+	{ code: "en", label: "English" },
+	{ code: "zh-CN", label: "简体中文" },
+	{ code: "zh-TW", label: "繁體中文" },
+	{ code: "ja", label: "日本語" },
+	{ code: "ko", label: "한국어" },
+	{ code: "es", label: "Español" },
+	{ code: "pt", label: "Português" },
+	{ code: "fr", label: "Français" },
+	{ code: "de", label: "Deutsch" },
+	{ code: "it", label: "Italiano" },
+	{ code: "ru", label: "Русский" },
+] as const;
 
-const lazyBackend: BackendModule = {
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]["code"];
+
+export const DEFAULT_LOCALE: SupportedLocale = "en";
+
+const supportedLocaleCodes: readonly string[] = SUPPORTED_LOCALES.map((locale) => locale.code);
+
+export function isSupportedLocale(value: string | null | undefined): value is SupportedLocale {
+	return !!value && supportedLocaleCodes.includes(value);
+}
+
+export function getLocale(): SupportedLocale {
+	const current = i18n.resolvedLanguage ?? i18n.language;
+	return isSupportedLocale(current) ? current : DEFAULT_LOCALE;
+}
+
+// The language detector persists the choice to localStorage on every change.
+export async function changeLocale(locale: SupportedLocale): Promise<SupportedLocale> {
+	await i18n.changeLanguage(locale);
+	return getLocale();
+}
+
+const lazyCatalogBackend: BackendModule = {
 	type: "backend",
-	init() {},
-	read(language, namespace, callback) {
-		loadNamespace(language as Language, namespace as Namespace)
-			.then((resources) => callback(null, resources))
-			.catch((error) => callback(error, null));
+	init: () => {},
+	read: (language, namespace, callback) => {
+		loadCatalog(language, namespace).then(
+			(catalog) => callback(null, catalog),
+			(error: Error) => callback(error, false),
+		);
 	},
 };
 
-void i18next
-	.use(initReactI18next)
-	.use(lazyBackend)
-	.init({
-		lng: detectInitialLanguage(),
-		fallbackLng: "en",
-		defaultNS: "common",
-		// i18next resolves a missing key through fallbackLng, reading en/<ns>.json
-		// through the same lazy backend — the "load both, then render" behavior the
-		// spec requires, with no extra wiring.
-		ns: ["common"],
-		interpolation: { escapeValue: false },
-		react: { useSuspense: false },
-		missingKeyHandler: (_lngs, ns, key) => {
-			if (import.meta.env.DEV) console.warn(`[i18n] missing key "${ns}:${key}"`);
-		},
-	});
-
-export function changeLanguage(language: Language): void {
-	persistLanguage(language);
-	void i18next.changeLanguage(language);
+// Uses the resolved language, so a failed catalog load does not label English text with the requested language.
+function syncDocumentLanguage() {
+	if (typeof document !== "undefined") document.documentElement.lang = getLocale();
 }
 
-export default i18next;
+let ready: Promise<unknown> = Promise.resolve();
+
+if (!i18n.isInitialized) {
+	i18n.on("languageChanged", syncDocumentLanguage);
+	ready = i18n
+		.use(lazyCatalogBackend)
+		.use(LanguageDetector)
+		.use(initReactI18next)
+		.init({
+			resources,
+			// English is bundled; other languages come from lazyCatalogBackend.
+			partialBundledLanguages: true,
+			ns: [...NAMESPACES],
+			defaultNS: "common",
+			// Namespaces are chosen via useTranslation(ns) or { ns }, never a "ns:key" prefix.
+			// Keep in sync with CustomTypeOptions in i18next.d.ts.
+			nsSeparator: false,
+			fallbackLng: DEFAULT_LOCALE,
+			supportedLngs: [...supportedLocaleCodes],
+			nonExplicitSupportedLngs: false,
+			load: "currentOnly",
+			interpolation: {
+				escapeValue: false,
+			},
+			detection: {
+				order: ["localStorage", "navigator"],
+				lookupLocalStorage: LOCALE_STORAGE_KEY,
+				caches: ["localStorage"],
+			},
+			react: {
+				useSuspense: false,
+			},
+		});
+}
+
+// Resolves once the detected language's catalogs are loaded, so the first render is not English.
+export const i18nReady = ready.catch(() => undefined);
+
+export { NAMESPACES };
+export type { I18nNamespace } from "./resources";
+export default i18n;

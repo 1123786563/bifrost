@@ -12,13 +12,15 @@ import { getProviderLabel } from "@/lib/constants/logs";
 import { useGetCustomerQuery, useGetTeamQuery, useGetVirtualKeyQuery } from "@/lib/store/apis/governanceApi";
 import { RoutingFallbackWire, RoutingRule } from "@/lib/types/routingRules";
 import { getScopeLabel } from "@/lib/utils/labels";
-import { formatTargetsTTFT, normalizeFallback } from "@/lib/utils/routingRules";
+import { normalizeFallback, summarizeTargetsTTFT } from "@/lib/utils/routingRules";
+import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { formatDistanceToNow } from "date-fns";
+import { dateFnsLocale } from "@/lib/i18n/dateLocale";
 import { Check, Copy, GitMerge, Key } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { RuleGroupType, RuleType } from "react-querybuilder";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next";
 
 interface Props {
 	rule: RoutingRule | null;
@@ -44,16 +46,20 @@ function formatRuleValue(value: any): string {
 
 // Resolves a rule's scope_id to a display name. Each scope fetches only the one
 // entity it needs — the rule points at a single id, so pulling the full list to
-// find one name is wasted payload.
+// find one name is wasted payload. A caller without View on the scope's entity
+// skips the lookup and gets no name.
 function useScopeName(scope: string, scopeId?: string): string | undefined {
+	const hasTeamsAccess = useRbac(RbacResource.Teams, RbacOperation.View);
+	const hasCustomersAccess = useRbac(RbacResource.Customers, RbacOperation.View);
+	const hasVirtualKeysAccess = useRbac(RbacResource.VirtualKeys, RbacOperation.View);
 	const { data: teamData } = useGetTeamQuery(scopeId as string, {
-		skip: scope !== "team" || !scopeId,
+		skip: scope !== "team" || !scopeId || !hasTeamsAccess,
 	});
 	const { data: customerData } = useGetCustomerQuery(scopeId as string, {
-		skip: scope !== "customer" || !scopeId,
+		skip: scope !== "customer" || !scopeId || !hasCustomersAccess,
 	});
 	const { data: vkData } = useGetVirtualKeyQuery(scopeId as string, {
-		skip: scope !== "virtual_key" || !scopeId,
+		skip: scope !== "virtual_key" || !scopeId || !hasVirtualKeysAccess,
 	});
 
 	return useMemo(() => {
@@ -68,8 +74,9 @@ function useScopeName(scope: string, scopeId?: string): string | undefined {
 // ─── copy button ─────────────────────────────────────────────────────────────
 
 function CopyButton({ value, label, testId }: { value: string; label?: string; testId: string }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("models");
 	const [copied, setCopied] = useState(false);
+	const copyLabel = label ?? t("routing.value");
 
 	const handleCopy = async () => {
 		try {
@@ -77,7 +84,7 @@ function CopyButton({ value, label, testId }: { value: string; label?: string; t
 			setCopied(true);
 			setTimeout(() => setCopied(false), 1500);
 		} catch {
-			toast.error(t("governance:routingRules.info.toastCopyFailed"));
+			toast.error(t("routing.failedCopy"));
 		}
 	};
 
@@ -90,21 +97,13 @@ function CopyButton({ value, label, testId }: { value: string; label?: string; t
 					size="icon"
 					className="h-6 w-6 shrink-0"
 					onClick={handleCopy}
-					aria-label={
-						copied
-							? t("governance:routingRules.info.valueCopied", { label: label ?? t("governance:routingRules.info.copyValueDefault") })
-							: t("governance:routingRules.info.copyValue", { label: label ?? t("governance:routingRules.info.copyValueDefault") })
-					}
+					aria-label={copied ? t("routing.valueCopied", { label: copyLabel }) : t("routing.copyValue", { label: copyLabel })}
 					data-testid={testId}
 				>
 					{copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
 				</Button>
 			</TooltipTrigger>
-			<TooltipContent>
-				{copied
-					? t("governance:routingRules.info.copied")
-					: t("governance:routingRules.info.copyValue", { label: label ?? t("governance:routingRules.info.copyValueDefault") })}
-			</TooltipContent>
+			<TooltipContent>{copied ? t("routing.copied") : t("routing.copyValue", { label: copyLabel })}</TooltipContent>
 		</Tooltip>
 	);
 }
@@ -112,6 +111,7 @@ function CopyButton({ value, label, testId }: { value: string; label?: string; t
 // ─── condition rendering ─────────────────────────────────────────────────────
 
 function ConditionRow({ rule }: { rule: RuleType }) {
+	const { t } = useTranslation("models");
 	const fieldLabel = getFieldLabel(rule.field);
 	const opLabel = getOperatorLabel(rule.operator);
 	const value = formatRuleValue(rule.value);
@@ -140,12 +140,12 @@ function ConditionRow({ rule }: { rule: RuleType }) {
 				<Badge variant="outline" className="shrink-0 font-medium">
 					{isHeader && keyName ? (
 						<span className="flex items-center gap-1">
-							<span className="text-muted-foreground font-normal">header</span>
+							<span className="text-muted-foreground font-normal">{t("routing.header")}</span>
 							<span className="font-mono">{keyName}</span>
 						</span>
 					) : isParam && keyName ? (
 						<span className="flex items-center gap-1">
-							<span className="text-muted-foreground font-normal">param</span>
+							<span className="text-muted-foreground font-normal">{t("routing.param")}</span>
 							<span className="font-mono">{keyName}</span>
 						</span>
 					) : (
@@ -172,7 +172,7 @@ function CombinatorPill({ combinator }: { combinator: string }) {
 }
 
 function ConditionGroup({ group, depth = 0 }: { group: RuleGroupType; depth?: number }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("models");
 	const rules = group.rules ?? [];
 	if (rules.length === 0) return null;
 
@@ -188,7 +188,7 @@ function ConditionGroup({ group, depth = 0 }: { group: RuleGroupType; depth?: nu
 	return (
 		<div className="border-foreground/25 relative mx-3 my-1 rounded border border-dashed py-1">
 			<span className="bg-background text-muted-foreground absolute -top-2 right-2 rounded px-1 text-[10px] font-medium">
-				{t("governance:routingRules.info.group")}
+				{t("routing.group")}
 			</span>
 			{content}
 		</div>
@@ -198,8 +198,8 @@ function ConditionGroup({ group, depth = 0 }: { group: RuleGroupType; depth?: nu
 // ─── target card ─────────────────────────────────────────────────────────────
 
 function TargetCard({ target, total }: { target: RoutingRule["targets"][0]; index: number; total: number }) {
-	const { t } = useTranslation(["common", "governance"]);
-	const providerLabel = target.provider ? getProviderLabel(target.provider) : t("governance:routingRules.info.incomingProvider");
+	const { t } = useTranslation("models");
+	const providerLabel = target.provider ? getProviderLabel(target.provider) : t("routing.incomingProvider");
 	const weightPercent = total > 0 ? Math.round(target.weight * 100) : 0;
 
 	return (
@@ -212,7 +212,7 @@ function TargetCard({ target, total }: { target: RoutingRule["targets"][0]; inde
 						{target.model ? (
 							<span className="text-muted-foreground font-mono text-xs">{target.model}</span>
 						) : (
-							<span className="text-muted-foreground text-xs">{t("governance:routingRules.info.incomingModel")}</span>
+							<span className="text-muted-foreground text-xs">{t("routing.incomingModel")}</span>
 						)}
 					</div>
 				</div>
@@ -225,15 +225,15 @@ function TargetCard({ target, total }: { target: RoutingRule["targets"][0]; inde
 							<span className="text-muted-foreground w-8 text-right font-mono text-xs">{weightPercent}%</span>
 						</div>
 					</TooltipTrigger>
-					<TooltipContent>{t("governance:routingRules.info.weightRaw", { weight: target.weight })}</TooltipContent>
+					<TooltipContent>{t("routing.weightRaw", { weight: target.weight })}</TooltipContent>
 				</Tooltip>
 			</div>
 			{target.key_id && (
 				<div className="bg-muted/50 flex items-center gap-1.5 rounded-md px-2 py-1">
 					<Key className="text-muted-foreground h-3 w-3 shrink-0" />
-					<span className="text-muted-foreground text-xs">{t("governance:routingRules.info.pinnedKey")}</span>
+					<span className="text-muted-foreground text-xs">{t("routing.pinnedKeyLabel")}</span>
 					<code className="truncate font-mono text-xs">{target.key_id}</code>
-					<CopyButton value={target.key_id} label={t("governance:routingRules.info.keyIdLabel")} testId="routing-rule-copy-key-id-btn" />
+					<CopyButton value={target.key_id} label={t("routing.copyKeyId")} testId="routing-rule-copy-key-id-btn" />
 				</div>
 			)}
 		</div>
@@ -243,12 +243,12 @@ function TargetCard({ target, total }: { target: RoutingRule["targets"][0]; inde
 // ─── fallback chain ───────────────────────────────────────────────────────────
 
 function FallbackChain({ fallbacks }: { fallbacks: RoutingFallbackWire[] }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("models");
 	return (
 		<div className="flex flex-wrap items-center gap-y-2">
 			{fallbacks.map((fallback, i) => {
 				const { provider, model, key_id } = normalizeFallback(fallback);
-				const providerLabel = provider || t("governance:routingRules.info.incomingProvider");
+				const providerLabel = provider || t("routing.incomingProvider");
 
 				return (
 					<div key={i} className="flex items-center">
@@ -259,7 +259,7 @@ function FallbackChain({ fallbacks }: { fallbacks: RoutingFallbackWire[] }) {
 							{key_id && (
 								<span
 									className="text-muted-foreground flex items-center gap-1 border-l pl-1.5"
-									title={`${t("governance:routingRules.info.pinnedKey")} ${key_id}`}
+									title={t("routing.pinnedKeyTitle", { id: key_id })}
 								>
 									<Key className="h-3 w-3 shrink-0" />
 									<span className="max-w-24 truncate font-mono text-xs">{key_id}</span>
@@ -276,7 +276,12 @@ function FallbackChain({ fallbacks }: { fallbacks: RoutingFallbackWire[] }) {
 // ─── main sheet ──────────────────────────────────────────────────────────────
 
 export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, hasPrev = false, hasNext = false }: Props) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t, i18n } = useTranslation("models");
+	const formatTTFT = (targets: RoutingRule["targets"] | undefined) => {
+		const { ms, mixed } = summarizeTargetsTTFT(targets);
+		if (mixed) return t("routing.ttftMixed");
+		return ms ? t("routing.ttftValue", { ms }) : t("routing.off");
+	};
 	const targets = rule?.targets ?? [];
 	const fallbacks = rule?.fallbacks ?? [];
 	const hasQuery = rule?.query && (rule.query.rules?.length ?? 0) > 0;
@@ -302,17 +307,17 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 								<div className="flex w-full flex-wrap items-center gap-2">
 									<SheetTitle className="text-base">{rule.name}</SheetTitle>
 									<Badge variant={rule.enabled ? "default" : "secondary"}>
-										{rule.enabled ? t("governance:routingRules.info.enabled") : t("governance:routingRules.info.disabled")}
+										{rule.enabled ? t("routing.enabled") : t("routing.disabled")}
 									</Badge>
 									{rule.chain_rule && (
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<Badge variant="outline" className="cursor-default gap-1">
 													<GitMerge className="h-3 w-3" />
-													{t("governance:routingRules.chainRule")}
+													{t("routing.chainRuleBadge")}
 												</Badge>
 											</TooltipTrigger>
-											<TooltipContent className="max-w-64">{t("governance:routingRules.info.chainRuleTooltip")}</TooltipContent>
+											<TooltipContent className="max-w-64">{t("routing.chainRuleTooltip")}</TooltipContent>
 										</Tooltip>
 									)}
 								</div>
@@ -331,17 +336,17 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 						<div className="-mx-4 space-y-6 overflow-y-auto px-4 pb-8 md:-mx-8 md:px-8">
 							{/* Overview */}
 							<div className="space-y-3">
-								<h3 className="text-sm font-semibold">{t("governance:routingRules.overview")}</h3>
+								<h3 className="text-sm font-semibold">{t("routing.overview")}</h3>
 								<div className="grid gap-3">
 									<div className="grid grid-cols-1 items-center gap-4 md:grid-cols-3">
-										<span className="text-muted-foreground text-sm">{t("governance:routingRules.table.headers.scope")}</span>
+										<span className="text-muted-foreground text-sm">{t("routing.scope")}</span>
 										<div className="col-span-2 flex items-center gap-1.5">
 											<Badge variant="secondary">{getScopeLabel(rule.scope)}</Badge>
 											{scopeName && <span className="text-sm">{scopeName}</span>}
 										</div>
 									</div>
 									<div className="grid grid-cols-1 items-center gap-4 md:grid-cols-3">
-										<span className="text-muted-foreground text-sm">{t("governance:routingRules.info.priority")}</span>
+										<span className="text-muted-foreground text-sm">{t("routing.priority")}</span>
 										<div className="col-span-2">
 											<span className="bg-primary text-primary-foreground inline-block rounded px-2.5 py-0.5 text-xs font-medium">
 												{rule.priority}
@@ -355,24 +360,20 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 
 							{/* Conditions */}
 							<div className="space-y-3">
-								<h3 className="text-sm font-semibold">{t("governance:routingRules.conditions")}</h3>
+								<h3 className="text-sm font-semibold">{t("routing.conditions")}</h3>
 								{hasQuery ? (
 									<ConditionGroup group={rule.query!} />
 								) : hasCel ? (
-									<p className="text-muted-foreground text-sm">{t("governance:routingRules.info.celDefined")}</p>
+									<p className="text-muted-foreground text-sm">{t("routing.definedAsCel")}</p>
 								) : (
-									<p className="text-muted-foreground text-sm">{t("governance:routingRules.info.matchesAll")}</p>
+									<p className="text-muted-foreground text-sm">{t("routing.matchesAll")}</p>
 								)}
 
 								{/* CEL expression */}
 								<div className="space-y-1.5">
 									<div className="flex items-center justify-between">
-										<span className="text-sm font-semibold">{t("governance:routingRules.info.celExpression")}</span>
-										<CopyButton
-											value={rule.cel_expression}
-											label={t("governance:routingRules.info.expressionLabel")}
-											testId="routing-rule-copy-expression-btn"
-										/>
+										<span className="text-sm font-semibold">{t("routing.celExpression")}</span>
+										<CopyButton value={rule.cel_expression} label={t("routing.copyExpression")} testId="routing-rule-copy-expression-btn" />
 									</div>
 									<code className="bg-muted/50 block w-full rounded-md border px-3 py-2 font-mono text-xs break-all">
 										{rule.cel_expression || <span className="text-muted-foreground italic">true</span>}
@@ -384,7 +385,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 
 							{/* Targets */}
 							<div className="space-y-3">
-								<h3 className="text-sm font-semibold">{t("governance:routingRules.info.targetsCount", { count: targets.length })}</h3>
+								<h3 className="text-sm font-semibold">{t("routing.targetsCount", { count: targets.length })}</h3>
 								{targets.length > 0 ? (
 									<div className="space-y-2">
 										{targets.map((target, i) => (
@@ -392,7 +393,7 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 										))}
 									</div>
 								) : (
-									<p className="text-muted-foreground text-sm">{t("governance:routingRules.info.noTargets")}</p>
+									<p className="text-muted-foreground text-sm">{t("routing.noTargets")}</p>
 								)}
 							</div>
 
@@ -400,19 +401,19 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 
 							{/* Fallback Chain */}
 							<div className="space-y-3">
-								<h3 className="text-sm font-semibold">{t("governance:routingRules.fallbackChain")}</h3>
+								<h3 className="text-sm font-semibold">{t("routing.fallbackChain")}</h3>
 								{fallbacks.length > 0 ? (
 									<FallbackChain fallbacks={fallbacks} />
 								) : (
-									<p className="text-muted-foreground text-sm">{t("governance:routingRules.info.noFallbacks")}</p>
+									<p className="text-muted-foreground text-sm">{t("routing.noFallbacks")}</p>
 								)}
 							</div>
 
 							{/* TTFT cutoff */}
 							<div className="grid grid-cols-1 items-center gap-4 md:grid-cols-3">
-								<span className="text-muted-foreground text-sm">{t("governance:routingRules.info.ttft")}</span>
+								<span className="text-muted-foreground text-sm">{t("routing.ttftCutoff")}</span>
 								<span className="col-span-2 text-sm" data-testid="routing-rule-info-ttft-timeout">
-									{formatTargetsTTFT(rule.targets)}
+									{formatTTFT(rule.targets)}
 								</span>
 							</div>
 
@@ -421,22 +422,20 @@ export function RoutingRuleInfoSheet({ rule, open, onOpenChange, onNavigate, has
 							{/* Timestamps */}
 							<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 								<div>
-									<p className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
-										{t("governance:routingRules.created")}
-									</p>
+									<p className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">{t("routing.created")}</p>
 									<span className="text-sm">
 										{formatDistanceToNow(new Date(rule.created_at), {
 											addSuffix: true,
+											locale: dateFnsLocale(i18n.language),
 										})}
 									</span>
 								</div>
 								<div>
-									<p className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
-										{t("governance:routingRules.lastUpdated")}
-									</p>
+									<p className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">{t("routing.lastUpdated")}</p>
 									<span className="text-sm">
 										{formatDistanceToNow(new Date(rule.updated_at), {
 											addSuffix: true,
+											locale: dateFnsLocale(i18n.language),
 										})}
 									</span>
 								</div>

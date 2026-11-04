@@ -17,7 +17,7 @@ import (
 	"github.com/maximhq/bifrost/core/schemas"
 	"github.com/tidwall/gjson"
 
-	"github.com/maximhq/bifrost/transports/bifrost-http/lib"
+	"github.com/maximhq/bifrost/transports/v2/bifrost-http/lib"
 	"github.com/tidwall/sjson"
 	"github.com/valyala/fasthttp"
 )
@@ -238,8 +238,19 @@ func createAnthropicMessagesRouteConfig(pathPrefix string, logger schemas.Logger
 					return string(anthropicResponse[0].Type), anthropicResponse[0], nil
 				},
 				ErrorConverter: func(ctx *schemas.BifrostContext, err *schemas.BifrostError) interface{} {
+					// A stream that errors never renders a terminal frame, so this is
+					// where its prompt-usage readings are released: handleStreaming
+					// converts chunks in order and returns after this callback, so
+					// every queued message_delta has already been converted. Kept out
+					// of ToAnthropicResponsesStreamError so that converter stays pure.
+					anthropic.ReleaseStreamPromptUsage(ctx)
 					return anthropic.ToAnthropicResponsesStreamError(err)
 				},
+				// The error path above covers a stream that failed. A stream that
+				// simply ends -- including one whose upstream closed without a
+				// message_stop -- releases here instead, rather than waiting for the
+				// next stream to sweep it.
+				Cleanup: anthropic.ReleaseStreamPromptUsage,
 			},
 			PreCallback:  checkAnthropicPassthrough,
 			ShortCircuit: anthropicRefuseThreadContinue,
@@ -434,11 +445,7 @@ func checkAnthropicPassthrough(ctx *fasthttp.RequestCtx, bifrostCtx *schemas.Bif
 		if isMessagesRequest {
 			// Native Messages response forwarding is independent of raw request
 			// serialization. Vertex beta modes serialize the normalized request but
-			// still return Anthropic SSE that Guardrails must synchronize.
-			bifrostCtx.SetValue(
-				schemas.BifrostContextKeyRawStreamTextCodec,
-				schemas.RawStreamTextCodec(anthropicRawStreamTextCodec{}),
-			)
+			// still return the native Anthropic response, whose text plugins rewrite.
 			bifrostCtx.SetValue(
 				schemas.BifrostContextKeyRawResponseTextTransformer,
 				schemas.RawResponseTextTransformer(rewriteAnthropicRawResponseTransforms),
@@ -462,55 +469,6 @@ func checkAnthropicPassthrough(ctx *fasthttp.RequestCtx, bifrostCtx *schemas.Bif
 		}
 	}
 	return nil
-}
-
-// anthropicRawStreamTextCodec owns Anthropic's native text-delta JSON shape.
-type anthropicRawStreamTextCodec struct{}
-
-// Inspect exposes assistant text and tool-argument deltas while keeping reasoning and lifecycle events opaque.
-func (anthropicRawStreamTextCodec) Inspect(rawResponse string) (schemas.RawStreamTextEvent, bool, error) {
-	if !gjson.Valid(rawResponse) {
-		return schemas.RawStreamTextEvent{}, false, fmt.Errorf("anthropic raw stream event is not valid JSON")
-	}
-	deltaType := gjson.Get(rawResponse, "delta.type").String()
-	if gjson.Get(rawResponse, "type").String() != "content_block_delta" ||
-		(deltaType != "text_delta" && deltaType != "input_json_delta") {
-		return schemas.RawStreamTextEvent{}, false, nil
-	}
-	index := gjson.Get(rawResponse, "index")
-	if !index.Exists() || index.Type != gjson.Number || index.Int() < 0 {
-		return schemas.RawStreamTextEvent{}, false, fmt.Errorf("anthropic text_delta event has invalid index")
-	}
-	path := "delta.text"
-	if deltaType == "input_json_delta" {
-		path = "delta.partial_json"
-	}
-	text := gjson.Get(rawResponse, path)
-	if !text.Exists() || text.Type != gjson.String {
-		return schemas.RawStreamTextEvent{}, false, fmt.Errorf("anthropic text_delta event has invalid delta.text")
-	}
-	return schemas.RawStreamTextEvent{
-		TargetID: strconv.FormatInt(index.Int(), 10),
-		Text:     text.String(),
-	}, true, nil
-}
-
-// Rewrite changes only the inspected text or argument fragment, preserving native event identity.
-func (codec anthropicRawStreamTextCodec) Rewrite(rawResponse string, text string) (string, error) {
-	if _, eligible, err := codec.Inspect(rawResponse); err != nil {
-		return "", err
-	} else if !eligible {
-		return "", fmt.Errorf("anthropic raw stream event is not an eligible text_delta")
-	}
-	path := "delta.text"
-	if gjson.Get(rawResponse, "delta.type").String() == "input_json_delta" {
-		path = "delta.partial_json"
-	}
-	rewritten, err := sjson.Set(rawResponse, path, text)
-	if err != nil {
-		return "", fmt.Errorf("rewrite anthropic text_delta: %w", err)
-	}
-	return rewritten, nil
 }
 
 // rewriteAnthropicRawRequestBody applies runtime replacements only to Anthropic fields mirrored as mutable normalized text.
@@ -882,7 +840,7 @@ func collectAnthropicRawContentBlockPaths(paths *[]string, block gjson.Result, p
 		case anthropic.AnthropicContentBlockTypeText:
 			return appendRawRequestStringPath(paths, block.Get("text"), rawRequestObjectPath(path, "text"))
 		case anthropic.AnthropicContentBlockTypeToolUse:
-			return collectAnthropicArgumentStringPaths(paths, block.Get("input"), rawRequestObjectPath(path, "input"))
+			return collectRawRequestArgumentStringPaths(paths, block.Get("input"), rawRequestObjectPath(path, "input"))
 		case anthropic.AnthropicContentBlockTypeToolResult, anthropic.AnthropicContentBlockTypeMCPToolResult:
 			return collectAnthropicRawContentPaths(
 				paths,
@@ -1738,23 +1696,4 @@ func NewAnthropicRouter(client *bifrost.Bifrost, handlerStore lib.HandlerStore, 
 	return &AnthropicRouter{
 		GenericRouter: NewGenericRouter(client, handlerStore, accessResolver, routes, nil, logger),
 	}
-}
-
-// collectAnthropicArgumentStringPaths mirrors JSON argument values without changing tool metadata or object keys.
-func collectAnthropicArgumentStringPaths(paths *[]string, value gjson.Result, path string) error {
-	if value.Type == gjson.String {
-		return appendRawRequestStringPath(paths, value, path)
-	}
-	var err error
-	if value.IsObject() || value.IsArray() {
-		value.ForEach(func(key, child gjson.Result) bool {
-			childPath := rawRequestObjectPath(path, key.String())
-			if value.IsArray() {
-				childPath = rawRequestArrayPath(path, int(key.Int()))
-			}
-			err = collectAnthropicArgumentStringPaths(paths, child, childPath)
-			return err == nil
-		})
-	}
-	return err
 }

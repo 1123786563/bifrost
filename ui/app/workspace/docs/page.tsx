@@ -5,59 +5,59 @@ import GradientHeader from "@/components/ui/gradientHeader";
 import { BookOpen, Code, ExternalLink, FileText, GitBranch, Play, Shield, Users, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-// `title` stays in English on purpose: data-testid values are derived from it and must not change.
-const docSections = [
+type DocSectionKey = "quickStart" | "architecture" | "usageGuides" | "contributing" | "integrationExamples" | "benchmarks";
+
+const docSections: {
+	key: DocSectionKey;
+	testSlug: string; // keeps data-testid values stable across locales
+	icon: typeof Play;
+	url: string;
+	badge?: "popular" | "comprehensive";
+}[] = [
 	{
 		key: "quickStart",
-		title: "Quick Start",
+		testSlug: "quick-start",
 		icon: Play,
 		url: "https://github.com/maximhq/bifrost/tree/main/docs/quickstart",
-		badge: true,
-		items: ["httpTransportSetup", "goPackageUsage", "dockerGuide"],
+		badge: "popular",
 	},
 	{
 		key: "architecture",
-		title: "Architecture",
+		testSlug: "architecture",
 		icon: GitBranch,
 		url: "https://github.com/maximhq/bifrost/tree/main/docs/architecture",
-		items: ["systemOverview", "requestFlow", "concurrencyModel", "designDecisions"],
 	},
 	{
 		key: "usageGuides",
-		title: "Usage Guides",
+		testSlug: "usage-guides",
 		icon: BookOpen,
 		url: "https://github.com/maximhq/bifrost/tree/main/docs/usage",
-		badge: true,
-		items: ["providersSetup", "keyManagement", "errorHandling", "memoryNetworking"],
+		badge: "comprehensive",
 	},
 	{
 		key: "contributing",
-		title: "Contributing",
+		testSlug: "contributing",
 		icon: Users,
 		url: "https://github.com/maximhq/bifrost/tree/main/docs/contributing",
-		items: ["contributingGuide", "addingProviders", "pluginDevelopment", "codeConventions"],
 	},
 	{
-		key: "integrations",
-		title: "Integration Examples",
+		key: "integrationExamples",
+		testSlug: "integration-examples",
 		icon: Code,
 		url: "https://github.com/maximhq/bifrost/tree/main/docs/usage/http-transport/integrations",
-		items: ["openai", "anthropic", "genai", "migrationGuides"],
 	},
 	{
 		key: "benchmarks",
-		title: "Benchmarks",
+		testSlug: "benchmarks",
 		icon: Zap,
 		url: "https://github.com/maximhq/bifrost/blob/main/docs/benchmarks.md",
-		items: ["rpsTestResults", "performanceMetrics", "configurationTuning", "hardwareComparisons"],
 	},
 ];
 
-// `title` stays in English on purpose: data-testid values are derived from it and must not change.
 const featuredDocs = [
 	{
-		key: "mcp",
-		title: "MCP Documentation",
+		key: "mcpDocs",
+		testSlug: "mcp-documentation",
 		href: "https://github.com/maximhq/bifrost/blob/main/docs/mcp.md",
 		icon: FileText,
 		borderColor: "border-primary/20",
@@ -65,19 +65,24 @@ const featuredDocs = [
 		iconColor: "text-primary",
 	},
 	{
-		key: "governance",
-		title: "Governance Plugin",
+		key: "governancePlugin",
+		testSlug: "governance-plugin",
 		href: "https://github.com/maximhq/bifrost/blob/main/docs/governance.md",
 		icon: Shield,
 		borderColor: "border-green-200 dark:border-green-800",
 		backgroundColor: "bg-green-50 dark:bg-green-950/20",
 		iconColor: "text-green-600",
 	},
-];
+] as const;
+
+// Item lists are string arrays in config.json; the typed catalog treats arrays as
+// leaves (see lib/i18n/i18next.d.ts), so check the shape here rather than cast it.
+function docItems(value: unknown): string[] {
+	return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
 
 export default function DocsPage() {
-	const { t } = useTranslation(["common", "playground"]);
-
+	const { t } = useTranslation("config");
 	return (
 		<div className="dark:bg-card bg-white">
 			<div className="mx-auto max-w-7xl">
@@ -86,10 +91,10 @@ export default function DocsPage() {
 					<div className="space-y-4 text-center">
 						<div className="bg-primary/10 text-primary inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm">
 							<BookOpen className="h-4 w-4" />
-							<span className="font-semibold">{t("playground:docs.header.badge")}</span>
+							<span className="font-semibold">{t("docs.title")}</span>
 						</div>
-						<GradientHeader title={t("playground:docs.header.title")} />
-						<p className="text-muted-foreground mx-auto max-w-2xl text-lg">{t("playground:docs.header.subtitle")}</p>
+						<GradientHeader title={t("docs.heading")} />
+						<p className="text-muted-foreground mx-auto max-w-2xl text-lg">{t("docs.subtitle")}</p>
 						<div className="flex justify-center gap-4">
 							<Button asChild>
 								<a
@@ -99,7 +104,7 @@ export default function DocsPage() {
 									data-testid="docs-view-full-documentation-link"
 								>
 									<ExternalLink className="mr-2 h-4 w-4" />
-									{t("playground:docs.header.viewFullDocumentation")}
+									{t("docs.viewFullDocumentation")}
 								</a>
 							</Button>
 							<Button variant="outline" asChild>
@@ -110,7 +115,7 @@ export default function DocsPage() {
 									data-testid="docs-quick-start-guide-link"
 								>
 									<Play className="mr-2 h-4 w-4" />
-									{t("playground:docs.header.quickStartGuide")}
+									{t("docs.quickStartGuide")}
 								</a>
 							</Button>
 						</div>
@@ -129,22 +134,20 @@ export default function DocsPage() {
 											</div>
 											{section.badge && (
 												<Badge variant="secondary" className="text-xs">
-													{t(`playground:docs.sections.${section.key}.badge`)}
+													{t(`docs.${section.badge}`)}
 												</Badge>
 											)}
 										</div>
-										<CardTitle className="text-xl">{t(`playground:docs.sections.${section.key}.title`)}</CardTitle>
-										<CardDescription className="leading-relaxed">
-											{t(`playground:docs.sections.${section.key}.description`)}
-										</CardDescription>
+										<CardTitle className="text-xl">{t(`docs.${section.key}`)}</CardTitle>
+										<CardDescription className="leading-relaxed">{t(`docs.${section.key}Desc`)}</CardDescription>
 									</CardHeader>
 									<CardContent className="flex h-full flex-col justify-between gap-8">
 										<div className="space-y-4">
 											<ul className="space-y-2">
-												{section.items.map((item, index) => (
+												{docItems(t(`docs.items.${section.key}`, { returnObjects: true })).map((item, index) => (
 													<li key={index} className="text-muted-foreground flex items-center gap-2 text-sm">
 														<div className="bg-primary h-1.5 w-1.5 rounded-full" />
-														{t(`playground:docs.sections.${section.key}.items.${item}`)}
+														{item}
 													</li>
 												))}
 											</ul>
@@ -155,9 +158,9 @@ export default function DocsPage() {
 												target="_blank"
 												rel="noopener noreferrer"
 												className="flex items-center justify-center gap-2"
-												data-testid={`docs-read-more-${section.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+												data-testid={`docs-read-more-${section.testSlug}`}
 											>
-												{t("playground:docs.readMore")}
+												{t("docs.readMore")}
 												<ExternalLink className="h-4 w-4" />
 											</a>
 										</Button>
@@ -169,26 +172,21 @@ export default function DocsPage() {
 
 					{/* Featured Documentation */}
 					<div className="grid gap-6 pt-8 md:grid-cols-2">
-						{featuredDocs.map((doc, index) => (
-							<Card className={`${doc.borderColor} ${doc.backgroundColor}`} key={index}>
+						{featuredDocs.map((doc) => (
+							<Card className={`${doc.borderColor} ${doc.backgroundColor}`} key={doc.key}>
 								<CardHeader>
 									<CardTitle className="flex items-center gap-2">
 										<doc.icon className={`h-5 w-5 ${doc.iconColor}`} />
-										{t(`playground:docs.featured.${doc.key}.title`)}
+										{t(`docs.${doc.key}`)}
 									</CardTitle>
-									<CardDescription>{t(`playground:docs.featured.${doc.key}.description`)}</CardDescription>
+									<CardDescription>{t(`docs.${doc.key}Desc`)}</CardDescription>
 								</CardHeader>
 								<CardContent>
-									<p className="text-muted-foreground mb-4 text-sm">{t(`playground:docs.featured.${doc.key}.content`)}</p>
+									<p className="text-muted-foreground mb-4 text-sm">{t(`docs.${doc.key}Content`)}</p>
 									<Button asChild className="w-full">
-										<a
-											href={doc.href}
-											target="_blank"
-											rel="noopener noreferrer"
-											data-testid={`docs-featured-${doc.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
-										>
+										<a href={doc.href} target="_blank" rel="noopener noreferrer" data-testid={`docs-featured-${doc.testSlug}`}>
 											<doc.icon className="mr-2 h-4 w-4" />
-											{t(`playground:docs.featured.${doc.key}.buttonText`)}
+											{t(doc.key === "mcpDocs" ? "docs.viewMcpGuide" : "docs.viewGovernanceGuide")}
 										</a>
 									</Button>
 								</CardContent>

@@ -3,12 +3,12 @@
 // times, and a per-row actions menu. Owns the empty state and pagination; the
 // page passes in the current page slice plus filter/revoke state.
 
+import { PIN_SHADOW_RIGHT } from "@/components/table/columnPinning";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { PIN_SHADOW_RIGHT } from "@/components/table/columnPinning";
+import i18n, { getLocale } from "@/lib/i18n";
 import type { OAuth2GrantRow } from "@/lib/store/apis/oauth2SessionsApi";
-import { type TFunction } from "i18next";
 import { ChevronLeft, ChevronRight, Fingerprint, Info, KeyRound, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import GrantActions from "./grantActions";
@@ -38,23 +38,26 @@ export default function GrantsTable({
 	pendingActionRowId,
 	onRevoke,
 }: GrantsTableProps) {
-	const { t } = useTranslation(["common", "auth"]);
+	const { t } = useTranslation("mcp");
 	return (
 		<div className="flex grow flex-col overflow-hidden">
 			<div className={`mb-2 grow overflow-hidden rounded-sm border ${isFetching ? "opacity-70 transition-opacity" : ""}`}>
 				<Table containerClassName="h-full overflow-auto">
 					<TableHeader className="bg-muted sticky top-0 z-20">
 						<TableRow>
-							<TableHead>{t("auth:grants.columns.client")}</TableHead>
+							<TableHead>{t("oauthGrants.columns.client")}</TableHead>
 							<TableHead>
-								<HeaderWithTooltip label={t("auth:grants.columns.boundTo")} tooltip={t("auth:grants.columns.boundToTooltip")} />
+								<HeaderWithTooltip label={t("oauthGrants.columns.boundTo")} tooltip={t("oauthGrants.tooltips.boundTo")} />
 							</TableHead>
 							<TableHead>
-								<HeaderWithTooltip label={t("auth:grants.columns.expiry")} tooltip={t("auth:grants.columns.expiryTooltip")} />
+								<HeaderWithTooltip
+									label={t("oauthGrants.columns.accessTokenExpiry")}
+									tooltip={t("oauthGrants.tooltips.accessTokenExpiry")}
+								/>
 							</TableHead>
-							<TableHead>{t("auth:grants.columns.created")}</TableHead>
+							<TableHead>{t("oauthGrants.columns.created")}</TableHead>
 							<TableHead>
-								<HeaderWithTooltip label={t("auth:grants.columns.lastUsed")} tooltip={t("auth:grants.columns.lastUsedTooltip")} />
+								<HeaderWithTooltip label={t("oauthGrants.columns.lastUsed")} tooltip={t("oauthGrants.tooltips.lastUsed")} />
 							</TableHead>
 							<TableHead className={`bg-muted relative sticky right-0 z-10 w-[56px] text-right ${PIN_SHADOW_RIGHT}`} />
 						</TableRow>
@@ -64,7 +67,7 @@ export default function GrantsTable({
 							<TableRow>
 								<TableCell colSpan={6} className="h-24 text-center">
 									{hasActiveFilters ? (
-										<div className="text-muted-foreground text-sm">{t("auth:grants.emptyFiltered")}</div>
+										<div className="text-muted-foreground text-sm">{t("oauthGrants.noMatch")}</div>
 									) : (
 										<EmptyGrantsState />
 									)}
@@ -80,10 +83,8 @@ export default function GrantsTable({
 									<TableCell className="text-muted-foreground text-sm">
 										<AccessTokenExpiry row={row} />
 									</TableCell>
-									<TableCell className="text-muted-foreground text-sm">{formatRelativePast(row.created_at, t)}</TableCell>
-									<TableCell className="text-muted-foreground text-sm">
-										{formatRelativePast(row.last_used_at || row.created_at, t)}
-									</TableCell>
+									<TableCell className="text-muted-foreground text-sm">{formatRelativePast(row.created_at)}</TableCell>
+									<TableCell className="text-muted-foreground text-sm">{formatRelativePast(row.last_used_at || row.created_at)}</TableCell>
 									<TableCell
 										className={`group-hover:bg-muted dark:bg-card dark:group-hover:bg-muted relative sticky right-0 z-10 bg-white text-right ${PIN_SHADOW_RIGHT}`}
 									>
@@ -104,10 +105,10 @@ export default function GrantsTable({
 			{totalCount > 0 && (
 				<div className="flex shrink-0 items-center justify-between text-xs" data-testid="pagination">
 					<div className="text-muted-foreground flex items-center gap-2">
-						{t("auth:grants.pagination.entries", {
-							from: (offset + 1).toLocaleString(),
-							to: Math.min(offset + pageSize, totalCount).toLocaleString(),
-							total: totalCount.toLocaleString(),
+						{t("common.ofEntries", {
+							from: (offset + 1).toLocaleString(getLocale()),
+							to: Math.min(offset + pageSize, totalCount).toLocaleString(getLocale()),
+							total: totalCount.toLocaleString(getLocale()),
 						})}
 					</div>
 
@@ -118,15 +119,16 @@ export default function GrantsTable({
 							onClick={() => onOffsetChange(Math.max(0, offset - pageSize))}
 							disabled={offset === 0}
 							data-testid="oauth-grants-prev-page-btn"
-							aria-label={t("auth:grants.pagination.prev")}
+							aria-label={t("common.previousPage")}
 						>
 							<ChevronLeft className="size-3" />
 						</Button>
 
 						<div className="flex items-center gap-1">
-							<span>{t("auth:grants.pagination.page")}</span>
-							<span>{Math.floor(offset / pageSize) + 1}</span>
-							<span>{t("auth:grants.pagination.ofPages", { count: Math.ceil(totalCount / pageSize) })}</span>
+							{t("common.pageRange", {
+								page: Math.floor(offset / pageSize) + 1,
+								total: Math.ceil(totalCount / pageSize),
+							})}
 						</div>
 
 						<Button
@@ -135,7 +137,7 @@ export default function GrantsTable({
 							onClick={() => onOffsetChange(offset + pageSize)}
 							disabled={offset + pageSize >= totalCount}
 							data-testid="oauth-grants-next-page-btn"
-							aria-label={t("auth:grants.pagination.next")}
+							aria-label={t("common.nextPage")}
 						>
 							<ChevronRight className="size-3" />
 						</Button>
@@ -173,22 +175,22 @@ function BindingCell({ row }: { row: OAuth2GrantRow }) {
 }
 
 function AccessTokenExpiry({ row }: { row: OAuth2GrantRow }) {
-	const { t } = useTranslation(["common", "auth"]);
+	const { t } = useTranslation("mcp");
 	// Access token TTL is 10 min (600s default). Access tokens are stateless JWTs
 	// not stored server-side, so we approximate expiry from the grant's last
 	// activity (last_used_at, falling back to created_at). Anchoring to created_at
 	// alone would read as expired for any grant that has silently refreshed.
 	const baseMs = new Date(row.last_used_at ?? row.created_at).getTime();
 	if (!Number.isFinite(baseMs)) {
-		return <span className="text-muted-foreground">{t("auth:grants.expiry.unknown")}</span>;
+		return <span className="text-muted-foreground">{t("oauthGrants.unknown")}</span>;
 	}
 	const expiryMs = baseMs + 600_000; // 10 min default
 	const diffMs = expiryMs - Date.now();
 	if (diffMs < 0) {
-		return <span className="text-muted-foreground">{t("auth:grants.expiry.refreshes")}</span>;
+		return <span className="text-muted-foreground">{t("oauthGrants.refreshesOnNextUse")}</span>;
 	}
 	const mins = Math.ceil(diffMs / 60_000);
-	return <span>{t("auth:grants.expiry.inMinutes", { count: mins })}</span>;
+	return <span>{t("credentials.inMinutes", { minutes: mins })}</span>;
 }
 
 function HeaderWithTooltip({ label, tooltip }: { label: string; tooltip: string }) {
@@ -208,27 +210,27 @@ function HeaderWithTooltip({ label, tooltip }: { label: string; tooltip: string 
 }
 
 function EmptyGrantsState() {
-	const { t } = useTranslation(["common", "auth"]);
+	const { t } = useTranslation("mcp");
 	return (
 		<div className="flex flex-col items-center gap-3 py-4">
-			<p className="text-muted-foreground text-sm">{t("auth:grants.empty")}</p>
+			<p className="text-muted-foreground text-sm">{t("oauthGrants.empty")}</p>
 		</div>
 	);
 }
 
-function formatRelativePast(iso: string, t: TFunction): string {
+function formatRelativePast(iso: string): string {
 	try {
 		const ts = new Date(iso).getTime();
 		if (!Number.isFinite(ts)) return iso;
 		const diffMs = Date.now() - ts;
-		if (diffMs < 0) return t("auth:grants.relative.justNow");
+		if (diffMs < 0) return i18n.t("credentials.justNow", { ns: "mcp" });
 		const mins = Math.floor(diffMs / 60_000);
-		if (mins < 1) return t("auth:grants.relative.justNow");
-		if (mins < 60) return t("auth:grants.relative.minutesAgo", { count: mins });
+		if (mins < 1) return i18n.t("credentials.justNow", { ns: "mcp" });
+		if (mins < 60) return i18n.t("credentials.minutesAgo", { ns: "mcp", minutes: mins });
 		const hrs = Math.floor(mins / 60);
-		if (hrs < 24) return t("auth:grants.relative.hoursAgo", { count: hrs });
+		if (hrs < 24) return i18n.t("credentials.hoursAgo", { ns: "mcp", hours: hrs });
 		const days = Math.floor(hrs / 24);
-		return t("auth:grants.relative.daysAgo", { count: days });
+		return i18n.t("credentials.daysAgo", { ns: "mcp", days: days });
 	} catch {
 		return iso;
 	}

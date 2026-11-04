@@ -18,7 +18,7 @@ interface PricingFormFragmentProps {
 }
 
 export function PricingFormFragment({ provider }: PricingFormFragmentProps) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
 	const dispatch = useAppDispatch();
 	const hasUpdateProviderAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Update);
 	const [updateProvider, { isLoading: isUpdatingProvider }] = useUpdateProviderMutation();
@@ -49,11 +49,11 @@ export function PricingFormFragment({ provider }: PricingFormFragmentProps) {
 		updateProvider(updatedProvider)
 			.unwrap()
 			.then(() => {
-				toast.success(t("providers:pricingTab.updatedSuccess"));
+				toast.success(t("providers.pricing.updated"));
 				form.reset(data);
 			})
 			.catch((err) => {
-				toast.error(t("providers:pricingTab.updateFailed"), {
+				toast.error(t("providers.pricing.updateFailed"), {
 					description: getErrorMessage(err),
 				});
 			});
@@ -70,8 +70,8 @@ export function PricingFormFragment({ provider }: PricingFormFragmentProps) {
 							<FormItem>
 								<div className="flex items-center justify-between space-x-2">
 									<div className="space-y-0.5">
-										<FormLabel>{t("providers:pricingTab.ignoreCost")}</FormLabel>
-										<p className="text-muted-foreground text-xs">{t("providers:pricingTab.ignoreCostDesc")}</p>
+										<FormLabel>{t("providers.pricing.ignoreProviderCost")}</FormLabel>
+										<p className="text-muted-foreground text-xs">{t("providers.pricing.ignoreProviderCostHelp")}</p>
 									</div>
 									<FormControl>
 										<Switch
@@ -98,7 +98,7 @@ export function PricingFormFragment({ provider }: PricingFormFragmentProps) {
 						disabled={!form.formState.isDirty || !hasUpdateProviderAccess || isUpdatingProvider}
 						isLoading={isUpdatingProvider}
 					>
-						{t("providers:pricingTab.save")}
+						{t("providers.pricing.save")}
 					</Button>
 				</div>
 			</form>

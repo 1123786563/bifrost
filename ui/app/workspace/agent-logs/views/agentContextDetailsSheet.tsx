@@ -8,13 +8,15 @@ import { useGetAgentLogStatsQuery, useLazyGetAgentLogOperationsQuery } from "@/l
 import type { AgentLogOperation, AgentLogSummary } from "@/lib/types/agentLogs";
 import { cn } from "@/lib/utils";
 import { format, isValid } from "date-fns";
+import type { ParseKeys } from "i18next";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import i18n from "@/lib/i18n";
+import { dateFnsLocale } from "@/lib/i18n/dateLocale";
 import { toast } from "sonner";
 import { A2AConversationMessage as ConversationMessage, A2APayloadView, TaskStateBadge } from "./a2aPayloadView";
 import { CorrelatedLogsContent, useCorrelatedLogCounts } from "./correlatedLogs";
+import { getLocale } from "@/lib/i18n";
 
 const CONTEXT_PAGE_SIZE = 10;
 const CONTEXT_FILTERS = (contextId: string) => ({ context_id: contextId, record_kind: ["request"] });
@@ -194,8 +196,9 @@ function buildSessionContent(log: AgentLogOperation): SessionContent[] {
 	return content;
 }
 
+// ConversationFailedResponse renders a failed task as the Agent's response turn when no status message was recorded.
 function ConversationFailedResponse({ state }: { state: string }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
+	const { t } = useTranslation("observability");
 	return (
 		<div className="flex gap-3">
 			<div className="flex flex-col items-center pt-1.5">
@@ -204,17 +207,19 @@ function ConversationFailedResponse({ state }: { state: string }) {
 			</div>
 			<div className="min-w-0 flex-1">
 				<div className="mb-1.5 flex min-w-0 items-center gap-2">
-					<span className="text-xs font-semibold">{t("logs:agent.agentResponse")}</span>
+					<span className="text-xs font-semibold">{t("agentLogs.contextSheet.agentResponse")}</span>
 					<TaskStateBadge state={state} />
 				</div>
-				<div className="bg-card text-muted-foreground rounded-sm border p-3 text-sm leading-5">{t("logs:agent.noResponseReturned")}</div>
+				<div className="bg-card text-muted-foreground rounded-sm border p-3 text-sm leading-5">
+					{t("agentLogs.contextSheet.noAgentResponse")}
+				</div>
 			</div>
 		</div>
 	);
 }
 
 function ConversationError({ error, timestamp }: { error: unknown; timestamp?: string }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
+	const { t } = useTranslation("observability");
 	return (
 		<div className="flex gap-3">
 			<div className="flex flex-col items-center pt-1.5">
@@ -223,7 +228,7 @@ function ConversationError({ error, timestamp }: { error: unknown; timestamp?: s
 			</div>
 			<div className="min-w-0 flex-1">
 				<div className="mb-1.5 flex min-w-0 items-center gap-2">
-					<span className="text-xs font-semibold">{t("logs:agent.errorLabel")}</span>
+					<span className="text-xs font-semibold">{t("labels.error")}</span>
 					{timestamp ? <span className="text-muted-foreground ml-auto font-mono text-[10px]">{timestamp}</span> : null}
 				</div>
 				<A2APayloadView errorDetails={error} showSectionTitles={false} />
@@ -233,7 +238,7 @@ function ConversationError({ error, timestamp }: { error: unknown; timestamp?: s
 }
 
 export function A2AConversationHistory({ responseBody }: { responseBody?: string }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const response = parseProtocolBody(responseBody);
 	const history = Array.isArray(response?.history) ? response.history : [];
 	if (history.length === 0) return null;
@@ -241,8 +246,8 @@ export function A2AConversationHistory({ responseBody }: { responseBody?: string
 	return (
 		<details className="group rounded-sm border">
 			<summary className="hover:bg-muted/30 flex cursor-pointer items-center justify-between px-3 py-2 text-sm transition">
-				<span className="font-medium">{t("logs:agent.conversationHistory")}</span>
-				<span className="text-muted-foreground text-xs">{t("logs:agent.messageCount", { count: history.length })}</span>
+				<span className="font-medium">{t("agentLogs.contextSheet.conversationHistory")}</span>
+				<span className="text-muted-foreground text-xs">{t("agentLogs.contextSheet.messageCount", { count: history.length })}</span>
 			</summary>
 			<div className="border-t p-3">
 				{history.map((value, index) => {
@@ -269,29 +274,30 @@ export function A2AConversationHistory({ responseBody }: { responseBody?: string
 }
 
 interface ProtocolActivityDefinition {
-	label: string;
+	labelKey?: ParseKeys<"observability">;
+	fallbackLabel?: string;
 	showsTaskState?: boolean;
 }
 
 const PROTOCOL_ACTIVITY_DEFINITIONS: Record<string, ProtocolActivityDefinition> = {
-	GetTask: { label: i18n.t("logs:agent.opTaskStateFetched"), showsTaskState: true },
-	ListTasks: { label: i18n.t("logs:agent.opTasksListed") },
-	CancelTask: { label: i18n.t("logs:agent.opTaskCancelRequested"), showsTaskState: true },
-	SubscribeToTask: { label: i18n.t("logs:agent.opTaskUpdateStream"), showsTaskState: true },
-	CreateTaskPushNotificationConfig: { label: i18n.t("logs:agent.opPushNotificationsConfigured") },
-	GetTaskPushNotificationConfig: { label: i18n.t("logs:agent.opPushConfigFetched") },
-	ListTaskPushNotificationConfigs: { label: i18n.t("logs:agent.opPushConfigsListed") },
-	DeleteTaskPushNotificationConfig: { label: i18n.t("logs:agent.opPushConfigDeleted") },
-	push_notification: { label: i18n.t("logs:agent.opTaskUpdateReceived"), showsTaskState: true },
-	push_delivery: { label: i18n.t("logs:agent.opPushNotificationForwarded") },
-	GetAgentCard: { label: i18n.t("logs:agent.opPublicAgentCardFetched") },
-	GetExtendedAgentCard: { label: i18n.t("logs:agent.opExtendedAgentCardFetched") },
+	GetTask: { labelKey: "agentLogs.contextSheet.activity.taskStateFetched", showsTaskState: true },
+	ListTasks: { labelKey: "agentLogs.contextSheet.activity.tasksListed" },
+	CancelTask: { labelKey: "agentLogs.contextSheet.activity.taskCancellationRequested", showsTaskState: true },
+	SubscribeToTask: { labelKey: "agentLogs.contextSheet.activity.taskUpdateStream", showsTaskState: true },
+	CreateTaskPushNotificationConfig: { labelKey: "agentLogs.contextSheet.activity.pushNotificationsConfigured" },
+	GetTaskPushNotificationConfig: { labelKey: "agentLogs.contextSheet.activity.pushConfigurationFetched" },
+	ListTaskPushNotificationConfigs: { labelKey: "agentLogs.contextSheet.activity.pushConfigurationsListed" },
+	DeleteTaskPushNotificationConfig: { labelKey: "agentLogs.contextSheet.activity.pushConfigurationDeleted" },
+	push_notification: { labelKey: "agentLogs.contextSheet.activity.taskUpdateReceived", showsTaskState: true },
+	push_delivery: { labelKey: "agentLogs.contextSheet.activity.pushNotificationForwarded" },
+	GetAgentCard: { labelKey: "agentLogs.contextSheet.activity.publicAgentCardFetched" },
+	GetExtendedAgentCard: { labelKey: "agentLogs.contextSheet.activity.extendedAgentCardFetched" },
 };
 
 function protocolActivityDefinition(operation: string): ProtocolActivityDefinition {
 	return (
 		PROTOCOL_ACTIVITY_DEFINITIONS[operation] ?? {
-			label: operation
+			fallbackLabel: operation
 				.replaceAll("/", " ")
 				.replace(/([a-z])([A-Z])/g, "$1 $2")
 				.replaceAll("_", " ")
@@ -323,7 +329,7 @@ function latestTaskState(log: AgentLogOperation) {
 }
 
 function ProtocolActivity({ log, showTimestamp }: { log: AgentLogOperation; showTimestamp: boolean }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
+	const { t, i18n } = useTranslation("observability");
 	const definition = protocolActivityDefinition(log.operation);
 	const taskState = definition.showsTaskState ? latestTaskState(log) : undefined;
 	const timestamp = new Date(log.timestamp);
@@ -336,19 +342,21 @@ function ProtocolActivity({ log, showTimestamp }: { log: AgentLogOperation; show
 			</div>
 			<div className="min-w-0 flex-1 pb-5">
 				<div className="mb-1.5 flex min-w-0 items-center gap-2">
-					<span className="text-xs font-semibold">{t("logs:agent.event")}</span>
+					<span className="text-xs font-semibold">{t("agentLogs.contextSheet.event")}</span>
 					{showTimestamp ? (
 						<span className="text-muted-foreground ml-auto shrink-0 font-mono text-[10px]">
-							{isValid(timestamp) ? format(timestamp, "MMM d, HH:mm:ss") : log.timestamp}
+							{isValid(timestamp) ? format(timestamp, "MMM d, HH:mm:ss", { locale: dateFnsLocale(i18n.language) }) : log.timestamp}
 						</span>
 					) : null}
 				</div>
 				<div className="rounded-sm border border-sky-200 bg-sky-50/60 p-3 dark:border-sky-900 dark:bg-sky-950/30">
 					<div className="flex flex-wrap items-center gap-2">
-						<span className="text-sm font-medium">{definition.label}</span>
+						<span className="text-sm font-medium">{definition.labelKey ? t(definition.labelKey) : definition.fallbackLabel}</span>
 						{taskState ? <TaskStateBadge state={taskState} /> : null}
-						{log.status === "error" ? <span className="text-destructive text-xs">{t("logs:metrics.failed")}</span> : null}
-						{log.status === "processing" ? <span className="text-muted-foreground text-xs">{t("logs:agent.inProgress")}</span> : null}
+						{log.status === "error" ? <span className="text-destructive text-xs">{t("logs.stats.failed")}</span> : null}
+						{log.status === "processing" ? (
+							<span className="text-muted-foreground text-xs">{t("agentLogs.contextSheet.inProgress")}</span>
+						) : null}
 					</div>
 				</div>
 			</div>
@@ -373,7 +381,7 @@ export function A2AOperationConversation({
 	showTimestamp?: boolean;
 	allowPushConversation?: boolean;
 }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t, i18n } = useTranslation("observability");
 	const timestamp = new Date(log.timestamp);
 	const conversationOperation =
 		isA2AConversationOperation(log.operation) || (allowPushConversation && isA2APushConversationOperation(log.operation));
@@ -384,7 +392,11 @@ export function A2AOperationConversation({
 
 	if (!conversationOperation) return <ProtocolActivity log={log} showTimestamp={showTimestamp} />;
 
-	const renderedTimestamp = showTimestamp ? (isValid(timestamp) ? format(timestamp, "MMM d, HH:mm:ss") : log.timestamp) : undefined;
+	const renderedTimestamp = showTimestamp
+		? isValid(timestamp)
+			? format(timestamp, "MMM d, HH:mm:ss", { locale: dateFnsLocale(i18n.language) })
+			: log.timestamp
+		: undefined;
 
 	return (
 		<div>
@@ -401,8 +413,8 @@ export function A2AOperationConversation({
 					context={
 						index === 0 && allowPushConversation && isA2APushConversationOperation(log.operation)
 							? log.operation === "push_notification"
-								? i18n.t("logs:agent.pushReceived")
-								: i18n.t("logs:agent.pushSentToClient")
+								? t("agentLogs.contextSheet.pushReceivedFromAgent")
+								: t("agentLogs.contextSheet.pushSentToCallback")
 							: undefined
 					}
 				/>
@@ -413,7 +425,7 @@ export function A2AOperationConversation({
 			) : null}
 			{messages.length === 0 && !hasError && !hasFailedTaskState && log.status === "processing" ? (
 				<div className="text-muted-foreground flex items-center justify-between gap-3 px-5 text-sm">
-					<span>{t("logs:agent.waitingForResponse")}</span>
+					<span>{t("agentLogs.contextSheet.waitingForResponse")}</span>
 					{renderedTimestamp ? <span className="font-mono text-[10px]">{renderedTimestamp}</span> : null}
 				</div>
 			) : null}
@@ -422,7 +434,7 @@ export function A2AOperationConversation({
 }
 
 function Operation({ log, current, onClick }: { log: AgentLogOperation; current: boolean; onClick: () => void }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
+	const { t } = useTranslation("observability");
 	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
 		event.preventDefault();
@@ -442,7 +454,7 @@ function Operation({ log, current, onClick }: { log: AgentLogOperation; current:
 		>
 			{current ? (
 				<span className="bg-background pointer-events-none absolute -top-1.5 left-3 z-10 rounded-full border border-sky-400/45 px-1.5 py-0 text-[9px] leading-tight font-semibold tracking-wide text-sky-600 uppercase dark:text-sky-300">
-					{t("logs:agent.current")}
+					{t("agentLogs.contextSheet.current")}
 				</span>
 			) : null}
 
@@ -461,7 +473,7 @@ export function AgentContextDetailsSheet({
 	onLogClick,
 	onFilterContext,
 }: AgentContextDetailsSheetProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const [triggerGetLogs] = useLazyGetAgentLogOperationsQuery();
 	const [logs, setLogs] = useState<AgentLogOperation[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -497,7 +509,7 @@ export function AgentContextDetailsSheet({
 				});
 				if (seq !== requestSeq.current) return;
 				if (result.error) {
-					toast.error(t("logs:agent.contextLoadFailed"), { description: getErrorMessage(result.error) });
+					toast.error(t("agentLogs.contextSheet.loadFailed"), { description: getErrorMessage(result.error) });
 					return;
 				}
 				if (result.data) {
@@ -517,7 +529,7 @@ export function AgentContextDetailsSheet({
 				if (seq === requestSeq.current) setLoading(false);
 			}
 		},
-		[contextId, currentLogId, filters, positionedSelection, positioningKey, sortOrder, triggerGetLogs, t],
+		[contextId, currentLogId, filters, positionedSelection, positioningKey, sortOrder, t, triggerGetLogs],
 	);
 
 	useEffect(() => {
@@ -537,26 +549,26 @@ export function AgentContextDetailsSheet({
 	useEffect(() => {
 		if (!open || !contextId) return;
 		void loadPage(page);
-	}, [contextId, loadPage, open, page, t]);
+	}, [contextId, loadPage, open, page]);
 
 	const totalPages = Math.max(1, Math.ceil(totalCount / CONTEXT_PAGE_SIZE));
 
 	const statsSummary = [
-		{ label: t("logs:agent.operationCount"), value: stats?.total_entries ?? 0 },
-		{ label: t("logs:agent.successful"), value: stats?.success_count ?? 0 },
-		{ label: t("logs:metrics.failed"), value: stats?.error_count ?? 0 },
-		{ label: t("logs:agent.avgDuration"), value: formatLatency(stats?.average_latency ?? 0) },
+		{ label: t("agentLogs.page.operations"), value: stats?.total_entries ?? 0 },
+		{ label: t("agentLogs.contextSheet.successful"), value: stats?.success_count ?? 0 },
+		{ label: t("logs.stats.failed"), value: stats?.error_count ?? 0 },
+		{ label: t("agentLogs.contextSheet.avgDuration"), value: formatLatency(stats?.average_latency ?? 0) },
 	] as const;
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent className="flex w-full flex-col gap-4 overflow-x-hidden overflow-y-auto p-4 pb-0 sm:max-w-[60%] md:p-8 md:pb-0">
 				<SheetHeader className="flex min-w-0 flex-col items-start px-0" headerClassName="bg-card sticky -top-4 z-20 mb-0 py-4 md:-top-8">
-					<SheetTitle>{t("logs:agent.sessionTitle")}</SheetTitle>
+					<SheetTitle>{t("agentLogs.contextSheet.agentSession")}</SheetTitle>
 					{contextId && (
 						<InteractiveValue
 							value={contextId}
-							label={t("logs:agent.session")}
+							label={t("labels.session")}
 							filter={{ context_id: contextId }}
 							onFilter={() => onFilterContext(contextId)}
 							className="text-muted-foreground block font-mono text-xs"
@@ -579,7 +591,7 @@ export function AgentContextDetailsSheet({
 							className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs transition-colors"
 							onClick={() => setSortOrder((order) => (order === "asc" ? "desc" : "asc"))}
 						>
-							{sortOrder === "asc" ? t("logs:session.earliestFirst") : t("logs:session.latestFirst")}
+							{sortOrder === "asc" ? t("agentLogs.contextSheet.earliestFirst") : t("agentLogs.contextSheet.latestFirst")}
 							{sortOrder === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />}
 						</button>
 					</div>
@@ -594,11 +606,11 @@ export function AgentContextDetailsSheet({
 					{llmCount > 0 || mcpCount > 0 ? (
 						<TabsList className="bg-muted/60 h-10 w-fit">
 							<TabsTrigger value="operations" className="px-3">
-								{t("logs:agent.operationCount")}
+								{t("agentLogs.page.operations")}
 							</TabsTrigger>
 							{llmCount > 0 ? (
 								<TabsTrigger value="llm-logs" className="px-3">
-									{t("logs:agent.llmLogs")}{" "}
+									{t("agentLogs.contextSheet.llmLogs")}{" "}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{llmCount}
 									</span>
@@ -606,7 +618,7 @@ export function AgentContextDetailsSheet({
 							) : null}
 							{mcpCount > 0 ? (
 								<TabsTrigger value="mcp-logs" className="px-3">
-									{t("logs:agent.mcpLogs")}{" "}
+									{t("agentLogs.contextSheet.mcpLogs")}{" "}
 									<span className="bg-background text-muted-foreground ml-1.5 rounded-sm border px-2 py-0.5 text-[10px] tabular-nums">
 										{mcpCount}
 									</span>
@@ -618,7 +630,7 @@ export function AgentContextDetailsSheet({
 						<div className="pr-1">
 							{loading && logs.length === 0 ? (
 								<div className="flex h-32 items-center justify-center gap-2 text-sm">
-									<Loader2 className="size-4 animate-spin" /> {t("logs:agent.loadingContext")}
+									<Loader2 className="size-4 animate-spin" /> {t("agentLogs.contextSheet.loadingContext")}
 								</div>
 							) : logs.length ? (
 								<div className="space-y-1">
@@ -628,7 +640,7 @@ export function AgentContextDetailsSheet({
 								</div>
 							) : (
 								<div className="text-muted-foreground flex h-32 items-center justify-center text-sm">
-									{t("logs:agent.noOperationsFound")}
+									{t("agentLogs.contextSheet.noOperations")}
 								</div>
 							)}
 						</div>
@@ -636,10 +648,10 @@ export function AgentContextDetailsSheet({
 						{totalCount > CONTEXT_PAGE_SIZE ? (
 							<div className="bg-card sticky bottom-0 z-10 flex items-center justify-between py-3 text-xs" data-testid="pagination">
 								<div className="text-muted-foreground flex items-center gap-2">
-									{t("logs:table.range", {
-										from: (page * CONTEXT_PAGE_SIZE + 1).toLocaleString(),
-										to: Math.min((page + 1) * CONTEXT_PAGE_SIZE, totalCount).toLocaleString(),
-										total: totalCount.toLocaleString(),
+									{t("agentGateway.agentsTable.entriesRange", {
+										from: (page * CONTEXT_PAGE_SIZE + 1).toLocaleString(getLocale()),
+										to: Math.min((page + 1) * CONTEXT_PAGE_SIZE, totalCount).toLocaleString(getLocale()),
+										total: totalCount.toLocaleString(getLocale()),
 									})}
 								</div>
 								<div className="flex items-center gap-2">
@@ -648,19 +660,21 @@ export function AgentContextDetailsSheet({
 										size="sm"
 										onClick={() => setPage((current) => Math.max(0, current - 1))}
 										disabled={loading || page === 0}
-										aria-label={t("logs:table.previousPage")}
+										aria-label={t("labels.previousPage")}
 									>
 										<ChevronLeft className="size-3" />
 									</Button>
 									<div className="flex items-center gap-1">
-										<span>{t("logs:table.pageOf", { current: page + 1, total: totalPages })}</span>
+										<span>{t("labels.page")}</span>
+										<span>{page + 1}</span>
+										<span>{t("labels.ofPages", { total: totalPages })}</span>
 									</div>
 									<Button
 										variant="ghost"
 										size="sm"
 										onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
 										disabled={loading || page >= totalPages - 1}
-										aria-label={t("logs:table.nextPage")}
+										aria-label={t("labels.nextPage")}
 									>
 										<ChevronRight className="size-3" />
 									</Button>

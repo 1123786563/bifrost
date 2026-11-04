@@ -36,7 +36,7 @@ export function ApiKeySelectorView({
 	onSearchChange?: (search: string) => void;
 	isSearching?: boolean;
 }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("config");
 	const [query, setQuery] = useState("");
 
 	// Provider keys are already in memory, so they filter here. Virtual keys
@@ -44,7 +44,7 @@ export function ApiKeySelectorView({
 	const apiKeyOptions = useMemo(() => {
 		if (requireVirtualKey) return [];
 		const opts = [
-			{ label: t("workspaces:promptsRepo.apiKey.autoDefault"), value: "__auto__" },
+			{ label: t("promptRepo.autoDefault"), value: "__auto__" },
 			...providerKeys.map((k) => ({ label: k.name, value: k.key_id })),
 		];
 		if (!query) return opts;
@@ -73,7 +73,7 @@ export function ApiKeySelectorView({
 	const getLabel = useCallback(
 		(val: string | null) => {
 			if (!val) return "";
-			if (val === "__auto__") return requireVirtualKey ? "" : t("workspaces:promptsRepo.apiKey.autoDefault");
+			if (val === "__auto__") return requireVirtualKey ? "" : t("promptRepo.autoDefault");
 			const providerKey = providerKeys.find((k) => k.key_id === val);
 			if (providerKey) return providerKey.name;
 			const virtualKey = virtualKeys.find((vk) => vk.value === val);
@@ -89,7 +89,7 @@ export function ApiKeySelectorView({
 	return (
 		<div className="flex flex-col gap-2">
 			<Label className="text-muted-foreground text-xs font-medium uppercase">
-				{requireVirtualKey ? t("workspaces:promptsRepo.apiKey.vkLabel") : t("workspaces:promptsRepo.apiKey.vkApiLabel")}
+				{requireVirtualKey ? t("promptRepo.virtualKey") : t("promptRepo.virtualKeyOrApiKey")}
 			</Label>
 			<Combobox
 				value={value}
@@ -102,10 +102,7 @@ export function ApiKeySelectorView({
 				itemToStringLabel={getLabel}
 			>
 				<ComboboxInput
-					placeholder={
-						placeholder ??
-						(requireVirtualKey ? t("workspaces:promptsRepo.apiKey.selectVk") : t("workspaces:promptsRepo.apiKey.selectApiKey"))
-					}
+					placeholder={placeholder ?? (requireVirtualKey ? t("promptRepo.selectVirtualKey") : t("promptRepo.selectApiKey"))}
 					showClear={Boolean(value) && value !== "__auto__"}
 					showTrigger
 					disabled={disabled}
@@ -115,7 +112,7 @@ export function ApiKeySelectorView({
 					<ComboboxList>
 						{apiKeyOptions.length > 0 && (
 							<ComboboxGroup>
-								<ComboboxLabel>{t("workspaces:promptsRepo.apiKey.apiKeysGroup")}</ComboboxLabel>
+								<ComboboxLabel>{t("promptRepo.apiKeys")}</ComboboxLabel>
 								{apiKeyOptions.map((o) => (
 									<ComboboxItem key={o.value} value={o.value}>
 										{o.label}
@@ -126,7 +123,7 @@ export function ApiKeySelectorView({
 						{apiKeyOptions.length > 0 && virtualKeyOptions.length > 0 && <ComboboxSeparator />}
 						{virtualKeyOptions.length > 0 && (
 							<ComboboxGroup>
-								<ComboboxLabel>{t("workspaces:promptsRepo.apiKey.vkGroup")}</ComboboxLabel>
+								<ComboboxLabel>{t("promptRepo.virtualKeys")}</ComboboxLabel>
 								{virtualKeyOptions.map((o) => (
 									<ComboboxItem key={o.value} value={o.value}>
 										{o.label}
@@ -137,11 +134,11 @@ export function ApiKeySelectorView({
 						{isSearching && !hasResults && (
 							<div className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm">
 								<Loader2 className="size-4 animate-spin" />
-								{t("common:state.searching")}
+								{t("promptRepo.searchingDots")}
 							</div>
 						)}
 						{!isSearching && !hasResults && (
-							<div className="text-muted-foreground py-6 text-center text-sm">{t("workspaces:prompts.noResults")}</div>
+							<div className="text-muted-foreground py-6 text-center text-sm">{t("promptRepo.noResultsFoundDot")}</div>
 						)}
 					</ComboboxList>
 				</ComboboxContent>

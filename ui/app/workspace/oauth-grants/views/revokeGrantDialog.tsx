@@ -21,21 +21,20 @@ interface RevokeGrantDialogProps {
 }
 
 export default function RevokeGrantDialog({ open, onOpenChange, onConfirm }: RevokeGrantDialogProps) {
-	const { t } = useTranslation(["common", "auth"]);
+	const { t } = useTranslation("mcp");
+	const { t: tCommon } = useTranslation("common");
+
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{t("auth:grants.revokeDialog.title")}</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t("auth:grants.revokeDialog.descriptionBefore")} <code className="bg-muted rounded px-1 py-0.5 text-xs">/mcp</code>{" "}
-						{t("auth:grants.revokeDialog.descriptionAfter")}
-					</AlertDialogDescription>
+					<AlertDialogTitle>{t("oauthGrants.revokeTitle")}</AlertDialogTitle>
+					<AlertDialogDescription>{t("oauthGrants.revokeDescription")}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel data-testid="oauth-grants-revoke-cancel-btn">{t("common:actions.cancel")}</AlertDialogCancel>
+					<AlertDialogCancel data-testid="oauth-grants-revoke-cancel-btn">{tCommon("cancel")}</AlertDialogCancel>
 					<AlertDialogAction data-testid="oauth-grants-revoke-confirm-btn" onClick={onConfirm}>
-						{t("auth:grants.revokeDialog.confirm")}
+						{t("common.revoke")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

@@ -38,20 +38,20 @@ export default function BudgetUsageResetDialog({
 	onChoice,
 	ownerLabel,
 }: BudgetUsageResetDialogProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("models");
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent data-testid={testId}>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{t("workspaces:budgetReset.title")}</AlertDialogTitle>
-					<AlertDialogDescription>{t("workspaces:budgetReset.description", { owner: ownerLabel })}</AlertDialogDescription>
+					<AlertDialogTitle>{t("budgetUsageReset.title")}</AlertDialogTitle>
+					<AlertDialogDescription>{t("budgetUsageReset.description", { owner: ownerLabel })}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel onClick={() => onChoice(false)} data-testid={testId ? `${testId}-preserve-btn` : undefined}>
-						{t("workspaces:budgetReset.preserve")}
+						{t("virtualKeys.preserveUsage")}
 					</AlertDialogCancel>
 					<AlertDialogAction onClick={() => onChoice(true)} data-testid={testId ? `${testId}-confirm-btn` : undefined}>
-						{t("workspaces:budgetReset.reset")}
+						{t("virtualKeys.resetUsage")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

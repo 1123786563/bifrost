@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { ChartErrorBoundary } from "./chartErrorBoundary";
 import { GaugeNeedle, getGaugeGeometry, useGaugeSize } from "./gaugeUtils";
+import { NoChartData } from "./noChartData";
+import { useLocale } from "@/lib/i18n/useLocale";
 
 interface LocalCacheTokenMeterChartProps {
 	data: LogStats | null;
@@ -13,7 +15,8 @@ interface LocalCacheTokenMeterChartProps {
 const METER_COLORS = { direct: "var(--chart-seq-1)", semantic: "var(--chart-seq-3)", remaining: "var(--chart-seq-5)" };
 
 function LocalCacheTokenMeterChartImpl({ data }: LocalCacheTokenMeterChartProps) {
-	const { t } = useTranslation("dashboard");
+	useLocale();
+	const { t } = useTranslation("observability");
 	const { ref, width, height } = useGaugeSize();
 
 	const { percentage, directHits, semanticHits, totalRequests, hasCacheCounters } = useMemo(() => {
@@ -50,7 +53,7 @@ function LocalCacheTokenMeterChartImpl({ data }: LocalCacheTokenMeterChartProps)
 		<ChartErrorBoundary resetKey={`${directHits}-${semanticHits}-${totalRequests}`}>
 			<div className="grid h-full grid-rows-[104px_auto] items-start overflow-hidden pt-8">
 				<div ref={ref} className="relative h-[104px] w-full">
-					{!hasData && <div className="text-muted-foreground flex h-full items-center justify-center text-sm">{t("empty.noData")}</div>}
+					{!hasData && <NoChartData />}
 					{hasData && gaugeGeometry && (
 						<>
 							<ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 1 }}>
@@ -83,16 +86,16 @@ function LocalCacheTokenMeterChartImpl({ data }: LocalCacheTokenMeterChartProps)
 					<div>
 						<div className="flex flex-col items-center pt-1 leading-none">
 							<div className="text-muted-foreground text-3xl font-semibold tracking-tight">{percentage.toFixed(1)}%</div>
-							<div className="text-muted-foreground mt-1 text-[11px]">{t("meters.local.ofRequests")}</div>
+							<div className="text-muted-foreground mt-1 text-[11px]">{t("dashboard.charts.localCacheCaption")}</div>
 						</div>
 						<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-2 text-[11px] leading-none">
 							<span className="flex items-center gap-1.5">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: METER_COLORS.direct }} />
-								<span className="text-primary">{t("meters.local.directLabel", { count: directHits })}</span>
+								<span className="text-primary">{t("dashboard.charts.directValue", { value: directHits })}</span>
 							</span>
 							<span className="flex items-center gap-1.5">
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: METER_COLORS.semantic }} />
-								<span className="text-primary">{t("meters.local.semanticLabel", { count: semanticHits })}</span>
+								<span className="text-primary">{t("dashboard.charts.semanticValue", { value: semanticHits })}</span>
 							</span>
 						</div>
 					</div>

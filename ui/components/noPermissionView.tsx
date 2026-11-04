@@ -9,7 +9,8 @@ interface NoPermissionViewProps {
 }
 
 export function NoPermissionView({ entity, className, align = "middle" }: NoPermissionViewProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("governance");
+
 	return (
 		<div
 			className={cn(
@@ -22,8 +23,10 @@ export function NoPermissionView({ entity, className, align = "middle" }: NoPerm
 				<ShieldX className="h-16 w-16" strokeWidth={1} />
 			</div>
 			<div className="flex flex-col items-center gap-1">
-				<h1 className="text-muted-foreground text-xl font-medium">{t("workspaces:noPermission.title", { entity })}</h1>
-				<p className="text-muted-foreground mt-2 max-w-[400px] text-sm font-normal">{t("workspaces:noPermission.description")}</p>
+				<h1 className="text-muted-foreground text-xl font-medium">
+					{t("noPermission.title", { entity: t(`noPermission.entities.${entity}`, { defaultValue: entity }) })}
+				</h1>
+				<p className="text-muted-foreground mt-2 max-w-[400px] text-sm font-normal">{t("noPermission.description")}</p>
 			</div>
 		</div>
 	);

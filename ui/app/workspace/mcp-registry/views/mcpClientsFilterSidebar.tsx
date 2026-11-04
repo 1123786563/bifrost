@@ -44,42 +44,16 @@ export const EMPTY_FILTERS: MCPClientFilters = {
 
 interface FilterOption {
 	value: string;
-	labelKey: string;
+	label: string;
 }
 
 // Facet values are fixed enums (schemas.MCPConnectionType / MCPAuthType) so we
 // hardcode them here rather than fetching a distinct-values endpoint.
 const CONNECTION_TYPE_OPTIONS: FilterOption[] = [
-	{ value: "http", labelKey: "mcp:registry.filters.http" },
-	{ value: "sse", labelKey: "mcp:registry.filters.sse" },
-	{ value: "stdio", labelKey: "mcp:registry.filters.stdio" },
-];
-
-const AUTH_TYPE_OPTIONS: FilterOption[] = [
-	{ value: "none", labelKey: "common:state.none" },
-	{ value: "headers", labelKey: "mcp:sessions.type.headers" },
-	{ value: "oauth", labelKey: "mcp:sessions.type.oauth" },
-	{ value: "per_user_oauth", labelKey: "mcp:registry.filters.perUserOauth" },
-	{ value: "per_user_headers", labelKey: "mcp:registry.filters.perUserHeaders" },
-	{ value: "token_exchange", labelKey: "mcp:registry.filters.tokenExchange" },
-];
-
-// Connection state is runtime, not a column — the backend resolves these
-// against live engine state. "unstable" covers everything not healthy.
-const STATE_OPTIONS: FilterOption[] = [
-	{ value: "healthy", labelKey: "mcp:registry.filters.healthy" },
-	{ value: "unstable", labelKey: "mcp:registry.filters.unstable" },
-];
-
-const CODE_MODE_OPTIONS: FilterOption[] = [
-	{ value: "true", labelKey: "common:state.enabled" },
-	{ value: "false", labelKey: "common:state.disabled" },
-];
-
-// Status maps to the `disabled` column: an enabled client has disabled=false.
-const STATUS_OPTIONS: FilterOption[] = [
-	{ value: "false", labelKey: "common:state.enabled" },
-	{ value: "true", labelKey: "common:state.disabled" },
+	{ value: "http", label: "HTTP" },
+	{ value: "sse", label: "SSE" },
+	{ value: "stdio", label: "STDIO" },
+	{ value: "openapi", label: "OpenAPI" }, // i18n-ignore
 ];
 
 interface SidebarProps {
@@ -92,7 +66,7 @@ interface SidebarProps {
 // ---------------------------------------------------------------------------
 
 export function MCPClientsFilterSidebar({ filters, onFiltersChange }: SidebarProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	const isMobile = useIsMobile();
 	const [collapsed, setCollapsed] = useState(false);
 
@@ -128,6 +102,40 @@ export function MCPClientsFilterSidebar({ filters, onFiltersChange }: SidebarPro
 		);
 	}, [filters]);
 
+	const connectionTypeOptions = useMemo(() => CONNECTION_TYPE_OPTIONS.map((o) => ({ ...o })), []);
+	const authTypeOptions = useMemo(
+		() => [
+			{ value: "none", label: t("registry.filter.none") },
+			{ value: "headers", label: t("registry.filter.headers") },
+			{ value: "oauth", label: "OAuth" }, // i18n-ignore
+			{ value: "per_user_oauth", label: t("registry.filter.perUserOauth") },
+			{ value: "per_user_headers", label: t("registry.filter.perUserHeaders") },
+			{ value: "token_exchange", label: t("registry.filter.tokenExchange") },
+		],
+		[t],
+	);
+	const stateOptions = useMemo(
+		() => [
+			{ value: "healthy", label: t("registry.filter.healthy") },
+			{ value: "unstable", label: t("registry.filter.unstable") },
+		],
+		[t],
+	);
+	const codeModeOptions = useMemo(
+		() => [
+			{ value: "true", label: t("common.enabled") },
+			{ value: "false", label: t("common.disabled") },
+		],
+		[t],
+	);
+	const statusOptions = useMemo(
+		() => [
+			{ value: "false", label: t("common.enabled") },
+			{ value: "true", label: t("common.disabled") },
+		],
+		[t],
+	);
+
 	const handleReset = useCallback(() => {
 		onFiltersChange(EMPTY_FILTERS);
 	}, [onFiltersChange]);
@@ -141,7 +149,7 @@ export function MCPClientsFilterSidebar({ filters, onFiltersChange }: SidebarPro
 	return (
 		<div className="bg-card fixed inset-y-2 left-2 z-40 flex h-auto w-[calc(100vw-1rem)] max-w-72 shrink-0 flex-col rounded-md border shadow-xl md:static md:h-full md:w-64 md:max-w-none md:rounded-md md:shadow-none">
 			<div className="flex h-11 items-center justify-between border-b pr-2 pl-5">
-				<span className="text-sm font-semibold">{t("mcp:sessions.filters.title")}</span>
+				<span className="text-sm font-semibold">{t("common.filters")}</span>
 				<div className="flex items-center gap-1">
 					{activeFilterCount > 0 && (
 						<Button
@@ -152,7 +160,7 @@ export function MCPClientsFilterSidebar({ filters, onFiltersChange }: SidebarPro
 							data-testid="mcpClientsFilterSidebar-reset-button"
 						>
 							<RotateCcw className="size-3" />
-							{t("common:actions.reset")}
+							{t("common.reset")}
 						</Button>
 					)}
 					<Button
@@ -160,8 +168,8 @@ export function MCPClientsFilterSidebar({ filters, onFiltersChange }: SidebarPro
 						size="icon"
 						className="size-7"
 						onClick={toggleCollapsed}
-						title={t("mcp:sessions.filters.hide")}
-						aria-label={t("mcp:sessions.filters.hide")}
+						title={t("common.hideFilters")}
+						aria-label={t("common.hideFilters")}
 						data-testid="mcpClientsFilterSidebar-toggle-hide"
 					>
 						<PanelLeftClose className="size-4" />
@@ -172,37 +180,37 @@ export function MCPClientsFilterSidebar({ filters, onFiltersChange }: SidebarPro
 			<ScrollArea className="flex flex-1 overflow-y-auto p-2 pb-0" viewportClassName="no-table">
 				<div className="flex grow flex-col gap-1">
 					<CheckboxFilterSection
-						title={t("mcp:registry.filters.connectionType")}
-						options={CONNECTION_TYPE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+						title={t("registry.filter.connectionType")}
+						options={connectionTypeOptions}
 						selected={filters.connection_types}
 						defaultOpen
 						onChange={(connection_types) => onFiltersChange({ ...filters, connection_types })}
 						testIdPrefix="mcp-clients-filter-connection-type"
 					/>
 					<CheckboxFilterSection
-						title={t("mcp:registry.filters.authType")}
-						options={AUTH_TYPE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+						title={t("registry.filter.authType")}
+						options={authTypeOptions}
 						selected={filters.auth_types}
 						onChange={(auth_types) => onFiltersChange({ ...filters, auth_types })}
 						testIdPrefix="mcp-clients-filter-auth-type"
 					/>
 					<CheckboxFilterSection
-						title={t("mcp:registry.filters.state")}
-						options={STATE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+						title={t("registry.filter.state")}
+						options={stateOptions}
 						selected={filters.states}
 						onChange={(states) => onFiltersChange({ ...filters, states })}
 						testIdPrefix="mcp-clients-filter-state"
 					/>
 					<CheckboxFilterSection
-						title={t("mcp:registry.filters.codeMode")}
-						options={CODE_MODE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+						title={t("registry.filter.codeMode")}
+						options={codeModeOptions}
 						selected={filters.code_mode}
 						onChange={(code_mode) => onFiltersChange({ ...filters, code_mode })}
 						testIdPrefix="mcp-clients-filter-code-mode"
 					/>
 					<CheckboxFilterSection
-						title={t("common:fields.status")}
-						options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+						title={t("registry.filter.status")}
+						options={statusOptions}
 						selected={filters.status}
 						onChange={(status) => onFiltersChange({ ...filters, status })}
 						testIdPrefix="mcp-clients-filter-status"
@@ -301,7 +309,7 @@ function CheckboxFilterSection({
 	testIdPrefix,
 }: {
 	title: string;
-	options: { value: string; label: string }[];
+	options: FilterOption[];
 	selected: string[];
 	defaultOpen?: boolean;
 	onChange: (selected: string[]) => void;
@@ -336,11 +344,13 @@ function CheckboxFilterSection({
 // filtering is applied on top of the (debounced) onSearch callback so the caller
 // can fetch server-side results. Mirrors the logs filter sidebar pattern.
 function SearchableCheckboxList({
+	// i18n for empty-state copy
+
 	items,
 	pinnedItems = [],
 	isSelected,
 	onToggle,
-	placeholder,
+	placeholder = "Search...",
 	inputRef,
 	testIdPrefix,
 	onSearch,
@@ -358,7 +368,7 @@ function SearchableCheckboxList({
 	onSearch?: (query: string) => void;
 	fetching?: boolean;
 }) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	const [query, setQuery] = useState("");
 	const normalized = query.trim().toLowerCase();
 	const filtered = normalized ? items.filter((item) => item.label.toLowerCase().includes(normalized)) : items;
@@ -404,9 +414,7 @@ function SearchableCheckboxList({
 					testId={testIdPrefix ? `${testIdPrefix}-checkbox-${item.key}` : undefined}
 				/>
 			))}
-			{filtered.length === 0 && (
-				<div className="text-muted-foreground flex h-9 items-center px-3 text-xs">{t("mcp:sessions.filters.noResults")}</div>
-			)}
+			{filtered.length === 0 && <div className="text-muted-foreground flex h-9 items-center px-3 text-xs">{t("common.noResults")}</div>}
 		</>
 	);
 }
@@ -423,7 +431,7 @@ function SearchableCheckboxList({
 const ALLOWED_BY_DEFAULT_KEY = "__allowed_by_default__";
 
 function VKAccessFilterSection({ filters, onFiltersChange }: SidebarProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	const hasActive = filters.only_allowed_by_default || filters.virtual_keys.length > 0;
 	const [opened, setOpened] = useState(hasActive);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -450,15 +458,15 @@ function VKAccessFilterSection({ filters, onFiltersChange }: SidebarProps) {
 
 	return (
 		<FilterSection
-			title={t("mcp:virtualMcps.tab.access")}
+			title={t("registry.filter.access")}
 			defaultOpen={hasActive}
 			onOpenChange={setOpened}
 			testId="mcp-clients-filter-vk-access-toggle"
 		>
 			<SearchableCheckboxList
 				inputRef={searchInputRef}
-				placeholder={t("mcp:sessions.filters.searchVirtualKeys")}
-				pinnedItems={[{ key: ALLOWED_BY_DEFAULT_KEY, label: t("mcp:agents.filters.allowedByDefault") }]}
+				placeholder={t("registry.filter.searchVirtualKeys")}
+				pinnedItems={[{ key: ALLOWED_BY_DEFAULT_KEY, label: t("registry.filter.allowedByDefault") }]}
 				items={virtualKeys.map((vk) => ({ key: vk.id, label: vk.name }))}
 				isSelected={isSelected}
 				onToggle={toggle}

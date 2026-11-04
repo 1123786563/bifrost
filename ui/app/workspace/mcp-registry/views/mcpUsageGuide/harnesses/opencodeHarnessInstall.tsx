@@ -1,10 +1,12 @@
 import { useMemo } from "react";
-import { buildOpenCodeConfig } from "../commandBuilders";
 import { useTranslation } from "react-i18next";
+import { buildOpenCodeConfig } from "../commandBuilders";
 import { HarnessCommandSection } from "../harnessCommandSection";
 import type { HarnessInstallProps } from "../types";
 import { getRegistrationLabel } from "../utils";
+import { withBasePath } from "@/lib/utils/basePath";
 
+/** Install panel for OpenCode: the generated config or command for the selected MCP servers. */
 export function OpenCodeHarnessInstall({
 	canGenerateCommand,
 	clientConfig,
@@ -14,7 +16,7 @@ export function OpenCodeHarnessInstall({
 	selectedServers,
 	serverScope,
 }: HarnessInstallProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	const configPath = {
 		linux: "~/.config/opencode/opencode.json",
 		macos: "~/.config/opencode/opencode.json",
@@ -36,12 +38,12 @@ export function OpenCodeHarnessInstall({
 			canCopyCommand={canGenerateCommand}
 			command={config}
 			controls={null}
-			copySuccessMessage={t("mcp:usageGuide.configCopied")}
+			copySuccessMessage={t("common.configCopied")}
 			emptyMessage={emptyMessage}
 			harnessName="OpenCode"
-			label={t("mcp:usageGuide.configLabel")}
-			logoSrc="/images/harness/opencode.svg"
-			registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers, t)}`}
+			label={t("common.config")}
+			logoSrc={withBasePath("/images/harness/opencode.svg")}
+			registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers)}`}
 		/>
 	);
 }

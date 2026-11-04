@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
-	return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
+	const { t } = useTranslation("common");
+	return <nav aria-label={t("breadcrumb.label")} data-slot="breadcrumb" {...props} />;
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
@@ -67,7 +68,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span"
 			{...props}
 		>
 			<MoreHorizontal className="size-4" />
-			<span className="sr-only">{t("actions.more")}</span>
+			<span className="sr-only">{t("breadcrumb.more")}</span>
 		</span>
 	);
 }

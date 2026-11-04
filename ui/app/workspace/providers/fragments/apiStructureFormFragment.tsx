@@ -28,7 +28,7 @@ interface Props {
 
 // Standalone component for provider configuration tabs
 export function ApiStructureFormFragment({ provider }: Props) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
 	const hasUpdateProviderAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Update);
 	const dispatch = useAppDispatch();
 	const [updateProvider, { isLoading: isUpdatingProvider }] = useUpdateProviderMutation();
@@ -62,6 +62,8 @@ export function ApiStructureFormFragment({ provider }: Props) {
 				ocr: provider.custom_provider_config?.allowed_requests?.ocr ?? true,
 				ocr_stream: provider.custom_provider_config?.allowed_requests?.ocr_stream ?? true,
 				decisions: provider.custom_provider_config?.allowed_requests?.decisions ?? true,
+				passthrough: provider.custom_provider_config?.allowed_requests?.passthrough ?? true,
+				passthrough_stream: provider.custom_provider_config?.allowed_requests?.passthrough_stream ?? true,
 			},
 			request_path_overrides: provider.custom_provider_config?.request_path_overrides ?? undefined,
 		},
@@ -91,11 +93,11 @@ export function ApiStructureFormFragment({ provider }: Props) {
 		)
 			.unwrap()
 			.then(() => {
-				toast.success(t("providers:toasts.configUpdated"));
+				toast.success(t("providers.configUpdated"));
 				form.reset(data);
 			})
 			.catch((err) => {
-				toast.error(t("providers:toasts.configUpdateFailed"), {
+				toast.error(t("providers.failedUpdateConfig"), {
 					description: getErrorMessage(err),
 				});
 			});
@@ -133,16 +135,16 @@ export function ApiStructureFormFragment({ provider }: Props) {
 						name="base_provider_type"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>{t("providers:apiStructure.baseProviderType")}</FormLabel>
+								<FormLabel>{t("providers.baseProviderType")}</FormLabel>
 								<FormControl>
 									<BaseProviderSelector
-										placeholder={t("providers:apiStructure.selectBaseProvider")}
+										placeholder={t("providers.selectBaseProvider")}
 										value={field.value}
 										onChange={field.onChange}
 										disabled
 									/>
 								</FormControl>
-								<FormDescription>{t("providers:apiStructure.baseProviderTypeDesc")}</FormDescription>
+								<FormDescription>{t("providers.baseProviderTypeHelp")}</FormDescription>
 								<FormMessage />
 							</FormItem>
 						)}
@@ -156,9 +158,9 @@ export function ApiStructureFormFragment({ provider }: Props) {
 									<div className="bg-muted/50 flex items-center justify-between space-x-2 rounded-sm border p-3">
 										<div className="space-y-0.5">
 											<label htmlFor="drop-excess-requests" className="text-sm font-medium">
-												{t("providers:addCustom.keyless")}
+												{t("providers.isKeyless")}
 											</label>
-											<p className="text-muted-foreground text-sm">{t("providers:addCustom.keylessDesc")}</p>
+											<p className="text-muted-foreground text-sm">{t("providers.requiresKey")}</p>
 										</div>
 										<Switch
 											id="drop-excess-requests"
@@ -181,9 +183,9 @@ export function ApiStructureFormFragment({ provider }: Props) {
 									<div className="bg-muted/50 flex items-center justify-between space-x-2 rounded-sm border p-3">
 										<div className="space-y-0.5">
 											<label htmlFor="does-not-send-done-marker" className="text-sm font-medium">
-												{t("providers:addCustom.doneMarker")}
+												{t("providers.doesNotSendDoneMarker")}
 											</label>
-											<p className="text-muted-foreground text-sm">{t("providers:addCustom.doneMarkerDesc")}</p>
+											<p className="text-muted-foreground text-sm">{t("providers.doesNotSendDoneMarkerHelp")}</p>
 										</div>
 										<Switch
 											id="does-not-send-done-marker"
@@ -206,9 +208,9 @@ export function ApiStructureFormFragment({ provider }: Props) {
 									<div className="bg-muted/50 flex items-center justify-between space-x-2 rounded-sm border p-3">
 										<div className="space-y-0.5">
 											<label htmlFor="wait-for-usage" className="text-sm font-medium">
-												{t("providers:addCustom.waitForUsage")}
+												{t("providers.custom.waitForUsage")}
 											</label>
-											<p className="text-muted-foreground text-sm">{t("providers:addCustom.waitForUsageDesc")}</p>
+											<p className="text-muted-foreground text-sm">{t("providers.custom.waitForUsageHelp")}</p>
 										</div>
 										<Switch
 											id="wait-for-usage"
@@ -234,18 +236,18 @@ export function ApiStructureFormFragment({ provider }: Props) {
 				{/* Form Actions */}
 				<div className="flex justify-end gap-2 py-2">
 					<Button type="button" variant="outline" onClick={() => form.reset()} disabled={!hasUpdateProviderAccess}>
-						{t("common:actions.reset")}
+						{t("providers.reset")}
 					</Button>
 					<TooltipProvider>
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button type="submit" disabled={!form.formState.isDirty || !hasUpdateProviderAccess} isLoading={isUpdatingProvider}>
-									{t("providers:apiStructure.save")}
+									{t("providers.saveApiStructureConfig")}
 								</Button>
 							</TooltipTrigger>
 							{!form.formState.isValid && (
 								<TooltipContent>
-									<p>{form.formState.errors.root?.message || t("providers:apiStructure.fixValidationErrors")}</p>
+									<p>{form.formState.errors.root?.message || t("providers.pleaseFixValidation")}</p>
 								</TooltipContent>
 							)}
 						</Tooltip>

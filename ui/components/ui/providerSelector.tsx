@@ -19,8 +19,8 @@ import { isSentinelValue } from "@/lib/utils/strings";
 import { ChevronDownIcon, Loader2Icon, XIcon } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { normalizeValueOption, type ProviderSelectorOption, type ProviderSelectorValue } from "./providerSelector.utils";
 import { useTranslation } from "react-i18next";
+import { normalizeValueOption, type ProviderSelectorOption, type ProviderSelectorValue } from "./providerSelector.utils";
 
 export type { ProviderSelectorOption, ProviderSelectorValue } from "./providerSelector.utils";
 
@@ -128,7 +128,7 @@ function matches(option: ProviderSelectorOption, term: string): boolean {
 }
 
 export function ProviderSelector(props: ProviderSelectorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	const {
 		source = "configured",
 		values,
@@ -141,8 +141,8 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 		contentTestId,
 		allOption,
 		groupByCustom = false,
-		placeholder = t("workspaces:providerSelector.selectProvider"),
-		searchPlaceholder = t("workspaces:filters.phProviders"),
+		placeholder: placeholderProp,
+		searchPlaceholder: searchPlaceholderProp,
 		emptyMessage,
 		disabled = false,
 		size = "default",
@@ -157,6 +157,8 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 		ariaDescribedBy,
 		ariaInvalid,
 	} = props;
+	const placeholder = placeholderProp ?? t("providerSelect.select");
+	const searchPlaceholder = searchPlaceholderProp ?? t("providerSelect.search");
 
 	const isAdd = props.mode === "add";
 	const isMulti = !isAdd && props.multiple === true;
@@ -208,8 +210,8 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 	const visibleExtras = useMemo(() => (extraOptions ?? []).filter((o) => matches(o, term)), [extraOptions, term]);
 	const visibleFooters = useMemo(() => (footerOptions ?? []).filter((o) => matches(o, term)), [footerOptions, term]);
 	const allRow = useMemo<ProviderSelectorOption[]>(
-		() => (allOption ? [{ value: allOption.value, label: allOption.label ?? t("workspaces:providerSelector.allProviders") }] : []),
-		[allOption, t],
+		() => (allOption ? [{ value: allOption.value, label: allOption.label ?? t("providerSelect.all") }] : []),
+		[allOption],
 	);
 	const visibleAll = useMemo(() => allRow.filter((o) => matches(o, term)), [allRow, term]);
 	const visible = useMemo(() => options.filter((o) => matches(o, term)), [options, term]);
@@ -230,7 +232,11 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 		if (isAdd) return [];
 		return shown
 			.filter((value) => value && !known.has(value))
-			.map((value) => ({ value, label: getProviderLabel(value), iconKey: resolveProviderIconKey(value) }))
+			.map((value) => ({
+				value,
+				label: getProviderLabel(value),
+				iconKey: resolveProviderIconKey(value),
+			}))
 			.filter((o) => matches(o, term));
 	}, [isAdd, known, shown, term]);
 
@@ -399,7 +405,7 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 										<span
 											role="button"
 											tabIndex={-1}
-											aria-label={t("workspaces:providerSelector.removeAria", { name: optionFor(value).label })}
+											aria-label={t("combobox.removeAria", { label: optionFor(value).label })}
 											className="text-muted-foreground hover:text-foreground flex shrink-0 cursor-pointer items-center"
 											onClick={(e) => {
 												e.preventDefault();
@@ -444,7 +450,7 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 
 					{pinned.length > 0 && (
 						<ComboboxGroup>
-							<ComboboxLabel>{t("workspaces:selectors.selected")}</ComboboxLabel>
+							<ComboboxLabel>{t("entityAssociation.selected")}</ComboboxLabel>
 							{pinned.map(renderOption)}
 						</ComboboxGroup>
 					)}
@@ -455,7 +461,7 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 							{base.map(renderOption)}
 							{custom.length > 0 && (
 								<ComboboxGroup>
-									<ComboboxLabel>{t("workspaces:selectors.customProviders")}</ComboboxLabel>
+									<ComboboxLabel>{t("providerSelect.customProviders")}</ComboboxLabel>
 									{custom.map(renderOption)}
 								</ComboboxGroup>
 							)}
@@ -469,13 +475,13 @@ export function ProviderSelector(props: ProviderSelectorProps) {
 					{isLoading ? (
 						<div className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm">
 							<Loader2Icon className="size-3.5 animate-spin" />
-							{t("common:state.loadingProviders")}
+							{t("providerSelect.loading")}
 						</div>
 					) : (
 						<ComboboxEmpty className="text-muted-foreground">
 							{isError
-								? t("workspaces:providerSelector.loadFailed")
-								: (emptyMessage ?? (search ? t("workspaces:providerSelector.noMatching") : t("workspaces:providerSelector.noneAvailable")))}
+								? t("providerSelect.couldntLoad")
+								: (emptyMessage ?? (search ? t("providerSelect.noMatching") : t("providerSelect.noneAvailable")))}
 						</ComboboxEmpty>
 					)}
 				</ComboboxList>

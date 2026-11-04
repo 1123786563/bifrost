@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader } from "./card";
 import { useTranslation } from "react-i18next";
+import { Card, CardContent, CardHeader } from "./card";
 
 interface PromoCardItem {
 	id: string;
@@ -20,7 +20,7 @@ interface PromoCardStackProps {
 }
 
 export function PromoCardStack({ cards, className = "", onCardsEmpty, onDismiss }: PromoCardStackProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	const [items, setItems] = useState(() => {
 		// Sort so non-dismissible cards appear at the top
 		return [...cards].sort((a, b) => {
@@ -124,7 +124,7 @@ export function PromoCardStack({ cards, className = "", onCardsEmpty, onDismiss 
 									<div className="min-w-0 flex-1">{typeof card.title === "string" ? card.title : card.title}</div>
 									{card.dismissible !== false && isTopCard && (
 										<button
-											aria-label={t("workspaces:misc2.dismissAria")}
+											aria-label={t("promoCard.dismiss")}
 											type="button"
 											onClick={() => handleDismiss(card.id)}
 											disabled={isAnimating}

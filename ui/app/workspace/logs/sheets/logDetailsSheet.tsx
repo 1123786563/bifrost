@@ -39,13 +39,13 @@ export function LogDetailSheet({
 	onFilterBySessionId,
 	onOpenLog,
 }: LogDetailSheetProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const [pollingInterval, setPollingInterval] = useState(0);
 	const {
 		data: fullLog,
 		isLoading,
 		isError,
-	} = useGetLogByIdQuery(log?.id ?? "", {
+	} = useGetLogByIdQuery(log ? { id: log.id, timestamp: log.timestamp } : "", {
 		skip: !open || !log?.id,
 		pollingInterval,
 	});
@@ -82,7 +82,7 @@ export function LogDetailSheet({
 			<SheetContent className="border-secondary flex w-full flex-col gap-2 overflow-x-hidden border p-0 sm:max-w-[60%] 2xl:max-w-[40%]">
 				{!isFullDataReady ? (
 					<div className="flex h-full items-center justify-center">
-						<SheetTitle className="sr-only">{t("logs:session.loadingLogDetails")}</SheetTitle>
+						<SheetTitle className="sr-only">{t("logs.detail.loadingDetails")}</SheetTitle>
 						<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
 					</div>
 				) : (
@@ -104,7 +104,7 @@ export function LogDetailSheet({
 										data-testid="session-button-view"
 										onClick={() => onViewSession(displayLog.parent_request_id as string, displayLog.id)}
 									>
-										{t("logs:session.viewSession")}
+										{t("logs.detail.viewSession")}
 									</Button>
 								) : null}
 								<SheetNavigationButtons
@@ -113,7 +113,7 @@ export function LogDetailSheet({
 									onNavigate={(dir) => onNavigate?.(dir)}
 									prevKeys={prevKeys}
 									nextKeys={nextKeys}
-									entityLabel="log"
+									entityLabel={t("logs.detail.entityLog")}
 								/>
 							</>
 						}

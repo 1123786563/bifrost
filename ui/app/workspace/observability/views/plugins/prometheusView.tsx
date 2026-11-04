@@ -1,10 +1,11 @@
 import { getErrorMessage, useAppSelector, useUpdatePluginMutation } from "@/lib/store";
-import { useTranslation } from "react-i18next";
 import { type SecretVar, PrometheusFormSchema } from "@/lib/types/schemas";
+import { getExampleBaseUrl } from "@/lib/utils/port";
 import { toOptionalSecretVarPayload } from "@/lib/utils/secretVarForm";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { PrometheusFormFragment } from "../../fragments/prometheusFormFragment";
+import { Trans, useTranslation } from "react-i18next";
 
 interface PushGatewayConfig {
 	enabled?: boolean;
@@ -31,7 +32,7 @@ interface PrometheusViewProps {
 }
 
 export default function PrometheusView({ onDelete, isDeleting }: PrometheusViewProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const selectedPlugin = useAppSelector((state) => state.plugin.selectedPlugin);
 	const currentConfig = useMemo(() => {
 		const telemetryConfig = (selectedPlugin?.config as TelemetryConfig) ?? {};
@@ -47,8 +48,8 @@ export default function PrometheusView({ onDelete, isDeleting }: PrometheusViewP
 	}, [selectedPlugin]);
 
 	const [updatePlugin] = useUpdatePluginMutation();
-	const baseUrl = `${window.location.protocol}//${window.location.host}`;
-	const metricsEndpoint = `${baseUrl}/metrics`;
+	// Origin plus server.base_path, so the scrape target users copy is the one the proxy routes.
+	const metricsEndpoint = `${getExampleBaseUrl()}/metrics`;
 
 	const handlePrometheusConfigSave = (config: PrometheusFormSchema): Promise<void> => {
 		return new Promise((resolve, reject) => {
@@ -83,10 +84,10 @@ export default function PrometheusView({ onDelete, isDeleting }: PrometheusViewP
 				.unwrap()
 				.then(() => {
 					resolve();
-					toast.success(t("logs:prom.updatedSuccess"));
+					toast.success(t("connectors.toast.prometheusUpdated"));
 				})
 				.catch((err) => {
-					toast.error(t("logs:prom.updateFailed"), {
+					toast.error(t("connectors.toast.prometheusFailed"), {
 						description: getErrorMessage(err),
 					});
 					reject(err);
@@ -97,7 +98,9 @@ export default function PrometheusView({ onDelete, isDeleting }: PrometheusViewP
 	return (
 		<div className="flex w-full flex-col gap-4">
 			<div className="flex w-full flex-col gap-3">
-				<div className="text-muted-foreground mb-2 text-xs font-normal">{t("logs:prom.exposeNote")}</div>
+				<div className="text-muted-foreground mb-2 text-xs font-normal">
+					<Trans t={t} i18nKey="connectors.prometheus.intro" components={{ code0: <code /> }} />
+				</div>
 				<PrometheusFormFragment
 					onSave={handlePrometheusConfigSave}
 					currentConfig={currentConfig}

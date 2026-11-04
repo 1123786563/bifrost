@@ -19,7 +19,7 @@ interface PerformanceFormFragmentProps {
 }
 
 export function PerformanceFormFragment({ provider }: PerformanceFormFragmentProps) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
 	const dispatch = useAppDispatch();
 	const hasUpdateProviderAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Update);
 	const [updateProvider, { isLoading: isUpdatingProvider }] = useUpdateProviderMutation();
@@ -60,11 +60,11 @@ export function PerformanceFormFragment({ provider }: PerformanceFormFragmentPro
 		updateProvider(updatedProvider)
 			.unwrap()
 			.then(() => {
-				toast.success(t("providers:toasts.configUpdated"));
+				toast.success(t("providers.configUpdated"));
 				form.reset(data);
 			})
 			.catch((err) => {
-				toast.error(t("providers:toasts.configUpdateFailed"), {
+				toast.error(t("providers.failedUpdateConfig"), {
 					description: getErrorMessage(err),
 				});
 			});
@@ -82,7 +82,7 @@ export function PerformanceFormFragment({ provider }: PerformanceFormFragmentPro
 								name="concurrency_and_buffer_size.concurrency"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>{t("providers:performance.concurrency")}</FormLabel>
+										<FormLabel>{t("providers.concurrency")}</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
@@ -115,7 +115,7 @@ export function PerformanceFormFragment({ provider }: PerformanceFormFragmentPro
 								name="concurrency_and_buffer_size.buffer_size"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>{t("providers:performance.bufferSize")}</FormLabel>
+										<FormLabel>{t("providers.bufferSize")}</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
@@ -152,7 +152,7 @@ export function PerformanceFormFragment({ provider }: PerformanceFormFragmentPro
 						disabled={!form.formState.isDirty || !hasUpdateProviderAccess || isUpdatingProvider}
 						isLoading={isUpdatingProvider}
 					>
-						{t("providers:performance.save")}
+						{t("providers.savePerformanceConfig")}
 					</Button>
 				</div>
 			</form>

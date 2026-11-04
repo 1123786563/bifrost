@@ -10,28 +10,35 @@ interface AgentsEmptyStateProps {
 }
 
 export function AgentsEmptyState({ onAddClick, canCreate = true }: AgentsEmptyStateProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("observability");
 	return (
 		<div className="flex min-h-[80vh] w-full flex-col items-center justify-center gap-4 py-16 text-center">
 			<div className="text-muted-foreground">
 				<Bot className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />
 			</div>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-muted-foreground text-xl font-medium">{t("mcp:agents.empty.title")}</h1>
-				<div className="text-muted-foreground mx-auto mt-2 w-full max-w-[600px] text-sm font-normal">{t("mcp:agents.empty.body")}</div>
+				<h1 className="text-muted-foreground text-xl font-medium">{t("agentGateway.emptyState.title")}</h1>
+				<div className="text-muted-foreground mx-auto mt-2 w-full max-w-[600px] text-sm font-normal">
+					{t("agentGateway.emptyState.description")}
+				</div>
 				<div className="mx-auto mt-6 flex flex-row flex-wrap items-center justify-center gap-2">
 					<Button
 						variant="outline"
-						aria-label={t("mcp:agents.empty.readMoreAria")}
+						aria-label={t("agentGateway.emptyState.readMoreAria")}
 						data-testid="agent-gateway-button-read-more"
 						onClick={() => {
 							window.open(`${AGENT_GATEWAY_DOCS_URL}?utm_source=bfd`, "_blank", "noopener,noreferrer");
 						}}
 					>
-						{t("mcp:agents.empty.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
+						{t("agentGateway.emptyState.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
-					<Button aria-label={t("mcp:agents.empty.newAgentAria")} onClick={onAddClick} disabled={!canCreate} data-testid="create-agent-btn">
-						{t("mcp:agents.empty.newAgent")}
+					<Button
+						aria-label={t("agentGateway.emptyState.registerAria")}
+						onClick={onAddClick}
+						disabled={!canCreate}
+						data-testid="create-agent-btn"
+					>
+						{t("agentGateway.emptyState.newAgent")}
 					</Button>
 				</div>
 			</div>

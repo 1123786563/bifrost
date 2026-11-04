@@ -20,6 +20,7 @@ import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { cn } from "@/lib/utils";
 import { Check, Copy, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Field, QueryBuilder, RuleGroupType } from "react-querybuilder";
 import "react-querybuilder/dist/query-builder.css";
 import { normalizeRoutingRuleGroupQuery } from "@/lib/utils/routingRuleGroupQuery";
@@ -29,7 +30,6 @@ import { FieldSelector } from "./fieldSelector";
 import { OperatorSelector } from "./operatorSelector";
 import { QueryBuilderWrapper } from "./queryBuilderWrapper";
 import { ValueEditor } from "./valueEditor";
-import { useTranslation } from "react-i18next";
 
 export interface CELFieldDefinition {
 	name: string;
@@ -112,7 +112,8 @@ export function CELRuleBuilder({
 		hideCELExpression: false,
 	},
 }: CELRuleBuilderProps) {
-	const { t } = useTranslation(["common", "workspaces", "governance"]);
+	const { t, i18n } = useTranslation("observability");
+	const { t: tc } = useTranslation("common");
 	const normalizedInitial = normalizeRoutingRuleGroupQuery(initialQuery ?? defaultQuery);
 	const [query, setQuery] = useState<RuleGroupType>(normalizedInitial);
 	const [celExpression, setCelExpression] = useState("");
@@ -146,7 +147,7 @@ export function CELRuleBuilder({
 			...field,
 			value: field.name,
 		})) as Field[];
-	}, [fieldDefinitions]);
+	}, [fieldDefinitions, i18n.language]); // spreading evaluates translated getters, so rebuild on language change
 
 	useEffect(() => {
 		const expression = convertToCELRef.current(query);
@@ -195,7 +196,7 @@ export function CELRuleBuilder({
 		return (
 			<div className="flex items-center justify-center space-x-2 rounded-md border p-8">
 				<Loader2 className="h-5 w-5 animate-spin" />
-				<span className="text-muted-foreground text-sm">{t("governance:routingRules.loadingCelBuilder")}</span>
+				<span className="text-muted-foreground text-sm">{t("celBuilder.loading")}</span>
 			</div>
 		);
 	}
@@ -221,7 +222,7 @@ export function CELRuleBuilder({
 							)}
 							data-testid="cel-builder-mode-builder"
 						>
-							{t("governance:routingRules.cel.builder")}
+							{t("celBuilder.builder")}
 						</button>
 						<button
 							type="button"
@@ -263,8 +264,8 @@ export function CELRuleBuilder({
 									combinatorSelector: CombinatorSelector,
 								}}
 								translations={{
-									addRule: { label: t("workspaces:celBuilder.addRule") },
-									addGroup: { label: t("workspaces:celBuilder.addGroup") },
+									addRule: { label: t("celBuilder.addRule") },
+									addGroup: { label: t("celBuilder.addRuleGroup") },
 								}}
 							/>
 						</QueryBuilderWrapper>
@@ -275,19 +276,17 @@ export function CELRuleBuilder({
 			{(mode === "cel" || !options.hideCELExpression) && (
 				<div className="space-y-2">
 					<div className="flex items-center justify-between">
-						<Label>
-							{mode === "cel" ? t("governance:routingRules.cel.expression") : t("governance:routingRules.cel.expressionPreview")}
-						</Label>
+						<Label>{mode === "cel" ? t("celBuilder.expression") : t("celBuilder.expressionPreview")}</Label>
 						<Button variant="outline" size="sm" onClick={() => copy(copyValue)} disabled={!copyValue} className="gap-2" type="button">
 							{copied ? (
 								<>
 									<Check className="h-4 w-4" />
-									{t("common:actions.copied")}
+									{t("celBuilder.copied")}
 								</>
 							) : (
 								<>
 									<Copy className="h-4 w-4" />
-									{t("common:actions.copy")}
+									{t("labels.copy")}
 								</>
 							)}
 						</Button>
@@ -299,7 +298,7 @@ export function CELRuleBuilder({
 								onChange={(e) => handleCelTextChange(e.target.value)}
 								className={cn("font-mono text-sm", celError && "border-destructive focus-visible:ring-destructive")}
 								rows={4}
-								placeholder={t("governance:routingRules.cel.placeholder")}
+								placeholder={t("celBuilder.celPlaceholder")}
 								aria-invalid={!!celError}
 								data-testid="cel-builder-cel-textarea"
 							/>
@@ -308,11 +307,11 @@ export function CELRuleBuilder({
 									{celError}
 								</p>
 							) : (
-								<p className="text-muted-foreground text-xs">{t("governance:routingRules.cel.leaveEmpty")}</p>
+								<p className="text-muted-foreground text-xs">{t("celBuilder.leaveEmpty")}</p>
 							)}
 						</>
 					) : (
-						<Textarea value={celExpression || t("governance:routingRules.cel.noRules")} readOnly className="font-mono text-sm" rows={4} />
+						<Textarea value={celExpression || t("celBuilder.noRules")} readOnly className="font-mono text-sm" rows={4} />
 					)}
 				</div>
 			)}
@@ -320,18 +319,18 @@ export function CELRuleBuilder({
 			<AlertDialog open={confirmSwitchToBuilder} onOpenChange={setConfirmSwitchToBuilder}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>{t("workspaces:celBuilder.switchTitle")}</AlertDialogTitle>
-						<AlertDialogDescription>{t("workspaces:celBuilder.switchDescription")}</AlertDialogDescription>
+						<AlertDialogTitle>{t("celBuilder.switchTitle")}</AlertDialogTitle>
+						<AlertDialogDescription>{t("celBuilder.switchDescription")}</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common:actions.cancel")}</AlertDialogCancel>
+						<AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={() => {
 								setConfirmSwitchToBuilder(false);
 								applySwitchToBuilder();
 							}}
 						>
-							{t("workspaces:celBuilder.discardAndSwitch")}
+							{t("celBuilder.discardAndSwitch")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

@@ -19,8 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { resetDurationLabel } from "@/lib/constants/governance";
-import i18n from "@/lib/i18n";
+import { resetDurationLabels } from "@/lib/constants/governance";
 import { getErrorMessage, useDeleteTeamMutation } from "@/lib/store";
 import { Team } from "@/lib/types/governance";
 import { cn } from "@/lib/utils";
@@ -33,9 +32,13 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import TeamSheet from "./teamSheet";
 import { TeamsEmptyState } from "./teamsEmptyState";
+import { useActionParam } from "@/hooks/useActionParam";
+import { getLocale } from "@/lib/i18n";
 
 // Helper to format reset duration for display
-const formatResetDuration = (duration: string) => resetDurationLabel(i18n.t, duration);
+const formatResetDuration = (duration: string) => {
+	return resetDurationLabels[duration] || duration;
+};
 
 function TeamActionsMenu({
 	team,
@@ -52,7 +55,8 @@ function TeamActionsMenu({
 	onEdit: (team: Team) => void;
 	onDelete: (teamId: string) => void;
 }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("governance");
+	const { t: tCommon } = useTranslation("common");
 	const [isOpen, setIsOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -64,7 +68,7 @@ function TeamActionsMenu({
 						variant="ghost"
 						size="icon"
 						className="h-8 w-8"
-						aria-label={t("governance:org.teams.actionsAria", { name: team.name })}
+						aria-label={t("teams.actionsAria", { name: team.name })}
 						data-testid={`team-actions-btn-${team.name}`}
 					>
 						<MoreHorizontal className="h-4 w-4" />
@@ -82,12 +86,12 @@ function TeamActionsMenu({
 						}}
 					>
 						<Edit className="h-4 w-4" />
-						{t("common:actions.edit")}
-					</DisabledReasonMenuItem>
+						{t("teams.actions.edit")}
+					</DisabledReasonMenuItem>{" "}
 					<DropdownMenuItem asChild className="cursor-pointer" data-testid={`team-view-logs-btn-${team.name}`}>
 						<Link to="/workspace/logs" search={{ team_ids: [team.id] }} onClick={() => setIsOpen(false)}>
 							<ScrollText className="h-4 w-4" />
-							{t("governance:org.teams.viewLogs")}
+							{t("teams.actions.viewLogs")}
 						</Link>
 					</DropdownMenuItem>
 					<DisabledReasonMenuItem
@@ -102,20 +106,20 @@ function TeamActionsMenu({
 						}}
 					>
 						<Trash2 className="h-4 w-4" />
-						{t("common:actions.delete")}
-					</DisabledReasonMenuItem>
+						{t("teams.actions.delete")}
+					</DisabledReasonMenuItem>{" "}
 				</DropdownMenuContent>
 			</DropdownMenu>
 			<AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>{t("governance:org.teams.deleteTitle")}</AlertDialogTitle>
-						<AlertDialogDescription>{t("governance:org.teams.deleteDescription", { name: team.name })}</AlertDialogDescription>
+						<AlertDialogTitle>{t("teams.deleteTitle")}</AlertDialogTitle>
+						<AlertDialogDescription>{t("teams.deleteDescription", { name: team.name })}</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common:actions.cancel")}</AlertDialogCancel>
+						<AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
 						<AlertDialogAction onClick={() => onDelete(team.id)} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">
-							{isDeleting ? t("governance:org.table.deleting") : t("common:actions.delete")}
+							{isDeleting ? t("teams.deleting") : t("teams.actions.delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -153,7 +157,8 @@ export default function TeamsTable({
 	onTeamSelect,
 	onDialogClose,
 }: TeamsTableProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("governance");
+	const { t: tCommon } = useTranslation("common");
 	const showTeamSheet = selectedTeamId !== null && selectedTeamId !== "";
 	const editingTeam = selectedTeamId && selectedTeamId !== "new" ? (teams.find((t) => t.id === selectedTeamId) ?? null) : null;
 
@@ -174,7 +179,7 @@ export default function TeamsTable({
 	const handleDelete = async (teamId: string) => {
 		try {
 			await deleteTeam(teamId).unwrap();
-			toast.success(t("governance:org.teams.toastDeleted"));
+			toast.success(t("teams.deleted"));
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		}
@@ -183,6 +188,7 @@ export default function TeamsTable({
 	const handleAddTeam = () => {
 		onTeamAdd();
 	};
+	useActionParam("create", handleAddTeam, { isOpen: selectedTeamId !== null, enabled: hasCreateAccess });
 
 	const handleEditTeam = (team: Team) => {
 		onTeamSelect(team);
@@ -197,7 +203,7 @@ export default function TeamsTable({
 	// via a correlated subquery, so neither needs a client-side join.
 	const getCustomerName = (team: Team) => {
 		if (!team.customer_id) return "-";
-		return team.customer?.name ?? t("governance:org.teams.unknownCustomer");
+		return team.customer?.name ?? t("teams.unknownCustomer");
 	};
 
 	const hasActiveFilters = debouncedSearch;
@@ -210,7 +216,7 @@ export default function TeamsTable({
 	// Hoisted above the empty/populated branch: PageTitle draws nothing inline,
 	// and leaving it out of either branch drops the topbar to the route-derived
 	// fallback.
-	const pageTitle = <PageTitle title={t("governance:org.teams.title")}>{t("governance:org.teams.pageTitleDescription")}</PageTitle>;
+	const pageTitle = <PageTitle title={t("teams.title")}>{t("teams.description")}</PageTitle>;
 
 	// True empty state: no teams at all (not just filtered to zero). Rendered as a
 	// branch *inside* the tree rather than an early return with a different shape,
@@ -235,8 +241,8 @@ export default function TeamsTable({
 							<div className="relative max-w-sm flex-1">
 								<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 								<Input
-									aria-label={t("governance:org.teams.searchAria")}
-									placeholder={t("governance:org.table.searchPlaceholder")}
+									aria-label={t("teams.searchAria")}
+									placeholder={t("teams.searchPlaceholder")}
 									value={search}
 									onChange={(e) => onSearchChange(e.target.value)}
 									className="pl-9"
@@ -246,7 +252,7 @@ export default function TeamsTable({
 							<DisabledReason reason={actionDisabledReason(hasCreateAccess, "create", "teams")} className="ml-auto">
 								<Button className="ml-auto" data-testid="create-team-btn" onClick={handleAddTeam} disabled={!hasCreateAccess}>
 									<Plus className="h-4 w-4" />
-									{t("governance:org.teams.add")}
+									{t("teams.add")}
 								</Button>
 							</DisabledReason>
 						</div>
@@ -255,11 +261,11 @@ export default function TeamsTable({
 							<Table className="min-w-[1100px]" containerClassName="h-full">
 								<TableHeader className="bg-background sticky top-0">
 									<TableRow>
-										<TableHead>{t("governance:org.table.name")}</TableHead>
-										<TableHead>{t("governance:org.table.customer")}</TableHead>
-										<TableHead>{t("governance:org.table.budget")}</TableHead>
-										<TableHead>{t("governance:org.table.rateLimit")}</TableHead>
-										<TableHead>{t("governance:org.table.virtualKeys")}</TableHead>
+										<TableHead>{t("teams.columns.name")}</TableHead>
+										<TableHead>{t("teams.columns.customer")}</TableHead>
+										<TableHead>{t("teams.columns.budget")}</TableHead>
+										<TableHead>{t("teams.columns.rateLimit")}</TableHead>
+										<TableHead>{t("teams.columns.virtualKeys")}</TableHead>
 										<TableHead className={`bg-muted sticky right-0 z-10 w-[56px] text-right ${PIN_SHADOW_RIGHT}`}></TableHead>
 									</TableRow>
 								</TableHeader>
@@ -267,7 +273,7 @@ export default function TeamsTable({
 									{teams.length === 0 ? (
 										<TableRow>
 											<TableCell colSpan={6} className="h-24 text-center">
-												<span className="text-muted-foreground text-sm">{t("governance:org.table.noTeamsMatch")}</span>
+												<span className="text-muted-foreground text-sm">{t("teams.noMatch")}</span>
 											</TableCell>
 										</TableRow>
 									) : (
@@ -311,7 +317,7 @@ export default function TeamsTable({
 															<span className="truncate font-medium">{team.name}</span>
 															{isExhausted && (
 																<Badge variant="destructive" className="w-fit text-xs">
-																	{t("governance:org.table.limitReached")}
+																	{t("teams.limitReached")}
 																</Badge>
 															)}
 														</div>
@@ -336,7 +342,7 @@ export default function TeamsTable({
 																						<span className="text-muted-foreground text-xs">{formatResetDuration(b.reset_duration)}</span>
 																					</div>
 																					<Progress
-																						aria-label={t("governance:org.table.budgetUsageAria")}
+																						aria-label={t("usage.budgetAria")}
 																						value={budgetPercentage}
 																						className={cn(
 																							"bg-muted/70 dark:bg-muted/30 h-1.5",
@@ -354,7 +360,7 @@ export default function TeamsTable({
 																					{formatCurrency(b.current_usage)} / {formatCurrency(b.max_limit)}
 																				</p>
 																				<p className="text-primary-foreground/80 text-xs">
-																					{t("governance:org.table.resets", { duration: formatResetDuration(b.reset_duration) })}
+																					{t("usage.resets", { period: formatResetDuration(b.reset_duration) })}
 																				</p>
 																			</TooltipContent>
 																		</Tooltip>
@@ -374,16 +380,14 @@ export default function TeamsTable({
 																			<div className="space-y-1.5">
 																				<div className="flex items-center justify-between gap-4 text-xs">
 																					<span className="font-medium">
-																						{t("governance:org.table.tokensCount", {
-																							count: team.rate_limit.token_max_limit.toLocaleString(),
-																						})}
+																						{t("usage.tokens", { value: team.rate_limit.token_max_limit.toLocaleString(getLocale()) })}
 																					</span>
 																					<span className="text-muted-foreground">
 																						{formatResetDuration(team.rate_limit.token_reset_duration || "1h")}
 																					</span>
 																				</div>
 																				<Progress
-																					aria-label={t("governance:org.table.tokenUsageAria")}
+																					aria-label={t("usage.tokenAria")}
 																					value={tokenPercentage}
 																					className={cn(
 																						"bg-muted/70 dark:bg-muted/30 h-1",
@@ -398,13 +402,13 @@ export default function TeamsTable({
 																		</TooltipTrigger>
 																		<TooltipContent>
 																			<p className="font-medium">
-																				{team.rate_limit.token_current_usage.toLocaleString()} /{" "}
-																				{t("governance:org.table.tokensCount", { count: team.rate_limit.token_max_limit.toLocaleString() })}
+																				{t("usage.tokenTooltip", {
+																					used: team.rate_limit.token_current_usage.toLocaleString(getLocale()),
+																					max: team.rate_limit.token_max_limit.toLocaleString(getLocale()),
+																				})}
 																			</p>
 																			<p className="text-primary-foreground/80 text-xs">
-																				{t("governance:org.table.resets", {
-																					duration: formatResetDuration(team.rate_limit.token_reset_duration || "1h"),
-																				})}
+																				{t("usage.resets", { period: formatResetDuration(team.rate_limit.token_reset_duration || "1h") })}
 																			</p>
 																		</TooltipContent>
 																	</Tooltip>
@@ -415,16 +419,14 @@ export default function TeamsTable({
 																			<div className="space-y-1.5">
 																				<div className="flex items-center justify-between gap-4 text-xs">
 																					<span className="font-medium">
-																						{t("governance:org.table.reqCount", {
-																							count: team.rate_limit.request_max_limit.toLocaleString(),
-																						})}
+																						{t("usage.req", { value: team.rate_limit.request_max_limit.toLocaleString(getLocale()) })}
 																					</span>
 																					<span className="text-muted-foreground">
 																						{formatResetDuration(team.rate_limit.request_reset_duration || "1h")}
 																					</span>
 																				</div>
 																				<Progress
-																					aria-label={t("governance:org.table.requestUsageAria")}
+																					aria-label={t("usage.requestAria")}
 																					value={requestPercentage}
 																					className={cn(
 																						"bg-muted/70 dark:bg-muted/30 h-1",
@@ -439,15 +441,13 @@ export default function TeamsTable({
 																		</TooltipTrigger>
 																		<TooltipContent>
 																			<p className="font-medium">
-																				{team.rate_limit.request_current_usage.toLocaleString()} /{" "}
-																				{t("governance:org.table.requestsCount", {
-																					count: team.rate_limit.request_max_limit.toLocaleString(),
+																				{t("usage.requestTooltip", {
+																					used: team.rate_limit.request_current_usage.toLocaleString(getLocale()),
+																					max: team.rate_limit.request_max_limit.toLocaleString(getLocale()),
 																				})}
 																			</p>
 																			<p className="text-primary-foreground/80 text-xs">
-																				{t("governance:org.table.resets", {
-																					duration: formatResetDuration(team.rate_limit.request_reset_duration || "1h"),
-																				})}
+																				{t("usage.resets", { period: formatResetDuration(team.rate_limit.request_reset_duration || "1h") })}
 																			</p>
 																		</TooltipContent>
 																	</Tooltip>
@@ -461,7 +461,7 @@ export default function TeamsTable({
 														{vkCount > 0 ? (
 															<div className="flex items-center gap-2">
 																<Badge variant="outline" className="text-xs">
-																	{t("governance:org.table.keyCount", { count: vkCount })}
+																	{t("usage.keyCount", { count: vkCount })}
 																</Badge>
 															</div>
 														) : (
@@ -492,9 +492,10 @@ export default function TeamsTable({
 						{totalCount > 0 && (
 							<div className="flex shrink-0 items-center justify-between text-xs" data-testid="pagination">
 								<div className="text-muted-foreground flex items-center gap-2">
-									{t("governance:org.table.entries", {
-										from: `${(offset + 1).toLocaleString()}-${Math.min(offset + limit, totalCount).toLocaleString()}`,
-										total: totalCount.toLocaleString(),
+									{t("webhooks.pagination.entries", {
+										from: (offset + 1).toLocaleString(getLocale()),
+										to: Math.min(offset + limit, totalCount).toLocaleString(getLocale()),
+										total: totalCount.toLocaleString(getLocale()),
 									})}
 								</div>
 
@@ -505,15 +506,15 @@ export default function TeamsTable({
 										onClick={() => onOffsetChange(Math.max(0, offset - limit))}
 										disabled={offset === 0}
 										data-testid="teams-pagination-prev-btn"
-										aria-label={t("governance:org.table.previousPageAria")}
+										aria-label={t("webhooks.pagination.previousPage")}
 									>
 										<ChevronLeft className="size-3" />
 									</Button>
 
 									<div className="flex items-center gap-1">
-										<span>{t("governance:org.table.page")}</span>
+										<span>{t("webhooks.pagination.page")}</span>
 										<span>{Math.floor(offset / limit) + 1}</span>
-										<span>{t("governance:org.table.pageOf", { count: Math.ceil(totalCount / limit) })}</span>
+										<span>{t("webhooks.pagination.ofPages", { total: Math.ceil(totalCount / limit) })}</span>
 									</div>
 
 									<Button
@@ -522,7 +523,7 @@ export default function TeamsTable({
 										onClick={() => onOffsetChange(offset + limit)}
 										disabled={offset + limit >= totalCount}
 										data-testid="teams-pagination-next-btn"
-										aria-label={t("governance:org.table.nextPageAria")}
+										aria-label={t("webhooks.pagination.nextPage")}
 									>
 										<ChevronRight className="size-3" />
 									</Button>

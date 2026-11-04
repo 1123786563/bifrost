@@ -25,20 +25,21 @@ interface MCPLibraryDeleteDialogProps {
 // card and table views. Copy is sync-aware: custom entries simply disappear,
 // while remote entries are tombstoned so they don't reappear on the next sync.
 export function MCPLibraryDeleteDialog({ server, open, isDeleting, onOpenChange, onConfirm, confirmTestId }: MCPLibraryDeleteDialogProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
+	const { t: tc } = useTranslation("common");
 	const isCustom = server?.source === "custom";
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{t("mcp:library.deleteTitle", { name: server?.name })}</AlertDialogTitle>
+					<AlertDialogTitle>{t("library.delete.title", { name: server?.name })}</AlertDialogTitle>
 					<AlertDialogDescription>
-						{isCustom ? t("mcp:library.deleteCustomDesc") : t("mcp:library.deleteSyncedDesc")} {t("mcp:library.deleteInstallationsNote")}
+						{isCustom ? t("library.delete.customBody") : t("library.delete.remoteBody")} {t("library.delete.existingInstalls")}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel disabled={isDeleting}>{t("common:actions.cancel")}</AlertDialogCancel>
+					<AlertDialogCancel disabled={isDeleting}>{tc("cancel")}</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={(event) => {
 							event.preventDefault();
@@ -47,7 +48,7 @@ export function MCPLibraryDeleteDialog({ server, open, isDeleting, onOpenChange,
 						disabled={isDeleting}
 						data-testid={confirmTestId}
 					>
-						{isDeleting ? t("mcp:library.removing") : t("mcp:library.remove")}
+						{isDeleting ? t("common.removing") : t("common.remove")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

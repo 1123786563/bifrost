@@ -6,18 +6,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import type { AgentAuthType, AgentOAuthConfig, AgentTLSConfig, AgentUpstreamAuth } from "@/lib/types/agents";
 import type { SecretVar } from "@/lib/types/schemas";
-import i18n from "@/lib/i18n";
+import type { ParseKeys, TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 export const emptySecret = (): SecretVar => ({ value: "", ref: "" });
 export const emptyAuth = (): AgentUpstreamAuth => ({ type: "none", headers: {} });
 
-const authTypeLabel = (type: AgentAuthType): string =>
-	({
-		none: i18n.t("mcp:agents.sheet.authTypeNone"),
-		headers: i18n.t("mcp:agents.sheet.authTypeHeaders"),
-		oauth: i18n.t("mcp:agents.sheet.authTypeOauth"),
-	})[type];
+const AUTH_TYPE_LABEL_KEYS: Record<AgentAuthType, ParseKeys<"observability">> = {
+	none: "agentGateway.authFields.typeNone",
+	headers: "agentGateway.authFields.typeHeaders",
+	oauth: "agentGateway.authFields.typeOauth",
+};
 
 export function hasTLS(tls?: AgentTLSConfig): boolean {
 	return !!(
@@ -45,21 +44,21 @@ export function normalizeAuth(auth: AgentUpstreamAuth): AgentUpstreamAuth | unde
 }
 
 // One-line summary for collapsed auth sections, e.g. "Headers · custom TLS".
-export function authSummary(auth: AgentUpstreamAuth): string {
-	const parts = [authTypeLabel(auth.type)];
-	if (auth.tls?.insecure_skip_verify) parts.push(i18n.t("mcp:agents.sheet.tlsSummaryOff"));
-	else if (hasTLS(auth.tls)) parts.push(i18n.t("mcp:agents.sheet.tlsSummaryCustom"));
+export function authSummary(auth: AgentUpstreamAuth, t: TFunction<"observability">): string {
+	const parts: string[] = [t(AUTH_TYPE_LABEL_KEYS[auth.type])];
+	if (auth.tls?.insecure_skip_verify) parts.push(t("agentGateway.authFields.tlsVerificationOff"));
+	else if (hasTLS(auth.tls)) parts.push(t("agentGateway.authFields.customTls"));
 	return parts.join(" · ");
 }
 
 export function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange: (next: AgentTLSConfig) => void }) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("observability");
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-4">
 				<div className="space-y-0.5">
-					<Label>{t("mcp:agents.sheet.tls.skip")}</Label>
-					<p className="text-muted-foreground text-xs">{t("mcp:agents.sheet.tls.skipHint")}</p>
+					<Label>{t("agentGateway.authFields.skipTls")}</Label>
+					<p className="text-muted-foreground text-xs">{t("agentGateway.authFields.skipTlsHelp")}</p>
 				</div>
 				<Switch
 					checked={value.insecure_skip_verify ?? false}
@@ -67,7 +66,7 @@ export function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange
 				/>
 			</div>
 			<div className="flex flex-col gap-2">
-				<Label>{t("mcp:agents.sheet.tls.caCert")}</Label>
+				<Label>{t("agentGateway.authFields.caCert")}</Label>
 				<SecretVarInput
 					variant="textarea"
 					rows={3}
@@ -78,7 +77,7 @@ export function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange
 			</div>
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 				<div className="flex flex-col gap-2">
-					<Label>{t("mcp:agents.sheet.tls.clientCert")}</Label>
+					<Label>{t("agentGateway.authFields.clientCert")}</Label>
 					<SecretVarInput
 						variant="textarea"
 						rows={3}
@@ -88,10 +87,11 @@ export function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange
 					/>
 				</div>
 				<div className="flex flex-col gap-2">
-					<Label>{t("mcp:agents.sheet.tls.clientKey")}</Label>
+					<Label>{t("agentGateway.authFields.clientKey")}</Label>
 					<SecretVarInput
 						variant="textarea"
 						rows={3}
+						// i18n-ignore: PEM header literal
 						placeholder="-----BEGIN PRIVATE KEY-----"
 						value={value.client_key_pem}
 						onChange={(client_key_pem) => onChange({ ...value, client_key_pem })}
@@ -103,11 +103,11 @@ export function TLSFields({ value, onChange }: { value: AgentTLSConfig; onChange
 }
 
 function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (next: AgentOAuthConfig) => void }) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("observability");
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-col gap-2">
-				<Label>{t("mcp:agents.sheet.oauth.tokenUrl")}</Label>
+				<Label>{t("agentGateway.authFields.tokenUrl")}</Label>
 				<Input
 					value={value.token_url ?? ""}
 					placeholder="https://auth.example.com/oauth/token"
@@ -116,33 +116,33 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 			</div>
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 				<div className="flex flex-col gap-2">
-					<Label>{t("mcp:agents.sheet.oauth.clientId")}</Label>
+					<Label>{t("agentGateway.authFields.clientId")}</Label>
 					<SecretVarInput
 						value={value.client_id}
-						placeholder="client-id or env.OAUTH_CLIENT_ID"
+						placeholder={t("agentGateway.authFields.clientIdPlaceholder")}
 						onChange={(client_id) => onChange({ ...value, client_id })}
 					/>
 				</div>
 				<div className="flex flex-col gap-2">
-					<Label>{t("mcp:agents.sheet.oauth.clientSecret")}</Label>
+					<Label>{t("agentGateway.authFields.clientSecret")}</Label>
 					<SecretVarInput
 						value={value.client_secret}
-						placeholder="secret or env.OAUTH_CLIENT_SECRET"
+						placeholder={t("agentGateway.authFields.clientSecretPlaceholder")}
 						onChange={(client_secret) => onChange({ ...value, client_secret })}
 					/>
 				</div>
 			</div>
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 				<div className="flex flex-col gap-2">
-					<Label>{t("mcp:agents.sheet.oauth.scopes")}</Label>
+					<Label>{t("agentGateway.authFields.scopes")}</Label>
 					<Input
 						value={value.scopes?.join(" ") ?? ""}
-						placeholder="read write"
+						placeholder={t("agentGateway.authFields.scopesPlaceholder")}
 						onChange={(event) => onChange({ ...value, scopes: event.target.value.split(/\s+/).filter(Boolean) })}
 					/>
 				</div>
 				<div className="flex flex-col gap-2">
-					<Label>{t("mcp:agents.sheet.oauth.resource")}</Label>
+					<Label>{t("agentGateway.authFields.resource")}</Label>
 					<Input
 						value={value.resource ?? ""}
 						placeholder="https://agent.example.com"
@@ -152,7 +152,7 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 			</div>
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 				<div className="flex flex-col gap-2">
-					<Label className="text-muted-foreground">{t("mcp:agents.sheet.oauth.providerUrl")}</Label>
+					<Label className="text-muted-foreground">{t("agentGateway.authFields.providerUrl")}</Label>
 					<Input
 						value={value.provider_url ?? ""}
 						placeholder="https://auth.example.com"
@@ -160,7 +160,7 @@ function OAuthFields({ value, onChange }: { value: AgentOAuthConfig; onChange: (
 					/>
 				</div>
 				<div className="flex flex-col gap-2">
-					<Label className="text-muted-foreground">{t("mcp:agents.sheet.oauth.discoveryUrl")}</Label>
+					<Label className="text-muted-foreground">{t("agentGateway.authFields.discoveryUrl")}</Label>
 					<Input
 						value={value.discovery_url ?? ""}
 						placeholder="https://auth.example.com/.well-known/openid-configuration"
@@ -185,7 +185,7 @@ export function AuthFields({
 	disabled?: boolean;
 	requiredHeaderKeys?: string[];
 }) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("observability");
 	const changeKind = (type: AgentAuthType) =>
 		onChange({
 			...emptyAuth(),
@@ -198,15 +198,15 @@ export function AuthFields({
 	return (
 		<fieldset disabled={disabled} className="space-y-4 disabled:opacity-70">
 			<div className="flex flex-col gap-2">
-				<Label>{t("mcp:agents.sheet.authType")}</Label>
+				<Label>{t("agentGateway.authFields.type")}</Label>
 				<Select value={value.type} onValueChange={changeKind} disabled={readOnlyAuth}>
 					<SelectTrigger className="w-full">
-						<SelectValue placeholder={t("mcp:agents.sheet.authTypePlaceholder")} />
+						<SelectValue placeholder={t("agentGateway.authFields.typePlaceholder")} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="none">{authTypeLabel("none")}</SelectItem>
-						<SelectItem value="headers">{authTypeLabel("headers")}</SelectItem>
-						<SelectItem value="oauth">{t("mcp:agents.sheet.oauthCreds")}</SelectItem>
+						<SelectItem value="none">{t(AUTH_TYPE_LABEL_KEYS.none)}</SelectItem>
+						<SelectItem value="headers">{t(AUTH_TYPE_LABEL_KEYS.headers)}</SelectItem>
+						<SelectItem value="oauth">{t("agentGateway.authFields.typeOauthClientCredentials")}</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
@@ -218,7 +218,7 @@ export function AuthFields({
 							onChange={(headers) => onChange({ ...value, headers })}
 							fixedKeys={requiredHeaderKeys}
 							useSecretVarInput
-							label={t("mcp:agents.sheet.requiredByCard")}
+							label={t("agentGateway.authFields.requiredByCard")}
 						/>
 					)}
 					<HeadersTable
@@ -233,7 +233,7 @@ export function AuthFields({
 							})
 						}
 						useSecretVarInput
-						label={t("mcp:agents.sheet.extraHeaders")}
+						label={t("agentGateway.authFields.extraHeaders")}
 					/>
 				</div>
 			)}
@@ -244,7 +244,7 @@ export function AuthFields({
 						value={value.headers ?? {}}
 						onChange={(headers) => onChange({ ...value, headers })}
 						useSecretVarInput
-						label={t("mcp:agents.sheet.extraHeaders")}
+						label={t("agentGateway.authFields.extraHeaders")}
 					/>
 				</div>
 			)}

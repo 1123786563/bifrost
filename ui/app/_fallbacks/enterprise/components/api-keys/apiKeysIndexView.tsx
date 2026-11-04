@@ -2,14 +2,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useGetCoreConfigQuery } from "@/lib/store";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
+import { getExampleBaseUrl } from "@/lib/utils/port";
 import { Link } from "@tanstack/react-router";
 import { Copy, InfoIcon, KeyRound } from "lucide-react";
 import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import ContactUsView from "../views/contactUsView";
 
 export default function APIKeysView() {
-	const { t } = useTranslation(["common", "auth"]);
+	const { t } = useTranslation("config");
 	const { data: bifrostConfig, isLoading } = useGetCoreConfigQuery({ fromDB: true });
 	const isAuthConfigure = useMemo(() => {
 		return bifrostConfig?.auth_config?.is_enabled;
@@ -17,7 +18,7 @@ export default function APIKeysView() {
 
 	const curlExample = `# Base64 encode your username:password
 # Example: echo -n "username:password" | base64
-curl --location 'http://localhost:8080/v1/chat/completions'
+curl --location '${getExampleBaseUrl()}/v1/chat/completions'
 --header 'Content-Type: application/json' 
 --header 'Accept: application/json' 
 --header 'Authorization: Basic <base64_encoded_username:password>' 
@@ -34,7 +35,7 @@ curl --location 'http://localhost:8080/v1/chat/completions'
 	const { copy: copyToClipboard } = useCopyToClipboard();
 
 	if (isLoading) {
-		return <div>{t("common:state.loading")}</div>;
+		return <div>{t("apiKeys.loading")}</div>;
 	}
 	if (!isAuthConfigure) {
 		return (
@@ -42,20 +43,20 @@ curl --location 'http://localhost:8080/v1/chat/completions'
 				<InfoIcon className="text-muted h-4 w-4" />
 				<AlertDescription>
 					<p className="text-md text-muted-foreground">
-						{t("auth:apiKeys.setupFirst")}{" "}
+						{t("apiKeys.needSecurity")}{" "}
 						<Link to="/workspace/config/security" className="text-md text-primary underline">
-							{t("auth:apiKeys.configureSecurity")}
+							{t("apiKeys.configureSecurity")}
 						</Link>
-						.
+						.<br />
 						<br />
-						<br />
-						{t("auth:apiKeys.useForKey")}
+						{t("apiKeys.needSecurityAfter")}
 					</p>
 				</AlertDescription>
 			</Alert>
 		);
 	}
 
+	const codeTag = <code className="bg-muted rounded px-1 py-0.5 text-sm" />;
 	const isInferenceAuthDisabled = !(bifrostConfig?.client_config?.enforce_auth_on_inference ?? false);
 
 	return (
@@ -65,26 +66,16 @@ curl --location 'http://localhost:8080/v1/chat/completions'
 				<AlertDescription>
 					<p className="text-md text-muted-foreground">
 						{isInferenceAuthDisabled ? (
-							<>
-								{t("auth:apiKeys.inferenceDisabledLead")}
-								<strong>{t("auth:apiKeys.inferenceDisabledStrong")}</strong>
-								{t("auth:apiKeys.inferenceDisabledRest")}
-								<code className="bg-muted rounded px-1 py-0.5 text-sm">username:password</code>
-								{t("auth:apiKeys.formatSuffix")}
-							</>
+							<Trans t={t} i18nKey="apiKeys.inferenceAuthDisabled" components={{ strong: <strong />, code: codeTag }} />
 						) : (
-							<>
-								{t("auth:apiKeys.useBasicAuthLead")}
-								<code className="bg-muted rounded px-1 py-0.5 text-sm">username:password</code>
-								{t("auth:apiKeys.formatSuffix")}
-							</>
+							<Trans t={t} i18nKey="apiKeys.useBasicAuth" components={{ code: codeTag }} />
 						)}
 					</p>
 					{!isInferenceAuthDisabled && (
 						<>
 							<br />
 							<p className="text-md text-muted-foreground">
-								<strong>{t("auth:apiKeys.example")}</strong>
+								<strong>{t("apiKeys.example")}</strong>
 							</p>
 
 							<div className="relative mt-2 w-full min-w-0 overflow-x-auto">
@@ -101,8 +92,8 @@ curl --location 'http://localhost:8080/v1/chat/completions'
 			<ContactUsView
 				className="mt-4 rounded-md border px-3 py-8"
 				icon={<KeyRound size={48} />}
-				title={t("auth:apiKeys.scopeKeysTitle")}
-				description={t("auth:apiKeys.scopeKeysDescription")}
+				title={t("enterprise.apiKeysTitle")}
+				description={t("enterprise.apiKeysDescription")}
 				readmeLink="https://docs.getbifrost.io/enterprise/api-keys"
 			/>
 		</div>

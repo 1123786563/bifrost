@@ -19,6 +19,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, Brain, ChevronDown, Info } from "lucide-react";
 import { lazy, memo, Suspense, useMemo, useState, type AnchorHTMLAttributes, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { withBasePath } from "@/lib/utils/basePath";
 
 // Markdown is not lazy: its Suspense fallback showed the raw markdown, which flashed before every answer.
 // Recharts is heavy and most answers have no chart.
@@ -81,7 +82,6 @@ export function WarpStreamingMessage({
 	toolCalls: WarpTurnToolCall[];
 	isStreaming: boolean;
 }) {
-	const { t } = useTranslation(["common", "workspaces"]);
 	return (
 		// Container scroller, not [&_table]:block: the ScrollArea has no horizontal bar to scroll with.
 		<div
@@ -104,7 +104,7 @@ function WarpTimeline({
 	toolCalls?: WarpTurnToolCall[];
 	isStreaming?: boolean;
 }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces"]);
+	const { t } = useTranslation("shell");
 	const items = useMemo(() => warpTimeline(content, toolCalls), [content, toolCalls]);
 	const last = items[items.length - 1];
 	// Nothing yet, or every lookup is back: the longest silence, which otherwise reads as hung.
@@ -141,7 +141,7 @@ function WarpTimeline({
 								className="text-muted-foreground my-3 rounded-sm border border-dashed p-3 text-xs"
 								data-testid="warp-chart-invalid"
 							>
-								{t("workspaces:warp.chartUnavailable")}
+								{t("warp.message.chartUnavailable")}
 							</div>
 						);
 					}
@@ -184,7 +184,6 @@ function WarpToolCallList({ calls, animate = false }: { calls: WarpTurnToolCall[
  * animate is for live turns only; a finished turn remounts these rows and must not replay them.
  */
 const WarpToolCallRow = memo(function WarpToolCallRow({ call, animate }: { call: WarpTurnToolCall; animate: boolean }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces"]);
 	const [expanded, setExpanded] = useState(false);
 	const canExpand = !!call.failed && !!call.error;
 	const isRunning = call.durationMs === undefined;
@@ -197,8 +196,8 @@ const WarpToolCallRow = memo(function WarpToolCallRow({ call, animate }: { call:
 			) : (
 				<WarpToolStatusIcon isRunning={isRunning} animate={animate} />
 			)}
-			<span className="sr-only">{warpToolStatusLabel(call, t)}</span>
-			<span className={cn("truncate", isRunning && "warp-shimmer")}>{warpToolLabel(call.name, isRunning, t)}</span>
+			<span className="sr-only">{warpToolStatusLabel(call)}</span>
+			<span className={cn("truncate", isRunning && "warp-shimmer")}>{warpToolLabel(call.name, isRunning)}</span>
 			{!isRunning && <span className={cn("shrink-0 tabular-nums opacity-60", animate && "warp-fade-in")}>{call.durationMs}ms</span>}
 		</>
 	);
@@ -303,7 +302,7 @@ function WarpAnswerLink({ href, children, ...rest }: AnchorHTMLAttributes<HTMLAn
 		return (
 			<a
 				{...anchorProps}
-				href={href}
+				href={withBasePath(href!)}
 				className="text-primary underline underline-offset-2"
 				data-testid="warp-answer-link"
 				onClick={(event) => {
@@ -325,7 +324,7 @@ function WarpAnswerLink({ href, children, ...rest }: AnchorHTMLAttributes<HTMLAn
 }
 
 function WarpAnswer({ content, toolCalls }: { content: string; toolCalls?: WarpTurnToolCall[] }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("shell");
 	const [expanded, setExpanded] = useState(false);
 	// Provenance is always last, so removing it leaves every tool call's offset valid.
 	const { answer, provenance } = splitWarpAnswer(content);
@@ -344,7 +343,7 @@ function WarpAnswer({ content, toolCalls }: { content: string; toolCalls?: WarpT
 						className="hover:text-foreground flex cursor-pointer items-center gap-1 text-[11px] transition-colors"
 					>
 						<Info className="size-3 shrink-0" />
-						<span>{t("workspaces:warp.whatThisCovers")}</span>
+						<span>{t("warp.message.whatThisCovers")}</span>
 						<WarpChevron open={expanded} className="size-3" />
 					</button>
 					<WarpCollapse open={expanded}>
@@ -362,7 +361,7 @@ function WarpAnswer({ content, toolCalls }: { content: string; toolCalls?: WarpT
 }
 
 function WarpPartialNote({ className }: { className?: string }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
+	const { t } = useTranslation("shell");
 	return (
 		<div
 			className={cn("flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-xs", className)}
@@ -370,19 +369,19 @@ function WarpPartialNote({ className }: { className?: string }) {
 		>
 			<Info className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
 			<div className="space-y-0.5">
-				<p className="font-medium">{t("workspaces:warp.partialAnswer")}</p>
-				<p className="text-muted-foreground">{t("workspaces:warp.partialBody")}</p>
+				<p className="font-medium">{t("warp.message.partialTitle")}</p>
+				<p className="text-muted-foreground">{t("warp.message.partialBody")}</p>
 			</div>
 		</div>
 	);
 }
 
 function WarpTurnError({ error, className }: { error: string; className?: string }) {
-	const { t } = useTranslation(["common", "logs", "mcp", "workspaces", "governance", "settings", "providers", "models"]);
+	const { t } = useTranslation("shell");
 	const [expanded, setExpanded] = useState(false);
 	// Not a bare split: a message with no colon is a message, not a code.
 	const { code, message } = decodeTurnError(error);
-	const detail = warpErrorDetail(code, message, t);
+	const detail = warpErrorDetail(code, message);
 
 	return (
 		<div className={cn("border-destructive/30 bg-destructive/5 rounded-md border p-2.5", className)} data-testid="warp-turn-error">
@@ -404,7 +403,7 @@ function WarpTurnError({ error, className }: { error: string; className?: string
 					<p>{detail.cause}</p>
 					{detail.suggestions.length > 0 && (
 						<div className="space-y-1">
-							<p className="text-foreground">{t("workspaces:warp.whatToTry")}:</p>
+							<p className="text-foreground">{t("warp.message.whatToTry")}</p>
 							<ul className="list-disc space-y-0.5 pl-4">
 								{detail.suggestions.map((suggestion) => (
 									<li key={suggestion}>{suggestion}</li>
@@ -422,11 +421,11 @@ function WarpTurnError({ error, className }: { error: string; className?: string
 }
 
 function WarpThinking() {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("shell");
 	return (
 		<p className="warp-thinking-in text-muted-foreground flex items-center gap-1.5 text-xs" data-testid="warp-thinking">
 			<Brain className="size-3.5 shrink-0" />
-			<span className="warp-shimmer">{t("workspaces:warp.thinking")}</span>
+			<span className="warp-shimmer">{t("warp.message.thinking")}</span>
 		</p>
 	);
 }

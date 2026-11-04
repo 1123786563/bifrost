@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 export default function ObservabilityView() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
 	const { data: bifrostConfig } = useGetCoreConfigQuery({ fromDB: true });
 	const config = bifrostConfig?.client_config;
@@ -49,16 +49,16 @@ export default function ObservabilityView() {
 
 	const handleSave = useCallback(async () => {
 		if (!bifrostConfig) {
-			toast.error(t("settings:observability.saveFailed"));
+			toast.error(t("observability.toastNotLoaded"));
 			return;
 		}
 		try {
 			await updateCoreConfig({ ...bifrostConfig, client_config: localConfig }).unwrap();
-			toast.success(t("settings:observability.saved"));
+			toast.success(t("observability.toastSaved"));
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		}
-	}, [t, bifrostConfig, localConfig, updateCoreConfig]);
+	}, [bifrostConfig, localConfig, t, updateCoreConfig]);
 
 	return (
 		<div className="mx-auto w-full max-w-4xl space-y-4">
@@ -66,23 +66,22 @@ export default function ObservabilityView() {
 
 			<Alert variant="destructive">
 				<AlertTriangle className="h-4 w-4" />
-				<AlertDescription>{t("settings:shared.restartNotice")}</AlertDescription>
+				<AlertDescription>{t("restartRequiredAlert")}</AlertDescription>
 			</Alert>
 
 			<div className="space-y-4">
-				{/* Prometheus Labels */}
 				<div>
 					<div className="space-y-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
 							<label htmlFor="prometheus-labels" className="text-sm font-medium">
-								{t("settings:observability.prometheusLabels")}
+								{t("observability.prometheusLabels")}
 							</label>
-							<p className="text-muted-foreground text-sm">{t("settings:observability.prometheusLabelsDescription")}</p>
+							<p className="text-muted-foreground text-sm">{t("observability.prometheusLabelsHelp")}</p>
 						</div>
 						<Textarea
 							id="prometheus-labels"
 							className="h-24"
-							placeholder={t("settings:observability.prometheusLabelsPlaceholder")}
+							placeholder={t("observability.prometheusLabelsPlaceholder")}
 							value={localValues.prometheus_labels}
 							onChange={(e) => handlePrometheusLabelsChange(e.target.value)}
 						/>
@@ -92,7 +91,7 @@ export default function ObservabilityView() {
 			</div>
 			<div className="flex justify-end pt-2">
 				<Button onClick={handleSave} disabled={!hasChanges || isLoading || !hasSettingsUpdateAccess}>
-					{isLoading ? t("common:state.saving") : t("settings:shared.saveChanges")}
+					{isLoading ? t("saving") : t("saveChanges")}
 				</Button>
 			</div>
 		</div>
@@ -100,6 +99,6 @@ export default function ObservabilityView() {
 }
 
 const RestartWarning = () => {
-	const { t } = useTranslation(["common", "settings"]);
-	return <div className="text-muted-foreground mt-2 pl-4 text-xs font-semibold">{t("settings:shared.restartWarning")}</div>;
+	const { t } = useTranslation("config");
+	return <div className="text-muted-foreground mt-2 pl-4 text-xs font-semibold">{t("restartWarning")}</div>;
 };

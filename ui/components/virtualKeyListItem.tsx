@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { cn } from "@/lib/utils";
-import { useTranslation } from "react-i18next";
 import { Copy, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // Show the leading chars, mask the rest. Matches the virtual keys table.
 function maskKey(key: string) {
@@ -38,8 +38,8 @@ export function VirtualKeyListItem({
 	className,
 	"data-testid": testId,
 }: VirtualKeyListItemProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
-	const { copy } = useCopyToClipboard({ successMessage: t("workspaces:virtualKeyListItem.copiedToast") });
+	const { t } = useTranslation("models");
+	const { copy } = useCopyToClipboard({ successMessage: t("virtualKeys.listItem.copied") });
 	return (
 		// oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- role, tabIndex and keys are set together whenever onClick exists; the linter cannot follow the conditional
 		<div
@@ -69,7 +69,7 @@ export function VirtualKeyListItem({
 							variant="ghost"
 							size="icon"
 							className="text-muted-foreground h-5 w-5 shrink-0"
-							aria-label={t("workspaces:virtualKeyListItem.copyAria")}
+							aria-label={t("virtualKeys.listItem.copyAria")}
 							onClick={(event) => {
 								event.stopPropagation();
 								copy(secret);
@@ -85,7 +85,7 @@ export function VirtualKeyListItem({
 					variant="ghost"
 					size="icon"
 					className="text-muted-foreground hover:text-destructive h-7 w-7 shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
-					aria-label={removeAriaLabel ?? t("workspaces:virtualKeyListItem.removeAria")}
+					aria-label={removeAriaLabel ?? t("virtualKeys.listItem.removeAria")}
 					disabled={removeDisabled}
 					data-testid={testId}
 					onClick={(event) => {

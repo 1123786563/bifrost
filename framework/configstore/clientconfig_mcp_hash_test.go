@@ -48,6 +48,26 @@ func TestGenerateMCPClientHash_NeedsSessionStickiness_NilVsFalseVsTrue(t *testin
 	assert.NotEqual(t, trueHash, falseHash, "true and false must hash differently from each other")
 }
 
+// TestGenerateMCPClientHash_EndpointSlug: an omitted slug leaves the hash exactly as before the field was
+// hashed (no mass re-sync of stored clients), a declared one drifts it, and spellings that normalise
+// to the same slug hash the same.
+func TestGenerateMCPClientHash_EndpointSlug(t *testing.T) {
+	base := func(slug string) tables.TableMCPClient {
+		return tables.TableMCPClient{Name: "client", ConnectionType: "http", AuthType: "headers", EndpointSlug: slug}
+	}
+	hash := func(slug string) string {
+		h, err := GenerateMCPClientHash(base(slug))
+		require.NoError(t, err)
+		return h
+	}
+
+	assert.Equal(t, "4e079178fdf0b46b348e3f1b415589e6bd519a73a280faf9200ad204ad389edf", hash(""),
+		"an omitted slug must not move existing stored hashes")
+	assert.NotEqual(t, hash(""), hash("custom"), "declaring a slug must drift the hash")
+	assert.NotEqual(t, hash("custom"), hash("other"), "changing a declared slug must drift the hash")
+	assert.Equal(t, hash("my-slug"), hash("My Slug"), "spellings of the same slug must hash the same")
+}
+
 // TestGenerateKeyHash_OAuthKeyConfigIsOrderIndependent pins that an unchanged OAuth key hashes
 // the same on every call. extra_params is a map; an encoder that walks it in iteration order
 // makes the hash differ between restarts, and reconcileProviderKeys then treats the stored key
@@ -116,6 +136,43 @@ func TestGenerateKeyHash_OAuthSecretsHashByReference(t *testing.T) {
 	viaLiteral, err := GenerateKeyHash(build("secret-v2", "https://idp.example/token"))
 	require.NoError(t, err)
 	require.NotEqual(t, viaRef, viaLiteral, "switching between a reference and a literal is an edit")
+}
+
+// TestGenerateKeyHash_AnthropicWorkloadIdentityHashesByReference pins that a rotated env-backed
+// identity token, which short-lived OIDC tokens always are, leaves an unchanged config.json key's
+// hash alone, while a real edit to the block still moves it.
+func TestGenerateKeyHash_AnthropicWorkloadIdentityHashesByReference(t *testing.T) {
+	build := func(token, workspace string) schemas.Key {
+		wif := &schemas.AnthropicWorkloadIdentityConfig{
+			FederationRuleID: *schemas.NewSecretVar("fdrl_01abc"),
+			OrganizationID:   *schemas.NewSecretVar("org-uuid"),
+			ServiceAccountID: *schemas.NewSecretVar("svac_01def"),
+			IdentitySource:   &schemas.IdentitySource{Type: schemas.IdentitySourceInline, Token: schemas.NewSecretVar(token)},
+		}
+		if workspace != "" {
+			wif.WorkspaceID = schemas.NewSecretVar(workspace)
+		}
+		return schemas.Key{ID: "k1", Name: "anthropic-wif", AnthropicKeyConfig: &schemas.AnthropicKeyConfig{WorkloadIdentity: wif}}
+	}
+	t.Setenv("HASH_TEST_ANTHROPIC_IDENTITY_TOKEN", "jwt-v1")
+	before, err := GenerateKeyHash(build("env.HASH_TEST_ANTHROPIC_IDENTITY_TOKEN", ""))
+	require.NoError(t, err)
+	t.Setenv("HASH_TEST_ANTHROPIC_IDENTITY_TOKEN", "jwt-v2")
+	after, err := GenerateKeyHash(build("env.HASH_TEST_ANTHROPIC_IDENTITY_TOKEN", ""))
+	require.NoError(t, err)
+	require.Equal(t, before, after, "rotating the env-backed identity token changed the hash of an unchanged file")
+
+	withWorkspace, err := GenerateKeyHash(build("env.HASH_TEST_ANTHROPIC_IDENTITY_TOKEN", "wrkspc_01ghi"))
+	require.NoError(t, err)
+	require.NotEqual(t, before, withWorkspace, "adding a workspace is an edit")
+
+	literal, err := GenerateKeyHash(build("jwt-v2", ""))
+	require.NoError(t, err)
+	require.NotEqual(t, after, literal, "switching between a reference and a literal is an edit")
+
+	plain, err := GenerateKeyHash(schemas.Key{ID: "k1", Name: "anthropic-wif"})
+	require.NoError(t, err)
+	require.NotEqual(t, plain, before, "adding the block is an edit")
 }
 
 // TestGenerateKeyHash_AliasesIsOrderIndependent pins the same property for aliases, which is
@@ -212,4 +269,147 @@ func TestKeyHashMatchesLegacyAliasOrder(t *testing.T) {
 	ok, err = KeyHashMatchesLegacyAliasOrder(many, manyLegacy)
 	require.NoError(t, err)
 	require.False(t, ok, "above maxLegacyAliasPermutations the search is skipped and the file wins")
+}
+
+// TestGenerateMCPClientHash_OpenAPIConfig pins which openapi_config fields take
+// part in config.json reconciliation: anything the synthesized server is built
+// from drifts the hash, server-computed metadata does not.
+func TestGenerateMCPClientHash_OpenAPIConfig(t *testing.T) {
+	str := func(s string) *string { return &s }
+	base := func(mutate func(c *schemas.MCPOpenAPIConfig)) tables.TableMCPClient {
+		cfg := &schemas.MCPOpenAPIConfig{
+			Spec:    "openapi: 3.0.0\npaths: {}",
+			BaseURL: str("https://api.example.com"),
+			SecurityCredentials: map[string]schemas.MCPOpenAPICredential{
+				"ApiKey": {Value: schemas.NewSecretVar("env.API_KEY")},
+				"Basic":  {Username: schemas.NewSecretVar("u"), Password: schemas.NewSecretVar("p")},
+			},
+			SpecHash:       "h1",
+			OperationCount: 3,
+		}
+		if mutate != nil {
+			mutate(cfg)
+		}
+		return tables.TableMCPClient{Name: "petstore", ConnectionType: "openapi", AuthType: "none", OpenAPIConfig: cfg}
+	}
+	hashOf := func(c tables.TableMCPClient) string {
+		h, err := GenerateMCPClientHash(c)
+		require.NoError(t, err)
+		return h
+	}
+	reference := hashOf(base(nil))
+
+	assert.Equal(t, reference, hashOf(base(nil)), "deterministic")
+	assert.Equal(t, reference, hashOf(base(func(c *schemas.MCPOpenAPIConfig) { c.SpecHash = "h2"; c.OperationCount = 9; c.SpecTitle = "x" })), "metadata does not drift the hash")
+
+	for name, mutate := range map[string]func(c *schemas.MCPOpenAPIConfig){
+		"spec":             func(c *schemas.MCPOpenAPIConfig) { c.Spec += "\n# edited" },
+		"base url":         func(c *schemas.MCPOpenAPIConfig) { c.BaseURL = str("https://other.example.com") },
+		"base url cleared": func(c *schemas.MCPOpenAPIConfig) { c.BaseURL = nil },
+		"credential ref": func(c *schemas.MCPOpenAPIConfig) {
+			c.SecurityCredentials["ApiKey"] = schemas.MCPOpenAPICredential{Value: schemas.NewSecretVar("env.OTHER")}
+		},
+		"credential value": func(c *schemas.MCPOpenAPIConfig) {
+			c.SecurityCredentials["Basic"] = schemas.MCPOpenAPICredential{Username: schemas.NewSecretVar("u"), Password: schemas.NewSecretVar("p2")}
+		},
+		"credential added": func(c *schemas.MCPOpenAPIConfig) {
+			c.SecurityCredentials["Bearer"] = schemas.MCPOpenAPICredential{Value: schemas.NewSecretVar("t")}
+		},
+		"include deprecated": func(c *schemas.MCPOpenAPIConfig) { c.IncludeDeprecated = true },
+		"response cap":       func(c *schemas.MCPOpenAPIConfig) { c.MaxResponseBytes = 1024 },
+	} {
+		assert.NotEqual(t, reference, hashOf(base(mutate)), "%s must drift the hash", name)
+	}
+
+	// Spec given by reference instead of content hashes by that reference.
+	fileOnly := hashOf(base(func(c *schemas.MCPOpenAPIConfig) { c.Spec = ""; c.SpecFile = str("specs/petstore.yaml") }))
+	urlOnly := hashOf(base(func(c *schemas.MCPOpenAPIConfig) { c.Spec = ""; c.SpecURL = str("https://x/openapi.json") }))
+	assert.NotEqual(t, reference, fileOnly)
+	assert.NotEqual(t, fileOnly, urlOnly)
+
+	// spec_url also drifts the hash beside an inline spec: relative servers (and
+	// Swagger 2.0 docs without a host) resolve against it, so it picks the upstream.
+	inlineWithURL := func(u string) string {
+		return hashOf(base(func(c *schemas.MCPOpenAPIConfig) { c.SpecURL = str(u) }))
+	}
+	assert.NotEqual(t, reference, inlineWithURL("https://a.example/openapi.json"))
+	assert.NotEqual(t, inlineWithURL("https://a.example/openapi.json"), inlineWithURL("https://b.example/openapi.json"), "changing only spec_url must drift the hash")
+
+	// An empty base_url means the same as none: use the document's server.
+	assert.Equal(t, hashOf(base(func(c *schemas.MCPOpenAPIConfig) { c.BaseURL = nil })), hashOf(base(func(c *schemas.MCPOpenAPIConfig) { c.BaseURL = str("") })), "an empty base_url must hash like a missing one")
+
+	// Fields are framed, so a value cannot impersonate a following field.
+	oneCred := func(value string, includeDeprecated bool) string {
+		return hashOf(base(func(c *schemas.MCPOpenAPIConfig) {
+			c.SecurityCredentials = map[string]schemas.MCPOpenAPICredential{"Z": {Value: schemas.NewSecretVar(value)}}
+			c.IncludeDeprecated = includeDeprecated
+		}))
+	}
+	assert.NotEqual(t, oneCred("k", true), oneCred("kopenapi_include_deprecated:true", false), "a credential value must not collide with the include_deprecated flag")
+
+	// A non-openapi client is unaffected by the new block.
+	plain := tables.TableMCPClient{Name: "remote", ConnectionType: "http", AuthType: "headers"}
+	before, err := GenerateMCPClientHash(plain)
+	require.NoError(t, err)
+	after, err := GenerateMCPClientHash(plain)
+	require.NoError(t, err)
+	assert.Equal(t, before, after)
+}
+
+// TestGenerateMCPClientHash_MaxProtocolVersion: an omitted cap leaves stored hashes as they were,
+// a declared one drifts the hash so a config.json edit is synced.
+func TestGenerateMCPClientHash_MaxProtocolVersion(t *testing.T) {
+	hash := func(version string) string {
+		h, err := GenerateMCPClientHash(tables.TableMCPClient{Name: "client", ConnectionType: "http", AuthType: "headers", MaxProtocolVersion: version})
+		require.NoError(t, err)
+		return h
+	}
+	before, err := GenerateMCPClientHash(tables.TableMCPClient{Name: "client", ConnectionType: "http", AuthType: "headers"})
+	require.NoError(t, err)
+	assert.Equal(t, before, hash(""))
+	assert.NotEqual(t, before, hash(schemas.MCPProtocolVersion20250618))
+	assert.NotEqual(t, hash(schemas.MCPProtocolVersion20250618), hash(schemas.MCPMaxProtocolVersionAuto))
+}
+
+// Unset allow-lists leave the hash as it was; [] and a list each drift it, so editing them in
+// config.json is reconciled.
+func TestGenerateMCPClientHash_ExposeLists(t *testing.T) {
+	hash := func(prompts, resources schemas.WhiteList) string {
+		h, err := GenerateMCPClientHash(tables.TableMCPClient{Name: "client", ConnectionType: "http", AuthType: "headers", PromptsToExpose: prompts, ResourcesToExpose: resources})
+		require.NoError(t, err)
+		return h
+	}
+	before, err := GenerateMCPClientHash(tables.TableMCPClient{Name: "client", ConnectionType: "http", AuthType: "headers"})
+	require.NoError(t, err)
+	assert.Equal(t, before, hash(nil, nil))
+	assert.NotEqual(t, before, hash(schemas.WhiteList{}, nil))
+	assert.NotEqual(t, hash(schemas.WhiteList{}, nil), hash(schemas.WhiteList{"review"}, nil))
+	assert.NotEqual(t, hash(schemas.WhiteList{"review"}, nil), hash(nil, schemas.WhiteList{"review"}), "the two lists hash apart")
+	assert.NotEqual(t, hash(schemas.WhiteList{"review,approve"}, nil), hash(schemas.WhiteList{"review", "approve"}, nil), "entry boundaries count")
+}
+
+// TestGenerateMCPClientHash_PerUserDiscovery pins the flag's hash contract:
+// unset and false contribute nothing (a stored hash from before the field
+// existed must keep matching a file entry that still omits it), and true
+// drifts the hash so flipping per_user_discovery in config.json triggers
+// reconciliation.
+func TestGenerateMCPClientHash_PerUserDiscovery(t *testing.T) {
+	base := func(perUserDiscovery *bool) tables.TableMCPClient {
+		return tables.TableMCPClient{
+			Name:             "client",
+			ConnectionType:   "http",
+			AuthType:         "per_user_headers",
+			PerUserDiscovery: perUserDiscovery,
+		}
+	}
+
+	unsetHash, err := GenerateMCPClientHash(base(nil))
+	require.NoError(t, err)
+	offHash, err := GenerateMCPClientHash(base(schemas.Ptr(false)))
+	require.NoError(t, err)
+	onHash, err := GenerateMCPClientHash(base(schemas.Ptr(true)))
+	require.NoError(t, err)
+
+	assert.Equal(t, unsetHash, offHash, "an omitted per_user_discovery must hash like false")
+	assert.NotEqual(t, offHash, onHash, "flipping per_user_discovery must drift the hash")
 }

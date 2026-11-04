@@ -21,7 +21,8 @@ interface Props {
 }
 
 export default function ConfirmDeletePluginDialog({ show, onCancel, onDelete, plugin }: Props) {
-	const { t } = useTranslation(["common", "plugins"]);
+	const { t } = useTranslation("governance");
+	const { t: tCommon } = useTranslation("common");
 	const [deletePlugin, { isLoading: isDeletingPlugin }] = useDeletePluginMutation();
 
 	const onDeleteHandler = () => {
@@ -31,7 +32,7 @@ export default function ConfirmDeletePluginDialog({ show, onCancel, onDelete, pl
 				onDelete();
 			})
 			.catch((err) => {
-				toast.error(t("plugins:messages.deleteFailed"), {
+				toast.error(t("plugins.deleteFailed"), {
 					description: getErrorMessage(err),
 				});
 			});
@@ -41,13 +42,13 @@ export default function ConfirmDeletePluginDialog({ show, onCancel, onDelete, pl
 		<AlertDialog open={show}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{t("plugins:dialog.deleteTitle")}</AlertDialogTitle>
-					<AlertDialogDescription>{t("plugins:dialog.confirmBody", { name: plugin.name })}</AlertDialogDescription>
+					<AlertDialogTitle>{t("plugins.deletePlugin")}</AlertDialogTitle>
+					<AlertDialogDescription>{t("plugins.deleteDescription", { name: plugin.name })}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel onClick={onCancel}>{t("common:actions.cancel")}</AlertDialogCancel>
+					<AlertDialogCancel onClick={onCancel}>{tCommon("cancel")}</AlertDialogCancel>
 					<AlertDialogAction onClick={onDeleteHandler} disabled={isDeletingPlugin}>
-						{isDeletingPlugin ? t("plugins:dialog.deleting") : t("common:actions.delete")}
+						{isDeletingPlugin ? t("plugins.deleting") : tCommon("delete")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

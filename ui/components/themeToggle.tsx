@@ -5,9 +5,9 @@ import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
 const THEMES = [
-	{ value: "light", labelKey: "workspaces:theme.light", icon: Sun },
-	{ value: "dark", labelKey: "workspaces:theme.dark", icon: Moon },
-	{ value: "system", labelKey: "workspaces:theme.system", icon: Laptop },
+	{ value: "light", labelKey: "theme.light", icon: Sun },
+	{ value: "dark", labelKey: "theme.dark", icon: Moon },
+	{ value: "system", labelKey: "theme.system", icon: Laptop },
 ] as const;
 
 /**
@@ -15,8 +15,8 @@ const THEMES = [
  * menu (e.g. the topbar account menu) rather than only in their own popover.
  */
 export function ThemeToggleItems() {
+	const { t } = useTranslation("common");
 	const { theme, setTheme } = useTheme();
-	const { t } = useTranslation(["common", "workspaces"]);
 
 	return (
 		<>
@@ -32,7 +32,7 @@ export function ThemeToggleItems() {
 }
 
 export function ThemeToggle() {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -45,7 +45,7 @@ export function ThemeToggle() {
 				>
 					<Sun className="size-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" strokeWidth={2} />
 					<Moon className="absolute size-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" strokeWidth={2} />
-					<span className="sr-only">{t("workspaces:theme.toggleAria")}</span>
+					<span className="sr-only">{t("theme.toggle")}</span>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" sideOffset={2}>

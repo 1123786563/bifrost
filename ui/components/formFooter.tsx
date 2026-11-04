@@ -15,19 +15,19 @@ interface FormFooterProps {
 }
 
 export default function FormFooter({ validator, label, onCancel, isLoading, isEditing, hasPermission = true }: FormFooterProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("common");
 	const isDisabled = isLoading || !validator.isValid() || !hasPermission;
 
 	const getTooltipMessage = () => {
-		if (!hasPermission) return t("workspaces:formFooter.noPermission");
-		if (isLoading) return t("workspaces:formFooter.saving");
-		return validator.getFirstError() || t("workspaces:formFooter.fixErrors");
+		if (!hasPermission) return t("formFooter.noPermission");
+		if (isLoading) return t("formFooter.saving");
+		return validator.getFirstError() || t("formFooter.fixValidation");
 	};
 
 	return (
 		<DialogFooter className="mt-4">
 			<Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-				{t("common:actions.cancel")}
+				{t("cancel")}
 			</Button>
 			<TooltipProvider>
 				<Tooltip>
@@ -35,11 +35,7 @@ export default function FormFooter({ validator, label, onCancel, isLoading, isEd
 						<span>
 							<Button type="submit" disabled={isDisabled}>
 								<Save className="h-4 w-4" />
-								{isLoading
-									? t("workspaces:formFooter.saving")
-									: isEditing
-										? t("workspaces:formFooter.update", { label })
-										: t("workspaces:formFooter.create", { label })}
+								{isLoading ? t("formFooter.saving") : isEditing ? t("formFooter.update", { label }) : t("formFooter.create", { label })}
 							</Button>
 						</span>
 					</TooltipTrigger>

@@ -3,15 +3,15 @@
 import { useCreateSkillMutation } from "@/lib/store/apis/skillsApi";
 import { getErrorMessage } from "@/lib/store/apis/baseApi";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
-import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useSkillForm } from "./helpers";
 import { SkillEditView } from "../forms/skillEditForm";
 
 // ---------- SkillCreateView ----------
 
 export function SkillCreateView({ onCreated, onBack }: { onCreated: (id: string) => void; onBack: () => void }) {
-	const { t } = useTranslation(["common", "playground"]);
+	const { t } = useTranslation("config");
 	const hasCreateAccess = useRbac(RbacResource.SkillsRepository, RbacOperation.Create);
 	const [createSkill, { isLoading }] = useCreateSkillMutation();
 	const form = useSkillForm();
@@ -22,10 +22,10 @@ export function SkillCreateView({ onCreated, onBack }: { onCreated: (id: string)
 
 		try {
 			const result = await createSkill(form.getPayload()).unwrap();
-			toast.success(t("playground:skills.creator.createdToast"));
+			toast.success(t("skillsRepo.toastCreated"));
 			onCreated(result.skill.id);
 		} catch (err: unknown) {
-			toast.error(t("playground:skills.creator.createFailed"), {
+			toast.error(t("skillsRepo.toastCreateFailed"), {
 				description: getErrorMessage(err),
 			});
 		}
@@ -34,7 +34,7 @@ export function SkillCreateView({ onCreated, onBack }: { onCreated: (id: string)
 	if (!hasCreateAccess) {
 		return (
 			<div className="flex h-full items-center justify-center">
-				<p className="text-muted-foreground">{t("playground:skills.creator.noPermission")}</p>
+				<p className="text-muted-foreground">{t("skillsRepo.noPermissionCreate")}</p>
 			</div>
 		);
 	}

@@ -15,14 +15,14 @@ import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { ChevronLeft, ChevronRight, Edit, Search } from "lucide-react";
 import { useQueryStates } from "nuqs";
 import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import AttributeSheet from "./attributeSheet";
 import OverriddenPrice from "./overriddenPrice";
+import { useTranslation } from "react-i18next";
+import { getLocale } from "@/lib/i18n";
 
 // The filter spells "no provider filter" as a sentinel, since the control needs a value to
 // show for it. Module level so its identity is stable across renders.
 const ALL_PROVIDERS_VALUE = "__all__";
-const ALL_PROVIDERS_LABEL_KEY = "models:catalog.attributes.allProviders";
 
 const PAGE_SIZE = 25;
 
@@ -54,7 +54,8 @@ interface AttributesTabProps {
 }
 
 export default function AttributesTab({ hasAccess }: AttributesTabProps) {
-	const { t } = useTranslation(["common", "models"]);
+	const { t } = useTranslation("models");
+	const allProvidersOption = useMemo(() => ({ value: ALL_PROVIDERS_VALUE, label: t("modelCatalog.allProvidersLower") }), [t]);
 	const hasUpdateAccess = useRbac(RbacResource.ModelProvider, RbacOperation.Update);
 
 	// Search and provider filter live in the URL so they survive a refresh and
@@ -116,9 +117,9 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 	if (error) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-				<p className="text-muted-foreground text-sm">{t("models:catalog.attributes.loadModelsFailed")}</p>
+				<p className="text-muted-foreground text-sm">{t("modelCatalog.failedLoadModels")}</p>
 				<button type="button" onClick={refetch} className="text-sm underline" data-testid="model-catalog-retry-button">
-					{t("common:actions.retry")}
+					{t("modelCatalog.retry")}
 				</button>
 			</div>
 		);
@@ -131,8 +132,8 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 			<div className="flex min-h-0 w-full grow flex-col overflow-hidden">
 				<div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2">
 					<div>
-						<h2 className="text-lg font-semibold">{t("models:catalog.attributes.title")}</h2>
-						<p className="text-muted-foreground text-sm">{t("models:catalog.attributes.titleDesc")}</p>
+						<h2 className="text-lg font-semibold">{t("modelCatalog.models")}</h2>
+						<p className="text-muted-foreground text-sm">{t("modelCatalog.modelsSubtitle")}</p>
 					</div>
 				</div>
 
@@ -140,8 +141,8 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 					<div className="relative w-full max-w-sm flex-1 basis-full sm:basis-auto">
 						<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 						<Input
-							aria-label={t("models:catalog.attributes.searchAria")}
-							placeholder={t("models:catalog.attributes.searchPlaceholder")}
+							aria-label={t("modelCatalog.searchAria")}
+							placeholder={t("modelCatalog.searchByModelName")}
 							value={search}
 							onChange={(e) => setUrlState({ search: e.target.value || null })}
 							className="pl-9"
@@ -151,7 +152,7 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 					<ProviderSelector
 						data-testid="model-catalog-provider-filter"
 						className="w-full sm:w-[200px]"
-						allOption={{ value: ALL_PROVIDERS_VALUE, label: t(ALL_PROVIDERS_LABEL_KEY) }}
+						allOption={allProvidersOption}
 						value={providerFilter || ALL_PROVIDERS_VALUE}
 						onChange={(v: string) => setUrlState({ provider: v === ALL_PROVIDERS_VALUE ? null : v })}
 					/>
@@ -161,14 +162,14 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 					<Table containerClassName="h-full overflow-y-auto overflow-x-auto" className="table-fixed">
 						<TableHeader className="bg-muted sticky top-0 z-20">
 							<TableRow className="hover:bg-transparent">
-								<TableHead className="w-[116px] font-medium">{t("models:catalog.attributes.providerColumn")}</TableHead>
-								<TableHead className="font-medium">{t("models:catalog.attributes.modelColumn")}</TableHead>
-								<TableHead className="w-[104px] px-2 text-right font-medium">{t("models:catalog.attributes.inputColumn")}</TableHead>
-								<TableHead className="w-[104px] px-2 text-right font-medium">{t("models:catalog.attributes.outputColumn")}</TableHead>
-								<TableHead className="w-[112px] px-2 text-right font-medium">{t("models:catalog.attributes.cacheWriteColumn")}</TableHead>
-								<TableHead className="w-[108px] px-2 text-right font-medium">{t("models:catalog.attributes.cacheReadColumn")}</TableHead>
-								<TableHead className="font-medium">{t("models:catalog.attributes.descriptionColumn")}</TableHead>
-								<TableHead className="w-[68px] font-medium">{t("models:catalog.attributes.otherColumn")}</TableHead>
+								<TableHead className="w-[116px] font-medium">{t("modelCatalog.provider")}</TableHead>
+								<TableHead className="font-medium">{t("modelCatalog.model")}</TableHead>
+								<TableHead className="w-[104px] px-2 text-right font-medium">{t("modelCatalog.colInput")}</TableHead>
+								<TableHead className="w-[104px] px-2 text-right font-medium">{t("modelCatalog.colOutput")}</TableHead>
+								<TableHead className="w-[112px] px-2 text-right font-medium">{t("modelCatalog.colCacheWrite")}</TableHead>
+								<TableHead className="w-[108px] px-2 text-right font-medium">{t("modelCatalog.colCacheRead")}</TableHead>
+								<TableHead className="font-medium">{t("modelCatalog.colDescription")}</TableHead>
+								<TableHead className="w-[68px] font-medium">{t("modelCatalog.colOther")}</TableHead>
 								<TableHead className="w-[80px] px-1"></TableHead>
 							</TableRow>
 						</TableHeader>
@@ -177,9 +178,7 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 								<TableRow>
 									<TableCell colSpan={9} className="h-24 text-center">
 										<span className="text-muted-foreground text-sm">
-											{!debouncedSearch && !providerFilter
-												? t("models:catalog.attributes.noModelsYet")
-												: t("models:catalog.attributes.noMatch")}
+											{!debouncedSearch && !providerFilter ? t("modelCatalog.noModelsLoaded") : t("modelCatalog.noMatchingModels")}
 										</span>
 									</TableCell>
 								</TableRow>
@@ -242,13 +241,11 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 												) : (
 													<div className="flex flex-wrap gap-1 pr-4">
 														{extraKeys.length > 0 && (
-															<Badge variant="secondary">
-																{t("models:catalog.attributes.attributeCount", { count: extraKeys.length })}
-															</Badge>
+															<Badge variant="secondary">{t("modelCatalog.attribute", { count: extraKeys.length })}</Badge>
 														)}
 														{overrideCount > 0 && (
 															<Badge variant="outline" data-testid={`model-catalog-override-badge-${testKey}`}>
-																{t("models:catalog.attributes.overrideCount", { count: overrideCount })}
+																{t("modelCatalog.override", { count: overrideCount })}
 															</Badge>
 														)}
 													</div>
@@ -261,7 +258,7 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 													className="ml-6 h-7 w-7"
 													disabled={!hasUpdateAccess}
 													onClick={() => setEditing(m)}
-													aria-label={t("models:catalog.attributes.editAria", { name: m.name })}
+													aria-label={t("modelCatalog.editAttributesFor", { name: m.name })}
 													data-testid={`model-catalog-edit-${testKey}`}
 												>
 													<Edit className="h-4 w-4" />
@@ -278,10 +275,10 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 				{totalCount > 0 && (
 					<div className="flex shrink-0 items-center justify-between text-xs" data-testid="model-catalog-pagination">
 						<div className="text-muted-foreground">
-							{t("models:catalog.pagination.entries", {
-								from: (offset + 1).toLocaleString(),
-								to: Math.min(offset + PAGE_SIZE, totalCount).toLocaleString(),
-								total: totalCount.toLocaleString(),
+							{t("modelCatalog.rangeOfEntries", {
+								from: (offset + 1).toLocaleString(getLocale()),
+								to: Math.min(offset + PAGE_SIZE, totalCount).toLocaleString(getLocale()),
+								total: totalCount.toLocaleString(getLocale()),
 							})}
 						</div>
 						<div className="flex items-center gap-2">
@@ -291,14 +288,14 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 								onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
 								disabled={offset === 0}
 								data-testid="model-catalog-pagination-prev-btn"
-								aria-label={t("models:catalog.pagination.previousAria")}
+								aria-label={t("modelCatalog.previousPage")}
 							>
 								<ChevronLeft className="size-3" />
 							</Button>
 							<div className="flex items-center gap-1">
-								<span>{t("models:catalog.pagination.page")}</span>
+								<span>{t("modelCatalog.page")}</span>
 								<span>{Math.floor(offset / PAGE_SIZE) + 1}</span>
-								<span>{t("models:catalog.pagination.ofPages", { pages: Math.ceil(totalCount / PAGE_SIZE) })}</span>
+								<span>{t("modelCatalog.pageOf", { total: Math.ceil(totalCount / PAGE_SIZE) })}</span>
 							</div>
 							<Button
 								variant="ghost"
@@ -306,7 +303,7 @@ export default function AttributesTab({ hasAccess }: AttributesTabProps) {
 								onClick={() => setOffset(offset + PAGE_SIZE)}
 								disabled={offset + PAGE_SIZE >= totalCount}
 								data-testid="model-catalog-pagination-next-btn"
-								aria-label={t("models:catalog.pagination.nextAria")}
+								aria-label={t("modelCatalog.nextPage")}
 							>
 								<ChevronRight className="size-3" />
 							</Button>

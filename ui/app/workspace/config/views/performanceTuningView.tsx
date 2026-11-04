@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 export default function PerformanceTuningView() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
 	const { data: bifrostConfig } = useGetCoreConfigQuery({ fromDB: true });
 	const config = bifrostConfig?.client_config;
@@ -68,44 +68,43 @@ export default function PerformanceTuningView() {
 			const maxBodySize = Number.parseInt(localValues.max_request_body_size_mb);
 
 			if (isNaN(poolSize) || poolSize <= 0) {
-				toast.error(t("settings:performance.poolSizePositive"));
+				toast.error(t("performance.toastPoolPositive"));
 				return;
 			}
 
 			if (isNaN(maxBodySize) || maxBodySize <= 0) {
-				toast.error(t("settings:performance.maxBodyPositive"));
+				toast.error(t("performance.toastBodyPositive"));
 				return;
 			}
 
 			if (!bifrostConfig) {
-				toast.error(t("settings:shared.notLoaded"));
+				toast.error(t("configNotLoadedRefresh"));
 				return;
 			}
 			await updateCoreConfig({ ...bifrostConfig, client_config: localConfig }).unwrap();
-			toast.success(t("settings:performance.saved"));
+			toast.success(t("performance.toastSaved"));
 		} catch (error) {
 			toast.error(getErrorMessage(error));
 		}
-	}, [t, bifrostConfig, localConfig, localValues, updateCoreConfig]);
+	}, [bifrostConfig, localConfig, localValues, t, updateCoreConfig]);
 
 	return (
 		<div className="mx-auto w-full max-w-4xl space-y-4">
-			<PageTitle title={t("settings:performance.title")}>{t("settings:performance.subtitle")}</PageTitle>
+			<PageTitle title={t("performance.title")}>{t("performance.description")}</PageTitle>
 
 			<Alert variant="destructive">
 				<AlertTriangle className="h-4 w-4" />
-				<AlertDescription>{t("settings:shared.restartNotice")}</AlertDescription>
+				<AlertDescription>{t("restartRequiredAlert")}</AlertDescription>
 			</Alert>
 
 			<div className="space-y-4">
-				{/* Initial Pool Size */}
 				<div>
 					<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
 							<label htmlFor="initial-pool-size" className="text-sm font-medium">
-								{t("settings:performance.initialPoolSize")}
+								{t("performance.initialPoolSize")}
 							</label>
-							<p className="text-muted-foreground text-sm">{t("settings:performance.initialPoolSizeDescription")}</p>
+							<p className="text-muted-foreground text-sm">{t("performance.initialPoolSizeHelp")}</p>
 						</div>
 						<Input
 							id="initial-pool-size"
@@ -119,14 +118,13 @@ export default function PerformanceTuningView() {
 					{needsRestart && <RestartWarning />}
 				</div>
 
-				{/* Max Request Body Size */}
 				<div>
 					<div className="flex items-center justify-between space-x-2 rounded-sm border p-4">
 						<div className="space-y-0.5">
 							<label htmlFor="max-request-body-size-mb" className="text-sm font-medium">
-								{t("settings:performance.maxRequestBodySize")}
+								{t("performance.maxRequestBodySize")}
 							</label>
-							<p className="text-muted-foreground text-sm">{t("settings:performance.maxRequestBodySizeDescription")}</p>
+							<p className="text-muted-foreground text-sm">{t("performance.maxRequestBodySizeHelp")}</p>
 						</div>
 						<Input
 							id="max-request-body-size-mb"
@@ -142,7 +140,7 @@ export default function PerformanceTuningView() {
 			</div>
 			<div className="flex justify-end pt-2">
 				<Button onClick={handleSave} disabled={!hasChanges || isLoading || !hasSettingsUpdateAccess}>
-					{isLoading ? t("common:state.saving") : t("settings:shared.saveChanges")}
+					{isLoading ? t("saving") : t("saveChanges")}
 				</Button>
 			</div>
 		</div>
@@ -150,6 +148,6 @@ export default function PerformanceTuningView() {
 }
 
 const RestartWarning = () => {
-	const { t } = useTranslation(["common", "settings"]);
-	return <div className="text-muted-foreground mt-2 pl-4 text-xs font-semibold">{t("settings:shared.restartWarning")}</div>;
+	const { t } = useTranslation("config");
+	return <div className="text-muted-foreground mt-2 pl-4 text-xs font-semibold">{t("restartWarning")}</div>;
 };

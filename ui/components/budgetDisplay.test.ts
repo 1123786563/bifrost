@@ -10,7 +10,7 @@ const source = readFileSync(fileURLToPath(new URL("./budgetDisplay.tsx", import.
 describe("BudgetDisplay overflow trigger", () => {
 	it('renders the "+N more" tooltip trigger as a focusable button so keyboard users can open it', () => {
 		const trigger = source.match(
-			/<TooltipTrigger asChild>\s*<(\w+)[^>]*>\s*\{t\("workspaces:budgetDisplay\.more", \{ count: hidden\.length \}\)\}/,
+			/<TooltipTrigger asChild>\s*<(\w+)[^>]*>\s*\{t\("providerList\.moreCount", \{ count: hidden\.length \}\)\}/,
 		);
 		expect(trigger, "could not find the +N more trigger").not.toBeNull();
 		expect(trigger![1]).toBe("button");

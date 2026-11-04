@@ -1,25 +1,52 @@
-import { NoPermissionView } from "@/components/noPermissionView";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ArrowUpRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
 	className?: string;
 	icon: React.ReactNode;
 	title: string;
-	description: string;
+	description?: string;
 	readmeLink: string;
 	align?: "middle" | "top";
 	testIdPrefix?: string;
 }
 
-/**
- * OSS fallback for the enterprise upsell screen. Every enterprise-only route
- * renders this behind its feature view; in OSS builds the feature does not
- * exist, so instead of the "Unlock … enterprise license" pitch the user sees
- * the standard no-permission state.
- */
-export default function ContactUsView({ title, className, align = "middle" }: Props) {
-	const { t } = useTranslation(["workspaces"]);
-	const entity = title.replace(/^Unlock\s+/i, "").trim();
-	return <NoPermissionView entity={entity} align={align} className={cn(className)} />;
+export default function ContactUsView({ icon, title, description, className, readmeLink, align = "middle", testIdPrefix }: Props) {
+	const { t } = useTranslation("governance");
+	const body = description ?? t("unlockSharedDescription");
+
+	return (
+		<div className={cn("flex flex-col items-center gap-4 text-center", align === "middle" ? "justify-center" : "justify-start", className)}>
+			<div className="text-muted-foreground">{icon}</div>
+			<div className="flex flex-col gap-1">
+				<h1 className="text-muted-foreground text-xl font-medium">{title}</h1>
+				<div className="text-muted-foreground mt-2 max-w-[600px] text-sm font-normal">{body}</div>
+				<div className="mx-auto flex flex-row items-center gap-2">
+					<Button
+						variant="outline"
+						aria-label={t("contactUs.readMoreAria")}
+						className="mx-auto mt-6"
+						data-testid={testIdPrefix ? `${testIdPrefix}-read-more` : undefined}
+						onClick={() => {
+							window.open(`${readmeLink}?utm_source=bfd`, "_blank", "noopener,noreferrer");
+						}}
+					>
+						{t("contactUs.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
+					</Button>
+					<Button
+						className="mx-auto mt-6"
+						aria-label={t("contactUs.bookDemoAria")}
+						data-testid={testIdPrefix ? `${testIdPrefix}-book-demo` : undefined}
+						onClick={() => {
+							window.open("https://calendly.com/maximai/bifrost-demo?utm_source=bfd_ent", "_blank", "noopener,noreferrer");
+						}}
+					>
+						{t("contactUs.bookDemo")}
+					</Button>
+				</div>
+			</div>
+		</div>
+	);
 }

@@ -10,7 +10,8 @@ interface WebhooksEmptyStateProps {
 }
 
 export function WebhooksEmptyState({ onAddClick, canCreate }: WebhooksEmptyStateProps) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t } = useTranslation("governance");
+
 	return (
 		<div
 			className="flex min-h-[80vh] w-full flex-col items-center justify-center gap-4 py-16 text-center"
@@ -20,10 +21,8 @@ export function WebhooksEmptyState({ onAddClick, canCreate }: WebhooksEmptyState
 				<Webhook className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />
 			</div>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-muted-foreground text-xl font-medium">{t("governance:webhooks.empty.title")}</h1>
-				<div className="text-muted-foreground mx-auto mt-2 w-full max-w-[600px] text-sm font-normal">
-					{t("governance:webhooks.empty.description")}
-				</div>
+				<h1 className="text-muted-foreground text-xl font-medium">{t("webhooks.emptyTitle")}</h1>
+				<div className="text-muted-foreground mx-auto mt-2 w-full max-w-[600px] text-sm font-normal">{t("webhooks.emptyDescription")}</div>
 				<div className="mx-auto mt-6 flex flex-row flex-wrap items-center justify-center gap-2">
 					<Button
 						variant="outline"
@@ -31,10 +30,10 @@ export function WebhooksEmptyState({ onAddClick, canCreate }: WebhooksEmptyState
 							window.open(`${WEBHOOKS_DOCS_URL}?utm_source=bfd`, "_blank", "noopener,noreferrer");
 						}}
 					>
-						{t("governance:webhooks.empty.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
+						{t("contactUs.readMore")} <ArrowUpRight className="text-muted-foreground h-3 w-3" />
 					</Button>
 					<Button onClick={onAddClick} disabled={!canCreate} data-testid="create-webhook-btn">
-						{t("governance:webhooks.empty.add")}
+						{t("webhooks.addEndpointEmpty")}
 					</Button>
 				</div>
 			</div>

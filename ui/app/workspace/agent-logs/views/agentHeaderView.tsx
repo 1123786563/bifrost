@@ -44,7 +44,7 @@ export function AgentHeaderView({
 	onToggleColumnVisibility,
 	onResetColumns,
 }: AgentHeaderViewProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const [timezone, setTimezone] = useTimezonePreference();
 	const [startTime, setStartTime] = useState<Date | undefined>(filters.start_time ? new Date(filters.start_time) : undefined);
 	const [endTime, setEndTime] = useState<Date | undefined>(filters.end_time ? new Date(filters.end_time) : undefined);
@@ -91,7 +91,7 @@ export function AgentHeaderView({
 				data-testid="agent-logs-header-refresh-btn"
 			>
 				<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-				Refresh
+				{t("labels.refresh")}
 			</Button>
 			<Button
 				variant={polling ? "default" : "outline"}
@@ -101,7 +101,7 @@ export function AgentHeaderView({
 				data-testid="agent-logs-header-live-btn"
 			>
 				{polling ? <Radio className="h-4 w-4 animate-pulse" /> : <Radio className="h-4 w-4" />}
-				Live
+				{t("labels.live")}
 			</Button>
 			<Tooltip>
 				<TooltipTrigger asChild>
@@ -114,11 +114,11 @@ export function AgentHeaderView({
 						aria-pressed={grouped}
 					>
 						<ListTree className="h-4 w-4" />
-						Group
+						{t("labels.group")}
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent sideOffset={6} className="max-w-64">
-					Groups operations sharing a context under the context&apos;s first matching operation. Expand a row to view its operations.
+					{t("agentLogs.header.groupHelp")}
 				</TooltipContent>
 			</Tooltip>
 			<div className="border-input flex h-7.5 min-w-[12rem] flex-1 items-center gap-2 rounded-sm border">
@@ -126,7 +126,7 @@ export function AgentHeaderView({
 				<Input
 					type="text"
 					className="!h-7 rounded-tl-none rounded-tr-sm rounded-br-sm rounded-bl-none border-none bg-slate-50 shadow-none outline-none focus-visible:ring-0 dark:bg-zinc-900"
-					placeholder={t("logs:agent.searchPlaceholder")}
+					placeholder={t("agentLogs.header.searchPlaceholder")}
 					value={localSearch}
 					onChange={(e) => handleSearchChange(e.target.value)}
 					data-testid="agent-logs-header-search-input"
@@ -135,7 +135,7 @@ export function AgentHeaderView({
 					<button
 						type="button"
 						onClick={clearSearch}
-						aria-label={t("logs:agent.clearSearch")}
+						aria-label={t("agentLogs.header.clearSearch")}
 						className="text-muted-foreground hover:text-foreground mr-2 transition-colors"
 						data-testid="agent-logs-header-search-clear-btn"
 					>

@@ -12,12 +12,12 @@ interface CodeModeLimitsSectionProps {
 // Inputs are controlled by the numeric limits: an empty input is 0, which the
 // server treats as the default, so the placeholder shows that default.
 export function CodeModeLimitsSection({ value, onChange, disabled }: CodeModeLimitsSectionProps) {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
 	return (
 		<div className="space-y-4 rounded-sm border p-4" data-testid="mcp-code-mode-limits">
 			<div className="space-y-0.5">
-				<p className="text-sm font-medium">{t("settings:mcp.codeMode.title")}</p>
-				<p className="text-muted-foreground text-sm">{t("settings:mcp.codeMode.description")}</p>
+				<p className="text-sm font-medium">{t("mcpSettings.codeModeLimitsTitle")}</p>
+				<p className="text-muted-foreground text-sm">{t("mcpSettings.codeModeLimitsDescription")}</p>
 			</div>
 			<div className="grid gap-4 sm:grid-cols-2">
 				{CODE_MODE_LIMIT_FIELDS.map((field) => {
@@ -26,9 +26,9 @@ export function CodeModeLimitsSection({ value, onChange, disabled }: CodeModeLim
 					return (
 						<div key={field.key} className="space-y-1">
 							<label htmlFor={id} className="text-sm font-medium">
-								{t(field.labelKey)}
+								{field.label}
 							</label>
-							<p className="text-muted-foreground text-xs">{t(field.descriptionKey)}</p>
+							<p className="text-muted-foreground text-xs">{field.description}</p>
 							<Input
 								id={id}
 								data-testid={`${id}-input`}

@@ -9,8 +9,8 @@ import { ModelSelector } from "@/components/ui/modelSelector";
 import { ProviderSelector } from "@/components/ui/providerSelector";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
-import { ValueEditorProps, ValueEditorType } from "react-querybuilder";
 import { useTranslation } from "react-i18next";
+import { ValueEditorProps, ValueEditorType } from "react-querybuilder";
 
 type CELValueEditorContext = {
 	validateRegex?: (pattern: string) => string | null;
@@ -24,7 +24,7 @@ export function ValueEditor({
 	type,
 	context,
 }: ValueEditorProps & { context?: CELValueEditorContext }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("observability");
 	// Compute all conditions upfront before any early returns
 	const isArrayOperator = operator === "in" || operator === "notIn";
 	const isRegexOperator = operator === "matches";
@@ -119,7 +119,7 @@ export function ValueEditor({
 					multiple
 					value={selectedModels}
 					onChange={handleMultiModelChange}
-					placeholder={t("workspaces:celBuilder.selectModels")}
+					placeholder={t("celBuilder.selectModels")}
 					allowCustomModel
 					unfiltered
 					className="!min-h-9 w-[360px]"
@@ -145,7 +145,7 @@ export function ValueEditor({
 			<ModelSelector
 				value={valueToUse || ""}
 				onChange={handleOnChange}
-				placeholder={t("workspaces:celBuilder.searchModel")}
+				placeholder={t("celBuilder.searchModel")}
 				allowCustomModel
 				unfiltered
 				className="border-input w-[360px]"
@@ -198,7 +198,7 @@ export function ValueEditor({
 					values={options}
 					value={selectedValues}
 					onChange={handleMultiselectChange}
-					placeholder={t("workspaces:celBuilder.selectProviders")}
+					placeholder={t("celBuilder.selectProviders")}
 					className="w-[360px]"
 					noPortal
 				/>
@@ -208,7 +208,7 @@ export function ValueEditor({
 					value={selectedValues}
 					onValueChange={handleMultiselectChange}
 					options={options}
-					placeholder={t("workspaces:celBuilder.selectProviders")}
+					placeholder={t("celBuilder.selectProviders")}
 					className="h-9 w-[360px]"
 					noPortal
 				/>
@@ -221,7 +221,7 @@ export function ValueEditor({
 				values={options}
 				value={value || ""}
 				onChange={(newValue: string) => handleOnChange(newValue)}
-				placeholder={fieldData.placeholder || t("workspaces:celBuilder.select")}
+				placeholder={fieldData.placeholder || t("celBuilder.selectPlaceholder")}
 				className="w-[360px]"
 				noPortal
 			/>
@@ -230,7 +230,7 @@ export function ValueEditor({
 				value={value || null}
 				onValueChange={(newValue) => handleOnChange(newValue ?? "")}
 				options={options}
-				placeholder={fieldData.placeholder || t("workspaces:celBuilder.select")}
+				placeholder={fieldData.placeholder || t("celBuilder.selectPlaceholder")}
 				className="h-9 w-[360px]"
 				noPortal
 			/>
@@ -245,7 +245,7 @@ export function ValueEditor({
 				type="text"
 				value={keyValuePair.value}
 				onChange={(e) => handleKeyValueValueChange(e.target.value)}
-				placeholder={t("workspaces:celBuilder.value")}
+				placeholder={t("celBuilder.value")}
 				className="w-[180px]"
 				data-testid="cel-builder-keyvalue-value-input"
 			/>
@@ -253,10 +253,10 @@ export function ValueEditor({
 	}
 
 	const placeholder = isArrayOperator
-		? t("workspaces:celBuilder.phArray")
+		? t("celBuilder.commaSeparated")
 		: isRegexOperator
-			? t("workspaces:celBuilder.phRegex")
-			: fieldData?.placeholder || t("workspaces:celBuilder.phValue");
+			? "e.g., .* (any), openai|anthropic (multiple), ^gpt.* (prefix)"
+			: fieldData?.placeholder || t("celBuilder.enterValue");
 
 	// Use textarea for array inputs
 	if (isArrayOperator) {

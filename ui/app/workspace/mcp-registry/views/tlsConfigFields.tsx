@@ -14,7 +14,7 @@ interface TLSConfigFieldsProps {
 
 /** Skip TLS Verification switch + CA Certificate PEM input, shared by the MCP create form and edit sheet. */
 export function TLSConfigFields({ control, disabled }: TLSConfigFieldsProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	return (
 		<>
 			<FormField
@@ -23,8 +23,8 @@ export function TLSConfigFields({ control, disabled }: TLSConfigFieldsProps) {
 				render={({ field }) => (
 					<FormItem className="flex flex-row items-center justify-between gap-4">
 						<div className="space-y-0.5">
-							<FormLabel>{t("mcp:agents.sheet.tls.skip")}</FormLabel>
-							<p className="text-muted-foreground text-sm">{t("mcp:agents.sheet.tls.skipHint")}</p>
+							<FormLabel>{t("registry.tls.skipVerify")}</FormLabel>
+							<p className="text-muted-foreground text-sm">{t("registry.tls.skipVerifyHelp")}</p>
 						</div>
 						<FormControl>
 							<Switch
@@ -42,12 +42,12 @@ export function TLSConfigFields({ control, disabled }: TLSConfigFieldsProps) {
 				name="tls_config.ca_cert_pem"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>{t("mcp:agents.sheet.tls.caCert")}</FormLabel>
-						<p className="text-muted-foreground text-xs">{t("mcp:registry.sheet.tlsCaCertHint")}</p>
+						<FormLabel>{t("registry.tls.caCertPem")}</FormLabel>
+						<p className="text-muted-foreground text-xs">{t("registry.tls.caCertPemHelp")}</p>
 						<FormControl>
 							<SecretVarInput
 								variant="textarea"
-								placeholder={`-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE----- or env.MCP_CA_CERT_PEM`}
+								placeholder={t("registry.tls.caCertPemPlaceholder")}
 								className="font-mono text-xs"
 								rows={6}
 								hideValueWhenEnv

@@ -20,15 +20,11 @@ import { useTranslation } from "react-i18next";
 import VirtualMCPAccessTab from "./virtualMcpAccessTab";
 import VirtualMCPGeneralTab, { slugify } from "./virtualMcpGeneralTab";
 import VirtualMcpToolsEditor from "./virtualMcpToolsEditor";
+import { withBasePath } from "@/lib/utils/basePath";
 
 const DOCS_URL = "https://docs.getbifrost.ai/mcp/connections";
 
-const STEPS = [
-	{ key: "general", titleKey: "mcp:virtualMcps.tab.general", descriptionKey: "mcp:virtualMcps.wizard.stepGeneral" },
-	{ key: "tools", titleKey: "mcp:virtualMcps.tab.tools", descriptionKey: "mcp:virtualMcps.wizard.stepTools" },
-	{ key: "access", titleKey: "mcp:virtualMcps.tab.access", descriptionKey: "mcp:virtualMcps.wizard.stepAccess" },
-	{ key: "review", titleKey: "mcp:virtualMcps.wizard.review", descriptionKey: "mcp:virtualMcps.wizard.stepReview" },
-] as const;
+const STEP_KEYS = ["general", "tools", "access", "review"] as const;
 
 interface VirtualMCPWizardProps {
 	onCancel: () => void;
@@ -37,7 +33,8 @@ interface VirtualMCPWizardProps {
 }
 
 export default function VirtualMCPWizard({ onCancel, onDone }: VirtualMCPWizardProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
+	const { t: tc } = useTranslation("common");
 	const { toast } = useToast();
 	const [createVirtualMCP, { isLoading: creating }] = useCreateVirtualMCPMutation();
 	const [attachVk] = useAttachVirtualMCPVirtualKeyMutation();
@@ -53,9 +50,18 @@ export default function VirtualMCPWizard({ onCancel, onDone }: VirtualMCPWizardP
 	const [createdId, setCreatedId] = useState<number | null>(null);
 	const [attachedVkIds, setAttachedVkIds] = useState<string[]>([]);
 
-	const step = STEPS[stepIdx];
+	const steps = useMemo(
+		() =>
+			STEP_KEYS.map((key) => ({
+				key,
+				title: t(`virtualMcps.wizard.${key}`),
+				description: t(`virtualMcps.wizard.${key}Desc`),
+			})),
+		[t],
+	);
+	const step = steps[stepIdx];
 	const isFirst = stepIdx === 0;
-	const isLast = stepIdx === STEPS.length - 1;
+	const isLast = stepIdx === steps.length - 1;
 
 	const canAdvance = useMemo(() => {
 		if (step.key === "general") return name.trim().length > 0;
@@ -88,10 +94,10 @@ export default function VirtualMCPWizard({ onCancel, onDone }: VirtualMCPWizardP
 				attached.add(vkId);
 				setAttachedVkIds([...attached]);
 			}
-			toast({ title: t("mcp:virtualMcps.createdToast") });
+			toast({ title: t("virtualMcps.created") });
 			onDone();
 		} catch (err) {
-			toast({ title: t("mcp:virtualMcps.createFailed"), description: getErrorMessage(err), variant: "destructive" });
+			toast({ title: t("virtualMcps.createFailed"), description: getErrorMessage(err), variant: "destructive" });
 		} finally {
 			setSubmitting(false);
 		}
@@ -102,16 +108,16 @@ export default function VirtualMCPWizard({ onCancel, onDone }: VirtualMCPWizardP
 			void handleCreate();
 			return;
 		}
-		setStepIdx((i) => Math.min(STEPS.length - 1, i + 1));
+		setStepIdx((i) => Math.min(steps.length - 1, i + 1));
 	};
 
 	return (
 		<div className="flex min-h-full min-w-0 flex-col gap-2 overflow-visible md:h-full md:flex-row md:overflow-hidden">
 			{/* Keep the topbar title stable, matching the list view (else it falls back to a route-derived label). */}
-			<PageTitle title={t("mcp:virtualMcps.title")}>{t("mcp:virtualMcps.subtitle")}</PageTitle>
+			<PageTitle title={t("virtualMcps.title")}>{t("virtualMcps.description")}</PageTitle>
 			{/* Step rail */}
 			<div className="bg-card flex h-auto w-full shrink-0 flex-row gap-2 overflow-x-auto rounded-b-md px-1 py-3 md:h-full md:w-[240px] md:flex-col md:overflow-x-visible md:rounded-r-md md:rounded-b-none">
-				{STEPS.map((s, i) => (
+				{steps.map((s, i) => (
 					<button
 						key={s.key}
 						type="button"
@@ -134,7 +140,7 @@ export default function VirtualMCPWizard({ onCancel, onDone }: VirtualMCPWizardP
 						>
 							{i < stepIdx ? <Check className="h-4 w-4" /> : i + 1}
 						</span>
-						<span className={`text-sm font-medium ${i === stepIdx ? "text-foreground" : "text-muted-foreground"}`}>{t(s.titleKey)}</span>
+						<span className={`text-sm font-medium ${i === stepIdx ? "text-foreground" : "text-muted-foreground"}`}>{s.title}</span>
 					</button>
 				))}
 			</div>
@@ -146,8 +152,8 @@ export default function VirtualMCPWizard({ onCancel, onDone }: VirtualMCPWizardP
 			>
 				<div className="mx-auto flex min-h-full w-full flex-col gap-6">
 					<div className="bg-card z-10 mx-auto w-full max-w-4xl px-4 pt-4">
-						<h2 className="text-lg font-semibold">{t(step.titleKey)}</h2>
-						<p className="text-muted-foreground text-sm">{t(step.descriptionKey)}</p>
+						<h2 className="text-lg font-semibold">{step.title}</h2>
+						<p className="text-muted-foreground text-sm">{step.description}</p>
 					</div>
 
 					<div className="mx-auto w-full max-w-4xl grow px-4">
@@ -185,7 +191,7 @@ export default function VirtualMCPWizard({ onCancel, onDone }: VirtualMCPWizardP
 						<div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3">
 							<Button type="button" variant="ghost" onClick={isFirst ? onCancel : goBack} disabled={submitting}>
 								<ArrowLeft className="h-4 w-4" />
-								{t("common:actions.back")}
+								{tc("back")}
 							</Button>
 							<Button
 								type="button"
@@ -196,13 +202,13 @@ export default function VirtualMCPWizard({ onCancel, onDone }: VirtualMCPWizardP
 								{submitting ? (
 									<>
 										<Loader2 className="h-4 w-4 animate-spin" />
-										{t("mcp:virtualMcps.wizard.creating")}
+										{t("common.creating")}
 									</>
 								) : isLast ? (
-									<>{t("mcp:virtualMcps.wizard.createBtn")}</>
+									<>{t("virtualMcps.wizard.create")}</>
 								) : (
 									<>
-										{t("common:actions.next")}
+										{tc("next")}
 										<ArrowRight className="h-4 w-4" />
 									</>
 								)}
@@ -225,42 +231,45 @@ interface ReviewStepProps {
 }
 
 function ReviewStep({ name, endpointSlug, description, enabled, tools, assignedVkIds }: ReviewStepProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	// The endpoint the server will serve; when the slug field is blank it is derived from the name.
 	const previewSlug = slugify(endpointSlug.trim() || name);
 	const { data: coreConfig } = useGetCoreConfigQuery({ fromDB: true });
 	const endpoint = `${getExternalBaseUrl(coreConfig?.client_config)}/mcp/${previewSlug}`;
 	const { data: clientsData } = useGetMCPClientsQuery({ limit: 1000 });
 	const nameById = new Map((clientsData?.clients ?? []).map((c) => [c.config.client_id, c.config.name]));
-	const { copy, copied } = useCopyToClipboard({ successMessage: t("mcp:virtualMcps.endpointCopied") });
+	const { copy, copied } = useCopyToClipboard({ successMessage: t("common.endpointCopied") });
 	const rows: { label: string; value: React.ReactNode }[] = [
-		{ label: t("common:fields.name"), value: name.trim() || <span className="text-muted-foreground">—</span> },
-		{ label: t("mcp:virtualMcps.col.endpoint"), value: <span className="font-mono text-sm">/mcp/{previewSlug || "—"}</span> },
+		{ label: t("common.name"), value: name.trim() || <span className="text-muted-foreground">—</span> },
 		{
-			label: t("common:fields.description"),
+			label: t("registry.columns.endpoint"),
+			value: <span className="font-mono text-sm">{withBasePath(`/mcp/${previewSlug || "—"}`)}</span>,
+		},
+		{
+			label: t("library.add.descriptionLabel"),
 			value: description.trim() ? (
 				<ExpandableText text={description.trim()} toggleAlign="right" />
 			) : (
 				<span className="text-muted-foreground">—</span>
 			),
 		},
-		{ label: t("common:fields.status"), value: enabled ? t("common:state.enabled") : t("common:state.disabled") },
+		{ label: t("common.status"), value: enabled ? t("common.enabled") : t("common.disabled") },
 		{
-			label: t("mcp:virtualMcps.wizard.servers"),
+			label: t("virtualMcps.wizard.servers"),
 			value:
 				tools.length === 0 ? (
-					<span className="text-muted-foreground">{t("common:state.none")}</span>
+					<span className="text-muted-foreground">{t("registry.filter.none")}</span>
 				) : (
-					t("mcp:virtualMcps.wizard.configured", { count: tools.length })
+					t("virtualMcps.wizard.configured", { count: tools.length })
 				),
 		},
 		{
-			label: t("mcp:virtualMcps.access.virtualKeys"),
+			label: t("virtualMcps.access.virtualKeys"),
 			value:
 				assignedVkIds.length === 0 ? (
-					<span className="text-muted-foreground">{t("common:state.none")}</span>
+					<span className="text-muted-foreground">{t("registry.filter.none")}</span>
 				) : (
-					t("mcp:virtualMcps.wizard.assigned", { count: assignedVkIds.length })
+					t("virtualMcps.wizard.assigned", { count: assignedVkIds.length })
 				),
 		},
 	];
@@ -277,7 +286,7 @@ function ReviewStep({ name, endpointSlug, description, enabled, tools, assignedV
 			</div>
 			{tools.length > 0 && (
 				<div className="flex flex-col gap-2">
-					<span className="text-muted-foreground text-xs font-medium uppercase">{t("mcp:virtualMcps.tab.tools")}</span>
+					<span className="text-muted-foreground text-xs font-medium uppercase">{t("virtualMcps.wizard.tools")}</span>
 					<div className="overflow-hidden rounded-md border">
 						{tools.map((spec, i) => {
 							const all = spec.tool_names.includes("*");
@@ -287,7 +296,7 @@ function ReviewStep({ name, endpointSlug, description, enabled, tools, assignedV
 										{nameById.get(spec.mcp_client_id) ?? spec.mcp_client_id}
 									</span>
 									<span className="text-muted-foreground min-w-0 flex-1 text-sm">
-										{all ? t("mcp:virtualMcps.wizard.allTools") : t("mcp:virtualMcps.wizard.toolsCount", { count: spec.tool_names.length })}
+										{all ? t("registry.sheet.allTools") : t("virtualMcps.wizard.toolsCount", { count: spec.tool_names.length })}
 									</span>
 								</div>
 							);
@@ -299,7 +308,7 @@ function ReviewStep({ name, endpointSlug, description, enabled, tools, assignedV
 			<InfoBox
 				className="mt-2"
 				icon={<Link2 className="size-4" />}
-				title={t("mcp:virtualMcps.wizard.endpointUrl")}
+				title={t("virtualMcps.wizard.endpointUrl")}
 				subcontent={
 					<a
 						href={DOCS_URL}
@@ -308,12 +317,12 @@ function ReviewStep({ name, endpointSlug, description, enabled, tools, assignedV
 						className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs"
 					>
 						<ExternalLink className="size-3.5" />
-						{t("mcp:virtualMcps.wizard.connectHarnesses")}
+						{t("virtualMcps.wizard.connectHarnesses")}
 					</a>
 				}
 			>
 				<div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-					<span className="text-muted-foreground">{t("mcp:virtualMcps.wizard.availableAt")}</span>
+					<span className="text-muted-foreground">{t("virtualMcps.wizard.availableAt")}</span>
 					<code className="text-foreground font-mono break-all" data-testid="virtual-mcp-review-endpoint">
 						{endpoint}
 					</code>
@@ -322,7 +331,7 @@ function ReviewStep({ name, endpointSlug, description, enabled, tools, assignedV
 						variant="ghost"
 						size="icon"
 						className="text-muted-foreground h-5 w-5 shrink-0"
-						aria-label={t("mcp:virtualMcps.copyEndpointAria")}
+						aria-label={t("registry.sheet.copyEndpointAria")}
 						onClick={() => copy(endpoint)}
 					>
 						{copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}

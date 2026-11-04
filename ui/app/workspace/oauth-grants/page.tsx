@@ -15,7 +15,7 @@ import RevokeGrantDialog from "./views/revokeGrantDialog";
 const PAGE_SIZE = 50;
 
 export default function OAuthGrantsPage() {
-	const { t } = useTranslation(["common", "auth"]);
+	const { t } = useTranslation("mcp");
 	const [urlState, setUrlState] = useQueryStates(
 		{
 			q: parseAsString.withDefault(""),
@@ -84,9 +84,9 @@ export default function OAuthGrantsPage() {
 		setPendingActionRowId(row.id);
 		try {
 			await revokeGrant(row.id).unwrap();
-			toast.success(t("auth:grants.revoked"));
+			toast.success(t("oauthGrants.grantRevoked"));
 		} catch (err) {
-			toast.error(t("auth:grants.revokeFailed"), { description: getErrorMessage(err) });
+			toast.error(t("oauthGrants.revokeFailed"), { description: getErrorMessage(err) });
 		} finally {
 			setPendingActionRowId(null);
 		}
@@ -96,15 +96,15 @@ export default function OAuthGrantsPage() {
 		<div className="flex h-full flex-col">
 			<RevokeGrantDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)} onConfirm={confirmRevoke} />
 
-			<PageTitle title={t("auth:grants.title")}>{t("auth:grants.subtitle")}</PageTitle>
+			<PageTitle title={t("oauthGrants.title")}>{t("oauthGrants.description")}</PageTitle>
 
 			<div className="mb-4 flex items-center gap-3">
 				<div className="relative max-w-sm min-w-[200px] flex-1">
 					<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 					<Input
 						data-testid="oauth-grants-search-input"
-						aria-label={t("auth:grants.search.label")}
-						placeholder={t("auth:grants.search.placeholder")}
+						aria-label={t("oauthGrants.searchAria")}
+						placeholder={t("oauthGrants.searchPlaceholder")}
 						value={urlState.q}
 						onChange={(e) => handleSearchChange(e.target.value)}
 						className="pl-9"
@@ -118,7 +118,7 @@ export default function OAuthGrantsPage() {
 				</div>
 			) : isError ? (
 				<div className="border-destructive bg-destructive/10 text-destructive rounded-lg border p-6 text-sm">
-					{t("auth:grants.loadFailed", { message: getErrorMessage(error) })}
+					{t("oauthGrants.loadFailed", { message: getErrorMessage(error) })}
 				</div>
 			) : (
 				<GrantsTable

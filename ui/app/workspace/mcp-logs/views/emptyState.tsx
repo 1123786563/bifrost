@@ -40,7 +40,7 @@ interface CodeBlockProps {
 }
 
 function CodeBlock({ code, language, onLanguageChange, showLanguageSelect = false, readonly = true }: CodeBlockProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const { copy: copyToClipboard } = useCopyToClipboard();
 
 	return (
@@ -48,20 +48,22 @@ function CodeBlock({ code, language, onLanguageChange, showLanguageSelect = fals
 			<div className="absolute top-4 right-4 z-10 flex items-center gap-2">
 				{showLanguageSelect && onLanguageChange && (
 					<Select value={language} onValueChange={onLanguageChange}>
-						<SelectTrigger className="h-8 w-fit text-xs" aria-label={t("logs:empty.codeLanguage")}>
+						<SelectTrigger className="h-8 w-fit text-xs" aria-label={t("logs.empty.codeLanguage")}>
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem className="text-xs" value="python">
+								{/* i18n-ignore: programming language name */}
 								Python
 							</SelectItem>
 							<SelectItem className="text-xs" value="typescript">
+								{/* i18n-ignore: programming language name */}
 								TypeScript
 							</SelectItem>
 						</SelectContent>
 					</Select>
 				)}
-				<Button variant="ghost" size="icon" onClick={() => copyToClipboard(code)} aria-label={t("logs:mcp.copyToClipboard")}>
+				<Button variant="ghost" size="icon" onClick={() => copyToClipboard(code)} aria-label={t("mcpLogs.copyToClipboard")}>
 					<Copy className="size-4" />
 				</Button>
 			</div>
@@ -76,7 +78,7 @@ interface MCPEmptyStateProps {
 }
 
 export function MCPEmptyState({ error, statusIndicator }: MCPEmptyStateProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const [language, setLanguage] = useState<Language>("python");
 
 	// Generate examples dynamically using the port utility
@@ -97,7 +99,7 @@ client = openai.OpenAI(
 # Step 2: Send chat request
 response = client.chat.completions.create(
     model="gpt-4o",
-    messages=[{"role": "user", "content": ${t("logs:mcp.samples.listFiles")}}]
+    messages=[{"role": "user", "content": "List files in current directory"}]
 )
 
 # Step 3: Check for tool calls
@@ -121,7 +123,7 @@ if message.tool_calls:
         final_response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "user", "content": ${t("logs:mcp.samples.listFiles")}},
+                {"role": "user", "content": "List files in current directory"},
                 message,
                 tool_result
             ]
@@ -138,7 +140,7 @@ const openai = new OpenAI({
 // Step 2: Send chat request
 const response = await openai.chat.completions.create({
   model: "gpt-4o",
-  messages: [{ role: "user", content: ${t("logs:mcp.samples.listFiles")} }],
+  messages: [{ role: "user", content: "List files in current directory" }],
 });
 
 const message = response.choices[0].message;
@@ -164,7 +166,7 @@ if (message.tool_calls) {
     const finalResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "user", content: ${t("logs:mcp.samples.listFiles")} },
+        { role: "user", content: "List files in current directory" },
         message,
         toolResult,
       ],
@@ -194,7 +196,7 @@ response = client.chat.completions.create(
     model="gpt-4o",
     messages=[{
         "role": "user", 
-        "content": ${t("logs:mcp.samples.listPythonFiles")}
+        "content": "List all Python files and summarize their purpose"
     }]
 )
 
@@ -226,7 +228,7 @@ const response = await openai.chat.completions.create({
   model: "gpt-4o",
   messages: [{
     role: "user",
-    content: ${t("logs:mcp.samples.listPythonFiles")}
+    content: "List all Python files and summarize their purpose"
   }],
 });
 
@@ -242,37 +244,37 @@ if (response.choices[0].message.tool_calls) {
 }`,
 			},
 		};
-	}, [t]);
+	}, []);
 
-	const isUnexpectedError = error && error.includes("An unexpected error occurred");
+	const isUnexpectedError = error && error.includes(t("mcpLogs.empty.unexpectedError"));
 
 	return (
 		<div className="dark:bg-card flex w-full flex-col items-center justify-center space-y-8 bg-white">
 			{error && (
 				<Alert>
 					<AlertTriangle className="h-4 w-4" />
-					<AlertDescription>{isUnexpectedError ? t("logs:empty.unexpectedError") : error}</AlertDescription>
+					<AlertDescription>{isUnexpectedError ? t("mcpLogs.empty.logStoreNotConfigured") : error}</AlertDescription>
 				</Alert>
 			)}
 
 			<div className="w-full space-y-6">
 				<div className="flex flex-row items-center gap-2">
 					<div>
-						<h3 className="text-lg font-semibold">{t("logs:mcp.emptyTitle")}</h3>
-						<p className="text-muted-foreground text-sm">{t("logs:mcp.emptySubtitle")}</p>
+						<h3 className="text-lg font-semibold">{t("mcpLogs.empty.title")}</h3>
+						<p className="text-muted-foreground text-sm">{t("mcpLogs.empty.subtitle")}</p>
 					</div>
 					<div className="ml-auto">{statusIndicator}</div>
 				</div>
 
 				<Tabs defaultValue="manual" className="w-full rounded-lg border">
 					<TabsList className="flex h-10 w-full justify-start rounded-t-lg rounded-b-none">
-						<TabsTrigger value="manual">{t("logs:mcp.tabManual")}</TabsTrigger>
-						<TabsTrigger value="agent">{t("logs:mcp.tabAgent")}</TabsTrigger>
+						<TabsTrigger value="manual">{t("mcpLogs.empty.manualTab")}</TabsTrigger>
+						<TabsTrigger value="agent">{t("mcpLogs.empty.agentTab")}</TabsTrigger>
 					</TabsList>
 
 					<TabsContent value="manual" className="px-4">
 						<div className="text-muted-foreground mb-3 text-sm">
-							<p>{t("logs:mcp.manualDesc")}</p>
+							<p>{t("mcpLogs.empty.manualDesc")}</p>
 						</div>
 						<CodeBlock
 							code={examples.manual[language]}
@@ -284,7 +286,7 @@ if (response.choices[0].message.tool_calls) {
 
 					<TabsContent value="agent" className="px-4">
 						<div className="text-muted-foreground mb-3 text-sm">
-							<p>{t("logs:mcp.agentDesc")}</p>
+							<p>{t("mcpLogs.empty.agentDesc")}</p>
 						</div>
 						<CodeBlock
 							code={examples.agentMode[language]}
@@ -296,22 +298,24 @@ if (response.choices[0].message.tool_calls) {
 				</Tabs>
 
 				<div className="bg-muted/50 rounded-lg border p-4">
-					<h4 className="mb-2 text-sm font-semibold">{t("logs:mcp.prerequisites")}</h4>
+					<h4 className="mb-2 text-sm font-semibold">{t("mcpLogs.empty.prerequisites")}</h4>
 					<ul className="text-muted-foreground space-y-1 text-sm">
 						<li className="flex items-start gap-2">
 							<span className="text-primary">1.</span>
-							<span>{t("logs:mcp.prereq1")}</span>
+							<span>{t("mcpLogs.empty.prereq1")}</span>
 						</li>
 						<li className="flex items-start gap-2">
 							<span className="text-primary">2.</span>
 							<span>
-								{t("logs:mcp.prereq2pre")} <code className="bg-muted rounded px-1">tools_to_execute</code> {t("logs:mcp.prereq2post")}
+								{t("mcpLogs.empty.prereq2Prefix")} <code className="bg-muted rounded px-1">tools_to_execute</code>{" "}
+								{t("mcpLogs.empty.prereq2Suffix")}
 							</span>
 						</li>
 						<li className="flex items-start gap-2">
 							<span className="text-primary">3.</span>
 							<span>
-								{t("logs:mcp.prereq3pre")} <code className="bg-muted rounded px-1">tools_to_auto_execute</code> {t("logs:mcp.prereq3post")}
+								{t("mcpLogs.empty.prereq3Prefix")} <code className="bg-muted rounded px-1">tools_to_auto_execute</code>{" "}
+								{t("mcpLogs.empty.prereq3Suffix")}
 							</span>
 						</li>
 					</ul>

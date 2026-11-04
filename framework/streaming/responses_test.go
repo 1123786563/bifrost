@@ -756,3 +756,75 @@ func TestResponsesStreamRetainsStopReason(t *testing.T) {
 		})
 	}
 }
+
+// TestAccumulatedResponsesStreamKeepsRawResponseFormat verifies the joined raw keeps the format its events declared,
+// so an event without a declaration (a synthetic tail) does not clear it.
+func TestAccumulatedResponsesStreamKeepsRawResponseFormat(t *testing.T) {
+	acc := testResponsesAccumulator(t)
+	ctx := schemas.NewBifrostContext(context.Background(), time.Time{})
+	ctx.SetValue(schemas.BifrostContextKeyAccumulatorID, "responses-raw-format")
+	declared := &schemas.BifrostResponse{ResponsesStreamResponse: &schemas.BifrostResponsesStreamResponse{
+		Type: schemas.ResponsesStreamResponseTypeOutputTextDelta, Delta: schemas.Ptr("Hello"), ContentIndex: schemas.Ptr(0),
+	}}
+	declared.ResponsesStreamResponse.ExtraFields.RawResponse = `{"type":"response.output_text.delta","delta":"Hello"}`
+	declared.ResponsesStreamResponse.ExtraFields.RawResponseFormat = schemas.RawResponseFormatOpenAIResponsesStreamEvent
+	_, err := acc.processResponsesStreamingResponse(ctx, declared, nil)
+	require.NoError(t, err)
+
+	ctx.SetValue(schemas.BifrostContextKeyStreamEndIndicator, true)
+	tail := &schemas.BifrostResponse{ResponsesStreamResponse: &schemas.BifrostResponsesStreamResponse{}}
+	tail.ResponsesStreamResponse.ExtraFields.ChunkIndex = 1
+	tail.ResponsesStreamResponse.ExtraFields.RawResponse = `{"type":"response.completed"}`
+	got, err := acc.processResponsesStreamingResponse(ctx, tail, nil)
+
+	require.NoError(t, err)
+	require.NotNil(t, got.Data.RawResponse)
+	require.Equal(t, `{"type":"response.output_text.delta","delta":"Hello"}`+"\n\n"+`{"type":"response.completed"}`, *got.Data.RawResponse)
+	require.Equal(t, schemas.RawResponseFormatOpenAIResponsesStreamEvent, got.Data.RawResponseFormat)
+}
+
+// TestBuildResponsesMessagesFromChunksWithoutAccumulator pins the exported builder used to rebuild
+// recorded streams outside a live Accumulator: it must sort out-of-order chunks itself and match
+// what the Accumulator method produces for the same input.
+func TestBuildResponsesMessagesFromChunksWithoutAccumulator(t *testing.T) {
+	ci := 0
+	makeChunks := func() []*ResponsesStreamChunk {
+		return []*ResponsesStreamChunk{
+			{ChunkIndex: 2, StreamResponse: &schemas.BifrostResponsesStreamResponse{Type: schemas.ResponsesStreamResponseTypeOutputTextDelta, Delta: schemas.Ptr("world"), ContentIndex: &ci}},
+			{ChunkIndex: 0, StreamResponse: &schemas.BifrostResponsesStreamResponse{Type: schemas.ResponsesStreamResponseTypeOutputTextDelta, Delta: schemas.Ptr("hello"), ContentIndex: &ci}},
+			{ChunkIndex: 1, StreamResponse: &schemas.BifrostResponsesStreamResponse{Type: schemas.ResponsesStreamResponseTypeOutputTextDelta, Delta: schemas.Ptr(", "), ContentIndex: &ci}},
+		}
+	}
+
+	msgs := BuildResponsesMessagesFromChunks(makeChunks())
+	require.Len(t, msgs, 1)
+	require.NotNil(t, msgs[0].Content)
+	require.NotEmpty(t, msgs[0].Content.ContentBlocks)
+	require.NotNil(t, msgs[0].Content.ContentBlocks[0].Text)
+	require.Equal(t, "hello, world", *msgs[0].Content.ContentBlocks[0].Text)
+
+	viaAccumulator := testResponsesAccumulator(t).buildCompleteMessageFromResponsesStreamChunks(makeChunks())
+	require.Equal(t, viaAccumulator, msgs)
+}
+
+func TestPassthroughStreamCarriesServiceTierFromUsage(t *testing.T) {
+	acc := testResponsesAccumulator(t)
+	ctx := schemas.NewBifrostContext(context.Background(), time.Time{})
+	ctx.SetValue(schemas.BifrostContextKeyAccumulatorID, "passthrough-service-tier")
+	ctx.SetValue(schemas.BifrostContextKeyStreamEndIndicator, true)
+	tier := schemas.BifrostServiceTierDefault
+
+	processed, err := acc.processPassthroughStreamingResponse(ctx, &schemas.BifrostResponse{
+		PassthroughResponse: &schemas.BifrostPassthroughResponse{
+			StatusCode: 200,
+			PassthroughUsage: &schemas.BifrostPassthroughUsage{
+				LLMUsage:    &schemas.BifrostLLMUsage{TotalTokens: 10},
+				ServiceTier: &tier,
+			},
+		},
+	}, nil)
+	require.NoError(t, err)
+	require.NotNil(t, processed.Data)
+	require.NotNil(t, processed.Data.ServiceTier)
+	require.Equal(t, schemas.BifrostServiceTierDefault, *processed.Data.ServiceTier)
+}

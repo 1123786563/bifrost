@@ -7,8 +7,8 @@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCallback, useMemo } from "react";
-import { FieldSelectorProps, RuleGroupType, RuleType } from "react-querybuilder";
 import { useTranslation } from "react-i18next";
+import { FieldSelectorProps, RuleGroupType, RuleType } from "react-querybuilder";
 
 /**
  * Recursively find and update a rule's value by path in the query tree.
@@ -32,7 +32,7 @@ function updateRuleValueAtPath(query: RuleGroupType, targetPath: number[], newVa
 }
 
 export function FieldSelector({ value, handleOnChange, options, rule, path, schema }: FieldSelectorProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("observability");
 	// Check if this is a keyValue field (headers/params)
 	const fieldData = useMemo(() => schema?.fields?.find((f) => "value" in f && f.value === value), [schema?.fields, value]);
 	const isKeyValueField = fieldData && "inputType" in fieldData && fieldData.inputType === "keyValue";
@@ -74,7 +74,7 @@ export function FieldSelector({ value, handleOnChange, options, rule, path, sche
 		<div className="flex items-center gap-2">
 			<Select value={value || ""} onValueChange={handleOnChange}>
 				<SelectTrigger className="w-[180px]" data-testid="cel-builder-field-selector-select">
-					<SelectValue placeholder={t("workspaces:celBuilder.selectField")} />
+					<SelectValue placeholder={t("celBuilder.selectField")} />
 				</SelectTrigger>
 				<SelectContent>
 					{options.map((option) => {
@@ -96,12 +96,12 @@ export function FieldSelector({ value, handleOnChange, options, rule, path, sche
 			</Select>
 			{isKeyValueField && (
 				<>
-					<span className="text-muted-foreground text-sm whitespace-nowrap">{t("workspaces:celBuilder.hasKey")}</span>
+					<span className="text-muted-foreground text-sm whitespace-nowrap">{t("celBuilder.hasKey")}</span>
 					<Input
 						type="text"
 						value={headerKey}
 						onChange={(e) => handleKeyChange(e.target.value)}
-						placeholder={t("workspaces:celBuilder.keyNamePh", { field: fieldData?.label || t("workspaces:celBuilder.key") })}
+						placeholder={t("celBuilder.keyNamePlaceholder", { label: fieldData?.label || t("celBuilder.keyFallback") })}
 						className="w-[180px]"
 						data-testid="cel-builder-field-selector-key-input"
 					/>

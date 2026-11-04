@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 import { isJson } from "@/lib/utils/validation";
 import { Check, ExternalLink, Loader2, PencilLine, Play, RefreshCw, Send, ShieldAlert, Wrench, XIcon } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { MCPAuthRequiredError } from "../../utils/executor";
 import MessageRoleSwitcher from "./messageRoleSwitcher";
-import { useTranslation } from "react-i18next";
 
 export default function ToolCallMessageView({
 	message,
@@ -33,7 +33,8 @@ export default function ToolCallMessageView({
 	fetchToolResult?: (toolCall: ToolCall) => Promise<string>;
 	respondedToolCallIds?: Set<string>;
 }) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("config");
+	const { t: tCommon } = useTranslation("common");
 	const toolCalls = message.toolCalls ?? [];
 	const [responses, setResponses] = useState<Record<string, string>>({});
 	const [executingIds, setExecutingIds] = useState<Set<string>>(new Set());
@@ -266,7 +267,7 @@ export default function ToolCallMessageView({
 
 				{toolCalls.length > 0 && (
 					<span className="animate-in fade-in-0 zoom-in-95 bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium duration-200 motion-reduce:animate-none">
-						{t("workspaces:prompts.toolCallCount", { count: toolCalls.length })}
+						{t("promptRepo.toolCall", { count: toolCalls.length })}
 					</span>
 				)}
 
@@ -274,7 +275,7 @@ export default function ToolCallMessageView({
 					{!disabled && onRemove && (
 						<button
 							type="button"
-							aria-label={t("workspaces:promptsRepo.messages.deleteAria")}
+							aria-label={t("promptRepo.deleteMessageAria")}
 							data-testid="tool-call-msg-delete"
 							onClick={onRemove}
 							className="hover:bg-destructive/10 focus:bg-destructive/10 rounded-md p-1 opacity-0 transition group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
@@ -331,13 +332,13 @@ export default function ToolCallMessageView({
 
 										{isResponded && (
 											<span className="animate-in fade-in-0 zoom-in-90 shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-600 duration-200 motion-reduce:animate-none dark:text-emerald-400">
-												{t("workspaces:prompts.responded")}
+												{t("promptRepo.responded")}
 											</span>
 										)}
 										{!isResponded && isMultiple && hasResult && (
 											<span className="animate-in fade-in-0 zoom-in-90 flex shrink-0 items-center gap-0.5 rounded-full bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-medium text-blue-600 duration-200 motion-reduce:animate-none dark:text-blue-400">
 												<Check className="size-2.5" />
-												{t("workspaces:prompts.ready")}
+												{t("promptRepo.ready")}
 											</span>
 										)}
 									</div>
@@ -350,7 +351,7 @@ export default function ToolCallMessageView({
 							{formattedArgs && (
 								<div className="border-t px-3 py-2">
 									<div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wide uppercase">
-										{t("workspaces:prompts.arguments")}
+										{t("promptRepo.arguments")}
 									</div>
 
 									{argsIsJson ? (
@@ -385,9 +386,7 @@ export default function ToolCallMessageView({
 								<div className="animate-in fade-in-0 bg-muted/20 space-y-2 border-t px-3 py-2 duration-150 motion-reduce:animate-none">
 									<div className="flex items-center gap-2">
 										<div className="text-foreground text-xs font-medium">
-											{isResolved && !isManualEntryOpen
-												? t("workspaces:promptsRepo.messages.executedResult")
-												: t("workspaces:promptsRepo.messages.toolResult")}
+											{isResolved && !isManualEntryOpen ? t("promptRepo.executedResult") : t("promptRepo.toolResult")}
 										</div>
 										{isMultiple && (
 											<Button
@@ -397,7 +396,7 @@ export default function ToolCallMessageView({
 												onClick={() => hideManualEntry(tc.id)}
 												disabled={isBusy}
 											>
-												{t("common:actions.clear")}
+												{t("promptRepo.clear")}
 											</Button>
 										)}
 										{!isMultiple && (
@@ -409,13 +408,13 @@ export default function ToolCallMessageView({
 												onClick={() => hideManualEntry(tc.id)}
 												disabled={isBusy}
 											>
-												{t("common:actions.cancel")}
+												{tCommon("cancel")}
 											</Button>
 										)}
 									</div>
 									<Textarea
 										autoFocus={isManualEntryOpen && !isResolved}
-										placeholder={t("workspaces:promptsRepo.messages.pasteResult")}
+										placeholder={t("promptRepo.pasteToolResult")}
 										value={responses[tc.id] ?? ""}
 										onChange={(e) => handleResponseChange(tc.id, e.target.value)}
 										data-testid="tool-call-response-textarea"
@@ -435,7 +434,7 @@ export default function ToolCallMessageView({
 												onClick={() => handleSubmitResponse(tc.id)}
 											>
 												<Send className="size-3.5" />
-												{t("workspaces:prompts.submitResult")}
+												{t("promptRepo.submitResult")}
 											</Button>
 										</div>
 									)}
@@ -452,9 +451,9 @@ export default function ToolCallMessageView({
 											</div>
 											<div className="min-w-0">
 												<div className="text-foreground text-xs font-medium">
-													{t("workspaces:prompts.authRequiredFor", { name: authErrors[tc.id].mcpClientName })}
+													{t("promptRepo.authRequiredFor", { name: authErrors[tc.id].mcpClientName })}
 												</div>
-												<div className="text-muted-foreground text-[10px]">{t("workspaces:prompts.connectAccount")}</div>
+												<div className="text-muted-foreground text-[10px]">{t("promptRepo.connectToExecute")}</div>
 											</div>
 										</div>
 										<div className="ml-auto flex items-center gap-1.5">
@@ -465,7 +464,7 @@ export default function ToolCallMessageView({
 													onClick={() => window.open(authErrors[tc.id].authorizeUrl, "_blank", "noopener,noreferrer")}
 												>
 													<ExternalLink className="size-3.5" />
-													{t("workspaces:prompts.authenticate")}
+													{t("promptRepo.authenticate")}
 												</Button>
 											)}
 											<Button
@@ -476,7 +475,7 @@ export default function ToolCallMessageView({
 												disabled={isBusy}
 											>
 												<RefreshCw className="size-3.5" />
-												{t("common:actions.retry")}
+												{t("promptRepo.retry")}
 											</Button>
 										</div>
 									</div>
@@ -489,8 +488,8 @@ export default function ToolCallMessageView({
 									<div className="flex flex-wrap items-center gap-2">
 										{!isMultiple && (
 											<div className="min-w-0">
-												<div className="text-foreground text-xs font-medium">{t("workspaces:prompts.awaitingResult")}</div>
-												<div className="text-muted-foreground text-[10px]">{t("workspaces:prompts.awaitingHint")}</div>
+												<div className="text-foreground text-xs font-medium">{t("promptRepo.awaitingToolResult")}</div>
+												<div className="text-muted-foreground text-[10px]">{t("promptRepo.executeOrAddManually")}</div>
 											</div>
 										)}
 										<div className={cn("flex items-center gap-1.5", !isMultiple && "ml-auto")}>
@@ -504,7 +503,7 @@ export default function ToolCallMessageView({
 													onClick={() => (isMultiple ? handleExecuteOne(tc) : handleExecuteSingle(tc))}
 												>
 													{executingIds.has(tc.id) ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
-													{executingIds.has(tc.id) ? t("workspaces:prompts.executing") : t("workspaces:prompts.execute")}
+													{executingIds.has(tc.id) ? t("promptRepo.executing") : t("promptRepo.execute")}
 												</Button>
 											)}
 											<Button
@@ -516,7 +515,7 @@ export default function ToolCallMessageView({
 												onClick={() => showManualEntry(tc.id)}
 											>
 												<PencilLine className="size-3.5" />
-												{t("workspaces:prompts.addManually")}
+												{t("promptRepo.addManually")}
 											</Button>
 										</div>
 									</div>
@@ -535,11 +534,11 @@ export default function ToolCallMessageView({
 							<div className="min-w-0">
 								<div className="text-foreground text-xs font-medium">
 									{allResolved
-										? t("workspaces:prompts.allResultsReady", { count: pendingToolCalls.length })
-										: t("workspaces:prompts.resultsCollected", { resolved: resolvedCount, total: pendingToolCalls.length })}
+										? t("promptRepo.allResultsReady", { count: pendingToolCalls.length })
+										: t("promptRepo.resultsCollected", { resolved: resolvedCount, total: pendingToolCalls.length })}
 								</div>
 								<div className="text-muted-foreground text-[10px]">
-									{allResolved ? t("workspaces:promptsRepo.messages.submitHint") : t("workspaces:promptsRepo.messages.executeHint")}
+									{allResolved ? t("promptRepo.submitAllToContinue") : t("promptRepo.executeOrFillThenSubmit")}
 								</div>
 							</div>
 							<div className="ml-auto flex items-center gap-1.5">
@@ -552,7 +551,7 @@ export default function ToolCallMessageView({
 										onClick={handleExecuteAll}
 									>
 										{isExecutingAll ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
-										{isExecutingAll ? t("workspaces:promptsRepo.messages.executingAll") : t("workspaces:promptsRepo.messages.executeAll")}
+										{isExecutingAll ? t("promptRepo.executingAll") : t("promptRepo.executeAll")}
 									</Button>
 								)}
 								<Button
@@ -568,7 +567,7 @@ export default function ToolCallMessageView({
 									onClick={handleSubmitAll}
 								>
 									{isSubmittingAll ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
-									{isSubmittingAll ? t("workspaces:promptsRepo.messages.submitting") : t("workspaces:promptsRepo.messages.submitAll")}
+									{isSubmittingAll ? t("promptRepo.submitting") : t("promptRepo.submitAllResults")}
 								</Button>
 							</div>
 						</div>

@@ -26,18 +26,19 @@ export interface WebhooksFilterBarProps {
 }
 
 export default function WebhooksFilterBar(props: WebhooksFilterBarProps) {
-	const { t } = useTranslation(["common", "governance", "workspaces"]);
-	const STATUS_OPTIONS = [
-		{ label: t("governance:webhooks.filterBar.statusEnabled"), value: "enabled" },
-		{ label: t("governance:webhooks.filterBar.statusDisabled"), value: "disabled" },
+	const { t } = useTranslation("governance");
+	const statusOptions = [
+		{ label: t("webhooks.filterBar.enabled"), value: "enabled" },
+		{ label: t("webhooks.filterBar.disabled"), value: "disabled" },
 	];
+
 	return (
 		<div className="@container/webhooks-toolbar flex shrink-0 flex-wrap items-center gap-3">
 			<div className="relative max-w-sm min-w-0 grow basis-40">
 				<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 				<Input
-					aria-label={t("governance:webhooks.filterBar.searchAria")}
-					placeholder={t("governance:webhooks.filterBar.searchPlaceholder")}
+					aria-label={t("webhooks.filterBar.searchAria")}
+					placeholder={t("webhooks.filterBar.searchPlaceholder")}
 					value={props.search}
 					onChange={(e) => props.onSearchChange(e.target.value)}
 					className="pl-9"
@@ -52,7 +53,7 @@ export default function WebhooksFilterBar(props: WebhooksFilterBarProps) {
 				options={EVENT_OPTIONS}
 				value={props.eventFilter}
 				onValueChange={props.onEventFilterChange}
-				placeholder={t("governance:webhooks.filterBar.allEvents")}
+				placeholder={t("webhooks.filterBar.allEvents")}
 				className="h-9 w-[180px] @5xl/webhooks-toolbar:w-[220px]"
 			/>
 			<ComboboxSelect
@@ -60,10 +61,10 @@ export default function WebhooksFilterBar(props: WebhooksFilterBarProps) {
 				disableSearch
 				compactTrigger
 				data-testid="webhooks-status-filter"
-				options={STATUS_OPTIONS}
+				options={statusOptions}
 				value={props.statusFilter}
 				onValueChange={props.onStatusFilterChange}
-				placeholder={t("governance:webhooks.filterBar.allStatuses")}
+				placeholder={t("webhooks.filterBar.allStatuses")}
 				className="h-9 w-[150px] @5xl/webhooks-toolbar:w-[170px]"
 			/>
 			{props.hasActiveFilters && (
@@ -72,15 +73,15 @@ export default function WebhooksFilterBar(props: WebhooksFilterBarProps) {
 						<Button
 							variant="ghost"
 							onClick={props.onClearFilters}
-							aria-label={t("governance:webhooks.filterBar.clearFilters")}
+							aria-label={t("webhooks.filterBar.clearFilters")}
 							data-testid="webhooks-clear-filters-btn"
 							className="size-9 px-0 @5xl/webhooks-toolbar:w-auto @5xl/webhooks-toolbar:px-3"
 						>
 							<X className="h-4 w-4" />
-							<span className="hidden @5xl/webhooks-toolbar:inline">{t("workspaces:webhooks.clearFilters")}</span>
+							<span className="hidden @5xl/webhooks-toolbar:inline">{t("webhooks.filterBar.clearFilters")}</span>
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>{t("governance:webhooks.filterBar.clearFilters")}</TooltipContent>
+					<TooltipContent>{t("webhooks.filterBar.clearFilters")}</TooltipContent>
 				</Tooltip>
 			)}
 			{props.actions && <div className="ml-auto flex shrink-0 items-center gap-2">{props.actions}</div>}

@@ -1,10 +1,10 @@
 import BlockHeader from "@/app/workspace/logs/views/blockHeader";
 import type { OverheadBucket } from "@/lib/types/logs";
 import { cn } from "@/lib/utils";
+import type { TFunction } from "i18next";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 
 // formatMicros renders a microsecond overhead value, promoting to ms once it is
 // large enough that microseconds would just be noise.
@@ -18,12 +18,12 @@ function formatMicros(us: number): string {
 // parse/encode), Conversion (API schema translation), Plugins, Middleware (auth/access),
 // Key selection, Processing (internal request pipeline), Networking
 // (client<->gateway<->provider handling), Client delivery (SSE egress to the client), and Miscellaneous
-// (small glue on no dedicated span plus the residual goroutine-hop latency between phases). "{t("common:actions.viewDetails")}" drills into the member
+// (small glue on no dedicated span plus the residual goroutine-hop latency between phases). "View details" drills into the member
 // spans inside each grouped category with their friendly labels. See OVERHEAD_LABELS /
 // OVERHEAD_BUCKET_CATEGORY / overheadCategoryKey for the mapping.
 type OverheadCategory = {
 	key: string;
-	labelKey: string;
+	label: string;
 	colorClass: string;
 	totalUs: number;
 	members: OverheadBucket[];
@@ -34,77 +34,77 @@ type OverheadCategory = {
 const OVERHEAD_SERIALIZATION_PHASES = new Set(["request-unmarshal", "request-marshal", "response-parse", "response-marshal"]);
 
 // Top-level categories shown in the stacked bar + legend. Each has a distinct colour.
-const OVERHEAD_CATEGORY_META: Record<string, { labelKey: string; colorClass: string }> = {
-	serialization: { labelKey: "workspaces:overhead.serialization", colorClass: "bg-indigo-500/70" },
-	conversion: { labelKey: "workspaces:overhead.conversion", colorClass: "bg-fuchsia-500/70" },
-	plugins: { labelKey: "workspaces:overhead.plugins", colorClass: "bg-blue-500/70" },
-	middleware: { labelKey: "workspaces:overhead.middleware", colorClass: "bg-cyan-500/70" },
-	routing: { labelKey: "workspaces:overhead.routing", colorClass: "bg-amber-500/70" },
-	processing: { labelKey: "workspaces:overhead.processing", colorClass: "bg-teal-500/70" },
-	protocol_sdk: { labelKey: "workspaces:overhead.protocol_sdk", colorClass: "bg-orange-500/70" },
-	networking: { labelKey: "workspaces:overhead.networking", colorClass: "bg-emerald-500/70" },
-	streaming: { labelKey: "workspaces:overhead.streaming", colorClass: "bg-red-500/70" },
-	miscellaneous: { labelKey: "workspaces:overhead.miscellaneous", colorClass: "bg-slate-500/70" },
-	other: { labelKey: "workspaces:overhead.other", colorClass: "bg-muted-foreground/50" },
-};
+const OVERHEAD_CATEGORY_META = {
+	serialization: { labelKey: "overhead.categories.serialization", colorClass: "bg-indigo-500/70" },
+	conversion: { labelKey: "overhead.categories.conversion", colorClass: "bg-fuchsia-500/70" },
+	plugins: { labelKey: "overhead.categories.plugins", colorClass: "bg-blue-500/70" },
+	middleware: { labelKey: "overhead.categories.middleware", colorClass: "bg-cyan-500/70" },
+	routing: { labelKey: "overhead.categories.routing", colorClass: "bg-amber-500/70" },
+	processing: { labelKey: "overhead.categories.processing", colorClass: "bg-teal-500/70" },
+	protocol_sdk: { labelKey: "overhead.categories.protocolSdk", colorClass: "bg-orange-500/70" },
+	networking: { labelKey: "overhead.categories.networking", colorClass: "bg-emerald-500/70" },
+	streaming: { labelKey: "overhead.categories.streaming", colorClass: "bg-red-500/70" },
+	miscellaneous: { labelKey: "overhead.categories.miscellaneous", colorClass: "bg-slate-500/70" },
+	other: { labelKey: "overhead.categories.other", colorClass: "bg-muted-foreground/50" },
+} as const;
 
-// Friendly drill-down labels for each raw bucket name (the technical span names the
+// i18n keys of the friendly drill-down label for each raw bucket name (the technical span names the
 // backend emits). Members without an entry fall back to the name with any "plugin."
 // prefix stripped.
-const OVERHEAD_LABEL_KEYS: Record<string, string> = {
+const OVERHEAD_LABEL_KEYS = {
 	// Serialization (JSON parse / encode)
-	"request-unmarshal": "workspaces:overheadMembers.request_unmarshal",
-	"request-marshal": "workspaces:overheadMembers.request_marshal",
-	"response-parse": "workspaces:overheadMembers.response_parse",
-	"response-marshal": "workspaces:overheadMembers.response_marshal",
+	"request-unmarshal": "overhead.members.requestUnmarshal",
+	"request-marshal": "overhead.members.requestMarshal",
+	"response-parse": "overhead.members.responseParse",
+	"response-marshal": "overhead.members.responseMarshal",
 	// Conversion (API schema translation)
-	convertor: "workspaces:overheadMembers.convertor",
-	"convertor.stream-in": "workspaces:overheadMembers.convertor_stream_in",
-	"convertor.stream-out": "workspaces:overheadMembers.convertor_stream_out",
+	convertor: "overhead.members.convertor",
+	"convertor.stream-in": "overhead.members.convertorStreamIn",
+	"convertor.stream-out": "overhead.members.convertorStreamOut",
 	// Middleware (auth / access control)
-	"middleware.apikeys": "workspaces:overheadMembers.middleware_apikeys",
-	"middleware.scim": "workspaces:overheadMembers.middleware_scim",
-	"middleware.auth": "workspaces:overheadMembers.middleware_auth",
+	"middleware.apikeys": "overhead.members.middlewareApikeys",
+	"middleware.scim": "overhead.members.middlewareScim",
+	"middleware.auth": "overhead.members.middlewareAuth",
 	// Routing
-	"key-pool": "workspaces:overheadMembers.key_pool",
-	"key.selection": "workspaces:overheadMembers.key_selection",
+	"key-pool": "overhead.members.keyPool",
+	"key.selection": "overhead.members.keySelection",
 	// Processing (internal request pipeline)
-	"handle-setup": "workspaces:overheadMembers.handle_setup",
-	"pipeline-pre": "workspaces:overheadMembers.pipeline_pre",
-	"pipeline-post": "workspaces:overheadMembers.pipeline_post",
-	"worker-setup": "workspaces:overheadMembers.worker_setup",
-	"worker-handoff": "workspaces:overheadMembers.worker_handoff",
-	"queue-wait": "workspaces:overheadMembers.queue_wait",
-	"attribute-population": "workspaces:overheadMembers.attribute_population",
-	miscellaneous: "workspaces:overheadMembers.miscellaneous",
+	"handle-setup": "overhead.members.handleSetup",
+	"pipeline-pre": "overhead.members.pipelinePre",
+	"pipeline-post": "overhead.members.pipelinePost",
+	"worker-setup": "overhead.members.workerSetup",
+	"worker-handoff": "overhead.members.workerHandoff",
+	"queue-wait": "overhead.members.queueWait",
+	"attribute-population": "overhead.members.attributePopulation",
+	miscellaneous: "overhead.members.miscellaneous",
 	// Networking (client<->gateway<->provider handling)
-	"provider-internal": "workspaces:overheadMembers.provider_internal",
-	"transport-context": "workspaces:overheadMembers.transport_context",
-	"transport-response-headers": "workspaces:overheadMembers.transport_response_headers",
-	"response-finalize": "workspaces:overheadMembers.response_finalize",
-	"request-sign": "workspaces:overheadMembers.request_sign",
-	"credentials-fetch": "workspaces:overheadMembers.credentials_fetch",
+	"provider-internal": "overhead.members.providerInternal",
+	"transport-context": "overhead.members.transportContext",
+	"transport-response-headers": "overhead.members.transportResponseHeaders",
+	"response-finalize": "overhead.members.responseFinalize",
+	"request-sign": "overhead.members.requestSign",
+	"credentials-fetch": "overhead.members.credentialsFetch",
 	// Streaming relay
-	"stream-backpressure": "workspaces:overheadMembers.stream_backpressure",
-	"stream-client-write": "workspaces:overheadMembers.stream_client_write",
-	scheduling: "workspaces:overheadMembers.scheduling",
+	"stream-backpressure": "overhead.members.streamBackpressure",
+	"stream-client-write": "overhead.members.streamClientWrite",
+	scheduling: "overhead.members.scheduling",
 	// A2A agent gateway
-	"a2a.normalize": "workspaces:overheadMembers.a2a_normalize",
-	"a2a.auth": "workspaces:overheadMembers.a2a_auth",
-	"a2a.prepare": "workspaces:overheadMembers.a2a_prepare",
-	"a2a.encode": "workspaces:overheadMembers.a2a_encode",
-	"a2a.dispatch": "workspaces:overheadMembers.a2a_dispatch",
-	"a2a.push.db.authenticate": "workspaces:overheadMembers.a2a_push_db_authenticate",
-	"a2a.push.db.bind": "workspaces:overheadMembers.a2a_push_db_bind",
-	"a2a.push.db.enqueue": "workspaces:overheadMembers.a2a_push_db_enqueue",
-	"a2a.push.db.config": "workspaces:overheadMembers.a2a_push_db_config",
-	"a2a.push.db.outcome": "workspaces:overheadMembers.a2a_push_db_outcome",
-	"a2a.push.db.local": "workspaces:overheadMembers.a2a_push_db_local",
-	"a2a.push.db.save": "workspaces:overheadMembers.a2a_push_db_save",
-	"a2a.push.db.delete": "workspaces:overheadMembers.a2a_push_db_delete",
-	"a2a.push.db.list-due": "workspaces:overheadMembers.a2a_push_db_list_due",
-	"a2a.push.db.prune": "workspaces:overheadMembers.a2a_push_db_prune",
-};
+	"a2a.normalize": "overhead.members.a2aNormalize",
+	"a2a.auth": "overhead.members.a2aAuth",
+	"a2a.prepare": "overhead.members.a2aPrepare",
+	"a2a.encode": "overhead.members.a2aEncode",
+	"a2a.dispatch": "overhead.members.a2aDispatch",
+	"a2a.push.db.authenticate": "overhead.members.a2aPushDbAuthenticate",
+	"a2a.push.db.bind": "overhead.members.a2aPushDbBind",
+	"a2a.push.db.enqueue": "overhead.members.a2aPushDbEnqueue",
+	"a2a.push.db.config": "overhead.members.a2aPushDbConfig",
+	"a2a.push.db.outcome": "overhead.members.a2aPushDbOutcome",
+	"a2a.push.db.local": "overhead.members.a2aPushDbLocal",
+	"a2a.push.db.save": "overhead.members.a2aPushDbSave",
+	"a2a.push.db.delete": "overhead.members.a2aPushDbDelete",
+	"a2a.push.db.list-due": "overhead.members.a2aPushDbListDue",
+	"a2a.push.db.prune": "overhead.members.a2aPushDbPrune",
+} as const;
 
 // Category assignment for buckets that aren't matched by a prefix rule below. Every
 // backend bucket name should be either matched by a prefix rule (serialization phases,
@@ -182,18 +182,17 @@ function overheadCategoryKey(b: OverheadBucket): string {
 // Plugin display names where a plain title-case of the kebab id would read wrong
 // (acronyms, multi-word tokens). Everything else is title-cased from its id.
 const PLUGIN_LABEL_OVERRIDES: Record<string, string> = {
-	otel: "workspaces:overhead.plugins.otel",
-	datadog: "workspaces:overhead.plugins.datadog",
-	compat: "workspaces:overhead.plugins.compat",
-	"adaptive-loadbalancer": "workspaces:overhead.plugins.adaptiveLoadBalancer",
-	"model-catalog-resolver": "workspaces:overhead.plugins.modelCatalogResolver",
+	otel: "OpenTelemetry",
+	datadog: "Datadog",
+	compat: "Compatibility",
+	"adaptive-loadbalancer": "Adaptive Load Balancer",
+	"model-catalog-resolver": "Model Catalog Resolver",
 };
 
 // pluginDisplayName turns a plugin's kebab-case id ("enterprise-governance") into a
 // friendly label ("Enterprise Governance"), honouring PLUGIN_LABEL_OVERRIDES first.
-function pluginDisplayName(id: string, t: TFunction): string {
-	const labelKey = PLUGIN_LABEL_OVERRIDES[id];
-	if (labelKey) return t(labelKey);
+function pluginDisplayName(id: string): string {
+	if (PLUGIN_LABEL_OVERRIDES[id]) return PLUGIN_LABEL_OVERRIDES[id];
 	return id
 		.split("-")
 		.filter(Boolean)
@@ -201,17 +200,17 @@ function pluginDisplayName(id: string, t: TFunction): string {
 		.join(" ");
 }
 
-function overheadMemberLabel(name: string, t: TFunction): string {
-	const friendly = OVERHEAD_LABEL_KEYS[name];
-	if (friendly) return t(friendly);
-	if (name.startsWith("plugin.")) return pluginDisplayName(name.slice("plugin.".length), t);
+function overheadMemberLabel(name: string, t: TFunction<"observability">): string {
+	const friendlyKey = OVERHEAD_LABEL_KEYS[name as keyof typeof OVERHEAD_LABEL_KEYS];
+	if (friendlyKey) return t(friendlyKey);
+	if (name.startsWith("plugin.")) return pluginDisplayName(name.slice("plugin.".length));
 	if (name.startsWith("middleware.")) return name.slice("middleware.".length);
 	return name;
 }
 
 // buildOverheadCategories groups the raw buckets into the top-level categories,
 // ordered largest-first so the bar and legend read like the numbers.
-function buildOverheadCategories(buckets: OverheadBucket[]): OverheadCategory[] {
+function buildOverheadCategories(buckets: OverheadBucket[], t: TFunction<"observability">): OverheadCategory[] {
 	const grouped = new Map<string, OverheadBucket[]>();
 	for (const b of buckets) {
 		const key = overheadCategoryKey(b);
@@ -232,10 +231,11 @@ function buildOverheadCategories(buckets: OverheadBucket[]): OverheadCategory[] 
 		}
 		const members = Array.from(byName.values());
 		members.sort((a, b) => b.duration_us - a.duration_us);
+		const meta = OVERHEAD_CATEGORY_META[key as keyof typeof OVERHEAD_CATEGORY_META];
 		cats.push({
 			key,
-			labelKey: OVERHEAD_CATEGORY_META[key]?.labelKey ?? key,
-			colorClass: OVERHEAD_CATEGORY_META[key]?.colorClass ?? "bg-muted-foreground/50",
+			label: meta ? t(meta.labelKey) : key,
+			colorClass: meta?.colorClass ?? "bg-muted-foreground/50",
 			totalUs: members.reduce((acc, m) => acc + m.duration_us, 0),
 			members,
 		});
@@ -250,11 +250,11 @@ function buildOverheadCategories(buckets: OverheadBucket[]): OverheadCategory[] 
 // overhead number. "View details" expands every category into its individual members
 // so a specific phase or plugin can be inspected.
 export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBucket[]; overheadMs?: number }) {
-	const { t } = useTranslation(["common", "workspaces", "logs"]);
+	const { t } = useTranslation("observability");
 	const [showDetails, setShowDetails] = useState(false);
 	if (!buckets || buckets.length === 0) return null;
 
-	const categories = buildOverheadCategories(buckets);
+	const categories = buildOverheadCategories(buckets, t);
 	const sumUs = buckets.reduce((acc, b) => acc + b.duration_us, 0);
 	const overheadUs = overheadMs != null && !isNaN(overheadMs) ? overheadMs * 1000 : undefined;
 
@@ -269,7 +269,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center justify-between gap-2">
-				<BlockHeader title={t("logs:metrics.overheadBreakdown")} />
+				<BlockHeader title={t("logs.detail.overheadBreakdown")} />
 				<div className="font-mono text-xs tabular-nums">{formatMicros(overheadUs ?? sumUs)}</div>
 			</div>
 
@@ -279,7 +279,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 						key={c.key}
 						className={cn(c.colorClass, "h-full")}
 						style={{ width: `${(c.totalUs / barTotal) * 100}%` }}
-						title={`${t(c.labelKey)} · ${formatMicros(c.totalUs)}`}
+						title={`${c.label} · ${formatMicros(c.totalUs)}`}
 					/>
 				))}
 			</div>
@@ -288,7 +288,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 				{categories.map((c) => (
 					<div key={c.key} className="flex items-center gap-1.5 font-mono text-[11px]">
 						<span className={cn("h-2.5 w-2.5 shrink-0 rounded-[2px]", c.colorClass)} />
-						<span>{t(c.labelKey)}</span>
+						<span>{c.label}</span>
 						<span className="text-muted-foreground tabular-nums">{formatMicros(c.totalUs)}</span>
 					</div>
 				))}
@@ -300,7 +300,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 					onClick={() => setShowDetails((v) => !v)}
 					className="text-muted-foreground hover:text-foreground flex items-center gap-1 font-mono text-[11px] transition"
 				>
-					{t("common:actions.viewDetails")}
+					{t("logs.detail.viewDetails")}
 					<ChevronDown className={cn("h-3 w-3 transition-transform", showDetails ? "rotate-180" : "rotate-0")} />
 				</button>
 			) : null}
@@ -311,7 +311,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 						<div key={c.key} className="space-y-1.5">
 							<div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-wide uppercase">
 								<span className={cn("h-2 w-2 shrink-0 rounded-[2px]", c.colorClass)} />
-								{t(c.labelKey)}
+								{c.label}
 								{/* normal-case: keep the unit as "µs" — uppercasing mangles the micro sign into "ΜS" (reads as ms) */}
 								<span className="normal-case tabular-nums">{formatMicros(c.totalUs)}</span>
 							</div>
@@ -332,7 +332,7 @@ export function OverheadBreakdown({ buckets, overheadMs }: { buckets: OverheadBu
 
 			{overCounted ? (
 				<div className="text-muted-foreground text-[11px]">
-					{t("workspaces:overhead.overCounted", { measured: formatMicros(sumUs), computed: formatMicros(overheadUs!) })}
+					{t("overhead.overCounted", { measured: formatMicros(sumUs), overhead: formatMicros(overheadUs!) })}
 				</div>
 			) : null}
 		</div>

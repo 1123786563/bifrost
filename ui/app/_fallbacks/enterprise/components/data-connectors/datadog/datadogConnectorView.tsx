@@ -1,6 +1,6 @@
 import { Dog } from "lucide-react";
-import ContactUsView from "../../views/contactUsView";
 import { useTranslation } from "react-i18next";
+import ContactUsView from "../../views/contactUsView";
 
 interface EnableToggleProps {
 	enabled: boolean;
@@ -15,7 +15,8 @@ interface DatadogConnectorViewProps {
 }
 
 export default function DatadogConnectorView(_props: DatadogConnectorViewProps) {
-	const { t } = useTranslation(["errors"]);
+	const { t } = useTranslation("governance");
+
 	return (
 		<div className="space-y-6">
 			{/* Content - OSS: paywall only; no delete/save buttons */}
@@ -25,8 +26,7 @@ export default function DatadogConnectorView(_props: DatadogConnectorViewProps) 
 						align="middle"
 						className="mx-auto w-full max-w-lg"
 						icon={<Dog className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />}
-						title={t("errors:upsell.datadog.title")}
-						description={t("errors:upsell.datadog.description")}
+						title={t("connectorsUnlock.datadog")}
 						readmeLink="https://docs.getbifrost.ai/enterprise/datadog-connector"
 					/>
 				</div>

@@ -58,7 +58,7 @@ interface AgentFilterSidebarProps {
 }
 
 export function AgentFilterSidebar({ filters, onFiltersChange }: AgentFilterSidebarProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const isMobile = useIsMobile();
 	const [collapsed, setCollapsed] = useState(false);
 
@@ -110,12 +110,12 @@ export function AgentFilterSidebar({ filters, onFiltersChange }: AgentFilterSide
 		<div className="bg-card fixed inset-y-2 left-2 z-40 flex h-auto w-[calc(100vw-1rem)] max-w-72 shrink-0 flex-col rounded-md border shadow-xl md:static md:h-full md:w-64 md:max-w-none md:rounded-md md:shadow-none">
 			{/* Header */}
 			<div className="flex h-11 items-center justify-between border-b pr-2 pl-5">
-				<span className="text-sm font-semibold">{t("logs:agent.filters")}</span>
+				<span className="text-sm font-semibold">{t("filters.filters")}</span>
 				<div className="flex items-center gap-1">
 					{activeFilterCount > 0 && (
 						<Button variant="outline" size="sm" className="text-muted-foreground h-7 px-2 text-xs" onClick={handleReset}>
 							<RotateCcw className="size-3" />
-							{t("common:actions.reset")}
+							{t("agentLogs.filters.reset")}
 						</Button>
 					)}
 					<Button
@@ -123,8 +123,8 @@ export function AgentFilterSidebar({ filters, onFiltersChange }: AgentFilterSide
 						size="icon"
 						className="size-7"
 						onClick={toggleCollapsed}
-						title={t("logs:agent.hideFilters")}
-						aria-label={t("logs:agent.hideFilters")}
+						title={t("filters.hideFilters")}
+						aria-label={t("filters.hideFilters")}
 					>
 						<PanelLeftClose className="size-4" />
 					</Button>
@@ -135,94 +135,132 @@ export function AgentFilterSidebar({ filters, onFiltersChange }: AgentFilterSide
 			<ScrollArea className="flex flex-1 overflow-y-auto p-2 pb-0" viewportClassName="no-table">
 				<div className="flex grow flex-col gap-1">
 					<EnumFilterSection
-						title={t("common:fields.status")}
+						title={t("filters.status")}
 						filterKey="status"
 						options={STATUSES}
 						filters={filters}
 						onFiltersChange={onFiltersChange}
-						formatLabel={(option) => option.charAt(0).toUpperCase() + option.slice(1)}
+						formatLabel={(option) => (option === "success" ? t("labels.success") : t("labels.error"))}
 						defaultOpen
 					/>
 					<AgentFilter filters={filters} onFiltersChange={onFiltersChange} />
 					<VirtualKeyFilter filters={filters} onFiltersChange={onFiltersChange} />
 					<GovernanceFilter
-						title={t("logs:columns.user")}
+						title={t("labels.user")}
+						placeholder={t("filters.searchOrAddAUser")}
 						dimension="users"
 						filterKey="user_id"
 						filters={filters}
 						onFiltersChange={onFiltersChange}
 					/>
 					<GovernanceFilter
-						title={t("logs:mcp.teams")}
+						title={t("mcpLogs.detail.teams")}
+						placeholder={t("filters.searchOrAddATeam")}
 						dimension="teams"
 						filterKey="team_id"
 						filters={filters}
 						onFiltersChange={onFiltersChange}
 					/>
 					<GovernanceFilter
-						title={t("logs:mcp.customers")}
+						title={t("mcpLogs.detail.customers")}
+						placeholder={t("filters.searchOrAddACustomer")}
 						dimension="customers"
 						filterKey="customer_id"
 						filters={filters}
 						onFiltersChange={onFiltersChange}
 					/>
 					<GovernanceFilter
-						title={t("logs:mcp.businessUnits")}
+						title={t("mcpLogs.detail.businessUnits")}
+						placeholder={t("filters.searchOrAddABusinessUnit")}
 						dimension="business_units"
 						filterKey="business_unit_id"
 						filters={filters}
 						onFiltersChange={onFiltersChange}
 					/>
 					<GovernanceFilter
-						title={t("logs:mcp.projects")}
+						title={t("mcpLogs.detail.projects")}
+						placeholder={t("filters.searchOrAddAProject")}
 						dimension="projects"
 						filterKey="project_id"
 						filters={filters}
 						onFiltersChange={onFiltersChange}
 					/>
 					<EnumFilterSection
-						title={t("logs:agent.operation")}
+						title={t("agentLogs.filters.operation")}
 						filterKey="operation"
 						options={OPERATIONS}
 						filters={filters}
 						onFiltersChange={onFiltersChange}
 					/>
 					<EnumFilterSection
-						title={t("logs:agent.taskState")}
+						title={t("agentLogs.filters.taskState")}
 						filterKey="task_state"
 						options={TASK_STATES}
 						filters={filters}
 						onFiltersChange={onFiltersChange}
 					/>
 					<FilterSection
-						title={t("logs:agent.agentIdentifiers")}
+						title={t("agentLogs.filters.agentIdentifiers")}
 						defaultOpen={Boolean(filters.task_id || filters.context_id || filters.push_config_id)}
 					>
-						<TextFilterInput label={t("logs:agent.contextId")} filterKey="context_id" filters={filters} onFiltersChange={onFiltersChange} />
-						<TextFilterInput label={t("logs:agent.taskId")} filterKey="task_id" filters={filters} onFiltersChange={onFiltersChange} />
 						<TextFilterInput
-							label={t("logs:agent.pushConfigId")}
+							label={t("agentLogs.filters.contextId")}
+							filterKey="context_id"
+							filters={filters}
+							onFiltersChange={onFiltersChange}
+						/>
+						<TextFilterInput
+							label={t("agentLogs.filters.taskId")}
+							filterKey="task_id"
+							filters={filters}
+							onFiltersChange={onFiltersChange}
+						/>
+						<TextFilterInput
+							label={t("agentLogs.filters.pushConfigId")}
 							filterKey="push_config_id"
 							filters={filters}
 							onFiltersChange={onFiltersChange}
 						/>
 					</FilterSection>
 					<FilterSection
-						title={t("logs:agent.bifrostIdentifiers")}
+						title={t("agentLogs.filters.bifrostIdentifiers")}
 						defaultOpen={Boolean(filters.search || filters.request_id || filters.trace_id)}
 					>
-						<TextFilterInput label={t("logs:agent.requestId")} filterKey="request_id" filters={filters} onFiltersChange={onFiltersChange} />
-						<TextFilterInput label={t("logs:agent.traceId")} filterKey="trace_id" filters={filters} onFiltersChange={onFiltersChange} />
-						<TextFilterInput label={t("logs:agent.recordId")} filterKey="search" filters={filters} onFiltersChange={onFiltersChange} />
-					</FilterSection>
-					<FilterSection title={t("logs:agent.pushRelayIdentifiers")} defaultOpen={Boolean(filters.delivery_id || filters.attempt_id)}>
 						<TextFilterInput
-							label={t("logs:agent.deliveryId")}
+							label={t("mcpLogs.detail.requestId")}
+							filterKey="request_id"
+							filters={filters}
+							onFiltersChange={onFiltersChange}
+						/>
+						<TextFilterInput
+							label={t("agentLogs.filters.traceId")}
+							filterKey="trace_id"
+							filters={filters}
+							onFiltersChange={onFiltersChange}
+						/>
+						<TextFilterInput
+							label={t("agentLogs.filters.recordId")}
+							filterKey="search"
+							filters={filters}
+							onFiltersChange={onFiltersChange}
+						/>
+					</FilterSection>
+					<FilterSection
+						title={t("agentLogs.filters.pushRelayIdentifiers")}
+						defaultOpen={Boolean(filters.delivery_id || filters.attempt_id)}
+					>
+						<TextFilterInput
+							label={t("agentLogs.filters.deliveryId")}
 							filterKey="delivery_id"
 							filters={filters}
 							onFiltersChange={onFiltersChange}
 						/>
-						<TextFilterInput label={t("logs:agent.attemptId")} filterKey="attempt_id" filters={filters} onFiltersChange={onFiltersChange} />
+						<TextFilterInput
+							label={t("agentLogs.filters.attemptId")}
+							filterKey="attempt_id"
+							filters={filters}
+							onFiltersChange={onFiltersChange}
+						/>
 					</FilterSection>
 				</div>
 			</ScrollArea>
@@ -246,7 +284,7 @@ interface FilterComponentProps {
 // ---------------------------------------------------------------------------
 
 function AgentFilter({ filters, onFiltersChange, defaultOpen }: FilterComponentProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const hasActive = (filters.agent_name || []).length > 0;
 	const [opened, setOpened] = useState(defaultOpen || hasActive);
 	const searchInputRef = useAutoFocusOnOpen(opened);
@@ -258,10 +296,10 @@ function AgentFilter({ filters, onFiltersChange, defaultOpen }: FilterComponentP
 	}, [data, filters.agent_name]);
 
 	return (
-		<FilterSection title={t("logs:agent.agent")} defaultOpen={defaultOpen || hasActive} loading={isLoading} onOpenChange={setOpened}>
+		<FilterSection title={t("filters.agent")} defaultOpen={defaultOpen || hasActive} loading={isLoading} onOpenChange={setOpened}>
 			<SearchableCheckboxList
 				inputRef={searchInputRef}
-				placeholder={t("logs:agent.searchAgentPlaceholder")}
+				placeholder={t("agentLogs.filters.searchOrAddAnAgent")}
 				items={items}
 				allowCustom
 				isSelected={(name) => (filters.agent_name || []).includes(name)}
@@ -280,7 +318,7 @@ function AgentFilter({ filters, onFiltersChange, defaultOpen }: FilterComponentP
 // ---------------------------------------------------------------------------
 
 function VirtualKeyFilter({ filters, onFiltersChange, defaultOpen }: FilterComponentProps) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const active = useMemo(() => filters.virtual_key_id || [], [filters.virtual_key_id]);
 	const hasActive = active.length > 0;
 	const [opened, setOpened] = useState(defaultOpen || hasActive);
@@ -312,10 +350,10 @@ function VirtualKeyFilter({ filters, onFiltersChange, defaultOpen }: FilterCompo
 	const resolveIDs = (name: string) => nameToIds.get(name) || [name];
 
 	return (
-		<FilterSection title={t("logs:columns.virtualKey")} defaultOpen={defaultOpen || hasActive} loading={isLoading} onOpenChange={setOpened}>
+		<FilterSection title={t("labels.virtualKey")} defaultOpen={defaultOpen || hasActive} loading={isLoading} onOpenChange={setOpened}>
 			<SearchableCheckboxList
 				inputRef={searchInputRef}
-				placeholder={t("logs:agent.searchVirtualKeys")}
+				placeholder={t("filters.searchVirtualKeys")}
 				items={items}
 				isSelected={(name) => resolveIDs(name).every((id) => active.includes(id))}
 				onToggle={(name) => {
@@ -334,11 +372,12 @@ function VirtualKeyFilter({ filters, onFiltersChange, defaultOpen }: FilterCompo
 
 function GovernanceFilter({
 	title,
+	placeholder,
 	dimension,
 	filterKey,
 	filters,
 	onFiltersChange,
-}: FilterComponentProps & { title: string; dimension: GovernanceDimension; filterKey: AgentGovernanceFilterKey }) {
+}: FilterComponentProps & { title: string; placeholder: string; dimension: GovernanceDimension; filterKey: AgentGovernanceFilterKey }) {
 	const active = useMemo(() => filters[filterKey] || [], [filterKey, filters]);
 	const hasActive = active.length > 0;
 	const [opened, setOpened] = useState(hasActive);
@@ -361,7 +400,7 @@ function GovernanceFilter({
 		<FilterSection title={title} defaultOpen={hasActive} loading={isLoading} onOpenChange={setOpened}>
 			<SearchableCheckboxList
 				inputRef={searchInputRef}
-				placeholder={`Search or add ${title.toLowerCase().replace(/s$/, "")}`}
+				placeholder={placeholder}
 				items={items}
 				allowCustom
 				isSelected={(id) => active.includes(id)}
@@ -429,7 +468,7 @@ function TextFilterInput({
 	filters,
 	onFiltersChange,
 }: FilterComponentProps & { label?: string; placeholder?: string; filterKey: AgentTextFilterKey }) {
-	const { t } = useTranslation(["common", "logs"]);
+	const { t } = useTranslation("observability");
 	const [localValue, setLocalValue] = useState(filters[filterKey] || "");
 	const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 	const filtersRef = useRef(filters);
@@ -460,7 +499,7 @@ function TextFilterInput({
 			<Input
 				value={localValue}
 				onChange={(e) => handleChange(e.target.value)}
-				placeholder={placeholder ?? t("logs:agent.exactValue")}
+				placeholder={placeholder ?? t("agentLogs.filters.exactValue")}
 				className="h-8 font-mono text-xs"
 				data-testid={`a2a-filter-${filterKey.replaceAll("_", "-")}`}
 			/>

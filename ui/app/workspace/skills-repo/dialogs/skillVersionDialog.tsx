@@ -22,7 +22,7 @@ export function SkillVersionsPopover({
 	servingVersion: string;
 	onSelectVersion: (version: SkillVersionSummary) => void;
 }) {
-	const { t } = useTranslation(["common", "playground"]);
+	const { t } = useTranslation("config");
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search, 300);
@@ -81,7 +81,7 @@ export function SkillVersionsPopover({
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button variant="outline" size="sm" data-testid="skill-versions-popover-trigger" className="h-8 gap-1.5">
-					{t("playground:skills.versions.trigger")}
+					{t("skillsRepo.versionsLabel")}
 					<ChevronDown className="h-3.5 w-3.5" />
 				</Button>
 			</PopoverTrigger>
@@ -116,7 +116,7 @@ export function SkillVersionsList({
 	open: boolean;
 	onSelectVersion: (version: SkillVersionSummary) => void;
 }) {
-	const { t } = useTranslation(["common", "playground"]);
+	const { t } = useTranslation("config");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search, 300);
 	const [offset, setOffset] = useState(0);
@@ -174,14 +174,14 @@ export function SkillVersionsList({
 		<Command shouldFilter={false}>
 			<CommandInput
 				data-testid="skill-versions-search-input"
-				placeholder={t("playground:skills.versions.searchPlaceholder")}
+				placeholder={t("skillsRepo.searchVersions")}
 				value={search}
 				onValueChange={setSearch}
 				isLoading={isFetching}
 			/>
 			<CommandList>
 				{!isFetching && accumulated.length === 0 && (
-					<CommandEmpty>{debouncedSearch ? t("playground:skills.versions.noMatch") : t("playground:skills.versions.noneYet")}</CommandEmpty>
+					<CommandEmpty>{debouncedSearch ? t("skillsRepo.noVersionsMatch") : t("skillsRepo.noVersionsYet")}</CommandEmpty>
 				)}
 				<CommandGroup>
 					{accumulated.map((v) => {
@@ -198,7 +198,7 @@ export function SkillVersionsList({
 									<span className="text-sm font-medium">{v.version}</span>
 									{isServing && (
 										<Badge variant="secondary" className="h-auto bg-emerald-100 px-1.5 py-0 text-xs">
-											{t("playground:skills.versions.serving")}
+											{t("skillsRepo.serving")}
 										</Badge>
 									)}
 								</span>
@@ -208,7 +208,7 @@ export function SkillVersionsList({
 					})}
 
 					{isError && !isFetching && accumulated.length === 0 && (
-						<div className="text-muted-foreground py-6 text-center text-xs">{t("playground:skills.versions.loadFailed")}</div>
+						<div className="text-muted-foreground py-6 text-center text-xs">{t("skillsRepo.loadVersionsFailed")}</div>
 					)}
 
 					{/* Sentinel observed to trigger the next page fetch */}

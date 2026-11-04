@@ -2,6 +2,7 @@ package logstore
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -111,6 +112,8 @@ const (
 
 // SearchFilters represents the available filters for log searches
 type SearchFilters struct {
+	// RealtimeInputItemID is an internal lookup of an item in a saved turn's metadata.
+	RealtimeInputItemID  string     `json:"-"`
 	Providers            []string   `json:"providers,omitempty"`
 	Models               []string   `json:"models,omitempty"`
 	Aliases              []string   `json:"aliases,omitempty"`
@@ -135,6 +138,7 @@ type SearchFilters struct {
 	UserIDs              []string   `json:"user_ids,omitempty"`
 	BusinessUnitIDs      []string   `json:"business_unit_ids,omitempty"`
 	ProjectIDs           []string   `json:"project_ids,omitempty"`
+	TopicIDs             []string   `json:"topic_ids,omitempty"`           // Warp topics the request was filed under; a topic merged into one of these counts as it (see applyTopicFilter)
 	RoutingEngineUsed    []string   `json:"routing_engine_used,omitempty"` // For filtering by routing engine (routing-rule, governance, loadbalancing)
 	Apps                 []string   `json:"apps,omitempty"`                // Backend-detected client apps
 	UserAgents           []string   `json:"user_agents,omitempty"`         // Raw User-Agent strings; kept for compatibility/debug filtering
@@ -159,14 +163,60 @@ type SearchFilters struct {
 	// (error_details.status_code). It is the error field every provider
 	// populates: error.code is empty for most of them, so "what kind of 400s are
 	// these" is usually a question about the status, not the code.
-	StatusCodes     []int             `json:"status_codes,omitempty"`
-	ContentSearch   string            `json:"content_search,omitempty"`
-	MetadataFilters map[string]string `json:"metadata_filters,omitempty"` // key=metadataKey, value=metadataValue for filtering by metadata
+	StatusCodes []int `json:"status_codes,omitempty"`
+	// GuardrailOutcomes keeps requests a guardrail acted on: "blocked" matches
+	// a guardrail_intervention error or a recorded intervention, "detected" a
+	// detect-only match in guardrail_debug. Several values are OR-ed together.
+	GuardrailOutcomes []string          `json:"guardrail_outcomes,omitempty"`
+	ContentSearch     string            `json:"content_search,omitempty"`
+	MetadataFilters   MetadataFilterMap `json:"metadata_filters,omitempty"` // metadata key to accepted values: any value per key, every key
 	// RankingLimit caps the number of rows returned by the ranking queries
 	// (GetModelRankings / GetUserRankings / GetDimensionRankings). nil means
 	// "use the store default" (defaultMaxRankingsLimit); a value <= 0 means
 	// "return every ranked entity", which is what the dashboard export uses.
 	RankingLimit *int `json:"ranking_limit,omitempty"`
+}
+
+// MaxMetadataFilterValuesPerKey caps the accepted values for one metadata key. Each value is one
+// OR term in the search, and SQLite fails a query whose expression tree is deeper than 1000.
+const MaxMetadataFilterValuesPerKey = 100
+
+// MetadataFilterMap maps a metadata key to the values a row may hold for it.
+type MetadataFilterMap map[string][]string
+
+// UnmarshalJSON reads each key as an array of strings or as one bare string. The bare form is how
+// metadata filters were written before a key could hold several values, and cost-recalc jobs queued
+// back then still carry it. Empty strings are dropped, and so is a key left with no values.
+func (m *MetadataFilterMap) UnmarshalJSON(data []byte) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	if raw == nil {
+		*m = nil
+		return nil
+	}
+	out := make(MetadataFilterMap, len(raw))
+	for key, value := range raw {
+		var values []string
+		var single string
+		if err := json.Unmarshal(value, &single); err == nil {
+			values = []string{single}
+		} else if err := json.Unmarshal(value, &values); err != nil {
+			return fmt.Errorf("metadata filter %q must be a string or an array of strings", key)
+		}
+		kept := values[:0]
+		for _, v := range values {
+			if v != "" {
+				kept = append(kept, v)
+			}
+		}
+		if len(kept) > 0 {
+			out[key] = kept
+		}
+	}
+	*m = out
+	return nil
 }
 
 // SessionGroupingActive reports whether this query should collapse each
@@ -306,6 +356,7 @@ type Log struct {
 	ParentRequestID         *string   `gorm:"type:varchar(255);index" json:"parent_request_id"`
 	Timestamp               time.Time `gorm:"index;index:idx_logs_ts_provider_status,priority:1;index:idx_logs_session_id_timestamp,priority:2;index:idx_logs_vk_ts,priority:2;index:idx_logs_user_ts,priority:2;index:idx_logs_team_ts,priority:2;not null;index:idx_logs_selected_key_ts,priority:2;index:idx_logs_routing_rule_ts,priority:2;index:idx_logs_customer_ts,priority:2;index:idx_logs_business_unit_ts,priority:2;index:idx_logs_project_ts,priority:2" json:"timestamp"`
 	Object                  string    `gorm:"type:varchar(255);index;not null;column:object_type" json:"object"` // text.completion, chat.completion, or embedding
+	IsPassthrough           bool      `gorm:"not null;default:false" json:"is_passthrough,omitempty"`            // Row came from a passthrough route; Object is its inferred type, or passthrough when none is known
 	Provider                string    `gorm:"type:varchar(255);index;index:idx_logs_ts_provider_status,priority:2;not null" json:"provider"`
 	Model                   string    `gorm:"type:varchar(255);index;not null" json:"model"`
 	Alias                   *string   `gorm:"type:varchar(255);index" json:"alias,omitempty"`          // Set when model was resolved via alias mapping; the original name the caller used
@@ -334,6 +385,7 @@ type Log struct {
 	SelectedPromptID        *string   `gorm:"type:varchar(36)" json:"selected_prompt_id"`
 	UserID                  *string   `gorm:"type:varchar(255);index:idx_logs_user_ts,priority:1" json:"user_id"` // (user_id, timestamp) composite; replaces the single-column idx_logs_user_id
 	UserName                *string   `gorm:"type:varchar(255)" json:"user_name"`
+	UserEmail               *string   `gorm:"type:varchar(255)" json:"user_email,omitempty"`
 	TeamID                  *string   `gorm:"type:varchar(255);index:idx_logs_team_ts,priority:1" json:"team_id"` // (team_id, timestamp) composite; replaces the single-column idx_logs_team_id
 	TeamName                *string   `gorm:"type:varchar(255)" json:"team_name"`
 	CustomerID              *string   `gorm:"type:varchar(255);index:idx_logs_customer_ts,priority:1" json:"customer_id"` // (customer_id, timestamp) composite; replaces idx_logs_customer_id
@@ -350,6 +402,7 @@ type Log struct {
 	BusinessUnitNames       *string   `gorm:"type:text" json:"-"`
 	UserAgent               *string   `gorm:"type:varchar(512);index:idx_logs_user_agent" json:"user_agent,omitempty"` // Raw HTTP User-Agent of the calling client
 	App                     *string   `gorm:"type:varchar(128);index:idx_logs_app" json:"app,omitempty"`               // Backend-detected client app derived from user_agent
+	ClientIP                *string   `gorm:"type:varchar(45)" json:"client_ip,omitempty"`                             // Caller IP: leftmost X-Forwarded-For, else X-Real-IP, else the TCP peer
 	InputHistory            string    `gorm:"type:text" json:"-"`                                                      // JSON serialized []schemas.ChatMessage
 	ResponsesInputHistory   string    `gorm:"type:text" json:"-"`                                                      // JSON serialized []schemas.ResponsesMessage
 	OutputMessage           string    `gorm:"type:text" json:"-"`                                                      // JSON serialized *schemas.ChatMessage
@@ -384,7 +437,7 @@ type Log struct {
 	GuardrailDebug    string   `gorm:"type:text" json:"-"` // JSON serialized *schemas.BifrostGuardrailMetadata
 	RoutingMetadata   string   `gorm:"type:text" json:"-"` // JSON serialized *schemas.BifrostRoutingMetadata
 	Latency           *float64 `gorm:"index:idx_logs_latency" json:"latency,omitempty"`
-	UpstreamLatency   *float64 `gorm:"index:idx_logs_upstream_latency" json:"upstream_latency,omitempty"` // Provider socket time across all attempts, ms; nil = unmeasured
+	UpstreamLatency   *float64 `gorm:"index:idx_logs_upstream_latency" json:"upstream_latency,omitempty"` // Provider socket time for this row's call (with its retries), ms; nil = unmeasured
 	OverheadLatency   *float64 `gorm:"index:idx_logs_overhead_latency" json:"overhead_latency,omitempty"` // Bifrost overhead (total minus upstream), ms; nil = unmeasured
 	OverheadBreakdown string   `gorm:"type:text" json:"-"`                                                // JSON serialized []OverheadBucket: per-span self-time decomposition of overhead
 	TokenUsage        string   `gorm:"type:text" json:"-"`                                                // JSON serialized *schemas.LLMUsage
@@ -432,9 +485,16 @@ type Log struct {
 	SessionTotalCost   float64 `gorm:"-" json:"session_total_cost,omitempty"`
 	SessionTotalTokens int64   `gorm:"-" json:"session_total_tokens,omitempty"`
 
-	RedactionData          *schemas.RedactionData        `gorm:"-" json:"-"`                           // Transient guardrail redaction data consumed by enterprise logstore wrappers
-	RedactionMapping       string                        `gorm:"type:text" json:"-"`                   // Reversible redaction mapping (encrypted when an encryption key is set), written by enterprise logstore wrappers; deleted with the row
-	RevealRedactionMapping *schemas.RedactionMapsByPhase `gorm:"-" json:"redaction_mapping,omitempty"` // Virtual field populated only on permitted log-detail reads
+	DeferredGuardrail       *schemas.DeferredGuardrailResult `gorm:"-" json:"-"` // Transient: pending output-monitor guardrail result; the writer holds the row until it completes
+	RealtimeInputCorrection *RealtimeInputCorrection         `gorm:"-" json:"-"` // Transient: merge one late transcript into the latest offloaded payload
+
+	RedactionData            *schemas.RedactionData        `gorm:"-" json:"-"`                           // Transient guardrail redaction data consumed by enterprise logstore wrappers
+	RawResponseFormat        schemas.RawResponseFormat     `gorm:"-" json:"-"`                           // Transient: declared format of a streamed RawResponse's frames, so redaction can match text split across them
+	PassthroughParseFormat   schemas.ModelProvider         `gorm:"-" json:"-"`                           // Transient: base provider whose wire format the log writer parses passthrough bodies with; empty skips parsing
+	PassthroughStreamFormat  schemas.RawResponseFormat     `gorm:"-" json:"-"`                           // Transient: declared format of a streamed passthrough response body's events, so redaction can match text split across them
+	PassthroughParseMaxBytes int64                         `gorm:"-" json:"-"`                           // Transient: large-payload request threshold applied to media parsed from passthrough bodies; 0 keeps everything
+	RedactionMapping         string                        `gorm:"type:text" json:"-"`                   // Reversible redaction mapping (encrypted when an encryption key is set), written by enterprise logstore wrappers; deleted with the row
+	RevealRedactionMapping   *schemas.RedactionMapsByPhase `gorm:"-" json:"redaction_mapping,omitempty"` // Virtual field populated only on permitted log-detail reads
 
 	// Cluster governance fields - attached by the logging plugin when running in a cluster
 	// so that leaders can recover disconnected node usage from the logs table.
@@ -1912,6 +1972,7 @@ type MCPToolLog struct {
 	// way the logs table records them. They are what the entity was called when
 	// the call was made, so a later rename or deletion leaves the row readable.
 	UserName         *string `gorm:"type:varchar(255)" json:"user_name,omitempty"`
+	UserEmail        *string `gorm:"type:varchar(255)" json:"user_email,omitempty"`
 	TeamName         *string `gorm:"type:varchar(255)" json:"team_name,omitempty"`
 	CustomerName     *string `gorm:"type:varchar(255)" json:"customer_name,omitempty"`
 	BusinessUnitName *string `gorm:"type:varchar(255)" json:"business_unit_name,omitempty"`
@@ -1948,6 +2009,7 @@ type MCPToolLog struct {
 	ProjectName        *string   `gorm:"type:varchar(255)" json:"project_name"`
 	UserAgent          *string   `gorm:"type:varchar(512);index:idx_mcp_logs_user_agent" json:"user_agent,omitempty"` // Raw HTTP User-Agent of the calling client
 	App                *string   `gorm:"type:varchar(128);index:idx_mcp_logs_app" json:"app,omitempty"`               // Backend-detected client app derived from user_agent
+	ClientIP           *string   `gorm:"type:varchar(45)" json:"client_ip,omitempty"`                                 // Caller IP: leftmost X-Forwarded-For, else X-Real-IP, else the TCP peer
 	Arguments          string    `gorm:"type:text" json:"-"`                                                          // JSON serialized tool arguments
 	Result             string    `gorm:"type:text" json:"-"`                                                          // JSON serialized tool result
 	ErrorDetails       string    `gorm:"type:text" json:"-"`                                                          // JSON serialized *schemas.BifrostError
@@ -1971,6 +2033,10 @@ type MCPToolLog struct {
 	AppKey   *string `gorm:"type:varchar(64)" json:"app_key,omitempty"` // Canonical policy key of the detected client app (schemas.AppKeyFromName), e.g. "claude-code"; a slug like App, not a secret or credential
 	Decision *string `gorm:"type:varchar(16)" json:"decision,omitempty"`
 	Source   *string `gorm:"type:varchar(16);index:idx_mcp_logs_source" json:"source,omitempty"`
+
+	// Method is the MCP method for a prompt or resource read ("prompts/get", "resources/read"),
+	// whose prompt name or resource URI is in ToolName; nil for a tool call.
+	Method *string `gorm:"type:varchar(32)" json:"method,omitempty"`
 
 	// Virtual fields for JSON output - populated when needed
 	TeamIDsParsed           []string                `gorm:"-" json:"team_ids,omitempty"`
@@ -3216,4 +3282,23 @@ func serializeTokenUsage(u *schemas.BifrostLLMUsage) *schemas.BifrostLLMUsage {
 		stored.CompletionTokensDetails = &details
 	}
 	return &stored
+}
+
+// PassthroughObjectType returns the object type a row had before passthrough typing: passthrough
+// or passthrough_stream for a passthrough row stored under its inferred type, Object otherwise.
+// Settings keyed by request type (object-storage exclusions) use it so an exclusion of passthrough
+// keeps covering every passthrough call.
+func (l *Log) PassthroughObjectType() string {
+	if !l.IsPassthrough {
+		return l.Object
+	}
+	if l.Stream {
+		return "passthrough_stream"
+	}
+	return "passthrough"
+}
+
+// IsPassthroughObjectType reports whether objectType names a passthrough call.
+func IsPassthroughObjectType(objectType string) bool {
+	return objectType == "passthrough" || objectType == "passthrough_stream"
 }

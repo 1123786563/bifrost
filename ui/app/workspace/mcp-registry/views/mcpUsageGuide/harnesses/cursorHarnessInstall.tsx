@@ -1,11 +1,13 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
-import { buildCursorConfig, buildCursorDeeplink } from "../commandBuilders";
 import { useTranslation } from "react-i18next";
+import { buildCursorConfig, buildCursorDeeplink } from "../commandBuilders";
 import { HarnessCommandSection } from "../harnessCommandSection";
 import type { CursorConfigScope, HarnessInstallProps } from "../types";
 import { getRegistrationLabel, getUserHomePrefix } from "../utils";
+import { withBasePath } from "@/lib/utils/basePath";
 
+/** Install panel for Cursor: the generated config or command for the selected MCP servers. */
 export function CursorHarnessInstall({
 	canGenerateCommand,
 	clientConfig,
@@ -15,7 +17,7 @@ export function CursorHarnessInstall({
 	selectedServers,
 	serverScope,
 }: HarnessInstallProps) {
-	const { t } = useTranslation(["common", "mcp"]);
+	const { t } = useTranslation("mcp");
 	const [configScope, setConfigScope] = useState<CursorConfigScope>("global");
 
 	const serverArgs = useMemo(
@@ -43,18 +45,18 @@ export function CursorHarnessInstall({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="global">{t("mcp:usageGuide.scope.global")}</SelectItem>
-						<SelectItem value="project">{t("mcp:usageGuide.scope.project")}</SelectItem>
+						<SelectItem value="global">{t("usageGuide.scopeGlobal")}</SelectItem>
+						<SelectItem value="project">{t("usageGuide.scopeProject")}</SelectItem>
 					</SelectContent>
 				</Select>
 			}
-			copySuccessMessage={t("mcp:usageGuide.configCopied")}
+			copySuccessMessage={t("common.configCopied")}
 			deeplink={deeplink}
 			emptyMessage={emptyMessage}
 			harnessName="Cursor"
-			label={t("mcp:usageGuide.configLabel")}
-			logoSrc="/images/harness/cursor.svg"
-			registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers, t)}`}
+			label={t("common.config")}
+			logoSrc={withBasePath("/images/harness/cursor.svg")}
+			registrationLabel={`${configPath} · ${getRegistrationLabel(serverScope, selectedServers)}`}
 		/>
 	);
 }

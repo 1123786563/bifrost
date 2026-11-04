@@ -11,7 +11,7 @@ import {
 import { ProviderIconType, RenderProviderIcon } from "@/lib/constants/icons";
 import { ProviderLabels } from "@/lib/constants/logs";
 import { KnownProvider } from "@/lib/types/config";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 interface Props {
 	show: boolean;
@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function FirstPartyProviderAvailableDialog({ show, customProviderName, knownProvider, onDismiss, onProceed }: Props) {
-	const { t } = useTranslation(["common", "providers"]);
+	const { t } = useTranslation("models");
 	const label = ProviderLabels[knownProvider];
 	// The exact name now belongs to the first-party provider, which the backend enforces: a custom
 	// provider holding it can no longer be updated, and config.json skips it.
@@ -34,26 +34,37 @@ export default function FirstPartyProviderAvailableDialog({ show, customProvider
 				<AlertDialogHeader>
 					<AlertDialogTitle className="flex items-center gap-2">
 						<RenderProviderIcon provider={knownProvider as ProviderIconType} size="sm" className="h-5 w-5 shrink-0" />
-						{t("providers:firstParty.title", { label })}
+						{t("providers.firstParty.title", { label })}
 					</AlertDialogTitle>
 					{nameReserved ? (
 						<AlertDialogDescription data-testid="first-party-provider-name-reserved">
-							{t("providers:firstParty.nameReserved1", { label })} <span className="text-foreground font-medium">{customProviderName}</span>{" "}
-							{t("providers:firstParty.nameReserved2")} <span className="text-foreground font-medium">{knownProvider}-custom</span>
-							{t("providers:firstParty.nameReserved3")}
+							<Trans
+								i18nKey="providers.firstParty.nameReservedDescription"
+								ns="models"
+								values={{ customName: customProviderName, label, suggestedName: `${knownProvider}-custom` }}
+								components={{
+									name: <span className="text-foreground font-medium" />,
+									suggested: <span className="text-foreground font-medium" />,
+								}}
+							/>
 						</AlertDialogDescription>
 					) : (
 						<AlertDialogDescription>
-							{t("providers:firstParty.description1")} <span className="text-foreground font-medium">{customProviderName}</span>
-							{t("providers:firstParty.description2", { label })}{" "}
-							<span className="text-foreground font-medium">{t("providers:addProvider.triggerAria")}</span>
-							{t("providers:firstParty.description3", { label })}
+							<Trans
+								i18nKey="providers.firstParty.description"
+								ns="models"
+								values={{ customName: customProviderName, label }}
+								components={{
+									name: <span className="text-foreground font-medium" />,
+									add: <span className="text-foreground font-medium" />,
+								}}
+							/>
 						</AlertDialogDescription>
 					)}
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel onClick={onDismiss}>{t("providers:firstParty.keepCustom")}</AlertDialogCancel>
-					<AlertDialogAction onClick={onProceed}>{t("providers:firstParty.takeMeThere")}</AlertDialogAction>
+					<AlertDialogCancel onClick={onDismiss}>{t("providers.firstParty.keepCustom")}</AlertDialogCancel>
+					<AlertDialogAction onClick={onProceed}>{t("providers.firstParty.takeMeThere")}</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>

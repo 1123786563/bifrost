@@ -41,7 +41,7 @@ interface CodeBlockProps {
 }
 
 function CodeBlock({ code, language, onLanguageChange, showLanguageSelect = false, readonly = true }: CodeBlockProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const { copy: copyToClipboard } = useCopyToClipboard();
 
 	return (
@@ -49,20 +49,22 @@ function CodeBlock({ code, language, onLanguageChange, showLanguageSelect = fals
 			<div className="absolute top-4 right-4 z-10 flex items-center gap-2">
 				{showLanguageSelect && onLanguageChange && (
 					<Select value={language} onValueChange={onLanguageChange}>
-						<SelectTrigger className="h-8 w-fit text-xs" aria-label={t("logs:empty.codeLanguage")}>
+						<SelectTrigger className="h-8 w-fit text-xs" aria-label={t("logs.empty.codeLanguage")}>
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem className="text-xs" value="python">
+								{/* i18n-ignore: language name */}
 								Python
 							</SelectItem>
 							<SelectItem className="text-xs" value="typescript">
+								{/* i18n-ignore: language name */}
 								TypeScript
 							</SelectItem>
 						</SelectContent>
 					</Select>
 				)}
-				<Button variant="ghost" size="icon" aria-label={t("logs:empty.copyCode")} onClick={() => copyToClipboard(code)}>
+				<Button variant="ghost" size="icon" aria-label={t("logs.empty.copyCode")} onClick={() => copyToClipboard(code)}>
 					<Copy className="size-4" aria-hidden="true" />
 				</Button>
 			</div>
@@ -76,7 +78,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ error }: EmptyStateProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const [language, setLanguage] = useState<Language>("python");
 
 	// Generate examples dynamically using the port utility
@@ -89,7 +91,7 @@ export function EmptyState({ error }: EmptyStateProps) {
   -d '{
     "model": "openai/gpt-4o-mini",
     "messages": [
-      {"role": "user", "content": ${t("logs:empty.samples.hello")}}
+      {"role": "user", "content": "Hello!"}
     ]
   }'`,
 			sdk: {
@@ -103,7 +105,7 @@ client = openai.OpenAI(
 
 response = client.chat.completions.create(
     model="gpt-4o-mini", # or "provider/model" for other providers (anthropic/claude-3-sonnet)
-    messages=[{"role": "user", "content": ${t("logs:empty.samples.hello")}}]
+    messages=[{"role": "user", "content": "Hello!"}]
 )`,
 					typescript: `import OpenAI from "openai";
 
@@ -114,7 +116,7 @@ const openai = new OpenAI({
 
 const response = await openai.chat.completions.create({
   model: "gpt-4o-mini", // or "provider/model" for other providers (anthropic/claude-3-sonnet)
-  messages: [{ role: "user", content: ${t("logs:empty.samples.hello")} }],
+  messages: [{ role: "user", content: "Hello!" }],
 });`,
 				},
 				anthropic: {
@@ -128,7 +130,7 @@ client = anthropic.Anthropic(
 response = client.messages.create(
     model="claude-3-sonnet-20240229", # or "provider/model" for other providers (openai/gpt-4o-mini)
     max_tokens=1000,
-    messages=[{"role": "user", "content": ${t("logs:empty.samples.hello")}}]
+    messages=[{"role": "user", "content": "Hello!"}]
 )`,
 					typescript: `import Anthropic from "@anthropic-ai/sdk";
 
@@ -140,7 +142,7 @@ const anthropic = new Anthropic({
 const response = await anthropic.messages.create({
   model: "claude-3-sonnet-20240229", // or "provider/model" for other providers (openai/gpt-4o-mini)
   max_tokens: 1000,
-  messages: [{ role: "user", content: ${t("logs:empty.samples.hello")} }],
+  messages: [{ role: "user", content: "Hello!" }],
 });`,
 				},
 				genai: {
@@ -154,7 +156,7 @@ client = genai.Client(
 
 response = client.models.generate_content(
     model="gemini-2.5-pro", # or "provider/model" for other providers (openai/gpt-4o-mini)
-    contents=${t("logs:empty.samples.hello")}
+    contents="Hello!"
 )`,
 					typescript: `import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -163,7 +165,7 @@ const genAI = new GoogleGenerativeAI("dummy-api-key", { // Handled by Bifrost
 });
 
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" }); // or "provider/model" for other providers (openai/gpt-4o-mini)
-const response = await model.generateContent(${t("logs:empty.samples.hello")});`,
+const response = await model.generateContent("Hello!");`,
 				},
 				litellm: {
 					python: `import litellm
@@ -172,13 +174,13 @@ litellm.api_base = "${baseUrl}/litellm"
 
 response = litellm.completion(
     model="openai/gpt-4o-mini",
-    messages=[{"role": "user", "content": ${t("logs:empty.samples.hello")}}]
+    messages=[{"role": "user", "content": "Hello!"}]
 )`,
 					typescript: `import { completion } from "litellm";
 
 const response = await completion({
   model: "openai/gpt-4o-mini",
-  messages: [{ role: "user", content: ${t("logs:empty.samples.hello")} }],
+  messages: [{ role: "user", content: "Hello!" }],
   api_base: "${baseUrl}/litellm",
 });`,
 				},
@@ -197,7 +199,7 @@ llm = ChatOpenAI(
 )
 
 # Simple message
-messages = [HumanMessage(content=${t("logs:empty.samples.helloFromLangchain")})]
+messages = [HumanMessage(content="Hello from LangChain!")]
 response = llm.invoke(messages)
 
 # Chain with prompt template
@@ -207,7 +209,7 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 chain = prompt | llm | StrOutputParser()
-result = chain.invoke({"input": ${t("logs:empty.samples.whatIsLangchain")}})`,
+result = chain.invoke({"input": "What is LangChain?"})`,
 					typescript: `import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
@@ -224,7 +226,7 @@ const llm = new ChatOpenAI({
 });
 
 // Simple message
-const messages = [new HumanMessage(${t("logs:empty.samples.helloFromLangchain")})];
+const messages = [new HumanMessage("Hello from LangChain!")];
 const response = await llm.invoke(messages);
 
 // Chain with prompt template
@@ -234,39 +236,39 @@ const prompt = ChatPromptTemplate.fromMessages([
 ]);
 
 const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-const result = await chain.invoke({ input: ${t("logs:empty.samples.whatIsLangchain")} });`,
+const result = await chain.invoke({ input: "What is LangChain?" });`,
 				},
 			},
 		};
-	}, [t]);
+	}, []);
 
-	const isUnexpectedError = error && error.includes("An unexpected error occurred");
+	const isUnexpectedError = error && error.includes(t("logs.empty.unexpectedError"));
 
 	return (
 		<div className="dark:bg-card flex w-full flex-col items-center justify-center space-y-8 bg-white">
 			{error && (
 				<Alert>
 					<AlertTriangle className="h-4 w-4" />
-					<AlertDescription>{isUnexpectedError ? t("logs:empty.unexpectedError") : error}</AlertDescription>
+					<AlertDescription>{isUnexpectedError ? t("logs.empty.logStoreNotConfigured") : error}</AlertDescription>
 				</Alert>
 			)}
 
 			<div className="w-full space-y-6 p-4">
 				<div className="flex flex-row items-center gap-2">
 					<div>
-						<h3 className="text-lg font-semibold">{t("logs:empty.title")}</h3>
-						<p className="text-muted-foreground text-sm">{t("logs:empty.subtitle")}</p>
+						<h3 className="text-lg font-semibold">{t("logs.empty.title")}</h3>
+						<p className="text-muted-foreground text-sm">{t("logs.empty.subtitle")}</p>
 					</div>
 				</div>
 
 				<Tabs defaultValue="curl" className="w-full rounded-lg border">
 					<TabsList className="flex h-10 w-full justify-start rounded-t-lg rounded-b-none">
-						<TabsTrigger value="curl">{t("logs:empty.tab.curl")}</TabsTrigger>
-						<TabsTrigger value="openai">{t("logs:empty.tab.openai")}</TabsTrigger>
-						<TabsTrigger value="anthropic">{t("logs:empty.tab.anthropic")}</TabsTrigger>
-						<TabsTrigger value="genai">{t("logs:empty.tab.genai")}</TabsTrigger>
-						<TabsTrigger value="litellm">{t("logs:empty.tab.litellm")}</TabsTrigger>
-						<TabsTrigger value="langchain">{t("logs:empty.tab.langchain")}</TabsTrigger>
+						<TabsTrigger value="curl">{t("logs.empty.curl")}</TabsTrigger>
+						<TabsTrigger value="openai">{t("logs.empty.openaiSdk")}</TabsTrigger>
+						<TabsTrigger value="anthropic">{t("logs.empty.anthropicSdk")}</TabsTrigger>
+						<TabsTrigger value="genai">{t("logs.empty.genaiSdk")}</TabsTrigger>
+						<TabsTrigger value="litellm">{t("logs.empty.litellmSdk")}</TabsTrigger>
+						<TabsTrigger value="langchain">{t("logs.empty.langchainSdk")}</TabsTrigger>
 					</TabsList>
 
 					<TabsContent value="curl" className="px-4">

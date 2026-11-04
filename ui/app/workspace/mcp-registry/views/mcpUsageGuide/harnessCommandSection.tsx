@@ -18,12 +18,12 @@ export function HarnessCommandSection({
 	logoSrc,
 	registrationLabel,
 }: HarnessCommandSectionProps) {
-	const { t } = useTranslation(["common", "mcp"]);
-	const successMessage = copySuccessMessage ?? t("mcp:usageGuide.commandCopied");
-	const sectionLabel = label ?? t("mcp:usageGuide.commandLabel");
-	const copyLabel = sectionLabel.toLowerCase();
-	const deeplinkText = deeplinkLabel ?? t("mcp:usageGuide.install");
-	const { copy, copied } = useCopyToClipboard({ successMessage });
+	const { t } = useTranslation("mcp");
+	const resolvedLabel = label ?? t("common.command");
+	const resolvedDeeplinkLabel = deeplinkLabel ?? t("common.install");
+	const resolvedCopySuccess = copySuccessMessage ?? t("common.commandCopied");
+	const { copy, copied } = useCopyToClipboard({ successMessage: resolvedCopySuccess });
+	const copyLabel = resolvedLabel.toLowerCase();
 	const canUseDeeplink = canCopyCommand && !!deeplink;
 
 	return (
@@ -31,7 +31,7 @@ export function HarnessCommandSection({
 			{/* ── Header row: label + action buttons ─────────────────── */}
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex items-center gap-2 text-sm font-medium">
-					<span>{sectionLabel}</span>
+					<span>{resolvedLabel}</span>
 				</div>
 
 				<div className="flex items-center gap-2">
@@ -43,9 +43,9 @@ export function HarnessCommandSection({
 							<TooltipTrigger asChild>
 								{canUseDeeplink ? (
 									<Button type="button" variant="secondary" size="sm" asChild data-testid="mcp-usage-guide-deeplink">
-										<a href={deeplink} aria-label={deeplinkText}>
+										<a href={deeplink} aria-label={resolvedDeeplinkLabel}>
 											{logoSrc && <img src={logoSrc} alt="" aria-hidden="true" className="size-4 rounded-[2px]" />}
-											<span>{deeplinkText}</span>
+											<span>{resolvedDeeplinkLabel}</span>
 										</a>
 									</Button>
 								) : (
@@ -54,15 +54,15 @@ export function HarnessCommandSection({
 										variant="secondary"
 										size="sm"
 										disabled
-										aria-label={deeplinkText}
+										aria-label={resolvedDeeplinkLabel}
 										data-testid="mcp-usage-guide-deeplink"
 									>
 										{logoSrc && <img src={logoSrc} alt="" aria-hidden="true" className="size-4 rounded-[2px]" />}
-										<span>{deeplinkText}</span>
+										<span>{resolvedDeeplinkLabel}</span>
 									</Button>
 								)}
 							</TooltipTrigger>
-							<TooltipContent>{canUseDeeplink ? deeplinkText : t("mcp:usageGuide.finishSelections")}</TooltipContent>
+							<TooltipContent>{canUseDeeplink ? resolvedDeeplinkLabel : t("usageGuide.finishSelections")}</TooltipContent>
 						</Tooltip>
 					)}
 
@@ -76,20 +76,20 @@ export function HarnessCommandSection({
 								disabled={!canCopyCommand}
 								onClick={() => void copy(command)}
 								aria-label={
-									copied ? t("mcp:usageGuide.labelCopied", { label: sectionLabel }) : t("mcp:usageGuide.copyLabel", { label: copyLabel })
+									copied ? t("usageGuide.copiedLabel", { label: resolvedLabel }) : t("usageGuide.copyLabel", { label: copyLabel })
 								}
 								data-testid="mcp-usage-guide-copy-command"
 							>
 								{copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
-								<span>{copied ? t("common:actions.copied") : t("common:actions.copy")}</span>
+								<span>{copied ? t("common.copied") : t("common.copy")}</span>
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
 							{canCopyCommand
 								? copied
-									? t("common:actions.copied")
-									: t("mcp:usageGuide.copyLabel", { label: copyLabel })
-								: t("mcp:usageGuide.finishSelections")}
+									? t("common.copied")
+									: t("usageGuide.copyLabel", { label: copyLabel })
+								: t("usageGuide.finishSelections")}
 						</TooltipContent>
 					</Tooltip>
 				</div>
@@ -111,7 +111,7 @@ export function HarnessCommandSection({
 
 				{canCopyCommand ? (
 					<pre className="overflow-x-auto p-4 text-xs leading-5">
-						<code>{command}</code>
+						<code data-testid="mcp-usage-guide-command">{command}</code>
 					</pre>
 				) : (
 					<div className="p-4 text-sm text-slate-400">{emptyMessage}</div>

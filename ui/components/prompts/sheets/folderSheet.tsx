@@ -9,8 +9,8 @@ import { useCreateFolderMutation, useUpdateFolderMutation } from "@/lib/store/ap
 import { Folder } from "@/lib/types/prompts";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 interface FolderFormData {
 	name: string;
@@ -25,7 +25,8 @@ interface FolderSheetProps {
 }
 
 export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheetProps) {
-	const { t } = useTranslation(["common", "workspaces"]);
+	const { t } = useTranslation("config");
+	const { t: tc } = useTranslation("common");
 	const [createFolder, { isLoading: isCreating }] = useCreateFolderMutation();
 	const [updateFolder, { isLoading: isUpdating }] = useUpdateFolderMutation();
 	const canSave = useRbac(RbacResource.PromptRepository, folder ? RbacOperation.Update : RbacOperation.Create);
@@ -58,18 +59,18 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 					id: folder.id,
 					data: { name: data.name.trim(), description: data.description.trim() || undefined },
 				}).unwrap();
-				toast.success(t("workspaces:promptsRepo.folderSheet.updated"));
+				toast.success(t("promptRepo.toastFolderUpdated"));
 			} else {
 				await createFolder({
 					name: data.name.trim(),
 					description: data.description.trim() || undefined,
 				}).unwrap();
-				toast.success(t("workspaces:promptsRepo.folderSheet.created"));
+				toast.success(t("promptRepo.toastFolderCreated"));
 			}
 			onSaved();
 			onOpenChange(false);
 		} catch (err) {
-			toast.error(t(isEditing ? "workspaces:promptsRepo.folderSheet.updateFailed" : "workspaces:promptsRepo.folderSheet.createFailed"), {
+			toast.error(t("promptRepo.toastFolderFailed", { action: isEditing ? t("promptRepo.updateAction") : t("promptRepo.createAction") }), {
 				description: getErrorMessage(err),
 			});
 		}
@@ -86,22 +87,20 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 			>
 				<form onSubmit={handleSubmit(onSubmit)}>
 					<SheetHeader className="flex flex-col items-start">
-						<SheetTitle>{isEditing ? t("workspaces:prompts.editFolder") : t("workspaces:promptsRepo.folderSheet.createTitle")}</SheetTitle>
-						<SheetDescription>
-							{isEditing ? t("workspaces:promptsRepo.folderSheet.editDesc") : t("workspaces:promptsRepo.folderSheet.createDesc")}
-						</SheetDescription>
+						<SheetTitle>{isEditing ? t("promptRepo.editFolder") : t("promptRepo.createFolder")}</SheetTitle>
+						<SheetDescription>{isEditing ? t("promptRepo.updateFolderDesc") : t("promptRepo.createFolderDesc")}</SheetDescription>
 					</SheetHeader>
 
 					<div className="mt-6 space-y-4">
 						<div className="space-y-2">
-							<Label htmlFor="name">{t("common:fields.name")}</Label>
+							<Label htmlFor="name">{t("promptRepo.name")}</Label>
 							<Input
 								id="name"
 								data-testid="folder-name-input"
-								placeholder={t("workspaces:promptsRepo.folderSheet.namePh")}
+								placeholder={t("promptRepo.folderNamePlaceholder")}
 								{...register("name", {
-									required: t("workspaces:promptsRepo.folderSheet.nameRequired"),
-									validate: (v) => v.trim().length > 0 || t("workspaces:promptsRepo.folderSheet.nameBlank"),
+									required: t("promptRepo.folderNameRequired"),
+									validate: (v) => v.trim().length > 0 || t("promptRepo.folderNameBlank"),
 								})}
 								autoFocus
 							/>
@@ -109,11 +108,11 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="description">{t("workspaces:promptsRepo.folderSheet.descLabel")}</Label>
+							<Label htmlFor="description">{t("promptRepo.descriptionOptional")}</Label>
 							<Textarea
 								id="description"
 								data-testid="folder-description-input"
-								placeholder={t("workspaces:promptsRepo.folderSheet.descPh")}
+								placeholder={t("promptRepo.folderDescriptionPlaceholder")}
 								className="resize-none"
 								{...register("description")}
 							/>
@@ -122,15 +121,15 @@ export function FolderSheet({ open, onOpenChange, folder, onSaved }: FolderSheet
 
 					<SheetFooter className="mt-6 flex flex-row items-center justify-end gap-2 p-0">
 						<Button type="button" variant="outline" data-testid="folder-cancel" onClick={() => onOpenChange(false)}>
-							{t("common:actions.cancel")}
+							{tc("cancel")}
 						</Button>
 						<Button
 							type="submit"
 							data-testid="folder-submit"
 							disabled={isLoading || !canSave}
-							title={canSave ? undefined : t("workspaces:promptsRepo.folderSheet.noPermission")}
+							title={canSave ? undefined : t("promptRepo.noChangeFolderPermission")}
 						>
-							{isLoading ? t("workspaces:formFooter.saving") : isEditing ? t("common:actions.update") : t("common:actions.create")}
+							{isLoading ? t("promptRepo.savingDots") : isEditing ? t("promptRepo.update") : tc("create")}
 						</Button>
 					</SheetFooter>
 				</form>

@@ -2,6 +2,7 @@ import { PluginLogEntry } from "@/lib/types/logs";
 import { cn } from "@/lib/utils";
 import { LOG_LEVEL_BADGE_CLASSES, meetsMinLogLevel, type LogLevel } from "@/lib/utils/logLevel";
 import { format } from "date-fns";
+import { dateFnsLocale } from "@/lib/i18n/dateLocale";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,7 +22,7 @@ function formatPluginName(name: string): string {
 }
 
 export default function PluginLogsView({ pluginLogs }: PluginLogsViewProps) {
-	const { t } = useTranslation(["logs"]);
+	const { t } = useTranslation("observability");
 	const [minLevel, setMinLevel] = useState<LogLevel>("debug");
 	const parsed = useMemo(() => parsePluginLogs(pluginLogs), [pluginLogs]);
 
@@ -30,7 +31,7 @@ export default function PluginLogsView({ pluginLogs }: PluginLogsViewProps) {
 	return (
 		<div>
 			<div className="flex items-center justify-between gap-3 py-3">
-				<div className="text-sm font-semibold">{t("logs:pluginLogs.title")}</div>
+				<div className="text-sm font-semibold">{t("mcpLogs.pluginLogs")}</div>
 				<LogLevelTabs value={minLevel} onChange={setMinLevel} testId="plugin-logs-level-filter" />
 			</div>
 			<div className="flex flex-col gap-2 pb-3">
@@ -43,7 +44,7 @@ export default function PluginLogsView({ pluginLogs }: PluginLogsViewProps) {
 }
 
 function PluginSection({ name, entries, minLevel }: { name: string; entries: PluginLogEntry[]; minLevel: LogLevel }) {
-	const { t } = useTranslation(["logs"]);
+	const { t, i18n } = useTranslation("observability");
 	const [isOpen, setIsOpen] = useState(false);
 	const visible = useMemo(
 		() => entries.filter((entry) => meetsMinLogLevel(entry.level, minLevel)).sort((a, b) => a.timestamp - b.timestamp),
@@ -51,9 +52,7 @@ function PluginSection({ name, entries, minLevel }: { name: string; entries: Plu
 	);
 	// At the debug floor nothing is hidden, so the plain total reads better than "N of N".
 	const count =
-		minLevel === "debug"
-			? `(${entries.length})`
-			: `(${t("logs:pluginLogs.visibleOf", { visible: visible.length, total: entries.length })})`;
+		minLevel === "debug" ? `(${entries.length})` : t("logs.pluginLogsView.countOf", { visible: visible.length, total: entries.length });
 
 	return (
 		<div className="rounded-md border">
@@ -73,11 +72,13 @@ function PluginSection({ name, entries, minLevel }: { name: string; entries: Plu
 			{isOpen && (
 				<div className="custom-scrollbar max-h-[300px] overflow-y-auto border-t">
 					{visible.length === 0 ? (
-						<div className="text-muted-foreground px-4 py-2 text-xs">{t("logs:pluginLogs.noEntries", { level: minLevel })}</div>
+						<div className="text-muted-foreground px-4 py-2 text-xs">{t("logs.pluginLogsView.noEntries", { level: minLevel })}</div>
 					) : (
 						visible.map((entry, idx) => (
 							<div key={idx} className="flex items-start gap-3 border-b px-4 py-1.5 font-mono text-xs last:border-b-0">
-								<span className="text-muted-foreground shrink-0">{format(new Date(entry.timestamp), "HH:mm:ss.SSS")}</span>
+								<span className="text-muted-foreground shrink-0">
+									{format(new Date(entry.timestamp), "HH:mm:ss.SSS", { locale: dateFnsLocale(i18n.resolvedLanguage) })}
+								</span>
 								<span
 									className={cn(
 										"shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase",

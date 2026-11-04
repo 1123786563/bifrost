@@ -50,7 +50,7 @@ function getDisplayModels(models: string[], displayByValue: Map<string, string[]
 }
 
 export default function OverviewTab({ hasAccess }: OverviewTabProps) {
-	const { t } = useTranslation(["common", "models"]);
+	const { t } = useTranslation("models");
 	const [providerFilter, setProviderFilter] = useState("");
 	const [statsMap, setStatsMap] = useState<Map<string, LogStats>>(new Map());
 	const [modelsUsedMap, setModelsUsedMap] = useState<Map<string, string[]>>(new Map());
@@ -186,9 +186,9 @@ export default function OverviewTab({ hasAccess }: OverviewTabProps) {
 	if (providersError) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-				<p className="text-muted-foreground text-sm">{t("models:catalog.overview.loadProvidersFailed")}</p>
+				<p className="text-muted-foreground text-sm">{t("modelCatalog.failedLoadProviders")}</p>
 				<button type="button" data-testid="model-catalog-retry-btn" onClick={refetchProviders} className="text-sm underline">
-					{t("common:actions.retry")}
+					{t("modelCatalog.retry")}
 				</button>
 			</div>
 		);

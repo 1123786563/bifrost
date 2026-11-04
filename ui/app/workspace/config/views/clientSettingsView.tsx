@@ -1,7 +1,10 @@
+import BetaBadge from "@/components/betaBadge";
+import { LanguageSelect } from "@/components/language-switcher";
 import PageTitle from "@/components/pageTitle";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getErrorMessage, useGetCoreConfigQuery, useGetDroppedRequestsQuery, useUpdateCoreConfigMutation } from "@/lib/store";
@@ -13,7 +16,7 @@ import { useGetLargePayloadConfigQuery, useUpdateLargePayloadConfigMutation } fr
 import { DefaultLargePayloadConfig, LargePayloadConfig } from "@enterprise/lib/types/largePayload";
 import { Info, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import UserAgentMappingsView from "./userAgentMappingsView";
 
@@ -67,7 +70,8 @@ function largePayloadConfigEqual(a: LargePayloadConfig, b: LargePayloadConfig): 
 }
 
 export default function ClientSettingsView() {
-	const { t } = useTranslation(["common", "settings"]);
+	const { t } = useTranslation("config");
+	const { t: tCommon } = useTranslation("common");
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
 	const [droppedRequests, setDroppedRequests] = useState<number>(0);
 	const { data: droppedRequestsData } = useGetDroppedRequestsQuery();
@@ -112,6 +116,7 @@ export default function ClientSettingsView() {
 			localConfig.disable_db_pings_in_health !== config.disable_db_pings_in_health ||
 			localConfig.dump_errors_in_console_logs !== config.dump_errors_in_console_logs ||
 			localConfig.async_job_result_ttl !== config.async_job_result_ttl ||
+			(localConfig.extra_fields_placement ?? "body") !== (config.extra_fields_placement ?? "body") ||
 			!headerFilterConfigEqual(localConfig.header_filter_config, config.header_filter_config)
 		);
 	}, [config, localConfig]);
@@ -158,15 +163,15 @@ export default function ClientSettingsView() {
 				localLargePayloadConfig.max_payload_bytes < minBytes ||
 				localLargePayloadConfig.truncated_log_bytes < minBytes
 			) {
-				toast.error(t("settings:client.bytesMin"));
+				toast.error(t("clientSettings.toastMinBytes"));
 				return;
 			}
 			if (localLargePayloadConfig.max_payload_bytes < localLargePayloadConfig.request_threshold_bytes) {
-				toast.error(t("settings:client.maxPayloadGeRequest"));
+				toast.error(t("clientSettings.toastMaxVsRequest"));
 				return;
 			}
 			if (localLargePayloadConfig.max_payload_bytes < localLargePayloadConfig.response_threshold_bytes) {
-				toast.error(t("settings:client.maxPayloadGeResponse"));
+				toast.error(t("clientSettings.toastMaxVsResponse"));
 				return;
 			}
 		}
@@ -177,7 +182,7 @@ export default function ClientSettingsView() {
 		// Save core config if changed
 		if (hasCoreConfigChanges) {
 			if (!bifrostConfig) {
-				toast.error(t("settings:shared.notLoaded"));
+				toast.error(t("configNotLoadedRefresh"));
 				return;
 			}
 			// Clean up empty strings from header filter config
@@ -190,10 +195,17 @@ export default function ClientSettingsView() {
 			};
 
 			try {
-				await updateCoreConfig({ ...bifrostConfig!, client_config: cleanedConfig }).unwrap();
+				await updateCoreConfig({
+					...bifrostConfig!,
+					client_config: cleanedConfig,
+				}).unwrap();
 				coreConfigSaved = true;
 			} catch (error) {
-				toast.error(t("settings:client.coreSaveFailed", { message: getErrorMessage(error) }));
+				toast.error(
+					t("clientSettings.toastSaveClientFailed", {
+						error: getErrorMessage(error),
+					}),
+				);
 			}
 		}
 
@@ -203,25 +215,29 @@ export default function ClientSettingsView() {
 				await updateLargePayloadConfig(localLargePayloadConfig).unwrap();
 				largePayloadSaved = true;
 			} catch (error) {
-				toast.error(t("settings:client.largePayloadSaveFailed", { message: getErrorMessage(error) }));
+				toast.error(
+					t("clientSettings.toastSaveLargePayloadFailed", {
+						error: getErrorMessage(error),
+					}),
+				);
 			}
 		}
 
 		if (coreConfigSaved || largePayloadSaved) {
 			if (largePayloadSaved) {
-				toast.success(t("settings:client.savedRestart"));
+				toast.success(t("clientSettings.toastSavedWithRestart"));
 			} else {
-				toast.success(t("settings:client.saved"));
+				toast.success(t("clientSettings.toastSaved"));
 			}
 		}
 	}, [
-		t,
 		bifrostConfig,
 		hasSecurityHeaderError,
 		hasCoreConfigChanges,
 		hasLargePayloadChanges,
 		localConfig,
 		localLargePayloadConfig,
+		t,
 		updateCoreConfig,
 		updateLargePayloadConfig,
 	]);
@@ -291,21 +307,34 @@ export default function ClientSettingsView() {
 
 	return (
 		<div className="mx-auto w-full max-w-4xl space-y-6">
-			<PageTitle title={t("settings:client.title")}>{t("settings:client.subtitle")}</PageTitle>
+			<PageTitle title={t("clientSettings.title")}>{t("clientSettings.description")}</PageTitle>
 
 			<div className="space-y-4">
+				{/* Language: per-browser preference, applied immediately (not part of Save) */}
+				<div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<div className="space-y-0.5">
+						<label htmlFor="client-settings-language" className="flex items-center gap-2 text-sm font-medium">
+							{tCommon("language")}
+							<BetaBadge />
+						</label>
+						<p className="text-muted-foreground text-sm">{t("clientSettings.languageHelp")}</p>
+					</div>
+					<LanguageSelect id="client-settings-language" />
+				</div>
+
 				{/* Drop Excess Requests */}
 				<div className="flex items-center justify-between space-x-2">
 					<div className="space-y-0.5">
 						<label htmlFor="drop-excess-requests" className="text-sm font-medium">
-							{t("settings:client.dropExcess")}
+							{t("clientSettings.dropExcessRequests")}
 						</label>
 						<p className="text-muted-foreground text-sm">
-							{t("settings:client.dropExcessDescription")}{" "}
+							{t("clientSettings.dropExcessRequestsHelp")}{" "}
 							{localConfig.drop_excess_requests && droppedRequests > 0 ? (
 								<span>
-									{t("settings:client.droppedSinceBefore")} <b>{t("settings:client.droppedSinceBold", { count: droppedRequests })}</b>{" "}
-									{t("settings:client.droppedSinceAfter")}
+									{t("clientSettings.droppedRequests", {
+										count: droppedRequests,
+									})}
 								</span>
 							) : (
 								<></>
@@ -325,9 +354,9 @@ export default function ClientSettingsView() {
 				<div className="flex items-center justify-between space-x-2">
 					<div className="space-y-0.5">
 						<label htmlFor="disable-db-pings-in-health" className="text-sm font-medium">
-							{t("settings:client.disableDbPings")}
+							{t("clientSettings.disableDbPings")}
 						</label>
-						<p className="text-muted-foreground text-sm">{t("settings:client.disableDbPingsDescription")}</p>
+						<p className="text-muted-foreground text-sm">{t("clientSettings.disableDbPingsHelp")}</p>
 					</div>
 					<Switch
 						id="disable-db-pings-in-health"
@@ -342,9 +371,9 @@ export default function ClientSettingsView() {
 				<div className="flex items-center justify-between space-x-2">
 					<div className="space-y-0.5">
 						<label htmlFor="dump-errors-in-console-logs" className="text-sm font-medium">
-							{t("settings:client.dumpErrors")}
+							{t("clientSettings.dumpErrors")}
 						</label>
-						<p className="text-muted-foreground text-sm">{t("settings:client.dumpErrorsDescription")}</p>
+						<p className="text-muted-foreground text-sm">{t("clientSettings.dumpErrorsHelp")}</p>
 					</div>
 					<Switch
 						id="dump-errors-in-console-logs"
@@ -355,13 +384,53 @@ export default function ClientSettingsView() {
 						disabled={!hasSettingsUpdateAccess}
 					/>
 				</div>
+				{/* Extra Fields Placement */}
+				<div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<div className="space-y-0.5">
+						<label htmlFor="extra-fields-placement" className="text-sm font-medium">
+							{t("clientSettings.extraFieldsPlacement")}
+						</label>
+						<p className="text-muted-foreground text-sm">
+							<Trans t={t} i18nKey="clientSettings.extraFieldsPlacementHelp" components={{ b: <b /> }} />
+						</p>
+						{(localConfig.extra_fields_placement ?? "body") === "headers" && (
+							<p className="text-muted-foreground text-sm" data-testid="client-settings-extra-fields-placement-dropped-note">
+								{t("clientSettings.extraFieldsPlacementDroppedNote")}
+							</p>
+						)}
+					</div>
+					<Select
+						value={localConfig.extra_fields_placement ?? "body"}
+						onValueChange={(value) =>
+							setLocalConfig((prev) => ({ ...prev, extra_fields_placement: value as CoreConfig["extra_fields_placement"] }))
+						}
+						disabled={!hasSettingsUpdateAccess}
+					>
+						<SelectTrigger
+							id="extra-fields-placement"
+							data-testid="client-settings-extra-fields-placement-select"
+							className="w-full shrink-0 sm:w-[140px]"
+						>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="body" data-testid="client-settings-extra-fields-placement-option-body">
+								{t("clientSettings.extraFieldsBody")}
+							</SelectItem>
+							<SelectItem value="headers" data-testid="client-settings-extra-fields-placement-option-headers">
+								{t("clientSettings.extraFieldsHeaders")}
+							</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+
 				{/* Async Job Result TTL */}
 				<div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
 					<div className="space-y-0.5">
 						<label htmlFor="async-job-result-ttl" className="text-sm font-medium">
-							{t("settings:client.asyncTtl")}
+							{t("clientSettings.asyncJobTtl")}
 						</label>
-						<p className="text-muted-foreground text-sm">{t("settings:client.asyncTtlDescription")}</p>
+						<p className="text-muted-foreground text-sm">{t("clientSettings.asyncJobTtlHelp")}</p>
 					</div>
 					<Input
 						id="async-job-result-ttl"
@@ -381,8 +450,8 @@ export default function ClientSettingsView() {
 			{/* Header Filter Section */}
 			<div className="space-y-4">
 				<div>
-					<h3 className="text-lg font-semibold tracking-tight">{t("settings:client.headerForwarding")}</h3>
-					<p className="text-muted-foreground text-sm">{t("settings:client.headerForwardingDescription")}</p>
+					<h3 className="text-lg font-semibold tracking-tight">{t("clientSettings.headerForwarding")}</h3>
+					<p className="text-muted-foreground text-sm">{t("clientSettings.headerForwardingHelp")}</p>
 				</div>
 
 				<Accordion type="multiple" className="w-full rounded-sm border px-4">
@@ -390,61 +459,94 @@ export default function ClientSettingsView() {
 						<AccordionTrigger>
 							<span className="flex items-center gap-2">
 								<Info className="h-4 w-4" />
-								{t("settings:client.aboutHeaderForwarding")}
+								{t("clientSettings.aboutHeaderForwarding")}
 							</span>
 						</AccordionTrigger>
 						<AccordionContent className="space-y-3">
 							<div>
-								<p className="mb-2 font-medium">{t("settings:client.twoWays")}</p>
+								<p className="mb-2 font-medium">{t("clientSettings.twoWays")}</p>
 								<ul className="text-muted-foreground list-inside list-disc space-y-1 text-sm">
 									<li>
-										<span className="font-medium">{t("settings:client.prefixedLabel")}</span> {t("settings:client.prefixed1")}{" "}
-										<code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">x-bf-eh-*</code> {t("settings:client.prefixed2")}{" "}
-										<code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">x-bf-eh-custom-id</code>{" "}
-										{t("settings:client.prefixed3")} <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">custom-id</code>.
+										<Trans
+											t={t}
+											i18nKey="clientSettings.prefixedHeaders"
+											components={{
+												span0: <span className="font-medium" />,
+												code1: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+												code2: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+												code3: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+											}}
+										/>
 									</li>
 									<li>
-										<span className="font-medium">{t("settings:client.directLabel")}</span> {t("settings:client.direct1")}{" "}
-										<code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">anthropic-beta</code>).
+										<Trans
+											t={t}
+											i18nKey="clientSettings.directHeaders"
+											components={{
+												span0: <span className="font-medium" />,
+												code1: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+											}}
+										/>
 									</li>
 								</ul>
 							</div>
 							<div>
-								<p className="mb-2 font-medium">{t("settings:client.howListsWork")}</p>
+								<p className="mb-2 font-medium">{t("clientSettings.howListsWork")}</p>
 								<ul className="text-muted-foreground list-inside list-disc space-y-1 text-sm">
 									<li>
-										<span className="font-medium">{t("settings:client.allowEmptyLabel")}</span> {t("settings:client.allowEmpty1")}{" "}
-										<code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">x-bf-eh-*</code> {t("settings:client.allowEmpty2")}
+										<Trans
+											t={t}
+											i18nKey="clientSettings.emptyAllowlist"
+											components={{
+												span0: <span className="font-medium" />,
+												code1: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+											}}
+										/>
 									</li>
 									<li>
-										<span className="font-medium">{t("settings:client.allowConfiguredLabel")}</span> {t("settings:client.allowConfigured1")}
+										<Trans t={t} i18nKey="clientSettings.configuredAllowlist" components={{ span0: <span className="font-medium" /> }} />
 									</li>
 									<li>
-										<span className="font-medium">{t("settings:client.denylistLabel")}</span> {t("settings:client.denylist1")}
+										<Trans t={t} i18nKey="clientSettings.denylistRules" components={{ span0: <span className="font-medium" /> }} />
 									</li>
 									<li>
-										<span className="font-medium">{t("settings:client.wildcardsLabel")}</span> {t("settings:client.wild1")}{" "}
-										<code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">*</code> {t("settings:client.wild2")}{" "}
-										<code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">anthropic-*</code> {t("settings:client.wild3")}{" "}
-										<code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">anthropic-</code>
-										{t("settings:client.wild4")} <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">*</code>{" "}
-										{t("settings:client.wild5")}
+										<Trans
+											t={t}
+											i18nKey="clientSettings.wildcardRules"
+											components={{
+												span0: <span className="font-medium" />,
+												code1: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+												code2: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+												code3: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+												code4: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+											}}
+										/>
 									</li>
 								</ul>
 							</div>
 							<div>
-								<p className="mb-2 font-medium">{t("settings:client.important")}</p>
+								<p className="mb-2 font-medium">{t("clientSettings.important")}</p>
 								<ul className="text-muted-foreground list-inside list-disc space-y-1 text-sm">
 									<li>
-										{t("settings:client.imp1")} <span className="font-medium">{t("settings:client.impWithout")}</span>{" "}
-										{t("settings:client.imp2")} <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">x-bf-eh-</code>{" "}
-										{t("settings:client.imp3")}
+										<Trans
+											t={t}
+											i18nKey="clientSettings.headerNames"
+											components={{
+												span0: <span className="font-medium" />,
+												code1: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+											}}
+										/>
 									</li>
 									<li>
-										{t("settings:client.ex1")} <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">x-bf-eh-custom-id</code>{" "}
-										{t("settings:client.ex2")} <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">custom-id</code>
-										{t("settings:client.ex3")} <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">custom-id</code>{" "}
-										{t("settings:client.ex4")}
+										<Trans
+											t={t}
+											i18nKey="clientSettings.allowlistExample"
+											components={{
+												code0: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+												code1: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+												code2: <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" />,
+											}}
+										/>
 									</li>
 								</ul>
 							</div>
@@ -455,12 +557,12 @@ export default function ClientSettingsView() {
 						<AccordionTrigger>
 							<span className="flex items-center gap-2">
 								<Info className="h-4 w-4" />
-								{t("settings:client.securityNote")}
+								{t("clientSettings.securityNote")}
 							</span>
 						</AccordionTrigger>
 						<AccordionContent>
-							<p className="text-sm">{t("settings:client.securityNoteText")}</p>
-							<p className="text-muted-foreground mt-1 font-mono text-xs">{t("settings:client.securityNoteHeaders")}</p>
+							<p className="text-sm">{t("clientSettings.securityNoteBody")}</p>
+							<p className="text-muted-foreground mt-1 font-mono text-xs">{SECURITY_HEADERS.join(", ")}</p>
 						</AccordionContent>
 					</AccordionItem>
 				</Accordion>
@@ -468,10 +570,15 @@ export default function ClientSettingsView() {
 				{/* Allowlist Section */}
 				<div className="space-y-3">
 					<div className="space-y-1">
-						<h4 className="text-sm font-medium">{t("settings:client.allowlist")}</h4>
+						<h4 className="text-sm font-medium">{t("clientSettings.allowlist")}</h4>
 						<p className="text-muted-foreground text-xs">
-							{t("settings:client.allowlistDesc1")} <code className="bg-muted rounded px-1 font-mono">x-bf-eh-</code> prefix. Any header in
-							this list can also be sent directly without the prefix.
+							<Trans
+								t={t}
+								i18nKey="clientSettings.allowlistHelp"
+								components={{
+									code0: <code className="bg-muted rounded px-1 font-mono" />,
+								}}
+							/>
 						</p>
 					</div>
 
@@ -479,7 +586,7 @@ export default function ClientSettingsView() {
 						{(localConfig.header_filter_config?.allowlist || []).map((header, index) => (
 							<div key={index} className="flex items-center gap-2">
 								<Input
-									placeholder={t("settings:client.allowlistPlaceholder")}
+									placeholder={t("clientSettings.allowlistPlaceholder")}
 									data-testid="header-filter-allowlist-input"
 									className={cn(
 										"font-mono lowercase",
@@ -504,7 +611,7 @@ export default function ClientSettingsView() {
 						))}
 						<Button type="button" variant="outline" size="sm" onClick={handleAddAllowlistHeader} disabled={!hasSettingsUpdateAccess}>
 							<Plus className="mr-2 h-4 w-4" />
-							{t("settings:client.addHeader")}
+							{t("addHeader")}
 						</Button>
 					</div>
 				</div>
@@ -512,10 +619,15 @@ export default function ClientSettingsView() {
 				{/* Denylist Section */}
 				<div className="space-y-3">
 					<div className="space-y-1">
-						<h4 className="text-sm font-medium">{t("settings:client.denylist")}</h4>
+						<h4 className="text-sm font-medium">{t("clientSettings.denylist")}</h4>
 						<p className="text-muted-foreground text-xs">
-							{t("settings:client.denylistDesc1")} <code className="bg-muted rounded px-1 font-mono">x-bf-eh-</code> prefix. Applies to both
-							prefixed and direct header forwarding.
+							<Trans
+								t={t}
+								i18nKey="clientSettings.denylistHelp"
+								components={{
+									code0: <code className="bg-muted rounded px-1 font-mono" />,
+								}}
+							/>
 						</p>
 					</div>
 
@@ -523,7 +635,7 @@ export default function ClientSettingsView() {
 						{(localConfig.header_filter_config?.denylist || []).map((header, index) => (
 							<div key={index} className="flex items-center gap-2">
 								<Input
-									placeholder={t("settings:client.denylistPlaceholder")}
+									placeholder={t("clientSettings.denylistPlaceholder")}
 									data-testid="header-filter-denylist-input"
 									className={cn(
 										"font-mono lowercase",
@@ -548,7 +660,7 @@ export default function ClientSettingsView() {
 						))}
 						<Button type="button" variant="outline" size="sm" onClick={handleAddDenylistHeader} disabled={!hasSettingsUpdateAccess}>
 							<Plus className="mr-2 h-4 w-4" />
-							{t("settings:client.addHeader")}
+							{t("addHeader")}
 						</Button>
 					</div>
 				</div>
@@ -566,11 +678,11 @@ export default function ClientSettingsView() {
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<span>
-								<Button disabled>{isLoading ? t("common:state.saving") : t("settings:shared.saveChanges")}</Button>
+								<Button disabled>{isLoading ? t("saving") : t("saveChanges")}</Button>
 							</span>
 						</TooltipTrigger>
 						<TooltipContent>
-							{t("settings:client.removeSecurityHeader", {
+							{t("clientSettings.removeSecurityHeader", {
 								count: invalidSecurityHeaders.length,
 								headers: invalidSecurityHeaders.join(", "),
 							})}
@@ -578,7 +690,7 @@ export default function ClientSettingsView() {
 					</Tooltip>
 				) : (
 					<Button onClick={handleSave} disabled={!hasChanges || isLoading || isQueriesLoading || !hasSettingsUpdateAccess}>
-						{isLoading ? t("common:state.saving") : t("settings:shared.saveChanges")}
+						{isLoading ? t("saving") : t("saveChanges")}
 					</Button>
 				)}
 			</div>

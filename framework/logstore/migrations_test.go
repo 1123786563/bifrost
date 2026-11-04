@@ -2,10 +2,12 @@ package logstore
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -49,6 +51,24 @@ func TestMigrationAddMCPPluginLogsColumn(t *testing.T) {
 	var count int64
 	require.NoError(t, db.Table("mcp_tool_logs").Where("id = ?", "mcp-existing").Count(&count).Error)
 	assert.Equal(t, int64(1), count)
+}
+
+// TestMigrationAddMethodColumnToMCPToolLogs verifies the read-method column is additive, idempotent,
+// and leaves existing rows (tool calls) null.
+func TestMigrationAddMethodColumnToMCPToolLogs(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "migrations.db")), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	require.NoError(t, err)
+	require.NoError(t, db.Exec("CREATE TABLE mcp_tool_logs (id TEXT PRIMARY KEY)").Error)
+	require.NoError(t, db.Exec("INSERT INTO mcp_tool_logs (id) VALUES (?)", "mcp-existing").Error)
+
+	ctx := context.Background()
+	for range 2 {
+		require.NoError(t, migrationAddMethodColumnToMCPToolLogs(ctx, db, testLogger{}))
+	}
+	require.True(t, db.Migrator().HasColumn(&MCPToolLog{}, "method"))
+	var method *string
+	require.NoError(t, db.Table("mcp_tool_logs").Select("method").Where("id = ?", "mcp-existing").Scan(&method).Error)
+	assert.Nil(t, method)
 }
 
 // TestMigrationAddSessionIDColumn verifies that the session lookup
@@ -655,6 +675,11 @@ func TestPerformanceIndexesCoverCorrelationIDs(t *testing.T) {
 	assert.Equal(t, "logs", tables["idx_logs_agent_correlation_id"])
 	assert.Equal(t, "mcp_tool_logs", tables["idx_mcp_logs_session_id"])
 	assert.Equal(t, "mcp_tool_logs", tables["idx_mcp_logs_agent_correlation_id"])
+	// relay_logs_add_session_id adds only the column on Postgres, so the background builder must
+	// carry the index or an upgraded deployment filters relay rows by session unindexed.
+	assert.Equal(t, "relay_logs", tables["idx_relay_logs_session_id"])
+	assert.Equal(t, "relay_logs", tables["idx_relay_logs_parent_request_id"])
+	assert.Equal(t, "relay_logs", tables["idx_relay_logs_agent_correlation_id"])
 }
 
 // TestMigrationAddMCPGovernanceSnapshots verifies the attribution columns are
@@ -732,6 +757,34 @@ func TestMigrationAddWarpConversationTables_NonRollbackable(t *testing.T) {
 	var surviving int64
 	require.NoError(t, db.Model(&WarpConversation{}).Count(&surviving).Error)
 	assert.EqualValues(t, 1, surviving, "the saved conversation must survive")
+}
+
+// TestMigrationAddWarpTopicTables_NonRollbackable pins that rolling the topic
+// tables back is refused while warp_topics holds anything. Topics outlive the
+// requests they were built from, and their names came from a model call, so a
+// populated table cannot be rebuilt from the logs. Empty tables still drop.
+func TestMigrationAddWarpTopicTables_NonRollbackable(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "migrations.db")), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	require.NoError(t, migrationAddWarpTopicTables(ctx, db, testLogger{}))
+	require.NoError(t, rollbackWarpTopicTables(db))
+	require.False(t, db.Migrator().HasTable(&WarpTopic{}), "empty topic tables are safe to drop")
+
+	require.NoError(t, db.AutoMigrate(&WarpTopic{}, &WarpTopicAssignment{}, &WarpTopicUnmatched{}))
+	now := time.Now().UTC()
+	require.NoError(t, db.Create(&WarpTopic{
+		ID: "t-1", Kind: WarpTopicKindTopic, Label: "Refunds", Status: WarpTopicStatusActive,
+		EmbeddingSignature: "sig", CreatedAt: now, UpdatedAt: now,
+	}).Error)
+
+	err = rollbackWarpTopicTables(db)
+	require.Error(t, err, "rollback must refuse while topics exist")
+	assert.Contains(t, err.Error(), "non-rollbackable")
+	for _, model := range []any{&WarpTopic{}, &WarpTopicAssignment{}, &WarpTopicUnmatched{}} {
+		assert.True(t, db.Migrator().HasTable(model), "a refused rollback leaves every topic table intact")
+	}
 }
 
 // TestMigrationAddWarpMessageOutcomeColumns_RollbackGuardsRecordedUsage pins
@@ -1134,4 +1187,336 @@ func TestIndexBuildersIgnoreSameNamedIndexInOtherSchema(t *testing.T) {
 		require.NoError(t, db.Raw("SELECT to_regclass(?) IS NOT NULL", shadow+"."+idx.name).Scan(&shadowKept).Error)
 		assert.True(t, shadowKept, "the builders must not drop %s.%s", shadow, idx.name)
 	}
+}
+
+// parkedLogIndexBuild is a CREATE INDEX CONCURRENTLY that pod 1 started and that
+// is still running, as the build of a killed pod keeps running in Postgres.
+type parkedLogIndexBuild struct {
+	pod2    *sql.Conn  // a connection from a second pool, standing in for the next pod
+	done    chan error // pod 1's build result
+	pid     int64      // backend running pod 1's build
+	oid     uint32     // pg_class oid of the index pod 1 is building
+	release func()     // commits the transaction the build is waiting on
+}
+
+// parkLogIndexBuild starts pod 1's build of idx_race_logs_v behind an open
+// REPEATABLE READ transaction (an old pod serving traffic), so the build parks in
+// "waiting for old snapshots" with its index already in pg_index as INVALID: the
+// state the next pod finds after a pod is killed mid-migration.
+func parkLogIndexBuild(t *testing.T) parkedLogIndexBuild {
+	t.Helper()
+	db := trySetupPostgresDB(t)
+	if db == nil {
+		t.Skip("Postgres not available, skipping test")
+	}
+	ctx := context.Background()
+	require.NoError(t, db.Exec("DROP TABLE IF EXISTS race_logs").Error)
+	t.Cleanup(func() { _ = db.Exec("DROP TABLE IF EXISTS race_logs").Error })
+	require.NoError(t, db.Exec(`CREATE TABLE race_logs (id INTEGER PRIMARY KEY, v TEXT NOT NULL)`).Error)
+	require.NoError(t, db.Exec(`INSERT INTO race_logs SELECT g, 'v' || g FROM generate_series(1, 5000) g`).Error)
+
+	pod2DB, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	require.NoError(t, err)
+	pod2SQL, err := pod2DB.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = pod2SQL.Close() })
+	pod2 := acquirePerfTestSQLConn(t, ctx, pod2DB)
+
+	blocker := acquirePerfTestSQLConn(t, ctx, db)
+	_, err = blocker.ExecContext(ctx, "BEGIN ISOLATION LEVEL REPEATABLE READ")
+	require.NoError(t, err)
+	_, err = blocker.ExecContext(ctx, "SELECT 1")
+	require.NoError(t, err)
+	var once sync.Once
+	release := func() { once.Do(func() { _, _ = blocker.ExecContext(ctx, "COMMIT") }) }
+	t.Cleanup(release)
+
+	pod1 := acquirePerfTestSQLConn(t, ctx, db)
+	build := parkedLogIndexBuild{pod2: pod2, done: make(chan error, 1), release: release}
+	go func() {
+		_, err := pod1.ExecContext(ctx, "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_race_logs_v ON race_logs (v)")
+		build.done <- err
+	}()
+	require.Eventually(t, func() bool {
+		return db.Raw(`SELECT COALESCE((SELECT pid FROM pg_stat_progress_create_index
+			WHERE relid = to_regclass('race_logs') AND phase = 'waiting for old snapshots'), 0)`).Scan(&build.pid).Error == nil && build.pid != 0
+	}, 20*time.Second, 50*time.Millisecond, "pod 1's build must park in 'waiting for old snapshots'")
+	require.NoError(t, db.Raw(`SELECT to_regclass('idx_race_logs_v')::oid`).Scan(&build.oid).Error)
+	valid, err := pgIndexValid(ctx, pod2, "race_logs", "idx_race_logs_v")
+	require.NoError(t, err)
+	require.False(t, valid, "a build still in progress must read as INVALID in pg_index")
+	return build
+}
+
+// rebuildRaceLogIndex runs the sequence every pgDropIndexConcurrently caller runs:
+// an INVALID index is dropped and rebuilt with CREATE INDEX CONCURRENTLY IF NOT EXISTS.
+func rebuildRaceLogIndex(ctx context.Context, conn *sql.Conn) error {
+	valid, err := pgIndexValid(ctx, conn, "race_logs", "idx_race_logs_v")
+	if err != nil || valid {
+		return err
+	}
+	if err := pgDropIndexConcurrently(ctx, conn, "idx_race_logs_v"); err != nil {
+		return err
+	}
+	_, err = conn.ExecContext(ctx, "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_race_logs_v ON race_logs (v)")
+	return err
+}
+
+// TestPgDropIndexConcurrentlyWaitsForLiveBuild pins that the next pod waits for a
+// concurrent build another backend is still running instead of dropping it. A
+// killed pod's idle advisory-lock session ends at once but its busy build keeps
+// running, so the next pod holds the migration lock while that build is alive.
+// Dropping it blocked behind the build and then failed one side with
+// "tuple concurrently updated".
+func TestPgDropIndexConcurrentlyWaitsForLiveBuild(t *testing.T) {
+	ctx := context.Background()
+	build := parkLogIndexBuild(t)
+	pod2Done := make(chan error, 1)
+	go func() { pod2Done <- rebuildRaceLogIndex(ctx, build.pod2) }()
+
+	db := trySetupPostgresDB(t)
+	var drops int64
+	for deadline := time.Now().Add(3 * time.Second); time.Now().Before(deadline) && drops == 0; time.Sleep(20 * time.Millisecond) {
+		require.NoError(t, db.Raw(`SELECT COUNT(*) FROM pg_stat_activity
+			WHERE query ILIKE 'DROP INDEX CONCURRENTLY%idx_race_logs_v%'`).Scan(&drops).Error)
+	}
+	build.release()
+	pod1Err, pod2Err := <-build.done, <-pod2Done
+
+	require.Zero(t, drops, "pod 2 issued DROP INDEX CONCURRENTLY against a build another backend was still running")
+	require.NoError(t, pod1Err)
+	require.NoError(t, pod2Err)
+	valid, err := pgIndexValid(ctx, build.pod2, "race_logs", "idx_race_logs_v")
+	require.NoError(t, err)
+	require.True(t, valid)
+	var finalOID uint32
+	require.NoError(t, db.Raw(`SELECT to_regclass('idx_race_logs_v')::oid`).Scan(&finalOID).Error)
+	require.Equal(t, build.oid, finalOID, "pod 1's finished build must be the index that remains, not a second rebuild")
+}
+
+// TestPgDropIndexConcurrentlyRebuildsAfterPeerBuildFails pins that waiting never
+// keeps a broken index: when the build pod 2 waits on dies (cancelled here, as a
+// terminated orphan would be), pod 2 drops the INVALID leftover and rebuilds.
+func TestPgDropIndexConcurrentlyRebuildsAfterPeerBuildFails(t *testing.T) {
+	ctx := context.Background()
+	build := parkLogIndexBuild(t)
+	pod2Done := make(chan error, 1)
+	go func() { pod2Done <- rebuildRaceLogIndex(ctx, build.pod2) }()
+	time.Sleep(500 * time.Millisecond)
+	db := trySetupPostgresDB(t)
+	require.NoError(t, db.Exec("SELECT pg_cancel_backend(?)", build.pid).Error)
+	require.Error(t, <-build.done, "the cancelled build must fail and leave an INVALID index")
+
+	build.release()
+	require.NoError(t, <-pod2Done)
+	valid, err := pgIndexValid(ctx, build.pod2, "race_logs", "idx_race_logs_v")
+	require.NoError(t, err)
+	require.True(t, valid)
+}
+
+// dropMatViewsForColumnDDL drops the materialized views, which select every logs column and so block
+// a DROP COLUMN; setupPerfTestDB recreates them for the next test.
+func dropMatViewsForColumnDDL(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	for _, view := range append(allMatViewNames(), legacyMatViewNames...) {
+		require.NoError(t, db.Exec("DROP MATERIALIZED VIEW IF EXISTS "+view+" CASCADE").Error)
+	}
+}
+
+// TestIsPassthroughMigrationBoundsLockWait pins that adding is_passthrough cannot park at the head of
+// the logs lock queue behind a long-running read (where every later query would wait on it): with a
+// read holding the table, the migration fails fast on its own lock timeout, and succeeds once the
+// read ends.
+func TestIsPassthroughMigrationBoundsLockWait(t *testing.T) {
+	_, db := setupPerfTestDB(t)
+	dropMatViewsForColumnDDL(t, db)
+	require.NoError(t, db.Exec("ALTER TABLE logs DROP COLUMN IF EXISTS is_passthrough").Error)
+	require.NoError(t, db.Exec("DELETE FROM migrations WHERE id = ?", "logs_add_is_passthrough_column").Error)
+
+	holder := db.Begin()
+	require.NoError(t, holder.Error)
+	require.NoError(t, holder.Exec("SELECT 1 FROM logs LIMIT 1").Error)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	started := time.Now()
+	err := migrationAddIsPassthroughColumn(ctx, db, testLogger{})
+	elapsed := time.Since(started)
+	require.NoError(t, holder.Rollback().Error)
+
+	require.Error(t, err, "the migration must not wait out a held table lock")
+	require.Contains(t, err.Error(), "lock timeout", "it must fail on its own lock_timeout, not the caller's deadline")
+	require.Less(t, elapsed, 15*time.Second)
+
+	require.NoError(t, migrationAddIsPassthroughColumn(context.Background(), db, testLogger{}))
+	require.True(t, db.Migrator().HasColumn(&Log{}, "is_passthrough"))
+}
+
+// TestIsPassthroughMigrationRollbackKeepsMarker pins that rolling the migration back does not drop
+// is_passthrough: it is the only thing that tells a passthrough row stored under its inferred type
+// apart from a typed request, so dropping it would silently erase that history.
+func TestIsPassthroughMigrationRollbackKeepsMarker(t *testing.T) {
+	_, db := setupPerfTestDB(t)
+	require.NoError(t, db.Create(&Log{ID: "typed-passthrough", Timestamp: time.Now(), Object: "chat_completion", IsPassthrough: true, Provider: "openai", Status: "success"}).Error)
+	dropMatViewsForColumnDDL(t, db)
+
+	require.NoError(t, isPassthroughColumnMigration(context.Background(), testLogger{}).Rollback(db))
+
+	require.True(t, db.Migrator().HasColumn(&Log{}, "is_passthrough"))
+	var row Log
+	require.NoError(t, db.First(&row, "id = ?", "typed-passthrough").Error)
+	require.True(t, row.IsPassthrough)
+}
+
+// TestClientIPColumnMigration pins logs_add_client_ip_column: existing tables gain client_ip, a rerun is a no-op, and rollback drops it.
+func TestClientIPColumnMigration(t *testing.T) {
+	ctx := context.Background()
+	store, err := newSqliteLogStore(ctx, &SQLiteConfig{Path: filepath.Join(t.TempDir(), "client-ip.db")}, testLogger{})
+	require.NoError(t, err)
+	db := store.db
+	for _, model := range clientIPColumnModels {
+		require.True(t, db.Migrator().HasColumn(model, "client_ip"), "%T.client_ip is created", model)
+		require.False(t, db.Migrator().HasColumn(model, "forwarded_for"), "%T has no forwarded_for column", model)
+		require.NoError(t, db.Migrator().DropColumn(model, "client_ip"))
+	}
+	require.NoError(t, db.Exec("DELETE FROM migrations WHERE id = ?", "logs_add_client_ip_column").Error)
+	require.NoError(t, migrationAddClientIPColumn(ctx, db, testLogger{}))
+	for _, model := range clientIPColumnModels {
+		assert.True(t, db.Migrator().HasColumn(model, "client_ip"), "%T.client_ip is added to an existing table", model)
+	}
+	require.NoError(t, db.Exec("DELETE FROM migrations WHERE id = ?", "logs_add_client_ip_column").Error)
+	require.NoError(t, migrationAddClientIPColumn(ctx, db, testLogger{}), "a rerun over an existing column succeeds")
+
+	require.NoError(t, clientIPColumnMigration(ctx, testLogger{}).Rollback(db))
+	for _, model := range clientIPColumnModels {
+		assert.False(t, db.Migrator().HasColumn(model, "client_ip"), "%T.client_ip is dropped on rollback", model)
+	}
+}
+
+// TestRefuseRollbackWhileRecorded_LocksTablesOnPostgres pins that the rollback check takes the DROP COLUMN lock on every
+// table before it reads, so no writer can commit a value between the check and the drop, and that a statement timeout
+// bounds how long the check can hold those locks.
+func TestRefuseRollbackWhileRecorded_LocksTablesOnPostgres(t *testing.T) {
+	db := trySetupPostgresDB(t)
+	if db == nil {
+		t.Skip("PostgreSQL not available")
+	}
+	require.NoError(t, db.AutoMigrate(clientIPColumnModels...))
+	tx := db.Begin()
+	require.NoError(t, tx.Error)
+	defer tx.Rollback()
+
+	_ = refuseRollbackWhileRecorded(tx, "logs_add_client_ip_column", clientIPColumnModels, "client_ip")
+
+	var locked int64
+	require.NoError(t, tx.Raw(`SELECT count(*) FROM pg_locks l JOIN pg_class c ON c.oid = l.relation
+		WHERE l.pid = pg_backend_pid() AND l.mode = 'AccessExclusiveLock' AND c.relname IN ('logs', 'mcp_tool_logs', 'relay_logs')`).Scan(&locked).Error)
+	assert.EqualValues(t, 3, locked, "every table is locked against writers before its values are checked")
+
+	// lock_timeout only bounds waiting for the locks; the scan that runs while they are held needs its own bound.
+	var timeout string
+	require.NoError(t, tx.Raw("SHOW statement_timeout").Scan(&timeout).Error)
+	assert.Equal(t, "30s", timeout, "the recorded-value scan cannot hold the locks for longer than the statement timeout")
+}
+
+// TestClientIPColumnMigration_NonRollbackable pins that rolling logs_add_client_ip_column back is refused while any
+// table holds a recorded address: the values cannot be recaptured, so the drop would delete data, not reverse a schema change.
+func TestClientIPColumnMigration_NonRollbackable(t *testing.T) {
+	ctx := context.Background()
+	store, err := newSqliteLogStore(ctx, &SQLiteConfig{Path: filepath.Join(t.TempDir(), "client-ip.db")}, testLogger{})
+	require.NoError(t, err)
+	db := store.db
+	require.NoError(t, db.Create(&MCPToolLog{ID: "mcp-1", ToolName: "echo", Status: "success", Timestamp: time.Now().UTC(), CreatedAt: time.Now().UTC()}).Error)
+	require.NoError(t, db.Model(&MCPToolLog{}).Where("id = ?", "mcp-1").Update("client_ip", "203.0.113.7").Error)
+
+	err = clientIPColumnMigration(ctx, testLogger{}).Rollback(db)
+	require.Error(t, err, "rollback must refuse while client_ip holds a value")
+	assert.Contains(t, err.Error(), "non-rollbackable")
+	for _, model := range clientIPColumnModels {
+		assert.True(t, db.Migrator().HasColumn(model, "client_ip"), "%T.client_ip survives a refused rollback", model)
+	}
+	var stored string
+	require.NoError(t, db.Model(&MCPToolLog{}).Where("id = ?", "mcp-1").Pluck("client_ip", &stored).Error)
+	assert.Equal(t, "203.0.113.7", stored)
+}
+
+// TestUserEmailColumnMigration pins logs_add_user_email_column: existing tables gain user_email, a rerun is a no-op, and rollback drops it.
+func TestUserEmailColumnMigration(t *testing.T) {
+	ctx := context.Background()
+	store, err := newSqliteLogStore(ctx, &SQLiteConfig{Path: filepath.Join(t.TempDir(), "user-email.db")}, testLogger{})
+	require.NoError(t, err)
+	db := store.db
+	for _, model := range userEmailColumnModels {
+		require.True(t, db.Migrator().HasColumn(model, "user_email"), "%T.user_email is created", model)
+		require.NoError(t, db.Migrator().DropColumn(model, "user_email"))
+	}
+	require.NoError(t, db.Exec("DELETE FROM migrations WHERE id = ?", "logs_add_user_email_column").Error)
+	require.NoError(t, migrationAddUserEmailColumn(ctx, db, testLogger{}))
+	for _, model := range userEmailColumnModels {
+		assert.True(t, db.Migrator().HasColumn(model, "user_email"), "%T.user_email is added to an existing table", model)
+	}
+	require.NoError(t, db.Exec("DELETE FROM migrations WHERE id = ?", "logs_add_user_email_column").Error)
+	require.NoError(t, migrationAddUserEmailColumn(ctx, db, testLogger{}), "a rerun over existing columns succeeds")
+
+	require.NoError(t, userEmailColumnMigration(ctx, testLogger{}).Rollback(db))
+	for _, model := range userEmailColumnModels {
+		assert.False(t, db.Migrator().HasColumn(model, "user_email"), "%T.user_email is dropped on rollback", model)
+	}
+}
+
+// TestUserEmailColumnMigration_NonRollbackable pins that rolling logs_add_user_email_column back is refused while any
+// table holds a recorded email: the snapshot cannot be rebuilt (relay exports carry only bodies), so the drop would delete it.
+func TestUserEmailColumnMigration_NonRollbackable(t *testing.T) {
+	ctx := context.Background()
+	store, err := newSqliteLogStore(ctx, &SQLiteConfig{Path: filepath.Join(t.TempDir(), "user-email.db")}, testLogger{})
+	require.NoError(t, err)
+	db := store.db
+	require.NoError(t, db.Create(&MCPToolLog{ID: "mcp-1", ToolName: "echo", Status: "success", Timestamp: time.Now().UTC(), CreatedAt: time.Now().UTC()}).Error)
+	require.NoError(t, db.Model(&MCPToolLog{}).Where("id = ?", "mcp-1").Update("user_email", "ada@example.com").Error)
+
+	err = userEmailColumnMigration(ctx, testLogger{}).Rollback(db)
+	require.Error(t, err, "rollback must refuse while user_email holds a value")
+	assert.Contains(t, err.Error(), "non-rollbackable")
+	for _, model := range userEmailColumnModels {
+		assert.True(t, db.Migrator().HasColumn(model, "user_email"), "%T.user_email survives a refused rollback", model)
+	}
+	var stored string
+	require.NoError(t, db.Model(&MCPToolLog{}).Where("id = ?", "mcp-1").Pluck("user_email", &stored).Error)
+	assert.Equal(t, "ada@example.com", stored)
+}
+
+// TestMigrationAddRelayLogCorrelationColumns pins that a relay_logs table from before the
+// correlation columns gains them and their indexes, keeps its rows, and survives a second run.
+func TestMigrationAddRelayLogCorrelationColumns(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "migrations.db")), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	require.NoError(t, err)
+	require.NoError(t, db.Exec("CREATE TABLE relay_logs (id TEXT PRIMARY KEY)").Error)
+	require.NoError(t, db.Exec("INSERT INTO relay_logs (id) VALUES (?)", "relay-existing").Error)
+
+	ctx := context.Background()
+	require.NoError(t, migrationAddRelayLogCorrelationColumns(ctx, db, testLogger{}))
+	require.NoError(t, migrationAddRelayLogCorrelationColumns(ctx, db, testLogger{}), "the migration is idempotent")
+	for field, index := range map[string]string{"ParentRequestID": "idx_relay_logs_parent_request_id", "AgentCorrelationID": "idx_relay_logs_agent_correlation_id"} {
+		require.True(t, db.Migrator().HasColumn(&RelayLog{}, field), "missing column for %s", field)
+		require.True(t, db.Migrator().HasIndex(&RelayLog{}, index), "missing index %s", index)
+	}
+	var count int64
+	require.NoError(t, db.Table("relay_logs").Count(&count).Error)
+	require.Equal(t, int64(1), count)
+}
+
+// TestMigrationAddRelayLogLargePayloadResponse pins that a relay_logs table from before the column
+// gains is_large_payload_response, keeps its rows, and survives a second run.
+func TestMigrationAddRelayLogLargePayloadResponse(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "migrations.db")), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	require.NoError(t, err)
+	require.NoError(t, db.Exec("CREATE TABLE relay_logs (id TEXT PRIMARY KEY)").Error)
+	require.NoError(t, db.Exec("INSERT INTO relay_logs (id) VALUES (?)", "relay-existing").Error)
+	ctx := context.Background()
+	require.NoError(t, migrationAddRelayLogLargePayloadResponse(ctx, db, testLogger{}))
+	require.NoError(t, migrationAddRelayLogLargePayloadResponse(ctx, db, testLogger{}), "the migration is idempotent")
+	require.True(t, db.Migrator().HasColumn(&RelayLog{}, "IsLargePayloadResponse"))
+	var count int64
+	require.NoError(t, db.Table("relay_logs").Count(&count).Error)
+	require.Equal(t, int64(1), count)
 }

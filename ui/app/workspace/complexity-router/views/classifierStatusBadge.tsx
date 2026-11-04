@@ -1,30 +1,29 @@
 import { badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SemanticStatusInfo } from "@/lib/types/complexityRouter";
+import { SemanticFallback, SemanticStatusInfo } from "@/lib/types/complexityRouter";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import type { VariantProps } from "class-variance-authority";
+import type { ParseKeys } from "i18next";
 import { ArrowRight, CircleAlert, CircleCheck, CircleDashed, LoaderCircle, RefreshCw } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { semanticWarmupFailureMessage, semanticWarmupImpactMessage } from "./classifierStatusBadge.utils";
 
 // The two states below are local to the form rather than reported by the
 // gateway: nothing is embedded yet, so /semantic-status has nothing to say.
 type ClassifierState = SemanticStatusInfo["state"] | "not-configured" | "not-saved" | "loading" | "unavailable";
 
-// The badge names the subject as well as the state: on its own in the header,
-// a bare "Ready" would not say what is ready.
-const BADGE_KEYS: Record<ClassifierState, string> = {
-	ready: "ready",
-	warming: "warming",
-	failed: "failed",
-	disabled: "disabled",
-	"not-configured": "notConfigured",
-	"not-saved": "notSaved",
-	loading: "loading",
-	unavailable: "unavailable",
+const LABEL_KEYS: Record<ClassifierState, ParseKeys<"models", {}, "routing.complexityUi">> = {
+	ready: "classifierReady",
+	warming: "classifierWarming",
+	failed: "classifierFailed",
+	disabled: "classifierOff",
+	"not-configured": "classifierNotConfigured",
+	"not-saved": "classifierNotSaved",
+	loading: "classifierChecking",
+	unavailable: "classifierUnavailable",
 };
 
 // Every tone comes from the shared Badge variants rather than a hand-picked
@@ -64,6 +63,7 @@ function StateIcon({ state }: { state: ClassifierState }) {
 // something is off, so it lives one click away in the popover.
 export function ClassifierStatusBadge({
 	status,
+	semanticFallback,
 	isLoading,
 	isNotConfigured,
 	isNotSaved,
@@ -79,6 +79,8 @@ export function ClassifierStatusBadge({
 	onRetryWarmup,
 }: {
 	status: SemanticStatusInfo | undefined;
+	// The saved fallback, not the form's: it decides what serves while warmup fails.
+	semanticFallback: SemanticFallback;
 	isLoading: boolean;
 	isNotConfigured: boolean;
 	isNotSaved: boolean;
@@ -93,7 +95,8 @@ export function ClassifierStatusBadge({
 	onRetryStatus: () => void;
 	onRetryWarmup: () => void;
 }) {
-	const { t } = useTranslation(["common", "governance"]);
+	const { t: tcpx } = useTranslation("models", { keyPrefix: "routing.complexityUi" });
+
 	const state: ClassifierState = isNotConfigured
 		? "not-configured"
 		: isNotSaved
@@ -107,18 +110,14 @@ export function ClassifierStatusBadge({
 						: "disabled";
 
 	const summary: ReactNode = {
-		"not-configured": hasEmbeddingProviders
-			? t("governance:complexityRouter.statusBadge.summary.notConfiguredSelected")
-			: t("governance:complexityRouter.statusBadge.summary.notConfiguredNoProviders"),
-		"not-saved": t("governance:complexityRouter.statusBadge.summary.notSaved"),
-		loading: t("governance:complexityRouter.statusBadge.summary.loading"),
-		warming: t("governance:complexityRouter.statusBadge.summary.warming"),
-		ready: status
-			? t("governance:complexityRouter.statusBadge.summary.ready", { count: status.total })
-			: t("governance:complexityRouter.statusBadge.summary.readyServing"),
-		failed: t("governance:complexityRouter.statusBadge.summary.failed"),
-		disabled: t("governance:complexityRouter.statusBadge.summary.disabled"),
-		unavailable: t("governance:complexityRouter.statusBadge.summary.unavailable"),
+		"not-configured": hasEmbeddingProviders ? tcpx("summaryNotConfigured") : tcpx("summaryNoEmbeddingProvider"),
+		"not-saved": tcpx("summaryNotSaved"),
+		loading: tcpx("summaryLoading"),
+		warming: tcpx("summaryWarming"),
+		ready: status ? tcpx("summaryReady", { count: status.total }) : tcpx("summaryServing"),
+		failed: tcpx("summaryFailed"),
+		disabled: tcpx("summaryDisabled"),
+		unavailable: tcpx("summaryUnavailable"),
 	}[state];
 
 	return (
@@ -133,7 +132,7 @@ export function ClassifierStatusBadge({
 					className={cn(badgeVariants({ variant: TONES[state] }), "h-8 cursor-pointer gap-1.5 px-2.5 transition-opacity hover:opacity-80")}
 				>
 					<StateIcon state={state} />
-					<span>{t(`governance:complexityRouter.statusBadge.${BADGE_KEYS[state]}`)}</span>
+					<span>{tcpx(LABEL_KEYS[state])}</span>
 				</button>
 			</PopoverTrigger>
 
@@ -144,17 +143,13 @@ export function ClassifierStatusBadge({
 			>
 				<p className="text-muted-foreground">{summary}</p>
 
-				{status?.serving_previous && state === "warming" && (
-					<p className="text-amber-700 dark:text-amber-400">{t("governance:complexityRouter.statusBadge.servingPrevious")}</p>
-				)}
+				{status?.serving_previous && state === "warming" && <p className="text-amber-700 dark:text-amber-400">{tcpx("servingPrevious")}</p>}
 
 				{hasUnsavedChanges && state !== "not-configured" && state !== "not-saved" && (
-					<p className="text-amber-700 dark:text-amber-400">{t("governance:complexityRouter.statusBadge.unsaved")}</p>
+					<p className="text-amber-700 dark:text-amber-400">{tcpx("unsavedServing")}</p>
 				)}
 
-				{statusRefreshFailed && status && (
-					<p className="text-amber-700 dark:text-amber-400">{t("governance:complexityRouter.statusBadge.refreshFailed")}</p>
-				)}
+				{statusRefreshFailed && status && <p className="text-amber-700 dark:text-amber-400">{tcpx("statusRefreshFailed")}</p>}
 
 				{state === "failed" && status && (
 					<p className="text-destructive" data-testid="complexity-router-semantic-status-error">
@@ -163,22 +158,26 @@ export function ClassifierStatusBadge({
 				)}
 
 				{state === "failed" && status && (
-					<p className={status.serving_previous ? "text-amber-700 dark:text-amber-400" : "text-destructive"}>
-						{semanticWarmupImpactMessage(status)}
+					<p
+						className={
+							status.serving_previous || semanticFallback !== "none" ? "text-amber-700 dark:text-amber-400" : "text-destructive"
+						}
+					>
+						{semanticWarmupImpactMessage(status, semanticFallback)}
 					</p>
 				)}
 
 				{state === "failed" && canRetryWarmup && !hasUnsavedChanges && (
 					<Button type="button" variant="outline" size="sm" className="w-full" onClick={onRetryWarmup} disabled={isRetryingWarmup}>
 						<RefreshCw className={cn("size-3.5", isRetryingWarmup && "animate-spin")} />
-						{t("governance:complexityRouter.statusBadge.retryWarmup")}
+						{tcpx("retryWarmup")}
 					</Button>
 				)}
 
 				{state === "unavailable" && (
 					<Button type="button" variant="outline" size="sm" className="w-full" onClick={onRetryStatus} disabled={isRetryingStatus}>
 						<RefreshCw className={cn("size-3.5", isRetryingStatus && "animate-spin")} />
-						{t("governance:complexityRouter.statusBadge.retryStatus")}
+						{tcpx("retryStatus")}
 					</Button>
 				)}
 
@@ -195,12 +194,12 @@ export function ClassifierStatusBadge({
 							onClick={onConfigure}
 							data-testid="complexity-router-status-configure-button"
 						>
-							{t("governance:complexityRouter.header.configureEmbedding")}
+							{tcpx("configureEmbedding")}
 						</Button>
 					) : (
 						<Button asChild variant="outline" size="sm" className="w-full" data-testid="complexity-router-status-add-provider-link">
 							<Link to="/workspace/providers">
-								{t("governance:complexityRouter.statusBadge.addEmbeddingProvider")}
+								{tcpx("addEmbeddingProvider")}
 								<ArrowRight className="size-3.5" />
 							</Link>
 						</Button>
