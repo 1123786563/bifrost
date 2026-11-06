@@ -442,6 +442,7 @@ func HandleOpenAITextCompletionRequest(
 			if err := sonic.Unmarshal(lpResult.ResponseBody, response); err != nil {
 				return nil, providerUtils.NewBifrostOperationError(schemas.ErrProviderResponseUnmarshal, err)
 			}
+			response.Usage.PreserveTokenCountZeros(lpResult.ResponseBody, "usage.prompt_tokens", "usage.completion_tokens")
 			response.ExtraFields = schemas.BifrostResponseExtraFields{Latency: lpResult.Latency}
 			return response, nil
 		}
@@ -519,6 +520,7 @@ func HandleOpenAITextCompletionRequest(
 		return nil, providerUtils.EnrichError(ctx, bifrostErr, jsonData, body, sendBackRawRequest, sendBackRawResponse, latency)
 	}
 
+	response.Usage.PreserveTokenCountZeros(body, "usage.prompt_tokens", "usage.completion_tokens")
 	response.ExtraFields.Latency = latency.Milliseconds()
 	response.ExtraFields.ProviderResponseHeaders = providerResponseHeaders
 
@@ -833,6 +835,8 @@ func HandleOpenAITextCompletionStreaming(
 				}
 			}
 
+			response.Usage.PreserveTokenCountZeros(data, "usage.prompt_tokens", "usage.completion_tokens")
+
 			// choices be array if nil
 			if response.Choices == nil {
 				response.Choices = []schemas.BifrostResponseChoice{}
@@ -871,6 +875,9 @@ func HandleOpenAITextCompletionStreaming(
 				// Here in some cases usage comes before final message
 				// So we need to check if the response.Usage is nil and then if usage != nil
 				// then add up all tokens
+				// Presence is sticky once any frame reports zero; counts still merge by max.
+				usage.PromptTokensExplicitZero = usage.PromptTokensExplicitZero || response.Usage.PromptTokensExplicitZero
+				usage.CompletionTokensExplicitZero = usage.CompletionTokensExplicitZero || response.Usage.CompletionTokensExplicitZero
 				if response.Usage.PromptTokens > usage.PromptTokens {
 					usage.PromptTokens = response.Usage.PromptTokens
 				}
@@ -1091,6 +1098,7 @@ func HandleOpenAIChatCompletionRequest(
 			if err := sonic.Unmarshal(lpResult.ResponseBody, response); err != nil {
 				return nil, providerUtils.NewBifrostOperationError(schemas.ErrProviderResponseUnmarshal, err)
 			}
+			response.Usage.PreserveTokenCountZeros(lpResult.ResponseBody, "usage.prompt_tokens", "usage.completion_tokens")
 			response.ExtraFields = schemas.BifrostResponseExtraFields{Latency: lpResult.Latency}
 			return response, nil
 		}
@@ -1184,6 +1192,7 @@ func HandleOpenAIChatCompletionRequest(
 	if bifrostErr != nil {
 		return nil, providerUtils.EnrichError(ctx, bifrostErr, jsonData, body, sendBackRawRequest, sendBackRawResponse, latency)
 	}
+	response.Usage.PreserveTokenCountZeros(body, "usage.prompt_tokens", "usage.completion_tokens")
 	response.Usage.NormalizeReasoningTokens()
 
 	// A 200 is not proof of success on every OpenAI-compatible provider: some report
@@ -1614,6 +1623,8 @@ func HandleOpenAIChatCompletionStreaming(
 				}
 			}
 
+			response.Usage.PreserveTokenCountZeros(data, "usage.prompt_tokens", "usage.completion_tokens")
+
 			// choices be array if nil
 			if response.Choices == nil {
 				response.Choices = []schemas.BifrostResponseChoice{}
@@ -1648,6 +1659,9 @@ func HandleOpenAIChatCompletionStreaming(
 				// Accumulate usage across chunks; attached to final event below.
 				if response.Usage != nil {
 					usageSeen = true
+					// Presence is sticky once any frame reports zero; counts still merge by max.
+					usage.PromptTokensExplicitZero = usage.PromptTokensExplicitZero || response.Usage.PromptTokensExplicitZero
+					usage.CompletionTokensExplicitZero = usage.CompletionTokensExplicitZero || response.Usage.CompletionTokensExplicitZero
 					if response.Usage.PromptTokens > usage.PromptTokens {
 						usage.PromptTokens = response.Usage.PromptTokens
 					}
@@ -1770,6 +1784,9 @@ func HandleOpenAIChatCompletionStreaming(
 					// Here in some cases usage comes before final message
 					// So we need to check if the response.Usage is nil and then if usage != nil
 					// then add up all tokens
+					// Presence is sticky once any frame reports zero; counts still merge by max.
+					usage.PromptTokensExplicitZero = usage.PromptTokensExplicitZero || response.Usage.PromptTokensExplicitZero
+					usage.CompletionTokensExplicitZero = usage.CompletionTokensExplicitZero || response.Usage.CompletionTokensExplicitZero
 					if response.Usage.PromptTokens > usage.PromptTokens {
 						usage.PromptTokens = response.Usage.PromptTokens
 					}
@@ -2058,6 +2075,7 @@ func HandleOpenAIResponsesRequest(
 			if err := sonic.Unmarshal(lpResult.ResponseBody, response); err != nil {
 				return nil, providerUtils.NewBifrostOperationError(schemas.ErrProviderResponseUnmarshal, err)
 			}
+			response.Usage.PreserveTokenCountZeros(lpResult.ResponseBody, "usage.input_tokens", "usage.output_tokens")
 			response.ExtraFields = schemas.BifrostResponseExtraFields{Latency: lpResult.Latency}
 			return response, nil
 		}
@@ -2145,10 +2163,13 @@ func HandleOpenAIResponsesRequest(
 		return nil, providerUtils.EnrichError(ctx, bifrostErr, jsonData, body, sendBackRawRequest, sendBackRawResponse, latency)
 	}
 
+	response.Usage.PreserveTokenCountZeros(body, "usage.input_tokens", "usage.output_tokens")
+
 	// Custom tools sent as function tools come back as function calls; restore them.
 	if names := customToolNamesToRestore(ctx, request); names != nil {
 		restoreCustomToolCalls(response.Output, names)
 	}
+	recordResponsesServerToolUsage(response, jsonData)
 
 	response.ExtraFields.Latency = latency.Milliseconds()
 	response.ExtraFields.ProviderResponseHeaders = providerResponseHeaders
@@ -2466,6 +2487,10 @@ func HandleOpenAIResponsesStreaming(
 				}
 			}
 
+			if response.Response != nil {
+				response.Response.Usage.PreserveTokenCountZeros(data, "response.usage.input_tokens", "response.usage.output_tokens")
+			}
+
 			if prefix, drop := customToolRestorer.restore(&response); drop {
 				continue
 			} else if prefix != nil {
@@ -2492,6 +2517,7 @@ func HandleOpenAIResponsesStreaming(
 
 			response.ExtraFields.ChunkIndex = response.SequenceNumber
 			if response.Type == schemas.ResponsesStreamResponseTypeCompleted || response.Type == schemas.ResponsesStreamResponseTypeIncomplete {
+				recordResponsesServerToolUsage(response.Response, jsonBody)
 				// Set raw request if enabled
 				if sendBackRawRequest {
 					providerUtils.ParseAndSetRawRequest(&response.ExtraFields, jsonBody)
@@ -8039,126 +8065,134 @@ func (provider *OpenAIProvider) ContainerFileList(ctx *schemas.BifrostContext, k
 	sendBackRawRequest := providerUtils.ShouldSendBackRawRequest(ctx, provider.sendBackRawRequest)
 	sendBackRawResponse := providerUtils.ShouldSendBackRawResponse(ctx, provider.sendBackRawResponse)
 
-	// Initialize serial pagination helper for multi-key support
+	// A container lives on one key's account: the first page finds that key, and the cursor keeps later pages on it.
 	helper, err := providerUtils.NewSerialListHelper(keys, request.After, provider.logger, true)
 	if err != nil {
 		return nil, providerUtils.NewBifrostOperationError("invalid pagination cursor", err)
 	}
 
-	// Get current key to query
-	key, nativeCursor, ok := helper.GetCurrentKey()
-	if !ok {
-		// All keys exhausted
-		return &schemas.BifrostContainerFileListResponse{
-			Object:  "list",
-			Data:    []schemas.ContainerFileObject{},
-			HasMore: false,
-		}, nil
+	type containerFilePage struct {
+		resp       *schemas.BifrostContainerFileListResponse
+		lastFileID string
 	}
-	// Resolve only the key the cursor selects: the cursor stores a position, so filtering
-	// failed OAuth keys out first would shift every later key and misdirect saved cursors.
-	key, keyErr := provider.resolveKey(ctx, key)
-	if keyErr != nil {
-		return nil, keyErr
+	fetchPage := func(key schemas.Key, nativeCursor string) (containerFilePage, *schemas.BifrostError) {
+		key, keyErr := provider.resolveKey(ctx, key)
+		if keyErr != nil {
+			return containerFilePage{}, keyErr
+		}
+
+		endpoint := fmt.Sprintf("/v1/containers/%s/files", escapedContainerID)
+		requestURL := provider.buildRequestURL(ctx, endpoint, schemas.ContainerFileListRequest)
+
+		queryParams := url.Values{}
+		if request.Limit > 0 {
+			queryParams.Set("limit", fmt.Sprintf("%d", request.Limit))
+		}
+		if nativeCursor != "" {
+			queryParams.Set("after", nativeCursor)
+		}
+		if request.Order != nil {
+			queryParams.Set("order", *request.Order)
+		}
+		if len(queryParams) > 0 {
+			requestURL = requestURL + "?" + queryParams.Encode()
+		}
+
+		req := fasthttp.AcquireRequest()
+		resp := fasthttp.AcquireResponse()
+		defer fasthttp.ReleaseRequest(req)
+		defer fasthttp.ReleaseResponse(resp)
+
+		providerUtils.SetExtraHeaders(ctx, req, provider.networkConfig.ExtraHeaders, nil)
+
+		req.SetRequestURI(requestURL)
+		req.Header.SetMethod(http.MethodGet)
+
+		if key.Value.GetValue() != "" {
+			req.Header.Set("Authorization", "Bearer "+key.Value.GetValue())
+		}
+
+		latency, bifrostErr, wait := providerUtils.MakeRequestWithContext(ctx, provider.client, req, resp)
+		defer wait()
+		if bifrostErr != nil {
+			return containerFilePage{}, bifrostErr
+		}
+
+		if resp.StatusCode() >= 400 {
+			return containerFilePage{}, providerUtils.SetErrorLatency(ParseOpenAIError(resp), latency)
+		}
+
+		responseBody, err := providerUtils.CheckAndDecodeBody(resp)
+		if err != nil {
+			return containerFilePage{}, providerUtils.NewBifrostOperationError(schemas.ErrProviderResponseDecode, err)
+		}
+
+		var listResp struct {
+			Object  string                        `json:"object"`
+			Data    []schemas.ContainerFileObject `json:"data"`
+			FirstID *string                       `json:"first_id"`
+			LastID  *string                       `json:"last_id"`
+			HasMore bool                          `json:"has_more"`
+		}
+
+		rawRequest, rawResponse, bifrostErr := providerUtils.HandleProviderResponse(responseBody, &listResp, nil, sendBackRawRequest, sendBackRawResponse)
+		if bifrostErr != nil {
+			return containerFilePage{}, bifrostErr
+		}
+
+		var lastFileID string
+		for _, file := range listResp.Data {
+			lastFileID = file.ID
+		}
+
+		containerFileListResponse := &schemas.BifrostContainerFileListResponse{
+			Object:  listResp.Object,
+			Data:    listResp.Data,
+			FirstID: listResp.FirstID,
+			LastID:  listResp.LastID,
+			HasMore: listResp.HasMore,
+			ExtraFields: schemas.BifrostResponseExtraFields{
+				Latency: latency.Milliseconds(),
+			},
+		}
+		if sendBackRawRequest {
+			containerFileListResponse.ExtraFields.RawRequest = rawRequest
+		}
+		if sendBackRawResponse {
+			containerFileListResponse.ExtraFields.RawResponse = rawResponse
+		}
+		return containerFilePage{resp: containerFileListResponse, lastFileID: lastFileID}, nil
 	}
 
-	// Build URL with query parameters
-	endpoint := fmt.Sprintf("/v1/containers/%s/files", escapedContainerID)
-	requestURL := provider.buildRequestURL(ctx, endpoint, schemas.ContainerFileListRequest)
-
-	// Add query parameters
-	queryParams := url.Values{}
-	if request.Limit > 0 {
-		queryParams.Set("limit", fmt.Sprintf("%d", request.Limit))
+	var page containerFilePage
+	var keyIndex int
+	var bifrostErr *schemas.BifrostError
+	if helper.Cursor != nil {
+		key, nativeCursor, ok := helper.GetCurrentKey()
+		if !ok {
+			return &schemas.BifrostContainerFileListResponse{
+				Object:  "list",
+				Data:    []schemas.ContainerFileObject{},
+				HasMore: false,
+			}, nil
+		}
+		keyIndex = helper.GetCurrentKeyIndex()
+		page, bifrostErr = fetchPage(key, nativeCursor)
+	} else {
+		page, keyIndex, bifrostErr = providerUtils.LookupAcrossKeys(ctx, keys, func(key schemas.Key) (containerFilePage, *schemas.BifrostError) {
+			return fetchPage(key, "")
+		})
 	}
-	// Use native cursor from helper instead of request.After
-	if nativeCursor != "" {
-		queryParams.Set("after", nativeCursor)
-	}
-	if request.Order != nil {
-		queryParams.Set("order", *request.Order)
-	}
-	if len(queryParams) > 0 {
-		requestURL = requestURL + "?" + queryParams.Encode()
-	}
-
-	// Create request
-	req := fasthttp.AcquireRequest()
-	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)
-	defer fasthttp.ReleaseResponse(resp)
-
-	providerUtils.SetExtraHeaders(ctx, req, provider.networkConfig.ExtraHeaders, nil)
-
-	req.SetRequestURI(requestURL)
-	req.Header.SetMethod(http.MethodGet)
-
-	if key.Value.GetValue() != "" {
-		req.Header.Set("Authorization", "Bearer "+key.Value.GetValue())
-	}
-
-	latency, bifrostErr, wait := providerUtils.MakeRequestWithContext(ctx, provider.client, req, resp)
-	defer wait()
 	if bifrostErr != nil {
 		return nil, bifrostErr
 	}
 
-	if resp.StatusCode() >= 400 {
-		return nil, providerUtils.SetErrorLatency(ParseOpenAIError(resp), latency)
-	}
-
-	// Decode response body (handles content-encoding like gzip)
-	responseBody, err := providerUtils.CheckAndDecodeBody(resp)
-	if err != nil {
-		return nil, providerUtils.NewBifrostOperationError(schemas.ErrProviderResponseDecode, err)
-	}
-
-	var listResp struct {
-		Object  string                        `json:"object"`
-		Data    []schemas.ContainerFileObject `json:"data"`
-		FirstID *string                       `json:"first_id"`
-		LastID  *string                       `json:"last_id"`
-		HasMore bool                          `json:"has_more"`
-	}
-
-	rawRequest, rawResponse, bifrostErr := providerUtils.HandleProviderResponse(responseBody, &listResp, nil, sendBackRawRequest, sendBackRawResponse)
-	if bifrostErr != nil {
-		return nil, bifrostErr
-	}
-
-	// Track last file ID for pagination cursor
-	var lastFileID string
-	for _, file := range listResp.Data {
-		lastFileID = file.ID
-	}
-
-	// Build cursor for next request (handles cross-key pagination)
-	nextCursor, hasMore := helper.BuildNextCursor(listResp.HasMore, lastFileID)
-
-	containerFileListResponse := &schemas.BifrostContainerFileListResponse{
-		Object:  listResp.Object,
-		Data:    listResp.Data,
-		FirstID: listResp.FirstID,
-		LastID:  listResp.LastID,
-		HasMore: hasMore,
-		ExtraFields: schemas.BifrostResponseExtraFields{
-			Latency: latency.Milliseconds(),
-		},
-	}
-
-	// Set encoded cursor for next page
+	nextCursor, hasMore := providerUtils.BuildNextCursorWithinKey(keyIndex, page.resp.HasMore, page.lastFileID)
+	page.resp.HasMore = hasMore
 	if nextCursor != "" {
-		containerFileListResponse.After = &nextCursor
+		page.resp.After = &nextCursor
 	}
-
-	if sendBackRawRequest {
-		containerFileListResponse.ExtraFields.RawRequest = rawRequest
-	}
-	if sendBackRawResponse {
-		containerFileListResponse.ExtraFields.RawResponse = rawResponse
-	}
-
-	return containerFileListResponse, nil
+	return page.resp, nil
 }
 
 // ContainerFileRetrieve retrieves a file from a container via OpenAI's API.
